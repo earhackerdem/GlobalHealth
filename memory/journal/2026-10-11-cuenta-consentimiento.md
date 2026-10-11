@@ -1,5 +1,20 @@
 # 2026-10-11 — Ejecución de cuenta-consentimiento (US-01)
 
+## Ronda review→apply (misma fecha, al final del día)
+- /epe-4-review completo: 5 finders paralelos → merge/dedupe (21→20) → 4 validadores por reproducción →
+  ronda 2 seca. 16 confirmados (login-CSRF y downgrade PKCE reproducidos de verdad), 3 falsos positivos
+  (el "SyntaxError crítico": python del sistema vs 3.14 del proyecto → closed.md). Comentarios FINDER y
+  VALIDATOR en el PR #1.
+- Saúl Pérez aprobó los 13 grupos de hallazgos SIN diferir nada; preguntó si se corrió openspec verify —
+  respuesta honesta: no aún; validate --strict sí; /opsx:verify se corre tras el apply.
+- /epe-5-apply en dos pasadas (tests c91eb7f rojo 17/83 → impl e8082fe verde): 100 passed/0/0, cobertura
+  89.83%→93.69%, Playwright 62, tdd-check ✓ (sanado con el flujo test:), prek 0 fallos. Fixer sin rebotes.
+- ADR D13 (cifrado: claves por propósito, MultiFernet, ENCRYPTION_KEY obligatoria fuera de dev). closed.md
+  estrenado con 3 veredictos. El guard de force-push bloqueó un amend sobre commit pusheado: se re-emitió
+  como commit normal (bien bloqueado).
+- Pendiente de Saúl: re-verificación manual del flujo Google con el NUEVO contrato (botón en login →
+  Google → /google-callback → sesión en la SPA), porque la 5.1 original se hizo con el flujo viejo.
+
 - Saúl Pérez aprobó el design ("plan approved") tras resolver el vacío de entorno (ADR D12) y pedir login con
   Google (FR-026). Rama feat/cuenta-consentimiento desde docs/product-brief.
 - Grupo 1 (single): template instalado copiando el repo oficial (método vigente: botón "Use this template",

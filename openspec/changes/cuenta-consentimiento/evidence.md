@@ -52,6 +52,22 @@ Ejecutada vía Chrome (Saúl Pérez presente, credenciales suyas en .env local n
 PR #1 abierto (feat/cuenta-consentimiento → main) con CI completo en verde en el head final:
 pre-commit, test-backend (cobertura 90%), test-docker-compose, Playwright 4/4 + merge de reportes.
 
+## Ronda /epe-4-review → /epe-5-apply (2026-10-11)
+
+Saúl Pérez aprobó los 13 hallazgos de la revisión adversarial (ninguno rechazado). Aplicados en dos pasadas
+(tests → impl, barrera respetada): rojo c91eb7f (17 failed esperados / 83 passed), verde e8082fe.
+- Números tras el apply: backend **100 passed / 0 failed / 0 errors / 0 skipped** · cobertura **93.69%**
+  (antes 89.83% real) · Playwright chromium **62 passed** · `make tdd-check` ✓ · pre-commit completo ✓.
+- Cambios de contrato (design.md §Interface contract actualizado): state anti-CSRF sellado en la cookie PKCE,
+  PKCE estricto sin downgrade, callback → 307 a `/google-callback#access_token=…` con no-store, claim `amr`
+  (auth_method real de la sesión), `require_consent` con vigencia de versión, rutas `/` + wrapper {data,count},
+  `HealthRecordStub.note` cifrada (migración a7f3c9e2), claves separadas datos/cookie + MultiFernet (ADR D13),
+  botón "Continuar con Google" + aterrizaje del token en la SPA, bind de handleError, errores es-MX.
+- Falsos positivos de la revisión documentados en el comentario VALIDATOR del PR (el principal: "SyntaxError
+  crítico" reproducido con el python del sistema; el proyecto es 3.14 de punta a punta).
+- NOTA: la prueba manual del flujo Google real (5.1) se hizo ANTES de este endurecimiento; el flujo real cambió
+  (redirect a la SPA). Re-verificación manual pendiente de Saúl con el nuevo flujo (ahora sí con botón).
+
 ## Deuda anotada (fuera del alcance de esta story)
 
 - Cobertura exactamente en 90%: `app/core/google_oauth.py` (camino real de red, mockeado en tests) e
