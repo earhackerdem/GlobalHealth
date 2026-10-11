@@ -78,6 +78,17 @@ como causalidad ni como diagnóstico.
   vigente NOT VERIFIED → T1 los confirma contra el repo oficial.
 - **Re-check if:** T1 de cuenta-consentimiento (instalación real).
 
+- **Fact (T1, empírico):** el método oficial de instalación HOY es el botón "Use this template" de GitHub (ya no
+  copier; hooks/post_gen_project.py es residuo del generador). Clonado el repo oficial (commit 7257e60,
+  2026-10-08): el frontend usa **bun** (workspaces: frontend + packages/react-email) y biome, el backend sirve el
+  frontend construido desde backend/app/frontend (los tests lo exigen), tests del backend en `backend/tests/`,
+  flujo dev: `docker compose up -d db mailpit` + `uv sync` + `uv run bash scripts/prestart.sh` + `uv run fastapi dev`
+  + `bun install` + `bun run dev`. Playwright levanta Vite solo (webServer) y lee credenciales del .env raíz.
+  OJO: la suite de pytest limpia datos de la BD local compartida (re-correr prestart tras pytest para re-sembrar).
+- **Source:** clon local del template (scratchpad), README.md y development.md del commit 7257e60 · verified 2026-10-11
+- **Confidence:** [VERIFIED] (ejecutado: pytest 58 passed, Playwright chromium 62 passed)
+- **Re-check if:** make harness-update del template / upgrade del template.
+
 - **Fact:** LFPDPPP: datos de salud = sensibles; art. 9 exige consentimiento expreso y por escrito (o equivalente)
   para tratarlos, con carga de la prueba en el responsable; existe excepción de transferencia para
   prevención/diagnóstico médico (citada como art. 36 o 37 según la fuente — numeración por confirmar en DOF).

@@ -8,13 +8,16 @@ files is `test→impl`; smaller groups are `single`. `make tdd-check` requires o
 
 ## 1. Esqueleto: template full-stack FastAPI corriendo · single
 
-- [ ] 1.1 Verificar empíricamente el método oficial de instalación del template (README del repo con fecha a
+- [x] 1.1 Verificar empíricamente el método oficial de instalación del template (README del repo con fecha a
       memory/research.md#stack) e instalarlo en la raíz (`backend/`, `frontend/`); verificar: árbol creado y
-      `docker compose up` levanta API, frontend y Postgres sanos
-- [ ] 1.2 Suites del template en verde local tal cual (pytest backend; build + Playwright frontend); números base
+      `docker compose up` levanta API, frontend y Postgres sanos — método hoy: "Use this template" (commit 7257e60);
+      copiado excluyendo .claude/.agents/README/workflows de mantenimiento; db+mailpit sanos, fastapi dev arriba
+- [x] 1.2 Suites del template en verde local tal cual (pytest backend; build + Playwright frontend); números base
       anotados para evidence.md; actualizar en design.md las rutas reales de signup/login si difieren del contrato
-- [ ] 1.3 Ajustes mínimos al repo (env de ejemplo, .gitignore, es-MX en las pantallas que esta story toca después);
-      verificar: `make doctor` y lint del harness pasan
+      — backend 58 passed/0 failed/0 skipped; Playwright chromium 62 passed; rutas coinciden (users.py:146)
+- [x] 1.3 Ajustes mínimos al repo (env de ejemplo, .gitignore, es-MX en las pantallas que esta story toca después);
+      verificar: `make doctor` y lint del harness pasan — .gitignore fusionado, harness.json tests → backend/tests/,
+      doctor OK; es-MX queda en los grupos 2-3 que tocan pantallas
 
 ## 2. Login y alta con Google (OIDC) · test→impl
 

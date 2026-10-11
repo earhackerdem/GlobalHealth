@@ -15,7 +15,7 @@
     "packages/"
   ],
   "tests": [
-    "backend/app/tests/",
+    "backend/tests/",
     "frontend/tests/",
     "tests/",
     "test/",
