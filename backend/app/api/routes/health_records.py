@@ -35,9 +35,7 @@ def create_health_record(
 
 
 @router.get("", response_model=list[HealthRecordPublic])
-def read_health_records(
-    session: SessionDep, current_user: ConsentedUser
-) -> Any:
+def read_health_records(session: SessionDep, current_user: ConsentedUser) -> Any:
     """List ONLY the health-record stubs owned by the session user."""
     records = session.exec(
         select(HealthRecordStub).where(HealthRecordStub.owner_id == current_user.id)

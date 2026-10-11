@@ -53,9 +53,7 @@ def consented_user_headers(client: TestClient, db: Session) -> dict[str, str]:
     """Fresh random user, logged in, with consent v1 granted."""
     email = random_email()
     password = random_lower_string()
-    crud.create_user(
-        session=db, user_create=UserCreate(email=email, password=password)
-    )
+    crud.create_user(session=db, user_create=UserCreate(email=email, password=password))
     headers = login_headers(client, email, password)
     r = client.post(
         f"{settings.API_V1_STR}/consent", headers=headers, json={"version": "v1"}
@@ -64,7 +62,9 @@ def consented_user_headers(client: TestClient, db: Session) -> dict[str, str]:
     return headers
 
 
-def create_record(client: TestClient, headers: dict[str, str], note: str) -> dict[str, Any]:
+def create_record(
+    client: TestClient, headers: dict[str, str], note: str
+) -> dict[str, Any]:
     r = client.post(
         f"{settings.API_V1_STR}/health-records",
         headers=headers,
@@ -197,9 +197,7 @@ def test_ac_isolation_list_returns_only_own_records(
     assert r.status_code == 200, r.text
     listed = extract_records(r.json())
     assert len(listed) == 2
-    assert {str(item["id"]) for item in listed} == {
-        str(rec["id"]) for rec in records_a
-    }
+    assert {str(item["id"]) for item in listed} == {str(rec["id"]) for rec in records_a}
     assert {item["note"] for item in listed} == set(notes_a)
     for note in notes_b:
         assert note not in r.text

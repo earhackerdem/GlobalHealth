@@ -40,7 +40,7 @@ def patched_exchange_code(claims: SimpleNamespace) -> Generator[None]:
     fails on the endpoint response (404) instead of erroring at collection.
     """
 
-    async def fake_exchange_code(code: str) -> Any:
+    async def fake_exchange_code(_code: str) -> Any:
         return claims
 
     try:
@@ -48,7 +48,7 @@ def patched_exchange_code(claims: SimpleNamespace) -> Generator[None]:
             "app.core.google_oauth.exchange_code", new=fake_exchange_code, create=True
         )
         patcher.start()
-    except (ModuleNotFoundError, ImportError, AttributeError):
+    except ModuleNotFoundError, ImportError, AttributeError:
         yield
         return
     try:
@@ -57,9 +57,7 @@ def patched_exchange_code(claims: SimpleNamespace) -> Generator[None]:
         patcher.stop()
 
 
-def set_google_setting(
-    monkeypatch: pytest.MonkeyPatch, name: str, value: str
-) -> None:
+def set_google_setting(monkeypatch: pytest.MonkeyPatch, name: str, value: str) -> None:
     """Patch a Google setting if the Settings model already defines it.
 
     In the red phase Settings has no Google fields (pydantic rejects unknown

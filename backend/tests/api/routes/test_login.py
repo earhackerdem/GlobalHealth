@@ -106,6 +106,7 @@ def test_reset_password(client: TestClient, db: Session) -> None:
     assert r.json() == {"message": "Password updated successfully"}
 
     db.refresh(user)
+    assert user.hashed_password is not None
     verified, _ = verify_password(new_password, user.hashed_password)
     assert verified
 
@@ -143,6 +144,7 @@ def test_login_with_bcrypt_password_upgrades_to_argon2(
     db.commit()
     db.refresh(user)
 
+    assert user.hashed_password is not None
     assert user.hashed_password.startswith("$2")
 
     login_data = {"username": email, "password": password}
@@ -154,6 +156,7 @@ def test_login_with_bcrypt_password_upgrades_to_argon2(
     db.refresh(user)
 
     # Verify the hash was upgraded to argon2
+    assert user.hashed_password is not None
     assert user.hashed_password.startswith("$argon2")
 
     verified, updated_hash = verify_password(password, user.hashed_password)
@@ -187,5 +190,6 @@ def test_login_with_argon2_password_keeps_hash(client: TestClient, db: Session) 
 
     db.refresh(user)
 
+    assert user.hashed_password is not None
     assert user.hashed_password == original_hash
     assert user.hashed_password.startswith("$argon2")

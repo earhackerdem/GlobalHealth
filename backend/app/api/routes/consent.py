@@ -61,7 +61,7 @@ def grant_consent(
 
 
 @router.get("/text")
-def read_consent_text(current_user: CurrentUser) -> dict[str, str]:
+def read_consent_text(_current_user: CurrentUser) -> dict[str, str]:
     """Return the current consent text so the frontend renders the exact
     version the grant will hash (single source: app/core/consent_text.py)."""
     version = max(CONSENT_TEXTS)

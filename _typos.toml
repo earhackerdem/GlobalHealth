@@ -1,0 +1,13 @@
+# typos (pre-commit hook) está pensado para código/prosa en inglés; la
+# documentación del producto y la memoria del repo se escriben en es-MX y
+# disparan falsos positivos ("profesional" → "professional", etc.).
+[files]
+extend-exclude = [
+    "memory/",
+    "openspec/",
+    "product/",
+    "changes/",
+    "docs/",
+    "AGENTS.md",
+    "CLAUDE.md",
+]

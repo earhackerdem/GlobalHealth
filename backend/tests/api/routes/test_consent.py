@@ -56,7 +56,7 @@ def patched_exchange_code(claims: SimpleNamespace) -> Generator[None]:
     fails on the endpoint response (404) instead of erroring at collection.
     """
 
-    async def fake_exchange_code(code: str) -> Any:
+    async def fake_exchange_code(_code: str) -> Any:
         return claims
 
     try:
@@ -64,7 +64,7 @@ def patched_exchange_code(claims: SimpleNamespace) -> Generator[None]:
             "app.core.google_oauth.exchange_code", new=fake_exchange_code, create=True
         )
         patcher.start()
-    except (ModuleNotFoundError, ImportError, AttributeError):
+    except ModuleNotFoundError, ImportError, AttributeError:
         yield
         return
     try:
@@ -119,9 +119,7 @@ def test_ac2_granting_consent_records_evidence_and_enables_capture(
     assert str(record["owner_id"]) == str(user.id)
 
 
-def test_ac2_consent_is_idempotent_per_version(
-    client: TestClient, db: Session
-) -> None:
+def test_ac2_consent_is_idempotent_per_version(client: TestClient, db: Session) -> None:
     """Segundo POST /consent v1 no crea un otorgamiento nuevo."""
     _user, headers = random_user_token_headers(client, db)
 
@@ -143,9 +141,7 @@ def test_ac2_consent_is_idempotent_per_version(
     assert current["granted_at"] == granted_at_first
 
 
-def test_ac3_consent_is_queryable_by_its_owner(
-    client: TestClient, db: Session
-) -> None:
+def test_ac3_consent_is_queryable_by_its_owner(client: TestClient, db: Session) -> None:
     """Consultable por el titular: GET devuelve versión y fecha tras otorgar."""
     _user, headers = random_user_token_headers(client, db)
 
@@ -185,14 +181,10 @@ def test_ac3_consent_query_without_grant_returns_404(
     assert r_after.status_code == 200
 
 
-def test_ac4_google_signup_does_not_imply_consent(
-    client: TestClient, db: Session
-) -> None:
+def test_ac4_google_signup_does_not_imply_consent(client: TestClient) -> None:
     """Alta con Google no implica consentimiento: la captura sigue bloqueada."""
     email = random_email()
-    claims = SimpleNamespace(
-        sub="google-sub-consent", email=email, email_verified=True
-    )
+    claims = SimpleNamespace(sub="google-sub-consent", email=email, email_verified=True)
     with patched_exchange_code(claims):
         r_callback = client.get(
             f"{settings.API_V1_STR}/login/google/callback",

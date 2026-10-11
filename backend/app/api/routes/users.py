@@ -107,6 +107,9 @@ def update_password_me(
     """
     Update own password.
     """
+    if current_user.hashed_password is None:
+        # Google-only account: there is no local password to change yet.
+        raise HTTPException(status_code=400, detail="Incorrect password")
     verified, _ = verify_password(body.current_password, current_user.hashed_password)
     if not verified:
         raise HTTPException(status_code=400, detail="Incorrect password")

@@ -1139,6 +1139,36 @@ export type healthRecordsCreateHealthRecordResponses = {
 
 export type healthRecordsCreateHealthRecordResponse = healthRecordsCreateHealthRecordResponses[keyof healthRecordsCreateHealthRecordResponses];
 
+export type healthRecordsReadHealthRecordData = {
+    body?: never;
+    path: {
+        /**
+         * Id
+         */
+        id: string;
+    };
+    query?: never;
+    url: '/api/v1/health-records/{id}';
+};
+
+export type healthRecordsReadHealthRecordErrors = {
+    /**
+     * Validation Error
+     */
+    422: HTTPValidationError;
+};
+
+export type healthRecordsReadHealthRecordError = healthRecordsReadHealthRecordErrors[keyof healthRecordsReadHealthRecordErrors];
+
+export type healthRecordsReadHealthRecordResponses = {
+    /**
+     * Successful Response
+     */
+    200: HealthRecordPublic;
+};
+
+export type healthRecordsReadHealthRecordResponse = healthRecordsReadHealthRecordResponses[keyof healthRecordsReadHealthRecordResponses];
+
 export type privateCreateUserData = {
     body: PrivateUserCreate;
     path?: never;
