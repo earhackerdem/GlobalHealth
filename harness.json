@@ -7,12 +7,16 @@
   "owner": "Saúl Pérez",
   "changes_dir": "changes",
   "code": [
+    "backend/",
+    "frontend/",
     "src/",
     "app/",
     "lib/",
     "packages/"
   ],
   "tests": [
+    "backend/tests/",
+    "frontend/tests/",
     "tests/",
     "test/",
     "spec/",
@@ -35,7 +39,10 @@
     "production",
     "prod"
   ],
-  "blocked_commands": [],
+  "blocked_commands": [
+    "alembic downgrade",
+    "docker compose down -v"
+  ],
   "skill_hints": [
     {
       "skill": "triage",

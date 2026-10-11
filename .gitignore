@@ -26,3 +26,13 @@ venv/
 # Node (if the project uses it)
 node_modules/
 *.log
+
+# Local secrets: the real .env is never committed (use .env.example)
+.env
+
+# Template full-stack FastAPI (build y artefactos de test)
+backend/app/frontend/
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/

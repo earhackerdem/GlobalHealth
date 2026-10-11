@@ -9,3 +9,139 @@ to the source. Market-sensitive records expire after ~3 months.
 - **Source:** <URL or file:line> · consulted YYYY-MM-DD
 - **Confidence:** [VERIFIED] / [OPINION/HYPE] / NOT VERIFIED
 - **Re-check if:** <what would make it expire>
+
+## Comorbilidades crónicas con evidencia (para la IA proactiva) <a id="comorbilidades"></a>
+Pedido por Saúl Pérez 2026-10-11 ("investigar si hay evidencia de enfermedades crónicas que impliquen otras").
+Nota de alcance: esto es evidencia de ASOCIACIÓN para priorizar qué huecos señalar; el software nunca la presenta
+como causalidad ni como diagnóstico.
+
+- **Fact:** SII (colitis/intestino irritable) y ansiedad/depresión co-ocurren en ambas direcciones: cohorte
+  nacional taiwanesa 2026 — SII → mayor riesgo de ansiedad (aHR 1.68) y depresión (aHR 1.55), y a la inversa;
+  meta-análisis 2017: más ansiedad y depresión en todos los subtipos de SII vs controles. El mecanismo
+  (eje intestino-cerebro) sigue siendo hipótesis, no está confirmado en humanos para SII.
+- **Source:** https://pmc.ncbi.nlm.nih.gov/articles/PMC5503284 (meta-análisis 2017) · cohorte 2026 vía
+  https://www.cambridge.org/core/services/aop-cambridge-core/content/view/S0033291726103328 · consulted 2026-10-11
+- **Confidence:** [VERIFIED] la asociación bidireccional; NOT VERIFIED el mecanismo.
+- **Re-check if:** se redacta contenido clínico para usuarios; revisar los papers originales, no los resúmenes.
+
+- **Fact:** Trastornos de ansiedad y consumo problemático de alcohol: ~2x odds de trastorno por sustancias con
+  ansiedad; la ansiedad suele PRECEDER al problema de alcohol (consistente con automedicación, no prueba). NESARC
+  longitudinal (n=34,653): quienes bebían para calmar la ansiedad tuvieron ~2.6x odds de desarrollar trastorno por
+  alcohol en 3 años (12.6% vs 4.7%). Solo ~20% de personas con ansiedad se automedican con alcohol.
+- **Source:** https://pmc.ncbi.nlm.nih.gov/articles/PMC2763929 y https://apt.rcpsych.org/content/8/2/107.full ·
+  consulted 2026-10-11 (resúmenes secundarios; cifras exactas → Robinson et al. 2011, J Anxiety Disorders)
+- **Confidence:** [VERIFIED] la asociación y el orden temporal típico; cifras puntuales pendientes de fuente primaria.
+- **Re-check if:** la IA vaya a citar números concretos al usuario.
+
+- **Fact:** Historial familiar como disparador de tamizaje: un familiar de primer grado con diabetes ≈ duplica el
+  riesgo (ADA: tamizaje más temprano/frecuente que el corte general de 45 años). Cáncer colorrectal: ACS/USMSTF
+  recomiendan iniciar a los 40 o 10 años antes del caso familiar más joven. Mama: mayor beneficio de mamografía
+  regular con madre/hermana afectada. OJO: fuentes de 2004–2019; las guías vigentes (USPSTF actual, ADA Standards
+  of Care del año) deben verificarse antes de codificar reglas.
+- **Source:** https://www.aafp.org/afp/2019/1215/p771.pdf · https://pmc.ncbi.nlm.nih.gov/articles/PMC2726801/ ·
+  https://stacks.cdc.gov/view/cdc/119217/cdc_119217_DS1.pdf · consulted 2026-10-11
+- **Confidence:** [VERIFIED] el principio (historial familiar adelanta el tamizaje); NOT VERIFIED los umbrales vigentes 2026.
+- **Re-check if:** SIEMPRE antes de implementar cada regla de sugerencia — ir a la guía vigente con fecha.
+
+- **Fact:** La multimorbilidad se agrupa en clústers reproducibles (p.ej. artritis+depresión+ansiedad en España;
+  dolor crónico+respiratorio en hombres, ánimo irritable+cefalea en mujeres en Brasil), pero los clústers dependen
+  de la muestra y del método: sirven como heurística de "qué preguntar", no como regla clínica.
+- **Source:** https://www.ncbi.nlm.nih.gov/pmc/articles/PMC6382818/ (São Paulo) ·
+  https://pmc.ncbi.nlm.nih.gov/articles/PMC3896355 (COURAGE España) · consulted 2026-10-11
+- **Confidence:** [VERIFIED] que existen patrones; [OPINION/HYPE] cualquier uso predictivo individual.
+- **Re-check if:** se diseñe el motor de sugerencias; buscar guías clínicas, no estudios transversales.
+
+## Stack y proveedores (technical brief) <a id="stack"></a>
+- **Fact:** Anthropic no entrena modelos con contenido de clientes de la API por defecto (Commercial Terms);
+  retención por defecto reportada en conflicto entre fuentes (7 días desde sept 2025 vs 30 días); ZDR existe pero
+  se solicita, no es automático.
+- **Source:** https://aibusiness.com/nlp/anthropic-will-not-train-its-ai-on-clients-data ·
+  https://char.com/blog/anthropic-data-retention-policy (secundarias) · consulted 2026-10-11
+- **Confidence:** [VERIFIED] el no-training por defecto (múltiples fuentes coincidentes); NOT VERIFIED la ventana
+  de retención exacta → ir a Commercial Terms/DPA oficiales antes del primer dato real (NFR-005).
+- **Re-check if:** SIEMPRE antes de mandar el primer dato de salud real; política puede cambiar.
+
+- **Fact:** El template full-stack de tiangolo vive hoy en la org fastapi (github.com/fastapi/full-stack-fastapi-template):
+  FastAPI + SQLModel + Postgres + Alembic, React/TS + Vite + Tailwind + shadcn, Docker Compose + Traefik, GH Actions,
+  pytest + Playwright. MIT. Snapshot feb 2026.
+- **Source:** https://github.com/fastapi/full-stack-fastapi-template y https://fastapi.tiangolo.com/project-generation ·
+  consulted 2026-10-11
+- **Confidence:** [VERIFIED]
+- **Re-check if:** se reconsidera el stack (ADR D6 lo descartó para v1).
+
+- **Fact:** El template migró de Poetry a uv (#1356) y adoptó `docker compose watch` para desarrollo local (#1354),
+  ambos en septiembre 2024; los archivos compose fueron renombrados a compose.yml (#2106). Entorno local documentado:
+  Docker Compose para los servicios + uv para el venv/deps del backend.
+- **Source:** https://code.morphllm.com/fastapi/full-stack-fastapi-template/commits/0.8.0/master/backend/README.md
+  (mirror del commit log) · consulted 2026-10-11
+- **Confidence:** [VERIFIED] la migración a uv y compose watch (commit log); los comandos exactos del development.md
+  vigente NOT VERIFIED → T1 los confirma contra el repo oficial.
+- **Re-check if:** T1 de cuenta-consentimiento (instalación real).
+
+- **Fact (T1, empírico):** el método oficial de instalación HOY es el botón "Use this template" de GitHub (ya no
+  copier; hooks/post_gen_project.py es residuo del generador). Clonado el repo oficial (commit 7257e60,
+  2026-10-08): el frontend usa **bun** (workspaces: frontend + packages/react-email) y biome, el backend sirve el
+  frontend construido desde backend/app/frontend (los tests lo exigen), tests del backend en `backend/tests/`,
+  flujo dev: `docker compose up -d db mailpit` + `uv sync` + `uv run bash scripts/prestart.sh` + `uv run fastapi dev`
+  + `bun install` + `bun run dev`. Playwright levanta Vite solo (webServer) y lee credenciales del .env raíz.
+  OJO: la suite de pytest limpia datos de la BD local compartida (re-correr prestart tras pytest para re-sembrar).
+- **Source:** clon local del template (scratchpad), README.md y development.md del commit 7257e60 · verified 2026-10-11
+- **Confidence:** [VERIFIED] (ejecutado: pytest 58 passed, Playwright chromium 62 passed)
+- **Re-check if:** make harness-update del template / upgrade del template.
+
+- **Fact:** LFPDPPP: datos de salud = sensibles; art. 9 exige consentimiento expreso y por escrito (o equivalente)
+  para tratarlos, con carga de la prueba en el responsable; existe excepción de transferencia para
+  prevención/diagnóstico médico (citada como art. 36 o 37 según la fuente — numeración por confirmar en DOF).
+  La reforma 2025 habría cambiado la autoridad (ya no INAI) — NOT VERIFIED.
+- **Source:** https://sdv.com.mx/compendio/ley-proteccion-datos-personales/articulo-9/ ·
+  https://sdv.com.mx/compendio/ley-proteccion-datos-personales/articulo-37/ ·
+  https://iapp.org/news/a/la-proteccion-de-datos-personales-en-los-expedientes-clinicos · consulted 2026-10-11
+- **Confidence:** [VERIFIED] el principio (consentimiento expreso para sensibles); NOT VERIFIED numeración vigente,
+  reforma 2025 y autoridad competente → texto en DOF + abogado antes de abrir a usuarios distintos de Saúl (NFR-004).
+- **Re-check if:** antes del primer cambio de cumplimiento; antes de cualquier usuario externo.
+
+## Nombre del producto (decisión pendiente de Saúl Pérez) <a id="naming"></a>
+- **Fact:** "GlobalHealth" colisiona: GlobalHealth, Inc. (aseguradora de Oklahoma) tiene app homónima en tiendas
+  (apps.appfollow.io/ios/globalhealth/1109445182) y Global Health Limited (Luxemburgo) tiene marca viva
+  "GLOBAL HEALTH CONNECTING CLINICIANS AND CONSUMERS" para seguros de salud (la frase "GLOBAL HEALTH" está
+  disclaimed en esa marca). Hay además filings EGLOBALHEALTH y un GLOBALHEALTH de software de 1999 abandonado.
+- **Source:** https://trademarks.justia.com/791/84/global-health-connecting-clinicians-and-79184762.html ·
+  https://trademark.justia.com/758/22/globalhealth-75822561.html · consulted 2026-10-11
+- **Confidence:** [VERIFIED] las colisiones citadas; NO es un clearance legal completo (USPTO/EUIPO/IMPI + abogado
+  antes de marca pública).
+- **Re-check if:** se decida el nombre definitivo.
+
+- **Fact:** "Vitacora" (vita+bitácora): búsqueda sin producto existente con ese nombre. "Anamnesis": usado por un
+  proyecto estudiantil (Drexel), papers y una patente 2012; existe "AnamnIA" (transcriptor de historias clínicas).
+  Competidores de la categoría con nombre: Apple Health Records, MyChart, Fasten Health (PHR open-source self-hosted,
+  FHIR), CommonHealth, MyLinks, One Record, TidyHealth, VertexMD, HealthMemo.
+- **Source:** https://cci.drexel.edu/SeniorDesign/2021_2022/ANAMNESIS/index.html · https://anamnia1.odoo.com ·
+  https://selfhostyourself.com/alternative-to/apple-health-records · consulted 2026-10-11
+- **Confidence:** [VERIFIED] lo encontrado; la ausencia de colisiones de "Vitacora" es evidencia débil (una búsqueda).
+- **Re-check if:** antes de registrar marca o publicar en tiendas: IMPI/USPTO + App Store/Play Store del finalista.
+
+## Wearables con API accesible (fuera de v1; camino futuro) <a id="wearables"></a>
+- **Fact:** En Android, los datos de un Galaxy Watch llegan a terceros vía Health Connect: watch → app Samsung
+  Health (sincroniza con Health Connect desde la v6.22.5, oct 2022) → tu app lee con permiso del usuario. Health
+  Connect corre en el teléfono, no en Wear OS. Hay reportes de sincronización poco fiable en algunos dispositivos.
+- **Source:** https://developer.samsung.com/health/blog/reading-body-composition-data-with-galaxy-watch-via-health-connect-api y https://developer.samsung.com/health/overview.html · consulted 2026-10-11
+- **Confidence:** [VERIFIED]
+- **Re-check if:** Samsung o Google cambian el modelo de permisos de Health Connect; al implementar la integración.
+
+- **Fact:** La Fitbit Web API legacy está en deprecación (anunciada para sept 2026, guías de migración hacia
+  Google Health APIs); el tipo de app "Personal" solo accede a la cuenta del propio desarrollador (OAuth 2.0 + PKCE).
+- **Source:** https://dev.fitbit.com/build/reference/web-api/developer-guide/authorization/ · consulted 2026-10-11
+- **Confidence:** [VERIFIED] (la fecha exacta de corte, re-verificar: hoy ya es posterior al anuncio)
+- **Re-check if:** antes de cualquier integración Fitbit — verificar estado actual de Google Health APIs.
+
+- **Fact:** Garmin Health API requiere aprobación como partner (portal no self-serve); Polar AccessLink y Oura
+  API v2 existirían como APIs de desarrollador pero no se verificaron sus términos.
+- **Source:** solo fuente secundaria (blog de vendor thryve.health) · consulted 2026-10-11
+- **Confidence:** NOT VERIFIED
+- **Re-check if:** se decide integrar alguno — ir a developer.garmin.com / polar.com/accesslink-api / cloud.ouraring.com.
+
+- **Fact (nota de diseño, no externa):** fallback universal sin API: importar los reportes PDF que exportan las
+  apps de los fabricantes como documentos del expediente. No requiere partner ni OAuth.
+- **Source:** decisión de diseño, product/brief.md (Out of scope) · 2026-10-11
+- **Confidence:** [OPINION/HYPE] (propuesta propia, no verificada con reportes reales)
+- **Re-check if:** al probar con un reporte real del dispositivo de Saúl.
