@@ -29,11 +29,11 @@ O4 IA cita o calla · O5 el profesional devuelve sin transcripción · O6 detecc
 | FR-011 | paciente | mostrar el QR de un enlace para escaneo en consulta | M | O2 |
 | FR-012 | paciente | activar/desactivar cada enlace individualmente, con efecto inmediato | M | O3 |
 | FR-013 | paciente | generar un PDF de resumen del expediente para entrega directa | M | O2 |
-| FR-014 | paciente | elegir qué categorías del expediente expone cada enlace (p.ej. salud mental solo a psiquiatra) | S | O3 |
+| FR-014 | paciente | elegir qué categorías del expediente expone cada enlace (p.ej. salud mental solo a psiquiatra) | M | O3 |
 | FR-015 | profesional | abrir un enlace activo y ver el resumen sin instalar nada ni registrarse | M | O2 |
 | FR-016 | profesional | enviar un diagnóstico o nota por el enlace, que queda en el expediente marcado como aportado por él | M | O5 |
 | FR-017 | profesional | enviar una petición de estudios o un anexo por el enlace | M | O5 |
-| FR-018 | paciente | revisar y aceptar cada aporte de un profesional antes de integrarse al expediente | S | O5 |
+| FR-018 | paciente | revisar y aceptar cada aporte de un profesional antes de integrarse al expediente | M | O5 |
 | FR-019 | profesional | hacer preguntas en lenguaje natural sobre el expediente desde el enlace | M | O4 |
 | FR-020 | paciente o profesional | recibir de la IA solo respuestas con cita a documentos del expediente; sin fuente, responde que no hay información | M | O4 |
 | FR-021 | paciente | recibir avisos proactivos de huecos (p.ej. historial familiar de diabetes sin tamizaje registrado) con estudios y preguntas sugeridas para discutir con el profesional, cada una con fuente | M | O6 |
@@ -110,10 +110,10 @@ Covers: FR-025 · Stories:
 ## 6. Out of scope and open questions
 - Out (brief + ADR D4/D5): telemedicina/chat, ingesta de wearables (camino futuro: memory/research.md#wearables),
   citas/agenda, venta institucional, idiomas distintos de es-MX.
-- Q1 ¿FR-018 (aprobación de aportes del profesional) sube a Must? — A: sí (recomendada: sin ella un tercero escribe
-  en el expediente sin control del dueño) / B: queda Should y v1 integra directo marcando el origen.
-- Q2 ¿FR-014 (granularidad por categorías) sube a Must? — A: sí (privacidad real entre especialidades: el urólogo no
-  necesita el historial psiquiátrico) / B: Should; v1 comparte expediente completo por enlace.
+- Q1 RESUELTA (Saúl Pérez, 2026-10-11): FR-018 es **Must** — ningún aporte externo entra al expediente sin
+  aprobación del dueño.
+- Q2 RESUELTA (Saúl Pérez, 2026-10-11): FR-014 es **Must** — cada enlace expone solo las categorías que el
+  paciente eligió.
 - Q3 Residencia de datos (NFR-006) — la decide el technical brief con costo sobre la mesa.
 
 ## 7. Technology notes for the technical brief (not decisions)
