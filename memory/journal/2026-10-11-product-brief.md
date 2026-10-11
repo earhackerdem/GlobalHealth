@@ -26,3 +26,12 @@
   ansiedad↔alcohol [VERIFIED], historial familiar→tamizaje [principio VERIFIED, umbrales 2026 por verificar],
   clústers de multimorbilidad [heurística, no regla]).
 - Brief actualizado: O6 (detección proactiva de huecos con fuente obligatoria), preguntas abiertas → resueltas.
+
+## Tercera ronda (mismo día): PRD
+- Escrito product/prd.md (Status: draft): 25 FR, 14 NFR medibles (los números desconocidos como NEEDS
+  CLARIFICATION, nunca inventados), 6 épicas (cuenta/privacidad, expediente, compartir, portal profesional, IA,
+  recordatorios), trazabilidad outcome→épica→FR/NFR.
+- 3 preguntas abiertas para Saúl Pérez: ¿FR-018 (aprobar aportes del profesional) y FR-014 (granularidad por
+  categorías) suben a Must?; residencia de datos → technical brief.
+- Split en change folders diferido hasta después del technical brief (ninguna story arranca aún).
+- Pendiente: Saúl acepta el PRD → /product-tech-brief (stack, presupuesto NFR).
