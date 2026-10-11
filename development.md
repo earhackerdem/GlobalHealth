@@ -1,7 +1,7 @@
 # FastAPI Project - Development
 
-> **Adaptación de este repo:** `.env` NO está rastreado (contiene secretos reales, p.ej. Google OAuth).
-> Primer paso en un clon nuevo: `cp .env.example .env` y ajusta los valores.
+> **Repo adaptation:** `.env` is NOT tracked (it holds real secrets, e.g. Google OAuth).
+> First step on a fresh clone: `cp .env.example .env` and adjust the values.
 
 ## Local Development
 

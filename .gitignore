@@ -27,7 +27,7 @@ venv/
 node_modules/
 *.log
 
-# Secretos locales: .env real nunca se commitea (usar .env.example)
+# Local secrets: the real .env is never committed (use .env.example)
 .env
 
 # Template full-stack FastAPI (build y artefactos de test)
