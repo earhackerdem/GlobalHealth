@@ -27,6 +27,25 @@ services:
     ports:
       - "5432:5432"
 
+  # Ephemeral test database: pytest runs against it (never against db).
+  # tmpfs = starts empty on every container start; the test suite migrates it.
+  # Dev/CI only: the deploy stack (compose.yml + compose.deploy.yml) never sees it.
+  db-test:
+    image: postgres:18
+    tmpfs:
+      - /var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d app_test"]
+      interval: 5s
+      retries: 5
+      start_period: 15s
+      timeout: 5s
+    environment:
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:?Variable not set}
+      - POSTGRES_DB=app_test
+    ports:
+      - "5433:5432"
+
   adminer:
     ports:
       - "8080:8080"

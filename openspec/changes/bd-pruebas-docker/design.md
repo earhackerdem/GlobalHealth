@@ -1,7 +1,7 @@
 # Design
 
-Status: DRAFT   <!-- the harness gate: "plan approved" from the person you work with → `Status: APPROVED` -->
-Approved by: <pendiente>
+Status: APPROVED
+Approved by: Saúl Pérez (author) on 2026-10-11 ("plan approved")
 
 ## Context
 
@@ -24,12 +24,14 @@ cambiar el runtime de la app (la app en dev/prod sigue usando `DATABASE_URL` tal
 
 ## Interface contract
 
-- **compose.yml** — nuevo servicio `db-test`:
+- **compose.override.yml** — nuevo servicio `db-test` (en el override, no en compose.yml: el deploy compone
+  `compose.yml + compose.deploy.yml`, así producción nunca levanta la BD de prueba; local y CI cargan el override
+  por defecto):
   - `image: postgres:18` (idéntica a `db` para no probar contra otra versión)
   - `tmpfs: [/var/lib/postgresql]` — efímera por construcción, sin volumen
   - `environment`: `POSTGRES_PASSWORD=${POSTGRES_PASSWORD}`, `POSTGRES_DB=app_test`
   - healthcheck `pg_isready -U postgres -d app_test`
-- **compose.override.yml** — `db-test.ports: ["5433:5432"]` (5433 en el host; dentro de la red compose sigue 5432)
+  - `ports: ["5433:5432"]` (5433 en el host; dentro de la red compose sigue 5432)
 - **.env.example** — nueva variable documentada:
   `TEST_DATABASE_URL=postgresql://postgres:${POSTGRES_PASSWORD}@localhost:5433/app_test`
 - **backend/tests/conftest.py** — ANTES de cualquier import de `app.*` (primeras líneas del módulo):
