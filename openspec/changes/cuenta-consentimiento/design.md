@@ -1,7 +1,7 @@
 # Design
 
-Status: DRAFT
-Approved by: —
+Status: APPROVED
+Approved by: Saúl Pérez (author/owner) on 2026-10-11
 
 ## Context
 
