@@ -1,10 +1,12 @@
 import uuid
+from datetime import timedelta
 from unittest.mock import patch
 
 from fastapi.testclient import TestClient
 from sqlmodel import Session, select
 
 from app import crud
+from app.core import security
 from app.core.config import settings
 from app.core.security import verify_password
 from app.models import User, UserCreate
@@ -264,6 +266,33 @@ def test_update_password_me(
         settings.FIRST_SUPERUSER_PASSWORD, user_db.hashed_password
     )
     assert verified
+
+
+def test_update_password_me_google_only_account_is_rejected(
+    client: TestClient, db: Session
+) -> None:
+    """Cuenta solo-Google (hashed_password None): PATCH password -> 400 (H11)."""
+    user = User(email=random_email(), hashed_password=None, is_active=True)
+    db.add(user)
+    db.commit()
+    db.refresh(user)
+
+    token = security.create_access_token(user.id, expires_delta=timedelta(minutes=5))
+    data = {
+        "current_password": random_lower_string(),
+        "new_password": random_lower_string(),
+    }
+    r = client.patch(
+        f"{settings.API_V1_STR}/users/me/password",
+        headers={"Authorization": f"Bearer {token}"},
+        json=data,
+    )
+
+    assert r.status_code == 400
+    assert r.json()["detail"] == "Incorrect password"
+
+    db.refresh(user)
+    assert user.hashed_password is None
 
 
 def test_update_password_me_incorrect_password(

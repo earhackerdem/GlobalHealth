@@ -4,12 +4,16 @@ Spec: openspec/changes/cuenta-consentimiento/specs/identity/user-auth/spec.md
 (scenarios "Alta exitosa con correo", "Correo ya registrado", "Acceso a
 recurso ajeno por identificador", "Listados solo propios").
 
-Contract (openspec/changes/cuenta-consentimiento/design.md §Interface contract):
+Contract (openspec/changes/cuenta-consentimiento/design.md §Interface contract
++ approved review findings H7/H13):
 - POST /api/v1/users/signup and POST /api/v1/login/access-token (template).
-- POST /api/v1/health-records {"note": str} -> auth + consent required ->
+- POST /api/v1/health-records/ {"note": str} -> auth + consent required ->
   201 {"id", "note", "owner_id"} persisted with the session user's owner_id.
-- GET /api/v1/health-records -> lists ONLY the session user's records.
+- GET /api/v1/health-records/ -> template envelope {"data": [...], "count": N}
+  with skip/limit, listing ONLY the session user's records.
 - Foreign record by id -> not-found/not-authorized, resource never exposed.
+- HealthRecordStub.note is encrypted at rest (EncryptedString): the ORM/API
+  read plaintext, the raw column holds only ciphertext.
 
 Email scenarios already partially covered by the template
 (tests/api/routes/test_users.py): this file adds only the observable
@@ -20,6 +24,7 @@ leak on duplicate signup).
 from typing import Any
 
 from fastapi.testclient import TestClient
+from sqlalchemy import text
 from sqlmodel import Session
 
 from app import crud
@@ -56,7 +61,7 @@ def consented_user_headers(client: TestClient, db: Session) -> dict[str, str]:
     crud.create_user(session=db, user_create=UserCreate(email=email, password=password))
     headers = login_headers(client, email, password)
     r = client.post(
-        f"{settings.API_V1_STR}/consent", headers=headers, json={"version": "v1"}
+        f"{settings.API_V1_STR}/consent/", headers=headers, json={"version": "v1"}
     )
     assert r.status_code == 201, r.text
     return headers
@@ -66,7 +71,7 @@ def create_record(
     client: TestClient, headers: dict[str, str], note: str
 ) -> dict[str, Any]:
     r = client.post(
-        f"{settings.API_V1_STR}/health-records",
+        f"{settings.API_V1_STR}/health-records/",
         headers=headers,
         json={"note": note},
     )
@@ -75,14 +80,6 @@ def create_record(
     assert record["id"]
     assert record["note"] == note
     return record
-
-
-def extract_records(body: Any) -> list[dict[str, Any]]:
-    """Accept both a plain list and the template's {data, count} envelope."""
-    if isinstance(body, dict) and "data" in body:
-        return body["data"]
-    assert isinstance(body, list), f"unexpected list payload: {body!r}"
-    return body
 
 
 # --- Scenario: Alta exitosa con correo -------------------------------------
@@ -182,7 +179,11 @@ def test_ac_isolation_foreign_record_by_id_not_exposed(
 def test_ac_isolation_list_returns_only_own_records(
     client: TestClient, db: Session
 ) -> None:
-    """A con 2 registros y B con 3: A lista exactamente sus 2, ninguno de B."""
+    """A con 2 registros y B con 3: A lista exactamente sus 2, ninguno de B.
+
+    Contract H13: the list endpoint returns the template envelope
+    {"data": [...], "count": N} and honours skip/limit.
+    """
     headers_a = consented_user_headers(client, db)
     headers_b = consented_user_headers(client, db)
 
@@ -192,12 +193,55 @@ def test_ac_isolation_list_returns_only_own_records(
     for note in notes_b:
         create_record(client, headers_b, note)
 
-    r = client.get(f"{settings.API_V1_STR}/health-records", headers=headers_a)
+    r = client.get(f"{settings.API_V1_STR}/health-records/", headers=headers_a)
 
     assert r.status_code == 200, r.text
-    listed = extract_records(r.json())
+    body = r.json()
+    assert body["count"] == 2
+    listed = body["data"]
     assert len(listed) == 2
     assert {str(item["id"]) for item in listed} == {str(rec["id"]) for rec in records_a}
     assert {item["note"] for item in listed} == set(notes_a)
     for note in notes_b:
         assert note not in r.text
+
+    # skip/limit: one page of 1, count still reports the owner's total.
+    r_page = client.get(
+        f"{settings.API_V1_STR}/health-records/",
+        headers=headers_a,
+        params={"skip": 1, "limit": 1},
+    )
+    assert r_page.status_code == 200, r_page.text
+    page = r_page.json()
+    assert page["count"] == 2
+    assert len(page["data"]) == 1
+
+
+# --- NFR-001: health data encrypted at rest (finding H7) ----------------------
+
+
+def test_health_record_note_is_encrypted_at_rest(
+    client: TestClient, db: Session
+) -> None:
+    """La nota se guarda cifrada: el SQL crudo no contiene el plaintext."""
+    headers = consented_user_headers(client, db)
+    secret_note = f"nota-en-reposo-{random_lower_string()}"
+    record = create_record(client, headers, note=secret_note)
+
+    raw_rows = db.execute(
+        text("SELECT note FROM healthrecordstub WHERE id = CAST(:id AS uuid)"),
+        {"id": str(record["id"])},
+    ).all()
+    assert len(raw_rows) == 1
+    raw_note = raw_rows[0][0]
+    assert raw_note != secret_note
+    assert secret_note not in str(raw_note)
+    # Fernet tokens are versioned with the 0x80 byte: urlsafe-b64 "gAAAA".
+    assert str(raw_note).startswith("gAAAA")
+
+    # And the ORM/API still read the plaintext back.
+    r = client.get(
+        f"{settings.API_V1_STR}/health-records/{record['id']}", headers=headers
+    )
+    assert r.status_code == 200
+    assert r.json()["note"] == secret_note
