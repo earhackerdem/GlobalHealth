@@ -83,8 +83,8 @@ def mock_id_token_validation(
     def decode(
         _token: str,
         _key: Any,
-        algorithms: Any = None,
-        audience: Any = None,  # noqa: ARG001
+        algorithms: Any = None,  # noqa: ARG001 — jwt.decode lo pasa; el fake no lo usa
+        audience: Any = None,
     ) -> dict[str, Any]:
         if decode_error:
             raise real_jwt.PyJWTError("invalid signature")
