@@ -1,5 +1,8 @@
 # FastAPI Project - Development
 
+> **Adaptación de este repo:** `.env` NO está rastreado (contiene secretos reales, p.ej. Google OAuth).
+> Primer paso en un clon nuevo: `cp .env.example .env` y ajusta los valores.
+
 ## Local Development
 
 For local development, run PostgreSQL and Mailpit with Docker Compose, and run the FastAPI and Vite development servers locally.
