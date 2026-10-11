@@ -1,15 +1,29 @@
+import base64
+import hashlib
+import secrets
 from datetime import timedelta
 from typing import Annotated, Any
+from urllib.parse import urlencode
 
-from fastapi import APIRouter, Depends, HTTPException
-from fastapi.responses import HTMLResponse
+from fastapi import APIRouter, Cookie, Depends, HTTPException, Response
+from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.security import OAuth2PasswordRequestForm
+from sqlmodel import select
 
 from app import crud
 from app.api.deps import CurrentUser, SessionDep, get_current_active_superuser
-from app.core import security
+from app.core import google_oauth, security
 from app.core.config import settings
-from app.models import Message, NewPassword, Token, UserPublic, UserUpdate
+from app.core.encrypted import decrypt_str, encrypt_str
+from app.models import (
+    Message,
+    NewPassword,
+    OAuthIdentity,
+    Token,
+    User,
+    UserPublic,
+    UserUpdate,
+)
 from app.utils import (
     generate_password_reset_token,
     generate_reset_password_email,
@@ -34,6 +48,101 @@ def login_access_token(
         raise HTTPException(status_code=400, detail="Incorrect email or password")
     elif not user.is_active:
         raise HTTPException(status_code=400, detail="Inactive user")
+    access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
+    return Token(
+        access_token=security.create_access_token(
+            user.id, expires_delta=access_token_expires
+        )
+    )
+
+
+PKCE_COOKIE = "g_pkce"
+
+
+@router.get("/login/google")
+def login_google() -> RedirectResponse:
+    """
+    Redirect to Google's OAuth 2.0 / OIDC authorization endpoint
+    (Authorization Code + PKCE; the verifier travels encrypted in a cookie)
+    """
+    code_verifier = secrets.token_urlsafe(64)
+    code_challenge = (
+        base64.urlsafe_b64encode(hashlib.sha256(code_verifier.encode()).digest())
+        .rstrip(b"=")
+        .decode()
+    )
+    params = urlencode(
+        {
+            "client_id": settings.GOOGLE_CLIENT_ID or "",
+            "redirect_uri": settings.GOOGLE_REDIRECT_URI or "",
+            "response_type": "code",
+            "scope": "openid email profile",
+            "code_challenge": code_challenge,
+            "code_challenge_method": "S256",
+        }
+    )
+    response = RedirectResponse(url=f"{google_oauth.GOOGLE_AUTH_URL}?{params}")
+    response.set_cookie(
+        PKCE_COOKIE,
+        encrypt_str(code_verifier),
+        max_age=600,
+        httponly=True,
+        secure=True,
+        samesite="lax",
+    )
+    return response
+
+
+@router.get("/login/google/callback")
+async def login_google_callback(
+    session: SessionDep,
+    response: Response,
+    code: str,
+    g_pkce: Annotated[str | None, Cookie()] = None,
+) -> Token:
+    """
+    Google OIDC callback: create or link the account by Google-verified email
+    and return an access token (same model as /login/access-token)
+    """
+    code_verifier = decrypt_str(g_pkce) if g_pkce else None
+    if code_verifier:
+        claims = await google_oauth.exchange_code(code, code_verifier=code_verifier)
+    else:
+        # No PKCE cookie (or invalid): exchange without verifier
+        claims = await google_oauth.exchange_code(code)
+    response.delete_cookie(PKCE_COOKIE)
+    if not claims.email_verified:
+        raise HTTPException(
+            status_code=400, detail="Google account email is not verified"
+        )
+
+    user = crud.get_user_by_email(session=session, email=claims.email)
+    if not user:
+        user = User(email=claims.email, hashed_password=None, is_active=True)
+        session.add(user)
+        session.commit()
+        session.refresh(user)
+    elif not user.is_active:
+        raise HTTPException(status_code=400, detail="Inactive user")
+
+    # Link the Google identity if not already linked (subject is encrypted at
+    # rest, so compare decrypted values in Python instead of filtering in SQL)
+    identities = session.exec(
+        select(OAuthIdentity).where(
+            OAuthIdentity.user_id == user.id, OAuthIdentity.provider == "google"
+        )
+    ).all()
+    if not any(identity.subject == claims.sub for identity in identities):
+        session.add(
+            OAuthIdentity(
+                user_id=user.id,
+                provider="google",
+                subject=claims.sub,
+                email=claims.email,
+            )
+        )
+        session.commit()
+
     access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
     return Token(
         access_token=security.create_access_token(

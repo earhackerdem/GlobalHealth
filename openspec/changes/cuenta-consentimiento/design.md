@@ -25,11 +25,19 @@ shell Capacitor, deploy a PaaS (otra story), texto legal definitivo del consenti
   confirmar rutas exactas empíricamente en T1 y actualizar aquí si difieren.
 - `GET /api/v1/login/google` → redirige a Google (Authorization Code + PKCE).
 - `GET /api/v1/login/google/callback?code=…` → crea cuenta o vincula por correo **verificado por Google**; responde
-  el mismo token de sesión que el login del template. Error si el correo no viene verificado.
+  `Token {access_token, token_type: "bearer"}` (mismo modelo que `/login/access-token`). Correo no verificado → 400.
+- **Punto de mock (fijado en T1):** `app/core/google_oauth.py` expone
+  `async def exchange_code(code: str) -> GoogleClaims` con `GoogleClaims {sub: str, email: str, email_verified: bool}`;
+  las rutas lo llaman vía `google_oauth.exchange_code(...)` y los tests parchean `app.core.google_oauth.exchange_code`.
+  Google real nunca se toca en tests.
 - `POST /api/v1/consent` body `{"version": "v1"}` → 201 `{version, granted_at, auth_method}`; idempotente por versión.
 - `GET /api/v1/consent` → 200 `{version, granted_at}` o 404 si no se ha otorgado.
 - Dependencia `require_consent` (FastAPI Depends): sin consentimiento vigente → 403 `{"detail": "CONSENT_REQUIRED"}`.
-  Todo router futuro de datos de salud (E2+) la declara; en esta story se prueba con un router mínimo de prueba.
+  Todo router futuro de datos de salud (E2+) la declara; en esta story se prueba con un router mínimo de prueba
+  (fijado en T3): `POST /api/v1/health-records` body `{"note": str}` → requiere usuario autenticado + consentimiento;
+  con consentimiento → 201 `{"id", "note", "owner_id"}` persistido con owner_id del usuario de sesión;
+  `GET /api/v1/health-records` → lista SOLO los del usuario de sesión (sirve además a los escenarios de aislamiento
+  del grupo 4; E2 lo reemplaza por los registros clínicos reales).
 - Modelo `ConsentGrant`: `user_id FK · version · text_sha256 · granted_at · auth_method`; usuario del template con
   `hashed_password` nullable + tabla `OAuthIdentity (user_id, provider='google', subject, email)`.
 - Tipo de columna cifrada (NFR-001): TypeDecorator con cifrado simétrico app-level (clave por env), disponible para

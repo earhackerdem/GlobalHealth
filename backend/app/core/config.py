@@ -30,6 +30,17 @@ class Settings(BaseSettings):
     SENTRY_DSN: HttpUrl | None = None
     DATABASE_URL: PostgresDsn
 
+    # Google OIDC (login/signup with Google). Unset -> endpoints exist but
+    # cannot complete a real OAuth flow (tests mock the exchange).
+    GOOGLE_CLIENT_ID: str | None = None
+    GOOGLE_CLIENT_SECRET: str | None = None
+    GOOGLE_REDIRECT_URI: str | None = None
+
+    # Symmetric key (urlsafe base64, 32 bytes) for encrypted DB columns
+    # (app/core/encrypted.py). Unset -> derived from SECRET_KEY (dev only);
+    # set a dedicated ENCRYPTION_KEY in production.
+    ENCRYPTION_KEY: str | None = None
+
     @field_validator("DATABASE_URL", mode="before")
     @classmethod
     def _use_psycopg_driver(cls, value: str | PostgresDsn) -> str:

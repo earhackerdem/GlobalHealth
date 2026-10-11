@@ -2,7 +2,10 @@ import uuid
 from datetime import UTC, datetime
 
 from pydantic import EmailStr
+from sqlalchemy import Column
 from sqlmodel import Field, Relationship, SQLModel
+
+from app.core.encrypted import EncryptedString
 
 
 def get_datetime_utc() -> datetime:
@@ -50,9 +53,22 @@ class UpdatePassword(SQLModel):
 # Database model, database table inferred from class name
 class User(UserBase, table=True):
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
-    hashed_password: str
+    # Nullable: accounts created via Google OIDC have no local password
+    hashed_password: str | None = Field(default=None)
     created_at: datetime | None = Field(default_factory=get_datetime_utc)
     items: list[Item] = Relationship(back_populates="owner", cascade_delete=True)
+
+
+# OAuth identity linked to a user (e.g. Google); subject is encrypted at rest
+class OAuthIdentity(SQLModel, table=True):
+    id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
+    user_id: uuid.UUID = Field(
+        foreign_key="user.id", nullable=False, ondelete="CASCADE"
+    )
+    provider: str = Field(max_length=32)
+    subject: str = Field(sa_column=Column(EncryptedString(), nullable=False))
+    email: EmailStr = Field(max_length=255)
+    created_at: datetime | None = Field(default_factory=get_datetime_utc)
 
 
 # Properties to return via API, id is always required
