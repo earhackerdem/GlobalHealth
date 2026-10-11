@@ -7,16 +7,16 @@
   "owner": "Saúl Pérez",
   "changes_dir": "changes",
   "code": [
+    "backend/",
+    "frontend/",
     "src/",
     "app/",
     "lib/",
-    "packages/",
-    "routes/",
-    "database/",
-    "resources/",
-    "config/"
+    "packages/"
   ],
   "tests": [
+    "backend/app/tests/",
+    "frontend/tests/",
     "tests/",
     "test/",
     "spec/",
@@ -40,9 +40,8 @@
     "prod"
   ],
   "blocked_commands": [
-    "php artisan migrate:fresh",
-    "php artisan migrate:reset",
-    "php artisan db:wipe"
+    "alembic downgrade",
+    "docker compose down -v"
   ],
   "skill_hints": [
     {

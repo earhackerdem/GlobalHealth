@@ -56,7 +56,7 @@ link the new one. Order: from most structural to most tactical.
   clínica vigente antes de implementarse (nunca desde memoria del modelo).
 
 ## D6 — Stack v1: monolito Laravel + Postgres(pgvector) + Claude API tras AiGateway
-- **Status:** Accepted · 2026-10-11 · decided by: Saúl Pérez (author/owner), recomendación del technical brief
+- **Status:** Revised · 2026-10-11 → ver D11 · decided by: Saúl Pérez (author/owner), recomendación del technical brief
 - **Decision:** v1 es un monolito Laravel 12 con PostgreSQL (pgvector para recuperación) y la capa IA como
   llamadas directas a Claude API encapsuladas en una interfaz interna propia (`AiGateway`).
 - **Why:** el equipo es una persona fluida en Laravel; el código más delicado (consentimiento, revocación,
@@ -90,3 +90,26 @@ link the new one. Order: from most structural to most tactical.
   calidad en cita/grounding requerida por NFR-011.
 - **Consequence:** NFR-005 obliga a verificar retención (7 vs 30 días en fuentes) y ZDR en Commercial Terms/DPA
   oficiales, con captura fechada en memory/research.md, ANTES del primer dato real en el sistema.
+
+## D10 — (Revised el mismo día → D11) variante Laravel core + FastAPI portal/IA
+- **Status:** Revised · 2026-10-11 → ver D11 · decided by: Saúl Pérez (author/owner)
+- **Decision:** variante intermedia donde Laravel era dueño de datos y FastAPI servía portal médico + IA vía API
+  interna. Vivió una ronda de conversación: Saúl aclaró que su preferencia es no usar Laravel en absoluto.
+
+## D11 — Stack final: monolito full-stack FastAPI, sin Laravel
+- **Status:** Accepted · 2026-10-11 · decided by: Saúl Pérez (author/owner), reafirmado tras objeción del agente
+- **Decision:** el producto es UN monolito sobre el template oficial full-stack FastAPI
+  (github.com/fastapi/full-stack-fastapi-template: backend/ FastAPI+SQLModel+Postgres+Alembic, frontend/ React/TS).
+  Ese mismo proyecto sirve la web del personal médico, la gestión del paciente (subir recetas/estudios, ver lo que
+  ven sus médicos, activar/desactivar URLs) y la capa IA (async nativo). La app Android es un shell Capacitor sobre
+  el frontend del template (ajuste a D7). Microservicio de IA = contingencia: FastAPI sin template, solo si una
+  razón concreta lo exige; en ese caso evaluar gestión por variables en BD en lugar de env/secrets. La capa IA vive
+  tras una interfaz interna (AiGateway) para que la extracción, si llega, no sea rediseño.
+- **Why:** preferencia explícita de Saúl Pérez por razones de mercado (empleabilidad Python/FastAPI): "prefiero no
+  usar Laravel". La objeción del agente (aprender Python+React sobre el núcleo de privacidad; recomendaba Laravel
+  por fluidez) fue oída y descartada por él — costo aceptado conscientemente, mitigado por 20+ h/semana y por lo que
+  el template ya trae resuelto (authn, CI, pytest, Playwright).
+- **Discarded:** monolito Laravel (D6); Laravel core + FastAPI portal (D10); Kotlin nativo (sigue descartado, D7).
+- **Consequence:** harness.json → code: backend/, frontend/; tests: backend/app/tests/, frontend/tests/;
+  blocked_commands: alembic downgrade, docker compose down -v. Todo plan debe decir cómo el monolito cumple los NFR
+  que toca (budget §4 del technical brief).

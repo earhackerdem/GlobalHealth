@@ -21,15 +21,26 @@ No aplica (greenfield); las tensiones aparecen por candidato en §3.
 ## 3. Candidate stacks
 | Option | Buys | Costs | Maturity / hiring | Hosting fit | NFRs met / at risk | Sources |
 |---|---|---|---|---|---|---|
-| **A (recomendada): monolito Laravel 12 + PostgreSQL (pgvector) + Claude API directa; web responsive para paciente y profesional; app Android = shell Capacitor sobre la misma web** | Máxima fluidez (el núcleo privacidad/consentimiento se construye en el framework que domina); un solo deploy; cifrado, authn/z, colas y notificaciones resueltos por el ecosistema Laravel [OPINION fundada en fluidez declarada] | La capa IA se orquesta en PHP (llamadas HTTP al proveedor + pgvector): ecosistema de tooling IA más delgado que Python; OCR/procesado pesado de documentos quedaría para un sidecar futuro | Laravel y Postgres: aburridos y masivos; Capacitor: maduro, comunidad grande [OPINION] | Railway/Render corren Laravel+Postgres administrado (PaaS que ya opera) | Cumple NFR-013 (una persona), NFR-001/002 (revocación server-side trivial en monolito). Riesgo: NFR-009 si el procesado de PDFs crece → sidecar | fluidez: §1; template no requerido |
-| B: fastapi/full-stack-fastapi-template (FastAPI + SQLModel + Postgres + React/TS + Docker + Traefik + GH Actions) | Un solo backend en el lenguaje del ecosistema IA; cliente OpenAPI autogenerado; template oficial mantenido (snapshot feb 2026) [VERIFIED: github.com/fastapi/full-stack-fastapi-template · 2026-10-11] | Python «reciente» + React probablemente nuevo: aprender dos capas mientras se construye el núcleo de privacidad; Traefik/Compose = más ops que un PaaS git-push | FastAPI: maduro, enorme adopción [VERIFIED mismo repo] | Dockerizado corre en Railway/Fly | Riesgo NFR-013 (curva + ops) en las semanas objetivo | ídem |
+| **A (recomendación del agente, descartada por Saúl → D11): monolito Laravel 12 + PostgreSQL (pgvector) + Claude API directa; web responsive para paciente y profesional; app Android = shell Capacitor sobre la misma web** | Máxima fluidez (el núcleo privacidad/consentimiento se construye en el framework que domina); un solo deploy; cifrado, authn/z, colas y notificaciones resueltos por el ecosistema Laravel [OPINION fundada en fluidez declarada] | La capa IA se orquesta en PHP (llamadas HTTP al proveedor + pgvector): ecosistema de tooling IA más delgado que Python; OCR/procesado pesado de documentos quedaría para un sidecar futuro | Laravel y Postgres: aburridos y masivos; Capacitor: maduro, comunidad grande [OPINION] | Railway/Render corren Laravel+Postgres administrado (PaaS que ya opera) | Cumple NFR-013 (una persona), NFR-001/002 (revocación server-side trivial en monolito). Riesgo: NFR-009 si el procesado de PDFs crece → sidecar | fluidez: §1; template no requerido |
+| **B (ELEGIDA, ADR D11)**: fastapi/full-stack-fastapi-template (FastAPI + SQLModel + Postgres + React/TS + Docker + Traefik + GH Actions) | Un solo backend en el lenguaje del ecosistema IA; cliente OpenAPI autogenerado; template oficial mantenido (snapshot feb 2026) [VERIFIED: github.com/fastapi/full-stack-fastapi-template · 2026-10-11] | Python «reciente» + React probablemente nuevo: aprender dos capas mientras se construye el núcleo de privacidad; Traefik/Compose = más ops que un PaaS git-push | FastAPI: maduro, enorme adopción [VERIFIED mismo repo] | Dockerizado corre en Railway/Fly | Riesgo NFR-013 (curva + ops) en las semanas objetivo | ídem |
 | C: Laravel núcleo + sidecar FastAPI para IA (idea original de Saúl) | Cada herramienta en lo suyo; Python disponible para RAG/OCR desde el día 1 | Dos servicios: dos deploys, dos superficies de secretos, contrato interno que mantener — el costo operativo más alto para una persona | ambos maduros | PaaS corre ambos (más caro) | Riesgo NFR-013; NFR-005 igual en los tres (el proveedor es el mismo) | — |
 
-**Recommendation and what would change it:** **A**, con la capa IA detrás de UNA interfaz interna (un servicio
-`AiGateway` propio): si el procesado de documentos u OCR lo exige, el sidecar FastAPI (C) se añade después sin
-rediseño — C es la segunda mejor y el camino de evolución, no una alternativa perdida. B se descarta porque apila
-dos aprendizajes sobre el código más delicado (consentimiento/privacidad); cambiaría la decisión que Saúl quiera
-explícitamente invertir estas semanas en aprender el stack Python/React más que en lanzar v1.
+**Recommendation and what would change it:** el brief recomendó **A** (monolito Laravel). Saúl Pérez, tras oír la
+objeción (dos aprendizajes sobre el núcleo de privacidad), decidió lo contrario y es su decisión registrada
+(ADR D11; D6 y D10 → Revised): **prefiere no usar Laravel; todo en FastAPI por razones de mercado**. Decisión final:
+- **Monolito = template oficial full-stack FastAPI** (`backend/` FastAPI + SQLModel + Postgres + Alembic;
+  `frontend/` React/TS + Vite [VERIFIED: github.com/fastapi/full-stack-fastapi-template · 2026-10-11]). Un solo
+  proyecto sirve: la web del personal médico (vistas de enlace compartido, Q&A, devolución de aportes), la gestión
+  del paciente (subir recetas/estudios, ver lo que ven sus médicos, activar/desactivar sus URLs) y la **capa IA**
+  (async nativo de FastAPI para llamadas al proveedor). Dueño único de datos, revocación y bitácora: el mismo backend.
+- **Microservicio de IA: contingencia, no punto de partida.** Si una razón concreta lo exige (aislar consumo/latencia,
+  dependencias pesadas de procesado de documentos), se extrae a un FastAPI aparte SIN template (no necesita front);
+  valdría añadirle gestión por variables en BD (no env/secrets) si se quiere operar sin redeploy — lo decide el plan
+  de ese cambio. Mientras tanto, la capa IA vive detrás de una interfaz interna (`AiGateway`) para que la extracción
+  no sea rediseño.
+- **Cliente Android (D7, ajustada):** shell Capacitor sobre el `frontend/` React del template.
+- Costo aceptado conscientemente: Python reciente + React probablemente nuevo mientras se construye el núcleo de
+  consentimiento/privacidad; mitigación: 20+ h/semana, el template trae authn, CI, pytest y Playwright resueltos.
 **Cliente móvil:** web responsive primero y la app Android como shell Capacitor (notificaciones locales nativas
 para FR-025, cámara para FR-007, y vía futura a Health Connect por plugin/módulo nativo cuando los wearables entren;
 memory/research.md#wearables). Kotlin nativo descartado para v1: meses de curva sin beneficio en los FR de v1
@@ -61,13 +72,17 @@ tareas baratas; precios → verificar al implementar, no de memoria.
 ## 5. Decisions recorded
 | ADR | Decision | File |
 |---|---|---|
-| D6 | Stack v1: monolito Laravel 12 + Postgres(pgvector) + Claude API tras interfaz AiGateway; descartados template FastAPI (B) y sidecar ahora (C → evolución futura) | memory/decisions.md |
+| D6 | (Revised por D11) recomendación original: monolito Laravel | memory/decisions.md |
+| D10 | (Revised por D11) variante intermedia Laravel core + FastAPI portal | memory/decisions.md |
+| D11 | Stack final: monolito con el template full-stack FastAPI (backend+frontend) para médicos, paciente y capa IA; microservicio IA solo como contingencia; sin Laravel. Decidido por Saúl Pérez (mercado) | memory/decisions.md |
 | D7 | Cliente: web responsive + app Android por Capacitor; Kotlin nativo descartado en v1 | memory/decisions.md |
 | D8 | Hosting: PaaS que Saúl ya opera (Railway o Render, elegir en el primer cambio), región US + aviso de transferencia; revisar si la verificación legal exige región MX | memory/decisions.md |
 | D9 | Proveedor IA: Claude API (no-training por defecto); retención/ZDR por verificar en fuente oficial antes del primer dato real | memory/decisions.md |
 
 ## 6. Consequences for the harness
-- `harness.json` → `code`: `app/`, `src/`, `routes/`, `database/`, `resources/`, `config/`, `lib/`, `packages/` ·
-  `tests` sin cambio · `blocked_commands`: `php artisan migrate:fresh`, `php artisan db:wipe`, `php artisan migrate:reset`.
+- Layout del template: `backend/` y `frontend/`. `harness.json` → `code`: `backend/`, `frontend/` ·
+  `tests`: `backend/app/tests/`, `frontend/tests/` además de los genéricos (el hook casa por prefijo exacto,
+  verificado en .claude/hooks/_config.py:112-125, así que las rutas anidadas se declaran explícitas) ·
+  `blocked_commands`: `alembic downgrade`, `docker compose down -v` (tiran esquema/volúmenes de la BD).
 - Cada `/epe-1-explore` arranca del budget §4; cada `/epe-2-plan` dice cómo cumple los NFR afectados; romper el
   budget = cambiar este brief y su ADR en el mismo PR.

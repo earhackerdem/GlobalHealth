@@ -49,3 +49,14 @@
 - Verificaciones a memory/research.md#stack (no-training Anthropic, template fastapi, LFPDPPP art. 9/36-37).
 - Pendiente: Saúl acepta el technical brief → split de la primera story (épica E1 cuenta/privacidad) con
   `make epe-new`.
+
+## Quinta ronda (mismo día): el stack lo decide el dueño — sin Laravel
+- Saúl Pérez corrigió la dirección dos veces: primero "la capa IA sí o sí en FastAPI por mercado" (quedó D10:
+  Laravel core + FastAPI portal), y al ver esa variante aclaró su ideal: "prefiero no usar Laravel" — monolito con
+  el template full-stack FastAPI para médicos, paciente y capa IA; microservicio IA solo como contingencia (sin
+  template; evaluar config por variables en BD si llega).
+- La objeción del agente (fluidez Laravel vs aprender Python+React sobre el núcleo de privacidad) fue oída y
+  descartada por Saúl: decisión suya, registrada en D11 con el costo aceptado. D6 y D10 → Revised.
+- technical-brief.md actualizado (opción B marcada ELEGIDA), harness.json: code backend//frontend/, tests
+  anidados explícitos (el hook casa por prefijo: .claude/hooks/_config.py:112-125), blocked_commands de Alembic y
+  docker volumes en lugar de artisan.
