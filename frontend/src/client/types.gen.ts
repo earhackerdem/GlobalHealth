@@ -35,6 +35,48 @@ export type Body_login_login_access_token = {
 };
 
 /**
+ * ConsentCreate
+ */
+export type ConsentCreate = {
+    /**
+     * Version
+     */
+    version: string;
+};
+
+/**
+ * ConsentGrantPublic
+ */
+export type ConsentGrantPublic = {
+    /**
+     * Version
+     */
+    version: string;
+    /**
+     * Granted At
+     */
+    granted_at: string;
+    /**
+     * Auth Method
+     */
+    auth_method: string;
+};
+
+/**
+ * ConsentStatusPublic
+ */
+export type ConsentStatusPublic = {
+    /**
+     * Version
+     */
+    version: string;
+    /**
+     * Granted At
+     */
+    granted_at: string;
+};
+
+/**
  * HTTPValidationError
  */
 export type HTTPValidationError = {
@@ -42,6 +84,34 @@ export type HTTPValidationError = {
      * Detail
      */
     detail?: Array<ValidationError>;
+};
+
+/**
+ * HealthRecordCreate
+ */
+export type HealthRecordCreate = {
+    /**
+     * Note
+     */
+    note: string;
+};
+
+/**
+ * HealthRecordPublic
+ */
+export type HealthRecordPublic = {
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Note
+     */
+    note: string;
+    /**
+     * Owner Id
+     */
+    owner_id: string;
 };
 
 /**
@@ -366,6 +436,50 @@ export type loginLoginAccessTokenResponses = {
 };
 
 export type loginLoginAccessTokenResponse = loginLoginAccessTokenResponses[keyof loginLoginAccessTokenResponses];
+
+export type loginLoginGoogleData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/login/google';
+};
+
+export type loginLoginGoogleResponses = {
+    /**
+     * Successful Response
+     */
+    200: unknown;
+};
+
+export type loginLoginGoogleCallbackData = {
+    body?: never;
+    path?: never;
+    query: {
+        /**
+         * Code
+         */
+        code: string;
+    };
+    url: '/api/v1/login/google/callback';
+};
+
+export type loginLoginGoogleCallbackErrors = {
+    /**
+     * Validation Error
+     */
+    422: HTTPValidationError;
+};
+
+export type loginLoginGoogleCallbackError = loginLoginGoogleCallbackErrors[keyof loginLoginGoogleCallbackErrors];
+
+export type loginLoginGoogleCallbackResponses = {
+    /**
+     * Successful Response
+     */
+    200: Token;
+};
+
+export type loginLoginGoogleCallbackResponse = loginLoginGoogleCallbackResponses[keyof loginLoginGoogleCallbackResponses];
 
 export type loginTestTokenData = {
     body?: never;
@@ -920,6 +1034,110 @@ export type itemsUpdateItemResponses = {
 };
 
 export type itemsUpdateItemResponse = itemsUpdateItemResponses[keyof itemsUpdateItemResponses];
+
+export type consentReadConsentData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/consent';
+};
+
+export type consentReadConsentResponses = {
+    /**
+     * Successful Response
+     */
+    200: ConsentStatusPublic;
+};
+
+export type consentReadConsentResponse = consentReadConsentResponses[keyof consentReadConsentResponses];
+
+export type consentGrantConsentData = {
+    body: ConsentCreate;
+    path?: never;
+    query?: never;
+    url: '/api/v1/consent';
+};
+
+export type consentGrantConsentErrors = {
+    /**
+     * Validation Error
+     */
+    422: HTTPValidationError;
+};
+
+export type consentGrantConsentError = consentGrantConsentErrors[keyof consentGrantConsentErrors];
+
+export type consentGrantConsentResponses = {
+    /**
+     * Successful Response
+     */
+    201: ConsentGrantPublic;
+};
+
+export type consentGrantConsentResponse = consentGrantConsentResponses[keyof consentGrantConsentResponses];
+
+export type consentReadConsentTextData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/consent/text';
+};
+
+export type consentReadConsentTextResponses = {
+    /**
+     * Response Consent-Read Consent Text
+     *
+     * Successful Response
+     */
+    200: {
+        [key: string]: string;
+    };
+};
+
+export type consentReadConsentTextResponse = consentReadConsentTextResponses[keyof consentReadConsentTextResponses];
+
+export type healthRecordsReadHealthRecordsData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/health-records';
+};
+
+export type healthRecordsReadHealthRecordsResponses = {
+    /**
+     * Response Health-Records-Read Health Records
+     *
+     * Successful Response
+     */
+    200: Array<HealthRecordPublic>;
+};
+
+export type healthRecordsReadHealthRecordsResponse = healthRecordsReadHealthRecordsResponses[keyof healthRecordsReadHealthRecordsResponses];
+
+export type healthRecordsCreateHealthRecordData = {
+    body: HealthRecordCreate;
+    path?: never;
+    query?: never;
+    url: '/api/v1/health-records';
+};
+
+export type healthRecordsCreateHealthRecordErrors = {
+    /**
+     * Validation Error
+     */
+    422: HTTPValidationError;
+};
+
+export type healthRecordsCreateHealthRecordError = healthRecordsCreateHealthRecordErrors[keyof healthRecordsCreateHealthRecordErrors];
+
+export type healthRecordsCreateHealthRecordResponses = {
+    /**
+     * Successful Response
+     */
+    201: HealthRecordPublic;
+};
+
+export type healthRecordsCreateHealthRecordResponse = healthRecordsCreateHealthRecordResponses[keyof healthRecordsCreateHealthRecordResponses];
 
 export type privateCreateUserData = {
     body: PrivateUserCreate;

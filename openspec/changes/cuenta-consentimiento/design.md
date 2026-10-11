@@ -32,6 +32,11 @@ shell Capacitor, deploy a PaaS (otra story), texto legal definitivo del consenti
   Google real nunca se toca en tests.
 - `POST /api/v1/consent` body `{"version": "v1"}` → 201 `{version, granted_at, auth_method}`; idempotente por versión.
 - `GET /api/v1/consent` → 200 `{version, granted_at}` o 404 si no se ha otorgado.
+- `GET /api/v1/consent/text` → `{version, text}` (añadido en T3: el frontend muestra EXACTAMENTE el texto cuya
+  sha256 queda en la evidencia; fuente única app/core/consent_text.py).
+- UI del consentimiento (decisión T3): tarjeta-gate es-MX en el dashboard mientras no haya otorgamiento
+  (ConsentGate.tsx); no bloquea las páginas del template (el bloqueo real de datos de salud es del backend, 403
+  CONSENT_REQUIRED), así el Playwright del template sigue verde y el alta por ambos métodos pasa por la tarjeta.
 - Dependencia `require_consent` (FastAPI Depends): sin consentimiento vigente → 403 `{"detail": "CONSENT_REQUIRED"}`.
   Todo router futuro de datos de salud (E2+) la declara; en esta story se prueba con un router mínimo de prueba
   (fijado en T3): `POST /api/v1/health-records` body `{"note": str}` → requiere usuario autenticado + consentimiento;

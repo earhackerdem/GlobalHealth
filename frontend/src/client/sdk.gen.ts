@@ -2,7 +2,7 @@
 
 import { type Client, type Options as Options2, type TDataShape, urlSearchParamsBodySerializer } from './client';
 import { client } from './client.gen';
-import type { itemsCreateItemData, itemsCreateItemErrors, itemsCreateItemResponses, itemsDeleteItemData, itemsDeleteItemErrors, itemsDeleteItemResponses, itemsReadItemData, itemsReadItemErrors, itemsReadItemResponses, itemsReadItemsData, itemsReadItemsErrors, itemsReadItemsResponses, itemsUpdateItemData, itemsUpdateItemErrors, itemsUpdateItemResponses, loginLoginAccessTokenData, loginLoginAccessTokenErrors, loginLoginAccessTokenResponses, loginRecoverPasswordData, loginRecoverPasswordErrors, loginRecoverPasswordHtmlContentData, loginRecoverPasswordHtmlContentErrors, loginRecoverPasswordHtmlContentResponses, loginRecoverPasswordResponses, loginResetPasswordData, loginResetPasswordErrors, loginResetPasswordResponses, loginTestTokenData, loginTestTokenResponses, privateCreateUserData, privateCreateUserErrors, privateCreateUserResponses, usersCreateUserData, usersCreateUserErrors, usersCreateUserResponses, usersDeleteUserData, usersDeleteUserErrors, usersDeleteUserMeData, usersDeleteUserMeResponses, usersDeleteUserResponses, usersReadUserByIdData, usersReadUserByIdErrors, usersReadUserByIdResponses, usersReadUserMeData, usersReadUserMeResponses, usersReadUsersData, usersReadUsersErrors, usersReadUsersResponses, usersRegisterUserData, usersRegisterUserErrors, usersRegisterUserResponses, usersUpdatePasswordMeData, usersUpdatePasswordMeErrors, usersUpdatePasswordMeResponses, usersUpdateUserData, usersUpdateUserErrors, usersUpdateUserMeData, usersUpdateUserMeErrors, usersUpdateUserMeResponses, usersUpdateUserResponses, utilsHealthCheckData, utilsHealthCheckResponses, utilsTestEmailData, utilsTestEmailErrors, utilsTestEmailResponses } from './types.gen';
+import type { consentGrantConsentData, consentGrantConsentErrors, consentGrantConsentResponses, consentReadConsentData, consentReadConsentResponses, consentReadConsentTextData, consentReadConsentTextResponses, healthRecordsCreateHealthRecordData, healthRecordsCreateHealthRecordErrors, healthRecordsCreateHealthRecordResponses, healthRecordsReadHealthRecordsData, healthRecordsReadHealthRecordsResponses, itemsCreateItemData, itemsCreateItemErrors, itemsCreateItemResponses, itemsDeleteItemData, itemsDeleteItemErrors, itemsDeleteItemResponses, itemsReadItemData, itemsReadItemErrors, itemsReadItemResponses, itemsReadItemsData, itemsReadItemsErrors, itemsReadItemsResponses, itemsUpdateItemData, itemsUpdateItemErrors, itemsUpdateItemResponses, loginLoginAccessTokenData, loginLoginAccessTokenErrors, loginLoginAccessTokenResponses, loginLoginGoogleCallbackData, loginLoginGoogleCallbackErrors, loginLoginGoogleCallbackResponses, loginLoginGoogleData, loginLoginGoogleResponses, loginRecoverPasswordData, loginRecoverPasswordErrors, loginRecoverPasswordHtmlContentData, loginRecoverPasswordHtmlContentErrors, loginRecoverPasswordHtmlContentResponses, loginRecoverPasswordResponses, loginResetPasswordData, loginResetPasswordErrors, loginResetPasswordResponses, loginTestTokenData, loginTestTokenResponses, privateCreateUserData, privateCreateUserErrors, privateCreateUserResponses, usersCreateUserData, usersCreateUserErrors, usersCreateUserResponses, usersDeleteUserData, usersDeleteUserErrors, usersDeleteUserMeData, usersDeleteUserMeResponses, usersDeleteUserResponses, usersReadUserByIdData, usersReadUserByIdErrors, usersReadUserByIdResponses, usersReadUserMeData, usersReadUserMeResponses, usersReadUsersData, usersReadUsersErrors, usersReadUsersResponses, usersRegisterUserData, usersRegisterUserErrors, usersRegisterUserResponses, usersUpdatePasswordMeData, usersUpdatePasswordMeErrors, usersUpdatePasswordMeResponses, usersUpdateUserData, usersUpdateUserErrors, usersUpdateUserMeData, usersUpdateUserMeErrors, usersUpdateUserMeResponses, usersUpdateUserResponses, utilsHealthCheckData, utilsHealthCheckResponses, utilsTestEmailData, utilsTestEmailErrors, utilsTestEmailResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
     /**
@@ -34,6 +34,34 @@ export class LoginService {
                 'Content-Type': 'application/x-www-form-urlencoded',
                 ...options.headers
             }
+        });
+    }
+    
+    /**
+     * Login Google
+     *
+     * Redirect to Google's OAuth 2.0 / OIDC authorization endpoint
+     * (Authorization Code + PKCE; the verifier travels encrypted in a cookie)
+     */
+    public static loginGoogle<ThrowOnError extends boolean = true>(options?: Options<loginLoginGoogleData, ThrowOnError>) {
+        return (options?.client ?? client).get<loginLoginGoogleResponses, unknown, ThrowOnError>({
+            responseType: 'json',
+            url: '/api/v1/login/google',
+            ...options
+        });
+    }
+    
+    /**
+     * Login Google Callback
+     *
+     * Google OIDC callback: create or link the account by Google-verified email
+     * and return an access token (same model as /login/access-token)
+     */
+    public static loginGoogleCallback<ThrowOnError extends boolean = true>(options: Options<loginLoginGoogleCallbackData, ThrowOnError>) {
+        return (options.client ?? client).get<loginLoginGoogleCallbackResponses, loginLoginGoogleCallbackErrors, ThrowOnError>({
+            responseType: 'json',
+            url: '/api/v1/login/google/callback',
+            ...options
         });
     }
     
@@ -355,6 +383,99 @@ export class ItemsService {
             responseType: 'json',
             security: [{ scheme: 'bearer', type: 'http' }],
             url: '/api/v1/items/{id}',
+            ...options,
+            headers: {
+                'Content-Type': 'application/json',
+                ...options.headers
+            }
+        });
+    }
+}
+
+export class ConsentService {
+    /**
+     * Read Consent
+     *
+     * Return the current consent of the session user, or 404 if never granted.
+     */
+    public static readConsent<ThrowOnError extends boolean = true>(options?: Options<consentReadConsentData, ThrowOnError>) {
+        return (options?.client ?? client).get<consentReadConsentResponses, unknown, ThrowOnError>({
+            responseType: 'json',
+            security: [{ scheme: 'bearer', type: 'http' }],
+            url: '/api/v1/consent',
+            ...options
+        });
+    }
+    
+    /**
+     * Grant Consent
+     *
+     * Record the express consent of the session user (NFR-004).
+     *
+     * Stores one row per grant with the version, the sha256 of the exact text
+     * accepted and the auth method of the session. Idempotent per version: a
+     * second POST for the same version returns the existing grant with 200 and
+     * the original granted_at.
+     *
+     * auth_method: the access token does not carry how the session was
+     * authenticated, so it is inferred from the account: a user without a local
+     * hashed_password can only have signed in via Google OIDC ("google");
+     * otherwise "password".
+     */
+    public static grantConsent<ThrowOnError extends boolean = true>(options: Options<consentGrantConsentData, ThrowOnError>) {
+        return (options.client ?? client).post<consentGrantConsentResponses, consentGrantConsentErrors, ThrowOnError>({
+            responseType: 'json',
+            security: [{ scheme: 'bearer', type: 'http' }],
+            url: '/api/v1/consent',
+            ...options,
+            headers: {
+                'Content-Type': 'application/json',
+                ...options.headers
+            }
+        });
+    }
+    
+    /**
+     * Read Consent Text
+     *
+     * Return the current consent text so the frontend renders the exact
+     * version the grant will hash (single source: app/core/consent_text.py).
+     */
+    public static readConsentText<ThrowOnError extends boolean = true>(options?: Options<consentReadConsentTextData, ThrowOnError>) {
+        return (options?.client ?? client).get<consentReadConsentTextResponses, unknown, ThrowOnError>({
+            responseType: 'json',
+            security: [{ scheme: 'bearer', type: 'http' }],
+            url: '/api/v1/consent/text',
+            ...options
+        });
+    }
+}
+
+export class HealthRecordsService {
+    /**
+     * Read Health Records
+     *
+     * List ONLY the health-record stubs owned by the session user.
+     */
+    public static recordsReadHealthRecords<ThrowOnError extends boolean = true>(options?: Options<healthRecordsReadHealthRecordsData, ThrowOnError>) {
+        return (options?.client ?? client).get<healthRecordsReadHealthRecordsResponses, unknown, ThrowOnError>({
+            responseType: 'json',
+            security: [{ scheme: 'bearer', type: 'http' }],
+            url: '/api/v1/health-records',
+            ...options
+        });
+    }
+    
+    /**
+     * Create Health Record
+     *
+     * Persist a health-record stub owned by the session user (consent required).
+     */
+    public static recordsCreateHealthRecord<ThrowOnError extends boolean = true>(options: Options<healthRecordsCreateHealthRecordData, ThrowOnError>) {
+        return (options.client ?? client).post<healthRecordsCreateHealthRecordResponses, healthRecordsCreateHealthRecordErrors, ThrowOnError>({
+            responseType: 'json',
+            security: [{ scheme: 'bearer', type: 'http' }],
+            url: '/api/v1/health-records',
             ...options,
             headers: {
                 'Content-Type': 'application/json',

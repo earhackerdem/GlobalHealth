@@ -21,22 +21,22 @@ files is `test→impl`; smaller groups are `single`. `make tdd-check` requires o
 
 ## 2. Login y alta con Google (OIDC) · test→impl
 
-- [ ] 2.1 Test (red): Alta con Google · Google con correo ya registrado · callback con correo no verificado
-      rechaza — mocks de Google, nunca el servicio real; commit `test:`
-- [ ] 2.2 Impl (green): rutas `/login/google` y `/login/google/callback`, `OAuthIdentity` (con `subject` en columna
+- [x] 2.1 Test (red): Alta con Google · Google con correo ya registrado · callback con correo no verificado
+      rechaza — mocks de Google, nunca el servicio real; commit `test:` — 4fb44c1, 4 failed/0 errors
+- [x] 2.2 Impl (green): rutas `/login/google` y `/login/google/callback`, `OAuthIdentity` (con `subject` en columna
       cifrada: primer uso del tipo NFR-001), vinculación por correo verificado, `hashed_password` nullable; sin
-      tocar los tests
-- [ ] 2.3 Verify: suite truly green (0 failures, 0 errors, 0 skipped); `make tdd-check`; lectura directa a BD
-      muestra ciphertext en `subject`
+      tocar los tests — c27cd79, incluye PKCE (S256 + verifier en cookie cifrada)
+- [x] 2.3 Verify: suite truly green (0 failures, 0 errors, 0 skipped); `make tdd-check`; lectura directa a BD
+      muestra ciphertext en `subject` — 62 passed; ciphertext Fernet verificado (gAAAAAB…)
 
 ## 3. Consentimiento expreso con evidencia · test→impl
 
-- [ ] 3.1 Test (red): captura sin consentimiento → 403 · otorgamiento en el alta → 201 y fila {v1, timestamp,
-      método} · consultable por el titular · alta con Google no implica consentimiento — commit `test:`
-- [ ] 3.2 Impl (green): `ConsentGrant` + endpoints POST/GET `/consent` + dependencia `require_consent` + router
+- [x] 3.1 Test (red): captura sin consentimiento → 403 · otorgamiento en el alta → 201 y fila {v1, timestamp,
+      método} · consultable por el titular · alta con Google no implica consentimiento — 71f2bce, 6 failed/0 errors
+- [x] 3.2 Impl (green): `ConsentGrant` + endpoints POST/GET `/consent` + dependencia `require_consent` + router
       mínimo de prueba que la usa; pantalla de consentimiento es-MX (texto v1-placeholder marcado) en el flujo de
-      alta de ambos métodos
-- [ ] 3.3 Verify: suite truly green; `make tdd-check`
+      alta de ambos métodos — API + ConsentGate.tsx (tarjeta es-MX en dashboard, backend bloquea con 403)
+- [x] 3.3 Verify: suite truly green; `make tdd-check` — backend 68 passed, Playwright 62 passed, build OK
 
 ## 4. Aislamiento por cuenta y cierre de escenarios de correo · test→impl
 

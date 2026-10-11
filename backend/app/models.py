@@ -71,6 +71,57 @@ class OAuthIdentity(SQLModel, table=True):
     created_at: datetime | None = Field(default_factory=get_datetime_utc)
 
 
+# Express consent kept as data, not as a flag: one row per grant with the
+# version and the sha256 of the exact text accepted (NFR-004, design.md)
+class ConsentGrant(SQLModel, table=True):
+    id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
+    user_id: uuid.UUID = Field(
+        foreign_key="user.id", nullable=False, ondelete="CASCADE"
+    )
+    version: str = Field(max_length=32)
+    text_sha256: str = Field(max_length=64)
+    granted_at: datetime = Field(default_factory=get_datetime_utc)
+    auth_method: str = Field(max_length=32)  # "password" | "google"
+
+
+# Properties to receive via API when granting consent
+class ConsentCreate(SQLModel):
+    version: str = Field(max_length=32)
+
+
+# Properties to return via API after granting consent
+class ConsentGrantPublic(SQLModel):
+    version: str
+    granted_at: datetime
+    auth_method: str
+
+
+# Properties to return via API when the owner queries the current consent
+class ConsentStatusPublic(SQLModel):
+    version: str
+    granted_at: datetime
+
+
+# Minimal health-record stub to exercise require_consent and per-owner
+# isolation; E2 replaces it with the real clinical records
+class HealthRecordStub(SQLModel, table=True):
+    id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
+    note: str = Field(max_length=255)
+    owner_id: uuid.UUID = Field(
+        foreign_key="user.id", nullable=False, ondelete="CASCADE"
+    )
+
+
+class HealthRecordCreate(SQLModel):
+    note: str = Field(min_length=1, max_length=255)
+
+
+class HealthRecordPublic(SQLModel):
+    id: uuid.UUID
+    note: str
+    owner_id: uuid.UUID
+
+
 # Properties to return via API, id is always required
 class UserPublic(UserBase):
     id: uuid.UUID
