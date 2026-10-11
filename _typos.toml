@@ -11,6 +11,7 @@ confidencial = "confidencial"
 
 [files]
 extend-exclude = [
+    "harness.json",
     "memory/",
     "openspec/",
     "product/",
