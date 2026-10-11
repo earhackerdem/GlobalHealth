@@ -55,7 +55,9 @@ def random_user_token_headers(
     return user, {"Authorization": f"Bearer {token}"}
 
 
-def post_consent(client: TestClient, headers: dict[str, str], version: str = "v1") -> Any:
+def post_consent(
+    client: TestClient, headers: dict[str, str], version: str = "v1"
+) -> Any:
     return client.post(
         f"{settings.API_V1_STR}/consent/", headers=headers, json={"version": version}
     )
@@ -219,9 +221,7 @@ def test_consent_auth_method_from_google_session_on_linked_account(
     assert r.json()["auth_method"] == "google"
 
     db.expire_all()
-    grant = db.exec(
-        select(ConsentGrant).where(ConsentGrant.user_id == user.id)
-    ).one()
+    grant = db.exec(select(ConsentGrant).where(ConsentGrant.user_id == user.id)).one()
     assert grant.auth_method == "google"
 
 

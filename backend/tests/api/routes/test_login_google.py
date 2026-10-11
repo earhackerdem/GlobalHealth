@@ -221,7 +221,9 @@ def test_ac3_unverified_google_email_is_rejected_and_no_user_created(
     email = random_email()
     users_before = count_users(db)
 
-    claims = google_claims(sub="google-sub-unverified", email=email, email_verified=False)
+    claims = google_claims(
+        sub="google-sub-unverified", email=email, email_verified=False
+    )
     with patched_exchange_code(claims):
         r = google_callback(client)
 
@@ -266,7 +268,9 @@ def test_google_callback_token_carries_amr_google(client: TestClient) -> None:
     assert payload["amr"] == "google"
 
 
-def test_password_login_token_carries_amr_password(client: TestClient, db: Session) -> None:
+def test_password_login_token_carries_amr_password(
+    client: TestClient, db: Session
+) -> None:
     """The JWT issued by POST /login/access-token carries amr: "password"."""
     email = random_email()
     password = random_lower_string()

@@ -49,7 +49,9 @@ def mock_token_endpoint(
     def handler(request: httpx.Request) -> httpx.Response:
         assert str(request.url) == google_oauth.GOOGLE_TOKEN_URL
         requests.append(parse_qs(request.content.decode()))
-        return httpx.Response(status_code, json=json_body if json_body is not None else {})
+        return httpx.Response(
+            status_code, json=json_body if json_body is not None else {}
+        )
 
     transport = httpx.MockTransport(handler)
 
@@ -79,7 +81,10 @@ def mock_id_token_validation(
             return SimpleNamespace(key="fake-signing-key")
 
     def decode(
-        token: str, key: Any, algorithms: Any = None, audience: Any = None
+        _token: str,
+        _key: Any,
+        algorithms: Any = None,
+        audience: Any = None,  # noqa: ARG001
     ) -> dict[str, Any]:
         if decode_error:
             raise real_jwt.PyJWTError("invalid signature")
