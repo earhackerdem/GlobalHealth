@@ -1,6 +1,14 @@
 # typos (pre-commit hook) está pensado para código/prosa en inglés; la
 # documentación del producto y la memoria del repo se escriben en es-MX y
 # disparan falsos positivos ("profesional" → "professional", etc.).
+# Palabras en español dentro de código/UI (producto es-MX, NFR-012). La lista
+# crecerá; si se vuelve fricción, decidir política (inbox): excluir archivos de
+# texto UI o quitar el hook.
+[default.extend-words]
+momento = "momento"
+mis = "mis"
+confidencial = "confidencial"
+
 [files]
 extend-exclude = [
     "memory/",
