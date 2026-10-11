@@ -56,7 +56,7 @@ from tests.utils.utils import get_superuser_token_headers  # noqa: E402
 
 
 @pytest.fixture(scope="session", autouse=True)
-def migrated_test_db() -> None:
+def _migrated_test_db() -> None:
     """The test database is ephemeral (tmpfs): bring its schema to head."""
     from alembic import command
     from alembic.config import Config
@@ -67,7 +67,7 @@ def migrated_test_db() -> None:
 
 
 @pytest.fixture(scope="session", autouse=True)
-def db(migrated_test_db: None) -> Generator[Session]:
+def db(_migrated_test_db: None) -> Generator[Session]:
     with Session(engine) as session:
         init_db(session)
         yield session
