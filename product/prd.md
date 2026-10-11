@@ -41,6 +41,7 @@ O4 IA cita o calla · O5 el profesional devuelve sin transcripción · O6 detecc
 | FR-023 | paciente | recibir sugerencia del tipo de especialista pertinente para discutir un hallazgo | S | O6 |
 | FR-024 | paciente | ver su consumo de consultas de IA del periodo contra su límite | M | — |
 | FR-025 | paciente | recibir un recordatorio en el horario de una toma registrada en una receta | M | — |
+| FR-026 | paciente | registrarse e iniciar sesión con su cuenta de Google, además del alta con correo/contraseña | M | O1 |
 
 ## 3. Non-functional requirements (measurable; unknown → NEEDS CLARIFICATION)
 | ID | Attribute | Stimulus → response → measure | Priority | Source |
@@ -62,8 +63,8 @@ O4 IA cita o calla · O5 el profesional devuelve sin transcripción · O6 detecc
 
 ## 4. Epics
 ### E1 — Cuenta y privacidad: el paciente es dueño verificable de sus datos
-Covers: FR-001..004, NFR-001, NFR-003, NFR-004, NFR-006, NFR-010 · Stories:
-- US-01 As a paciente, I want crear mi cuenta con consentimiento expreso, so that mis datos sensibles quedan aislados y bajo mi control.
+Covers: FR-001..004, FR-026, NFR-001, NFR-003, NFR-004, NFR-006, NFR-010 · Stories:
+- US-01 As a paciente, I want crear mi cuenta (con Google o con correo) con consentimiento expreso, so that mis datos sensibles quedan aislados y bajo mi control.
 - US-02 As a paciente, I want exportar y eliminar todo mi expediente, so that ejerzo mis derechos ARCO sin pedir permiso.
 - US-03 As a paciente, I want ver la bitácora de accesos, so that sé quién vio qué y cuándo.
 
@@ -98,7 +99,7 @@ Covers: FR-025 · Stories:
 ## 5. Traceability
 | Outcome | Epic | FR | NFR |
 |---|---|---|---|
-| O1 historial recuperable | E1, E2 | FR-001..002, FR-005..009 | NFR-001, NFR-010, NFR-012 |
+| O1 historial recuperable | E1, E2 | FR-001..002, FR-005..009, FR-026 | NFR-001, NFR-010, NFR-012 |
 | O2 acceso < 1 min | E3, E4 | FR-010..011, FR-013, FR-015 | NFR-007 |
 | O3 revocación verificable | E1, E3 | FR-004, FR-012, FR-014 | NFR-002, NFR-003 |
 | O4 IA cita o calla | E4, E5 | FR-019..020 | NFR-005, NFR-008, NFR-009 |
@@ -125,3 +126,6 @@ Covers: FR-025 · Stories:
 - FR-024/NFR-014 implican medición de uso por usuario desde v1 (el cobro llega después; la contabilidad, ahora).
 - NFR-011 implica dos clientes (móvil Android + web) sobre una misma superficie de servicios.
 - FR-002/FR-003 implican export e-borrado reales también en respaldos → condiciona la estrategia de backups (NFR-010).
+- FR-026 implica OAuth/OIDC con Google como proveedor de identidad (solo identidad: ningún dato de salud se comparte
+  con Google); el template trae auth JWT correo/contraseña, la integración del flujo social la decide el plan de E1.
+  Nota: el consentimiento expreso (NFR-004) se recaba igual en ambos flujos de alta, el login social no lo sustituye.
