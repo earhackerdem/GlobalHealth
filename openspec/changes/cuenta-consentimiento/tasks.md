@@ -40,10 +40,12 @@ files is `test→impl`; smaller groups are `single`. `make tdd-check` requires o
 
 ## 4. Aislamiento por cuenta y cierre de escenarios de correo · test→impl
 
-- [ ] 4.1 Test (red): alta exitosa con correo (adaptar el del template si existe) · correo ya registrado · acceso a
-      recurso ajeno por id → 404/403 · listados solo propios — sobre el router de prueba; commit `test:`
-- [ ] 4.2 Impl (green): filtros por `user_id` de sesión en el router de prueba como patrón documentado para E2+
-- [ ] 4.3 Verify: suite truly green; `make tdd-check`
+- [x] 4.1 Test (red): alta exitosa con correo (adaptar el del template si existe) · correo ya registrado · acceso a
+      recurso ajeno por id → 404/403 · listados solo propios — sobre el router de prueba; commit `test:` — eb067eb;
+      template ya cubría alta y duplicado (test_users.py:319, :342), nuevos: no-fuga, detalle dueño, listado propio
+- [x] 4.2 Impl (green): filtros por `user_id` de sesión en el router de prueba como patrón documentado para E2+ —
+      GET /health-records/{id} con 404 uniforme (no filtra existencia de recursos ajenos)
+- [x] 4.3 Verify: suite truly green; `make tdd-check` — 73 passed, 0 failed, 0 skipped; tdd-check ✓
 
 ## 5. Flujo real y CI · single
 
