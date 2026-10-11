@@ -50,6 +50,13 @@
 - Pendiente: Saúl acepta el technical brief → split de la primera story (épica E1 cuenta/privacidad) con
   `make epe-new`.
 
+## Sexta ronda (mismo día): vacío de entorno de desarrollo, detectado por Saúl Pérez
+- Antes de aprobar US-01, Saúl Pérez preguntó si el harness define el entorno local (¿Docker para la BD? ¿venvs?).
+  No lo define: se resolvió con ADR D12 (el entorno del template: Docker Compose + uv, verificado en commit log) y
+  quedó propuesta la meta-mejora para el skill product-tech-brief en memory/meta-improvements.md.
+- También abierta la story US-01 `cuenta-consentimiento` (openspec, 4/4 artefactos, design en DRAFT esperando
+  "plan approved"); FR-026 (login con Google) añadido antes al PRD a pedido suyo.
+
 ## Quinta ronda (mismo día): el stack lo decide el dueño — sin Laravel
 - Saúl Pérez corrigió la dirección dos veces: primero "la capa IA sí o sí en FastAPI por mercado" (quedó D10:
   Laravel core + FastAPI portal), y al ver esa variante aclaró su ideal: "prefiero no usar Laravel" — monolito con
