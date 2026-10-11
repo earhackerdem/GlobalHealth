@@ -1,17 +1,20 @@
 # typos (pre-commit hook) está pensado para código/prosa en inglés; la
 # documentación del producto y la memoria del repo se escriben en es-MX y
 # disparan falsos positivos ("profesional" → "professional", etc.).
-# Palabras en español dentro de código/UI (producto es-MX, NFR-012). La lista
-# crecerá; si se vuelve fricción, decidir política (inbox): excluir archivos de
-# texto UI o quitar el hook.
+# Palabras sueltas en español dentro de strings de código (producto es-MX,
+# NFR-012); los archivos que son prosa española completa van a extend-exclude.
 [default.extend-words]
-momento = "momento"
 mis = "mis"
 confidencial = "confidencial"
+# nombre real de la action re-actors/alls-green (workflows del template)
+alls = "alls"
 
 [files]
 extend-exclude = [
     "harness.json",
+    # prosa/UI es-MX
+    "backend/app/core/consent_text.py",
+    "frontend/src/components/Consent/",
     "memory/",
     "openspec/",
     "product/",
