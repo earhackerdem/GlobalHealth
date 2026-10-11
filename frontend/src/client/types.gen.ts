@@ -115,6 +115,20 @@ export type HealthRecordPublic = {
 };
 
 /**
+ * HealthRecordsPublic
+ */
+export type HealthRecordsPublic = {
+    /**
+     * Data
+     */
+    data: Array<HealthRecordPublic>;
+    /**
+     * Count
+     */
+    count: number;
+};
+
+/**
  * ItemCreate
  */
 export type ItemCreate = {
@@ -459,6 +473,10 @@ export type loginLoginGoogleCallbackData = {
          * Code
          */
         code: string;
+        /**
+         * State
+         */
+        state?: string | null;
     };
     url: '/api/v1/login/google/callback';
 };
@@ -476,10 +494,8 @@ export type loginLoginGoogleCallbackResponses = {
     /**
      * Successful Response
      */
-    200: Token;
+    200: unknown;
 };
-
-export type loginLoginGoogleCallbackResponse = loginLoginGoogleCallbackResponses[keyof loginLoginGoogleCallbackResponses];
 
 export type loginTestTokenData = {
     body?: never;
@@ -1039,7 +1055,7 @@ export type consentReadConsentData = {
     body?: never;
     path?: never;
     query?: never;
-    url: '/api/v1/consent';
+    url: '/api/v1/consent/';
 };
 
 export type consentReadConsentResponses = {
@@ -1055,7 +1071,7 @@ export type consentGrantConsentData = {
     body: ConsentCreate;
     path?: never;
     query?: never;
-    url: '/api/v1/consent';
+    url: '/api/v1/consent/';
 };
 
 export type consentGrantConsentErrors = {
@@ -1099,17 +1115,33 @@ export type consentReadConsentTextResponse = consentReadConsentTextResponses[key
 export type healthRecordsReadHealthRecordsData = {
     body?: never;
     path?: never;
-    query?: never;
-    url: '/api/v1/health-records';
+    query?: {
+        /**
+         * Skip
+         */
+        skip?: number;
+        /**
+         * Limit
+         */
+        limit?: number;
+    };
+    url: '/api/v1/health-records/';
 };
+
+export type healthRecordsReadHealthRecordsErrors = {
+    /**
+     * Validation Error
+     */
+    422: HTTPValidationError;
+};
+
+export type healthRecordsReadHealthRecordsError = healthRecordsReadHealthRecordsErrors[keyof healthRecordsReadHealthRecordsErrors];
 
 export type healthRecordsReadHealthRecordsResponses = {
     /**
-     * Response Health-Records-Read Health Records
-     *
      * Successful Response
      */
-    200: Array<HealthRecordPublic>;
+    200: HealthRecordsPublic;
 };
 
 export type healthRecordsReadHealthRecordsResponse = healthRecordsReadHealthRecordsResponses[keyof healthRecordsReadHealthRecordsResponses];
@@ -1118,7 +1150,7 @@ export type healthRecordsCreateHealthRecordData = {
     body: HealthRecordCreate;
     path?: never;
     query?: never;
-    url: '/api/v1/health-records';
+    url: '/api/v1/health-records/';
 };
 
 export type healthRecordsCreateHealthRecordErrors = {

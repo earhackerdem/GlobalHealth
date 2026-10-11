@@ -23,30 +23,47 @@ shell Capacitor, deploy a PaaS (otra story), texto legal definitivo del consenti
 
 - `POST /api/v1/users/signup` y `POST /api/v1/login/access-token` — los trae el template (correo/contraseña);
   confirmar rutas exactas empíricamente en T1 y actualizar aquí si difieren.
-- `GET /api/v1/login/google` → redirige a Google (Authorization Code + PKCE).
-- `GET /api/v1/login/google/callback?code=…` → crea cuenta o vincula por correo **verificado por Google**; responde
-  `Token {access_token, token_type: "bearer"}` (mismo modelo que `/login/access-token`). Correo no verificado → 400.
+- `GET /api/v1/login/google` → 307 a Google (Authorization Code + **PKCE S256 + `state`** aleatorio); sella
+  verificador y state en la cookie `g_pkce` = Fernet(JSON `{"v": verifier, "s": state}`), HttpOnly/Secure/Lax,
+  max-age 600, cifrada con la clave de propósito cookie (ADR D13).
+- `GET /api/v1/login/google/callback?code&state` → **exige** cookie descifrable Y `state` igual al sellado; si no,
+  400 `{"detail": "Solicitud de autorización inválida o expirada"}` borrando la cookie (también se borra en todo
+  error). El intercambio es SIEMPRE `exchange_code(code, code_verifier=<v>)`, sin rama sin verifier. Crea cuenta o
+  vincula por correo **verificado por Google** (no verificado → 400 "El correo de la cuenta de Google no está
+  verificado"; cuenta inactiva → 400 "Usuario inactivo"). Éxito → **307 a
+  `{FRONTEND_HOST}/google-callback#access_token=<jwt>&token_type=bearer`** (handoff a la SPA por fragment: no toca
+  logs ni cachés) con `Cache-Control: no-store`, `Pragma: no-cache` y cookie borrada.
+- **Claim `amr`** en el JWT de sesión: `"password"` (POST /login/access-token) o `"google"` (callback);
+  `TokenPayload.amr: str | None` (None solo en tokens emitidos antes del claim).
 - **Punto de mock (fijado en T1):** `app/core/google_oauth.py` expone
-  `async def exchange_code(code: str) -> GoogleClaims` con `GoogleClaims {sub: str, email: str, email_verified: bool}`;
+  `async def exchange_code(code: str, code_verifier: str | None = None) -> GoogleClaims` con
+  `GoogleClaims {sub: str, email: str, email_verified: bool}`;
   las rutas lo llaman vía `google_oauth.exchange_code(...)` y los tests parchean `app.core.google_oauth.exchange_code`.
   Google real nunca se toca en tests.
-- `POST /api/v1/consent` body `{"version": "v1"}` → 201 `{version, granted_at, auth_method}`; idempotente por versión.
-- `GET /api/v1/consent` → 200 `{version, granted_at}` o 404 si no se ha otorgado.
+- `POST /api/v1/consent/` body `{"version": "v1"}` → 201 `{version, granted_at, auth_method}`; idempotente por
+  versión (segundo POST → 200, una sola fila). `auth_method` sale del claim `amr` del token de la sesión; solo con
+  `amr` ausente (tokens previos al claim) se infiere de `hashed_password`. Versión desconocida → 400
+  `{"detail": "Versión de consentimiento desconocida"}`.
+- `GET /api/v1/consent/` → 200 `{version, granted_at}` o 404 si no se ha otorgado.
 - `GET /api/v1/consent/text` → `{version, text}` (añadido en T3: el frontend muestra EXACTAMENTE el texto cuya
   sha256 queda en la evidencia; fuente única app/core/consent_text.py).
 - UI del consentimiento (decisión T3): tarjeta-gate es-MX en el dashboard mientras no haya otorgamiento
   (ConsentGate.tsx); no bloquea las páginas del template (el bloqueo real de datos de salud es del backend, 403
   CONSENT_REQUIRED), así el Playwright del template sigue verde y el alta por ambos métodos pasa por la tarjeta.
-- Dependencia `require_consent` (FastAPI Depends): sin consentimiento vigente → 403 `{"detail": "CONSENT_REQUIRED"}`.
-  Todo router futuro de datos de salud (E2+) la declara; en esta story se prueba con un router mínimo de prueba
-  (fijado en T3): `POST /api/v1/health-records` body `{"note": str}` → requiere usuario autenticado + consentimiento;
-  con consentimiento → 201 `{"id", "note", "owner_id"}` persistido con owner_id del usuario de sesión;
-  `GET /api/v1/health-records` → lista SOLO los del usuario de sesión (sirve además a los escenarios de aislamiento
-  del grupo 4; E2 lo reemplaza por los registros clínicos reales).
+- Dependencia `require_consent` (FastAPI Depends): exige un otorgamiento de la **versión vigente**
+  (`max(CONSENT_TEXTS)`): al publicarse v2, un grant v1 deja de abrir la captura. Sin consentimiento vigente → 403
+  `{"detail": "CONSENT_REQUIRED"}`. Todo router futuro de datos de salud (E2+) la declara; en esta story se prueba
+  con un router mínimo de prueba (fijado en T3): `POST /api/v1/health-records/` body `{"note": str}` → requiere
+  usuario autenticado + consentimiento; con consentimiento → 201 `{"id", "note", "owner_id"}` persistido con
+  owner_id del usuario de sesión; `GET /api/v1/health-records/` → envelope del template `{"data": [...],
+  "count": N}` con `skip`/`limit`, SOLO los del usuario de sesión; `GET /api/v1/health-records/{id}` → 200 para el
+  dueño, 404 idéntico para ajeno o inexistente (sirve además a los escenarios de aislamiento del grupo 4; E2 lo
+  reemplaza por los registros clínicos reales).
 - Modelo `ConsentGrant`: `user_id FK · version · text_sha256 · granted_at · auth_method`; usuario del template con
   `hashed_password` nullable + tabla `OAuthIdentity (user_id, provider='google', subject, email)`.
-- Tipo de columna cifrada (NFR-001): TypeDecorator con cifrado simétrico app-level (clave por env), disponible para
-  E2; en esta story se aplica a `OAuthIdentity.subject` como primer uso real.
+- Tipo de columna cifrada (NFR-001): TypeDecorator `EncryptedString` con Fernet/MultiFernet app-level (ADR D13:
+  claves por propósito datos/cookie, `ENCRYPTION_KEY` obligatoria fuera de dev, `ENCRYPTION_KEY_PREVIOUS` para
+  rotación), disponible para E2; en esta story se aplica a `OAuthIdentity.subject` y `HealthRecordStub.note`.
 
 ## Decisions
 

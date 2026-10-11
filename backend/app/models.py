@@ -106,7 +106,8 @@ class ConsentStatusPublic(SQLModel):
 # isolation; E2 replaces it with the real clinical records
 class HealthRecordStub(SQLModel, table=True):
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
-    note: str = Field(max_length=255)
+    # Health data: encrypted at rest (NFR-001), like OAuthIdentity.subject
+    note: str = Field(sa_column=Column(EncryptedString(), nullable=False))
     owner_id: uuid.UUID = Field(
         foreign_key="user.id", nullable=False, ondelete="CASCADE"
     )
@@ -120,6 +121,11 @@ class HealthRecordPublic(SQLModel):
     id: uuid.UUID
     note: str
     owner_id: uuid.UUID
+
+
+class HealthRecordsPublic(SQLModel):
+    data: list[HealthRecordPublic]
+    count: int
 
 
 # Properties to return via API, id is always required
@@ -186,6 +192,9 @@ class Token(SQLModel):
 # Contents of JWT token
 class TokenPayload(SQLModel):
     sub: str | None = None
+    # Authentication method reference: "password" | "google" (None in tokens
+    # issued before this claim existed)
+    amr: str | None = None
 
 
 class NewPassword(SQLModel):

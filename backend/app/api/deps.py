@@ -10,6 +10,7 @@ from sqlmodel import Session, select
 
 from app.core import security
 from app.core.config import settings
+from app.core.consent_text import CONSENT_TEXTS
 from app.core.db import engine
 from app.models import ConsentGrant, TokenPayload, User
 
@@ -27,17 +28,24 @@ SessionDep = Annotated[Session, Depends(get_db)]
 TokenDep = Annotated[str, Depends(reusable_oauth2)]
 
 
-def get_current_user(session: SessionDep, token: TokenDep) -> User:
+def get_token_payload(token: TokenDep) -> TokenPayload:
+    """Decode and validate the session JWT (sub + amr claims)."""
     try:
         payload = jwt.decode(
             token, settings.SECRET_KEY, algorithms=[security.ALGORITHM]
         )
-        token_data = TokenPayload(**payload)
+        return TokenPayload(**payload)
     except InvalidTokenError, ValidationError:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Could not validate credentials",
         )
+
+
+TokenPayloadDep = Annotated[TokenPayload, Depends(get_token_payload)]
+
+
+def get_current_user(session: SessionDep, token_data: TokenPayloadDep) -> User:
     user = session.get(User, token_data.sub)
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
@@ -58,13 +66,18 @@ def get_current_active_superuser(current_user: CurrentUser) -> User:
 
 
 def require_consent(session: SessionDep, current_user: CurrentUser) -> User:
-    """Require a current express consent grant (NFR-004).
+    """Require an express consent grant of the CURRENT version (NFR-004).
 
     Every health-data router (E2+) must declare this dependency. An
-    authenticated user without any ConsentGrant row gets 403 CONSENT_REQUIRED.
+    authenticated user without a ConsentGrant row for the current consent
+    version (max of CONSENT_TEXTS) gets 403 CONSENT_REQUIRED: when the text
+    is revised, older grants stop opening health-data capture.
     """
+    current_version = max(CONSENT_TEXTS)
     grant = session.exec(
-        select(ConsentGrant).where(ConsentGrant.user_id == current_user.id)
+        select(ConsentGrant)
+        .where(ConsentGrant.user_id == current_user.id)
+        .where(ConsentGrant.version == current_version)
     ).first()
     if not grant:
         raise HTTPException(status_code=403, detail="CONSENT_REQUIRED")

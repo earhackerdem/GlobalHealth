@@ -21,7 +21,7 @@ import { handleError } from "@/utils"
  */
 function ConsentGate() {
   const queryClient = useQueryClient()
-  const { showSuccessToast } = useCustomToast()
+  const { showSuccessToast, showErrorToast } = useCustomToast()
 
   const { data: consent, isLoading: consentLoading } = useQuery({
     queryKey: ["consent"],
@@ -43,7 +43,7 @@ function ConsentGate() {
       showSuccessToast("Consentimiento registrado")
       queryClient.invalidateQueries({ queryKey: ["consent"] })
     },
-    onError: handleError,
+    onError: handleError.bind(showErrorToast),
   })
 
   if (consentLoading || consent || !consentText) {

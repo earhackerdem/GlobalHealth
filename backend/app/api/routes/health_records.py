@@ -9,15 +9,20 @@ import uuid
 from typing import Any
 
 from fastapi import APIRouter, HTTPException
-from sqlmodel import select
+from sqlmodel import func, select
 
 from app.api.deps import ConsentedUser, SessionDep
-from app.models import HealthRecordCreate, HealthRecordPublic, HealthRecordStub
+from app.models import (
+    HealthRecordCreate,
+    HealthRecordPublic,
+    HealthRecordsPublic,
+    HealthRecordStub,
+)
 
 router = APIRouter(prefix="/health-records", tags=["health-records"])
 
 
-@router.post("", response_model=HealthRecordPublic, status_code=201)
+@router.post("/", response_model=HealthRecordPublic, status_code=201)
 def create_health_record(
     *,
     session: SessionDep,
@@ -34,13 +39,26 @@ def create_health_record(
     return record
 
 
-@router.get("", response_model=list[HealthRecordPublic])
-def read_health_records(session: SessionDep, current_user: ConsentedUser) -> Any:
-    """List ONLY the health-record stubs owned by the session user."""
+@router.get("/", response_model=HealthRecordsPublic)
+def read_health_records(
+    session: SessionDep, current_user: ConsentedUser, skip: int = 0, limit: int = 100
+) -> Any:
+    """List ONLY the health-record stubs owned by the session user
+    (template envelope {"data": [...], "count": N}, like items)."""
+    count_statement = (
+        select(func.count())
+        .select_from(HealthRecordStub)
+        .where(HealthRecordStub.owner_id == current_user.id)
+    )
+    count = session.exec(count_statement).one()
     records = session.exec(
-        select(HealthRecordStub).where(HealthRecordStub.owner_id == current_user.id)
+        select(HealthRecordStub)
+        .where(HealthRecordStub.owner_id == current_user.id)
+        .offset(skip)
+        .limit(limit)
     ).all()
-    return records
+    records_public = [HealthRecordPublic.model_validate(record) for record in records]
+    return HealthRecordsPublic(data=records_public, count=count)
 
 
 @router.get("/{id}", response_model=HealthRecordPublic)

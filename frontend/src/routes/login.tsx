@@ -9,6 +9,7 @@ import { z } from "zod"
 
 import type { Body_login_login_access_token as AccessToken } from "@/client"
 import { AuthLayout } from "@/components/Common/AuthLayout"
+import { Button } from "@/components/ui/button"
 import {
   Form,
   FormControl,
@@ -20,6 +21,7 @@ import {
 import { Input } from "@/components/ui/input"
 import { LoadingButton } from "@/components/ui/loading-button"
 import { PasswordInput } from "@/components/ui/password-input"
+import { Separator } from "@/components/ui/separator"
 import useAuth, { isLoggedIn } from "@/hooks/useAuth"
 
 const formSchema = z.object({
@@ -127,6 +129,28 @@ function Login() {
             <LoadingButton type="submit" loading={loginMutation.isPending}>
               Log In
             </LoadingButton>
+
+            <div className="flex items-center gap-3">
+              <Separator className="flex-1" />
+              <span className="text-xs uppercase text-muted-foreground">o</span>
+              <Separator className="flex-1" />
+            </div>
+
+            <Button
+              type="button"
+              variant="outline"
+              data-testid="google-login-button"
+              onClick={() => {
+                // Full-page navigation: the backend redirects to Google and
+                // comes back through /google-callback with the token in the
+                // URL fragment.
+                window.location.href = `${
+                  import.meta.env.VITE_API_URL ?? ""
+                }/api/v1/login/google`
+              }}
+            >
+              Continuar con Google
+            </Button>
           </div>
 
           <div className="text-center text-sm">

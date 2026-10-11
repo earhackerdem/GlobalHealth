@@ -38,8 +38,12 @@ class Settings(BaseSettings):
 
     # Symmetric key (urlsafe base64, 32 bytes) for encrypted DB columns
     # (app/core/encrypted.py). Unset -> derived from SECRET_KEY (dev only);
-    # set a dedicated ENCRYPTION_KEY in production.
+    # REQUIRED outside development (see _enforce_non_default_secrets).
     ENCRYPTION_KEY: str | None = None
+    # Previous data-encryption key, kept only while rotating ENCRYPTION_KEY:
+    # old ciphertext still decrypts (MultiFernet) while new writes use the
+    # current key. Remove it once existing data has been re-encrypted.
+    ENCRYPTION_KEY_PREVIOUS: str | None = None
 
     @field_validator("DATABASE_URL", mode="before")
     @classmethod
@@ -95,6 +99,16 @@ class Settings(BaseSettings):
         self._check_default_secret(
             "FIRST_SUPERUSER_PASSWORD", self.FIRST_SUPERUSER_PASSWORD
         )
+        if not self.ENCRYPTION_KEY:
+            message = (
+                "ENCRYPTION_KEY is not set: the data-encryption key would be "
+                "derived from SECRET_KEY (dev-only fallback). For security, "
+                "please set a dedicated ENCRYPTION_KEY, at least for deployments."
+            )
+            if self.FASTAPI_ENV == "development":
+                warnings.warn(message, stacklevel=1)
+            else:
+                raise ValueError(message)
 
         return self
 

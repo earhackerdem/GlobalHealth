@@ -1,12 +1,13 @@
 import base64
 import hashlib
+import json
 import secrets
 from datetime import timedelta
 from typing import Annotated, Any
 from urllib.parse import urlencode
 
 from fastapi import APIRouter, Cookie, Depends, HTTPException, Response
-from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlmodel import select
 
@@ -51,21 +52,32 @@ def login_access_token(
     access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
     return Token(
         access_token=security.create_access_token(
-            user.id, expires_delta=access_token_expires
+            user.id, expires_delta=access_token_expires, amr="password"
         )
     )
 
 
 PKCE_COOKIE = "g_pkce"
+INVALID_AUTHORIZATION_DETAIL = "Solicitud de autorización inválida o expirada"
+
+
+def _error_response(status_code: int, detail: str) -> JSONResponse:
+    """Error response for the Google callback: always deletes the PKCE cookie
+    so a failed attempt never leaves a stale verifier behind."""
+    response = JSONResponse(status_code=status_code, content={"detail": detail})
+    response.delete_cookie(PKCE_COOKIE)
+    return response
 
 
 @router.get("/login/google")
 def login_google() -> RedirectResponse:
     """
     Redirect to Google's OAuth 2.0 / OIDC authorization endpoint
-    (Authorization Code + PKCE; the verifier travels encrypted in a cookie)
+    (Authorization Code + PKCE + state; verifier and state travel sealed in an
+    encrypted, HttpOnly cookie that the callback REQUIRES)
     """
     code_verifier = secrets.token_urlsafe(64)
+    state = secrets.token_urlsafe(32)
     code_challenge = (
         base64.urlsafe_b64encode(hashlib.sha256(code_verifier.encode()).digest())
         .rstrip(b"=")
@@ -79,12 +91,13 @@ def login_google() -> RedirectResponse:
             "scope": "openid email profile",
             "code_challenge": code_challenge,
             "code_challenge_method": "S256",
+            "state": state,
         }
     )
     response = RedirectResponse(url=f"{google_oauth.GOOGLE_AUTH_URL}?{params}")
     response.set_cookie(
         PKCE_COOKIE,
-        encrypt_str(code_verifier),
+        encrypt_str(json.dumps({"v": code_verifier, "s": state})),
         max_age=600,
         httponly=True,
         secure=True,
@@ -96,24 +109,29 @@ def login_google() -> RedirectResponse:
 @router.get("/login/google/callback")
 async def login_google_callback(
     session: SessionDep,
-    response: Response,
     code: str,
+    state: str | None = None,
     g_pkce: Annotated[str | None, Cookie()] = None,
-) -> Token:
+) -> Response:
     """
-    Google OIDC callback: create or link the account by Google-verified email
-    and return an access token (same model as /login/access-token)
+    Google OIDC callback: verify the sealed PKCE verifier + state, create or
+    link the account by Google-verified email and hand the session token to
+    the SPA via the redirect's URL fragment (never logged, never cached)
     """
-    code_verifier = decrypt_str(g_pkce) if g_pkce else None
-    if code_verifier:
-        claims = await google_oauth.exchange_code(code, code_verifier=code_verifier)
-    else:
-        # No PKCE cookie (or invalid): exchange without verifier
-        claims = await google_oauth.exchange_code(code)
-    response.delete_cookie(PKCE_COOKIE)
+    payload = decrypt_str(g_pkce) if g_pkce else None
+    try:
+        data = json.loads(payload) if payload else None
+    except ValueError:
+        data = None
+    code_verifier = data.get("v") if isinstance(data, dict) else None
+    sealed_state = data.get("s") if isinstance(data, dict) else None
+    if not code_verifier or not sealed_state or not state or state != sealed_state:
+        return _error_response(400, INVALID_AUTHORIZATION_DETAIL)
+
+    claims = await google_oauth.exchange_code(code, code_verifier=code_verifier)
     if not claims.email_verified:
-        raise HTTPException(
-            status_code=400, detail="Google account email is not verified"
+        return _error_response(
+            400, "El correo de la cuenta de Google no está verificado"
         )
 
     user = crud.get_user_by_email(session=session, email=claims.email)
@@ -123,7 +141,7 @@ async def login_google_callback(
         session.commit()
         session.refresh(user)
     elif not user.is_active:
-        raise HTTPException(status_code=400, detail="Inactive user")
+        return _error_response(400, "Usuario inactivo")
 
     # Link the Google identity if not already linked (subject is encrypted at
     # rest, so compare decrypted values in Python instead of filtering in SQL)
@@ -144,11 +162,21 @@ async def login_google_callback(
         session.commit()
 
     access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
-    return Token(
-        access_token=security.create_access_token(
-            user.id, expires_delta=access_token_expires
-        )
+    access_token = security.create_access_token(
+        user.id, expires_delta=access_token_expires, amr="google"
     )
+    # Handoff to the SPA via URL fragment: it never reaches a server log and
+    # no-store keeps the token out of any cache.
+    response: Response = RedirectResponse(
+        url=(
+            f"{settings.FRONTEND_HOST}/google-callback"
+            f"#access_token={access_token}&token_type=bearer"
+        ),
+        status_code=307,
+        headers={"Cache-Control": "no-store", "Pragma": "no-cache"},
+    )
+    response.delete_cookie(PKCE_COOKIE)
+    return response
 
 
 @router.post("/login/test-token", response_model=UserPublic)
