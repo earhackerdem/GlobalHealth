@@ -35,3 +35,17 @@
   categorías) suben a Must?; residencia de datos → technical brief.
 - Split en change folders diferido hasta después del technical brief (ninguna story arranca aún).
 - Pendiente: Saúl acepta el PRD → /product-tech-brief (stack, presupuesto NFR).
+
+## Cuarta ronda (mismo día): technical brief
+- Saúl Pérez subió FR-014 y FR-018 a Must (Q1/Q2 del PRD).
+- Pregunta bloqueante respondida: PaaS (Railway/Fly/Render/Vercel) ya operado, sin techo estricto de gasto,
+  20+ h/semana, abierto en cliente móvil.
+- Escrito product/technical-brief.md: recomendación A = monolito Laravel + Postgres(pgvector) + Claude API tras
+  AiGateway; cliente web responsive + Capacitor para Android; descartados template FastAPI (dos aprendizajes sobre
+  el núcleo de privacidad) y sidecar desde v1 (evolución futura, no alternativa perdida). ADRs D6–D9.
+- Budget NFR de 14 entradas con prueba por NFR; NEEDS CLARIFICATION honestos: texto vigente LFPDPPP (reforma 2025),
+  retención exacta de Anthropic (7 vs 30 días, verificar en fuente oficial antes del primer dato real), residencia.
+- harness.json: code += routes/, database/, resources/, config/; blocked_commands += migrate:fresh/reset, db:wipe.
+- Verificaciones a memory/research.md#stack (no-training Anthropic, template fastapi, LFPDPPP art. 9/36-37).
+- Pendiente: Saúl acepta el technical brief → split de la primera story (épica E1 cuenta/privacidad) con
+  `make epe-new`.

@@ -54,3 +54,39 @@ link the new one. Order: from most structural to most tactical.
 - **Consequence:** la evidencia de comorbilidades que alimenta las sugerencias vive en
   memory/research.md#comorbilidades con su nivel de confianza; cada regla de sugerencia exige verificar la guía
   clínica vigente antes de implementarse (nunca desde memoria del modelo).
+
+## D6 — Stack v1: monolito Laravel + Postgres(pgvector) + Claude API tras AiGateway
+- **Status:** Accepted · 2026-10-11 · decided by: Saúl Pérez (author/owner), recomendación del technical brief
+- **Decision:** v1 es un monolito Laravel 12 con PostgreSQL (pgvector para recuperación) y la capa IA como
+  llamadas directas a Claude API encapsuladas en una interfaz interna propia (`AiGateway`).
+- **Why:** el equipo es una persona fluida en Laravel; el código más delicado (consentimiento, revocación,
+  cifrado) se escribe en el framework que domina. Tecnología aburrida gana.
+- **Discarded:** (B) template full-stack FastAPI — apila dos aprendizajes (Python reciente + React) sobre el núcleo
+  de privacidad; (C) sidecar FastAPI desde v1 — dos deploys para una persona. C queda como evolución: si el
+  procesado de documentos/OCR lo exige, el sidecar se añade detrás de AiGateway sin rediseño.
+
+## D7 — Cliente: web responsive + Android por Capacitor
+- **Status:** Accepted · 2026-10-11 · decided by: Saúl Pérez (author/owner)
+- **Decision:** paciente y profesional usan la misma web responsive; la app Android de v1 es un shell Capacitor
+  (notificaciones locales para FR-025, cámara para FR-007, vía futura a Health Connect por plugin/módulo nativo).
+- **Why:** Saúl no tiene experiencia Android y está abierto a alternativas; Kotlin nativo son meses de curva sin
+  beneficio en los FR de v1.
+- **Discarded:** Kotlin nativo en v1 (se revisita si Health Connect lo exige al integrar wearables); PWA pura
+  (recordatorios de medicación menos fiables que notificaciones locales nativas).
+
+## D8 — Hosting: PaaS conocido, región US + aviso de transferencia
+- **Status:** Accepted · 2026-10-11 · decided by: Saúl Pérez (author/owner)
+- **Decision:** v1 corre en un PaaS que Saúl ya opera (Railway o Render; se fija en el primer cambio) con Postgres
+  administrado, región US, declarando la transferencia internacional en el aviso de privacidad.
+- **Why:** NFR-013 (≤2 h ops/mes para una persona); la LFPDPPP permite transferencia con consentimiento (art. 9,
+  36/37 — texto vigente por verificar: NFR-006).
+- **Discarded:** VPS propio (más ops); región MX obligatoria (solo si la verificación legal de NFR-006 lo exige).
+
+## D9 — Proveedor IA: Claude API
+- **Status:** Accepted · 2026-10-11 · decided by: Saúl Pérez (author/owner)
+- **Decision:** la capa IA usa Claude API (claude-sonnet-5-5 para Q&A y preparación de consulta; claude-haiku-5-5
+  para tareas baratas), detrás de AiGateway.
+- **Why:** no entrena con contenido de clientes API por defecto [fuentes secundarias coincidentes, 2026-10-11];
+  calidad en cita/grounding requerida por NFR-011.
+- **Consequence:** NFR-005 obliga a verificar retención (7 vs 30 días en fuentes) y ZDR en Commercial Terms/DPA
+  oficiales, con captura fechada en memory/research.md, ANTES del primer dato real en el sistema.

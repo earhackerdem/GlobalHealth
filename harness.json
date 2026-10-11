@@ -10,7 +10,11 @@
     "src/",
     "app/",
     "lib/",
-    "packages/"
+    "packages/",
+    "routes/",
+    "database/",
+    "resources/",
+    "config/"
   ],
   "tests": [
     "tests/",
@@ -35,7 +39,11 @@
     "production",
     "prod"
   ],
-  "blocked_commands": [],
+  "blocked_commands": [
+    "php artisan migrate:fresh",
+    "php artisan migrate:reset",
+    "php artisan db:wipe"
+  ],
   "skill_hints": [
     {
       "skill": "triage",

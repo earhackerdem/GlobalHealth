@@ -51,6 +51,35 @@ como causalidad ni como diagnóstico.
 - **Confidence:** [VERIFIED] que existen patrones; [OPINION/HYPE] cualquier uso predictivo individual.
 - **Re-check if:** se diseñe el motor de sugerencias; buscar guías clínicas, no estudios transversales.
 
+## Stack y proveedores (technical brief) <a id="stack"></a>
+- **Fact:** Anthropic no entrena modelos con contenido de clientes de la API por defecto (Commercial Terms);
+  retención por defecto reportada en conflicto entre fuentes (7 días desde sept 2025 vs 30 días); ZDR existe pero
+  se solicita, no es automático.
+- **Source:** https://aibusiness.com/nlp/anthropic-will-not-train-its-ai-on-clients-data ·
+  https://char.com/blog/anthropic-data-retention-policy (secundarias) · consulted 2026-10-11
+- **Confidence:** [VERIFIED] el no-training por defecto (múltiples fuentes coincidentes); NOT VERIFIED la ventana
+  de retención exacta → ir a Commercial Terms/DPA oficiales antes del primer dato real (NFR-005).
+- **Re-check if:** SIEMPRE antes de mandar el primer dato de salud real; política puede cambiar.
+
+- **Fact:** El template full-stack de tiangolo vive hoy en la org fastapi (github.com/fastapi/full-stack-fastapi-template):
+  FastAPI + SQLModel + Postgres + Alembic, React/TS + Vite + Tailwind + shadcn, Docker Compose + Traefik, GH Actions,
+  pytest + Playwright. MIT. Snapshot feb 2026.
+- **Source:** https://github.com/fastapi/full-stack-fastapi-template y https://fastapi.tiangolo.com/project-generation ·
+  consulted 2026-10-11
+- **Confidence:** [VERIFIED]
+- **Re-check if:** se reconsidera el stack (ADR D6 lo descartó para v1).
+
+- **Fact:** LFPDPPP: datos de salud = sensibles; art. 9 exige consentimiento expreso y por escrito (o equivalente)
+  para tratarlos, con carga de la prueba en el responsable; existe excepción de transferencia para
+  prevención/diagnóstico médico (citada como art. 36 o 37 según la fuente — numeración por confirmar en DOF).
+  La reforma 2025 habría cambiado la autoridad (ya no INAI) — NOT VERIFIED.
+- **Source:** https://sdv.com.mx/compendio/ley-proteccion-datos-personales/articulo-9/ ·
+  https://sdv.com.mx/compendio/ley-proteccion-datos-personales/articulo-37/ ·
+  https://iapp.org/news/a/la-proteccion-de-datos-personales-en-los-expedientes-clinicos · consulted 2026-10-11
+- **Confidence:** [VERIFIED] el principio (consentimiento expreso para sensibles); NOT VERIFIED numeración vigente,
+  reforma 2025 y autoridad competente → texto en DOF + abogado antes de abrir a usuarios distintos de Saúl (NFR-004).
+- **Re-check if:** antes del primer cambio de cumplimiento; antes de cualquier usuario externo.
+
 ## Wearables con API accesible (fuera de v1; camino futuro) <a id="wearables"></a>
 - **Fact:** En Android, los datos de un Galaxy Watch llegan a terceros vía Health Connect: watch → app Samsung
   Health (sincroniza con Health Connect desde la v6.22.5, oct 2022) → tu app lee con permiso del usuario. Health
