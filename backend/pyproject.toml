@@ -68,6 +68,9 @@ keep-runtime-typing = true
 [tool.coverage.run]
 source = ["app"]
 dynamic_context = "test_function"
+# Alembic migrations run in-process since the suite auto-migrates the test DB;
+# they are schema DDL, not unit-testable logic, so keep them out of the gate.
+omit = ["app/alembic/*"]
 
 [tool.coverage.report]
 show_missing = true
