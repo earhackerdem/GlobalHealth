@@ -49,12 +49,13 @@ files is `test→impl`; smaller groups are `single`. `make tdd-check` requires o
 
 ## 5. Flujo real y CI · single
 
-- [ ] 5.1 Prueba manual del flujo Google completo con credenciales reales en local (una vez, fuera de la suite);
-      capturas/notas a evidence.md — BLOQUEADA: esperando GOOGLE_CLIENT_ID/SECRET de Saúl Pérez (validation.md)
+- [x] 5.1 Prueba manual del flujo Google completo con credenciales reales en local (una vez, fuera de la suite);
+      capturas/notas a evidence.md — hecha vía Chrome con Saúl Pérez: PKCE S256 observado, consentimiento solo
+      identidad, callback 200 con Token, usuario sin password local + OAuthIdentity cifrada en BD (evidence.md)
 - [x] 5.2 CI del template adaptada al repo y en verde (correrá en GitHub al existir remoto; mientras, el comando
       local equivalente documentado); verificar: mismo comando que usará CI pasa local — coverage 90% = umbral,
       equivalentes locales ejecutados y documentados en evidence.md
 
 ## Close
 - [x] evidence.md (red/green numbers per group) · validation.md (non-technical, for whoever approves)
-- [ ] journal entry in memory/journal/ · PR opened (push only if asked) — journal ✓; PR BLOQUEADO: sin remoto git
+- [x] journal entry in memory/journal/ · PR opened (push only if asked) — journal ✓; PR #1 abierto, CI verde

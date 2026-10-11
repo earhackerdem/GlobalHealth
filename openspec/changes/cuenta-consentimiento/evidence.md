@@ -35,12 +35,22 @@ Sin remoto git aún: correrán en el primer push. Equivalentes locales ejecutado
 backend `uv run coverage run -m pytest && uv run coverage report --fail-under=90`; frontend
 `bunx playwright test --project=chromium`; compose `docker compose up -d --wait db mailpit`.
 
-## Pendiente (bloqueado en Saúl Pérez)
+## Tarea 5.1 — flujo Google REAL verificado (2026-10-11)
 
-- **Tarea 5.1** — prueba manual del flujo Google real: requiere `GOOGLE_CLIENT_ID`/`GOOGLE_CLIENT_SECRET` de
-  Google Cloud Console (OAuth client web, redirect URI `http://localhost:8000/api/v1/login/google/callback`).
-  Sin esto el flujo real (incl. PKCE contra Google) no está probado end-to-end; los tests lo cubren con mocks.
-- PR: sin remoto configurado no hay dónde abrirlo.
+Ejecutada vía Chrome (Saúl Pérez presente, credenciales suyas en .env local no rastreado):
+- `GET /login/google` → 307 a accounts.google.com con `code_challenge` + `code_challenge_method=S256` en la URL
+  (PKCE real observado en el navegador).
+- Selector de cuenta → consentimiento "Accede a GlobalHealth" mostrando SOLO nombre, foto y correo (Google actúa
+  únicamente como proveedor de identidad, como exige el PRD §7).
+- Callback → 200 con `{access_token, token_type: "bearer"}` tras intercambio real del código (con code_verifier
+  desde la cookie cifrada) y validación del id_token contra el JWKS de Google.
+- BD verificada: usuario `earhackerdem@gmail.com` creado con `hashed_password NULL`, activo; fila `oauthidentity`
+  con `provider=google` y `subject` en ciphertext Fernet (`gAAAAAB…`); log del server: callback 200 OK.
+
+## PR
+
+PR #1 abierto (feat/cuenta-consentimiento → main) con CI completo en verde en el head final:
+pre-commit, test-backend (cobertura 90%), test-docker-compose, Playwright 4/4 + merge de reportes.
 
 ## Deuda anotada (fuera del alcance de esta story)
 
