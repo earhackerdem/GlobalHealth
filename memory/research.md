@@ -69,6 +69,15 @@ como causalidad ni como diagnóstico.
 - **Confidence:** [VERIFIED]
 - **Re-check if:** se reconsidera el stack (ADR D6 lo descartó para v1).
 
+- **Fact:** El template migró de Poetry a uv (#1356) y adoptó `docker compose watch` para desarrollo local (#1354),
+  ambos en septiembre 2024; los archivos compose fueron renombrados a compose.yml (#2106). Entorno local documentado:
+  Docker Compose para los servicios + uv para el venv/deps del backend.
+- **Source:** https://code.morphllm.com/fastapi/full-stack-fastapi-template/commits/0.8.0/master/backend/README.md
+  (mirror del commit log) · consulted 2026-10-11
+- **Confidence:** [VERIFIED] la migración a uv y compose watch (commit log); los comandos exactos del development.md
+  vigente NOT VERIFIED → T1 los confirma contra el repo oficial.
+- **Re-check if:** T1 de cuenta-consentimiento (instalación real).
+
 - **Fact:** LFPDPPP: datos de salud = sensibles; art. 9 exige consentimiento expreso y por escrito (o equivalente)
   para tratarlos, con carga de la prueba en el responsable; existe excepción de transferencia para
   prevención/diagnóstico médico (citada como art. 36 o 37 según la fuente — numeración por confirmar en DOF).

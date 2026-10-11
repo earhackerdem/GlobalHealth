@@ -37,6 +37,9 @@ shell Capacitor, deploy a PaaS (otra story), texto legal definitivo del consenti
 
 ## Decisions
 
+- **Entorno de desarrollo = el del template (ADR D12)**: Docker Compose para Postgres/stack (`watch` para hot
+  reload) y uv para el venv y dependencias del backend [VERIFIED: migración a uv y compose watch, sept 2024 —
+  memory/research.md#stack]; T1 confirma los comandos exactos contra el development.md oficial.
 - **Instalación del template por el método oficial** (T1 lo confirma empíricamente: copier/clon según README del
   template [NOT VERIFIED aún — regla de explore: empírico antes que documental]) en la raíz del repo (`backend/`,
   `frontend/`), adaptando su CI al repo. Alternativa descartada: escribir FastAPI desde cero (pierde authn/CI/tests

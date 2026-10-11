@@ -84,5 +84,7 @@ tareas baratas; precios → verificar al implementar, no de memoria.
   `tests`: `backend/app/tests/`, `frontend/tests/` además de los genéricos (el hook casa por prefijo exacto,
   verificado en .claude/hooks/_config.py:112-125, así que las rutas anidadas se declaran explícitas) ·
   `blocked_commands`: `alembic downgrade`, `docker compose down -v` (tiran esquema/volúmenes de la BD).
+- **Entorno de desarrollo (ADR D12):** el que prescribe el template — Docker Compose (Postgres y stack, `watch`
+  para hot reload) + uv para venv/dependencias Python + Node para el frontend. Sin Postgres nativo ni venvs manuales.
 - Cada `/epe-1-explore` arranca del budget §4; cada `/epe-2-plan` dice cómo cumple los NFR afectados; romper el
   budget = cambiar este brief y su ADR en el mismo PR.
