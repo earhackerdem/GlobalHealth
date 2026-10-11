@@ -15,3 +15,14 @@
   `/product-prd` → `/product-tech-brief`.
 - Sin remoto git configurado: el trabajo queda en rama local `docs/product-brief`, sin PR posible aún.
 - Nota: START-HERE.md aparece borrado en el árbol desde antes de esta sesión; no es de esta sesión y no se tocó.
+
+## Segunda ronda (mismo día)
+- Saúl Pérez respondió las 4 preguntas abiertas → ADR D5 (recordatorios mínimos en v1; enlace por profesional
+  tipo+nombre revocable; IA proactiva también para el paciente; freemium con límite de consultas).
+- Objeción de socio escéptico registrada: IA que sugiere estudios/médicos directo al paciente = recomendación
+  clínica (riesgo COFEPRIS + alucinación). Alternativa adoptada en el brief: encuadre "preparación de consulta"
+  (sugerencias con fuente, para discutir con el profesional). Saúl puede revertirlo.
+- Investigación de comorbilidades pedida por Saúl → memory/research.md#comorbilidades (SII↔ansiedad [VERIFIED],
+  ansiedad↔alcohol [VERIFIED], historial familiar→tamizaje [principio VERIFIED, umbrales 2026 por verificar],
+  clústers de multimorbilidad [heurística, no regla]).
+- Brief actualizado: O6 (detección proactiva de huecos con fuente obligatoria), preguntas abiertas → resueltas.

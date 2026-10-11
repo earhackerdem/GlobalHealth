@@ -28,6 +28,9 @@ alcoholismo se habrían conectado antes. Que esto generalice a otros pacientes e
   adjunta; cero respuestas sin cita.
 - O5 — Un profesional puede devolver diagnóstico/órdenes/anexos por el enlace compartido y quedan en el expediente
   sin transcripción manual del paciente.
+- O6 — La IA detecta huecos proactivamente (p.ej. historial familiar de diabetes/cáncer sin tamizaje registrado) y
+  propone al paciente preguntas y estudios **para plantear al profesional**, cada sugerencia con su fuente
+  (guía clínica vigente o documento del expediente); cero sugerencias sin fuente. Nunca prescribe ni diagnostica.
 
 ## Constraints
 - **Privacidad primero** (decisión de Saúl Pérez, 2026-10-11 → ADR D2): datos de salud tratados como sensibles
@@ -46,13 +49,15 @@ alcoholismo se habrían conectado antes. Que esto generalice a otros pacientes e
   disponible: importar los reportes PDF del fabricante como documentos del expediente.
 - Venta institucional (clínicas/hospitales).
 
-## Open questions (max 4)
-1. ¿Citas y recordatorios de medicación en v1? — A: fuera de v1 (recomendada) / B: recordatorios mínimos — cada
-   superficie extra compite con el núcleo expediente+compartir.
-2. Verificación de identidad del profesional: ¿solo control del enlace (activar/desactivar) o además verificación
-   por teléfono/correo? — define la UX de consentimiento; el mecanismo lo decide el technical brief.
-3. ¿La IA responde también al paciente o solo al personal de salud? — cambia superficie y riesgo (autodiagnóstico).
-4. Freemium: ¿qué es premium? — se difiere; solo restringe que v1 no lo bloquee.
+## Resolved questions (Saúl Pérez, 2026-10-11 → ADR D5)
+1. Recordatorios de medicación **mínimos sí** en v1; citas/agenda fuera.
+2. Identidad del profesional: **solo control del enlace** — un enlace por profesional (se genera eligiendo tipo de
+   profesional + nombre), activable/desactivable individualmente. Sin verificación por teléfono/correo.
+3. La IA **también atiende al paciente**, con encuadre "preparación de consulta": detecta huecos (historial
+   familiar de cáncer y diabetes incluido), hace preguntas para completar el expediente y sugiere estudios y tipo de
+   especialista *para discutir con el profesional* — nunca prescribe (objeción registrada: sugerencia directa =
+   recomendación clínica/COFEPRIS; Saúl puede revertir el encuadre y quedaría registrado).
+4. Freemium: **gratis con límites de consulta a la IA**; el pago quita límites. v1 solo debe dejar contable el uso.
 
 ## Next step
 PRD needed? **Sí**: aunque decide una sola persona, hay más de una épica que no debe divergir (expediente,
