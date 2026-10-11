@@ -16,6 +16,18 @@
 - Cierre: 73 passed / 0 failed / 0 skipped, Playwright 62 passed, cobertura 90% (= umbral del CI, sin margen),
   tdd-check ✓ (un rojo por grupo). evidence.md y validation.md escritos.
 - Bloqueado en Saúl Pérez: credenciales Google para la prueba manual 5.1 y remoto git para abrir el PR.
+## Ronda de PR y CI (mismo día)
+- Repo privado earhackerdem/GlobalHealth creado a pedido de Saúl Pérez; el guard supervisado bloqueó inicializar
+  main (correcto) y Saúl lo pushó él mismo. PR #1 abierto (feat → main).
+- Investigación de nombre pedida por Saúl: "GlobalHealth" colisiona (aseguradora de Oklahoma con app homónima +
+  marca viva en Luxemburgo) → research.md#naming; candidatos Vitacora / Anamnesis; decisión en inbox.
+- CI del template adaptado al correr de verdad: (1) playwright.yml necesitaba permissions pull-requests:read para
+  paths-filter; (2) pre-commit.yml usaba la GitHub App pr-push del proyecto FastAPI (no instalada aquí) → reescrito
+  check-only; (3) typos no sabe español → _typos.toml (excluye prosa es-MX y harness.json); (4) mypy/ty con
+  hashed_password nullable → narrowing en tests del template (mantenimiento de tipado, no cambio de aserciones);
+  (5) cliente frontend regenerado (faltaba GET /health-records/{id}). pre-commit, test-backend (cobertura 90%) y
+  changes en verde en CI.
+
 - Incidente de proceso: un commit (c27cd79) entró con la suite completa aparentemente roja — era interferencia
   del tester del grupo 3 corriendo pytest contra la misma BD en paralelo; verificado aislando (62 passed) después
   del commit. Lección: no correr suites de verificación mientras un subagente ejecuta pytest sobre la misma BD;
