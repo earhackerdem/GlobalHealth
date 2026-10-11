@@ -1,0 +1,4 @@
+{
+  "chat.useAgentsMdFile": true,
+  "files.exclude": { "**/__pycache__": true, "**/.git": true, "**/node_modules": true }
+}

@@ -1,0 +1,407 @@
+{
+  "files": {
+    ".agents/rules/epe.md": {
+      "sha256": "c9b5a199bd9ccfd979d38dd68c069961b9199c7d6984351b8072e6b2d137c82d",
+      "src": ".agents/rules/epe.md"
+    },
+    ".agents/skills/README.md": {
+      "sha256": "d5149ef121286fed35654b5873091d3bccc4476d0882248e5026c710f656877d",
+      "src": ".agents/skills/README.md"
+    },
+    ".agents/skills/codebase-context/SKILL.md": {
+      "sha256": "f01c3d8ac8b38bf804f404eb3a3e5ea984d8ec81267b186bf940f09f58d60042",
+      "src": ".agents/skills/codebase-context/SKILL.md"
+    },
+    ".agents/skills/epe-0-new/SKILL.md": {
+      "sha256": "e30ab5c853dd8550d06b8e51f8e5a6b0cbaf55217508dc5bd70347de2aed40dd",
+      "src": ".agents/skills/epe-0-new/SKILL.md"
+    },
+    ".agents/skills/epe-0-new/templates/common/changes-README.md": {
+      "sha256": "8d65fe3309e8d8bc83af70d8ec49c66c68887803a9a8af5c9a8eb575cfdcf389",
+      "src": ".agents/skills/epe-0-new/templates/common/changes-README.md"
+    },
+    ".agents/skills/epe-0-new/templates/common/closed.md": {
+      "sha256": "d27656a739a9cbde045cc82b4000a5cc613c86f97be365fff308dc71372dd3cc",
+      "src": ".agents/skills/epe-0-new/templates/common/closed.md"
+    },
+    ".agents/skills/epe-0-new/templates/common/decisions.md": {
+      "sha256": "c1420dd2faae48c3c04c021fa7c371dcf2b1569179ce5771018060c994d41e1e",
+      "src": ".agents/skills/epe-0-new/templates/common/decisions.md"
+    },
+    ".agents/skills/epe-0-new/templates/common/inbox.md": {
+      "sha256": "013d2aa6285eff224c28900f081b921d37862f0aeaf66f33ecf1bb9ed1ffcfbd",
+      "src": ".agents/skills/epe-0-new/templates/common/inbox.md"
+    },
+    ".agents/skills/epe-0-new/templates/common/journal-README.md": {
+      "sha256": "9dbc4f85bde0fd7300d5ab9d704074d1b19aa987da2fa44f9ea6e458ffdf6033",
+      "src": ".agents/skills/epe-0-new/templates/common/journal-README.md"
+    },
+    ".agents/skills/epe-0-new/templates/common/memory-README.md": {
+      "sha256": "59410db9ff4aed78f5803e219079eb20c378c56361972cf7c670d455aaa58517",
+      "src": ".agents/skills/epe-0-new/templates/common/memory-README.md"
+    },
+    ".agents/skills/epe-0-new/templates/common/meta-improvements.md": {
+      "sha256": "21bcc3d87f1d3352dd53798a47ec3b6ace6769d7aa7ce3fd4b29598097ae2bd8",
+      "src": ".agents/skills/epe-0-new/templates/common/meta-improvements.md"
+    },
+    ".agents/skills/epe-0-new/templates/common/pull_request_template.md": {
+      "sha256": "d82ff8f771595ae348a3ca961f1e44b321ede137feeec22519c7f02d93738839",
+      "src": ".agents/skills/epe-0-new/templates/common/pull_request_template.md"
+    },
+    ".agents/skills/epe-0-new/templates/common/research.md": {
+      "sha256": "1d6b7c63ee6edc41c03cb261fc2c5aeadbcc484a831b07fabde629b58a38304f",
+      "src": ".agents/skills/epe-0-new/templates/common/research.md"
+    },
+    ".agents/skills/epe-0-new/templates/content/evidence.md": {
+      "sha256": "bc7b2a8d7b3cb9c3bb905750c22f48192eac84a24daa93cc796b5533522e6a51",
+      "src": ".agents/skills/epe-0-new/templates/content/evidence.md"
+    },
+    ".agents/skills/epe-0-new/templates/content/exploration.md": {
+      "sha256": "300893d4448c63420e8bd8a697fc53490dacd5cdcb7953ad4b99710b2a034ff5",
+      "src": ".agents/skills/epe-0-new/templates/content/exploration.md"
+    },
+    ".agents/skills/epe-0-new/templates/content/plan.md": {
+      "sha256": "472a4a3601b4e48ca4d7ce719b68cf08e3d775a17d0a9f06a34e83cb70c1631f",
+      "src": ".agents/skills/epe-0-new/templates/content/plan.md"
+    },
+    ".agents/skills/epe-0-new/templates/content/story.md": {
+      "sha256": "035742ed66379b90cc7dac68926065a5ca6bff4c029c9fd39dfe8b4f054e5fa5",
+      "src": ".agents/skills/epe-0-new/templates/content/story.md"
+    },
+    ".agents/skills/epe-0-new/templates/content/tasks.md": {
+      "sha256": "22bc36ed38a8f9e7585f9bb87582abced00739d906253e9ab5a9526001adefbe",
+      "src": ".agents/skills/epe-0-new/templates/content/tasks.md"
+    },
+    ".agents/skills/epe-0-new/templates/content/validation.md": {
+      "sha256": "ffc7ec64fd6c422c5cb51cb4127fe6f60492e32269312b20e0c2ac5726cb9680",
+      "src": ".agents/skills/epe-0-new/templates/content/validation.md"
+    },
+    ".agents/skills/epe-0-new/templates/development/evidence.md": {
+      "sha256": "e3c2b7d0bd232d7d3da4ddecb34c4523c4142f62dd9d593b1ea0b26077f7de4c",
+      "src": ".agents/skills/epe-0-new/templates/development/evidence.md"
+    },
+    ".agents/skills/epe-0-new/templates/development/exploration.md": {
+      "sha256": "2b89a4f086c69871d6b83f1b863f0dbd56483654727e45a65ce7c70dcab388c0",
+      "src": ".agents/skills/epe-0-new/templates/development/exploration.md"
+    },
+    ".agents/skills/epe-0-new/templates/development/plan.md": {
+      "sha256": "a34b8ded8ee98f0333e95c7b77102dbc1fc7e8a8c53b85877fc91b4c7d9947ae",
+      "src": ".agents/skills/epe-0-new/templates/development/plan.md"
+    },
+    ".agents/skills/epe-0-new/templates/development/story.md": {
+      "sha256": "22399055062b21ba2b23c143b5f1127b1eba1f163336147e98809b8eb8a9bedf",
+      "src": ".agents/skills/epe-0-new/templates/development/story.md"
+    },
+    ".agents/skills/epe-0-new/templates/development/tasks.md": {
+      "sha256": "b2474f1bfbf30109745a5e24456b4c3d7d0835b98f13bd4dc794c8d59c88c437",
+      "src": ".agents/skills/epe-0-new/templates/development/tasks.md"
+    },
+    ".agents/skills/epe-0-new/templates/development/validation.md": {
+      "sha256": "3b92ebceff8786321efb26794acd8ab2d35d4ca48a75e5324ddeb22a52bfe6c2",
+      "src": ".agents/skills/epe-0-new/templates/development/validation.md"
+    },
+    ".agents/skills/epe-0-new/templates/openspec/config-rules.yaml": {
+      "sha256": "be4fcd10195f3a109bbde3f9ae03cb6be821f041b29facbb51741c219d3c637b",
+      "src": ".agents/skills/epe-0-new/templates/openspec/config-rules.yaml"
+    },
+    ".agents/skills/epe-0-new/templates/openspec/design.md": {
+      "sha256": "f73b233808fdfa7dc82336113bfd9d389c44f07eb034e5b0c41cd74d2c4e011d",
+      "src": ".agents/skills/epe-0-new/templates/openspec/design.md"
+    },
+    ".agents/skills/epe-0-new/templates/openspec/tasks.md": {
+      "sha256": "09e0b40e7f6740c1195d79fc5d223787a947beafabc6866c3b7a68db7665da0b",
+      "src": ".agents/skills/epe-0-new/templates/openspec/tasks.md"
+    },
+    ".agents/skills/epe-1-explore/SKILL.md": {
+      "sha256": "0c4c2b8faf6f5adda8cc380138c135f397b307a3d2b1c7f563da2ae9e3aa04a9",
+      "src": ".agents/skills/epe-1-explore/SKILL.md"
+    },
+    ".agents/skills/epe-2-plan/SKILL.md": {
+      "sha256": "336cbb37fe6f6b3686621a69b04a53f891898e4cba726be73a3e03ee5eab21b8",
+      "src": ".agents/skills/epe-2-plan/SKILL.md"
+    },
+    ".agents/skills/epe-3-execute/SKILL.md": {
+      "sha256": "e0c19d6d1ea519d69592c4dcc0e136f4a4aa4ef6fe52501880d4f00a2acf3264",
+      "src": ".agents/skills/epe-3-execute/SKILL.md"
+    },
+    ".agents/skills/epe-4-review/SKILL.md": {
+      "sha256": "dd497e5f02e62955ae8286a55bda48bb1c3c213fc31bc4bc264222f9f75095d2",
+      "src": ".agents/skills/epe-4-review/SKILL.md"
+    },
+    ".agents/skills/epe-5-apply/SKILL.md": {
+      "sha256": "52277ace6a34e665bf27b92882fb66c55e570caf212db61bd3829a26f2fd5658",
+      "src": ".agents/skills/epe-5-apply/SKILL.md"
+    },
+    ".agents/skills/epe-6-archive/SKILL.md": {
+      "sha256": "352107a2ebf96db01185279b10d5697aef0585e888b24576e9070ae2f24103fd",
+      "src": ".agents/skills/epe-6-archive/SKILL.md"
+    },
+    ".agents/skills/epe-memory/SKILL.md": {
+      "sha256": "f3cd0737a3ea69dbd869506336dff6542c26c36f33a6f7b2dbb07970be0282d1",
+      "src": ".agents/skills/epe-memory/SKILL.md"
+    },
+    ".agents/skills/produce-content/SKILL.md": {
+      "sha256": "c8ed99c211d95d222691e405f7e7e5163cbaa05eb87a75b4de4ea74ce5695bfa",
+      "src": ".agents/skills/produce-content/SKILL.md"
+    },
+    ".agents/skills/product-brief/SKILL.md": {
+      "sha256": "526815c849ca2b3bf0f846e1b0cf21aeffe49ef343e27bdc137647bbe723d2a8",
+      "src": ".agents/skills/product-brief/SKILL.md"
+    },
+    ".agents/skills/product-brief/product-README.md": {
+      "sha256": "82ca56aaa26c268c0d7460865acfeb331a5a28e2352fb16f636e4d654123ebfb",
+      "src": ".agents/skills/product-brief/product-README.md"
+    },
+    ".agents/skills/product-brief/template.md": {
+      "sha256": "3cbf235bd5641ec6dc3fd7e576159bd89504b68aeab2f355ffd28965f84fc9b1",
+      "src": ".agents/skills/product-brief/template.md"
+    },
+    ".agents/skills/product-prd/SKILL.md": {
+      "sha256": "4e2d865909da99eee934f6bba9a53d5e9b1a76159884e25bec20b7140329e352",
+      "src": ".agents/skills/product-prd/SKILL.md"
+    },
+    ".agents/skills/product-prd/template.md": {
+      "sha256": "ab7b9eaaebafe3dc84f2482f4bd2ec387fd4c3aa666fabda9e0be77ae52ee1b4",
+      "src": ".agents/skills/product-prd/template.md"
+    },
+    ".agents/skills/product-tech-brief/SKILL.md": {
+      "sha256": "dfbc09e96f5cd5e1ab05568491a935d7842971453f3c480afd119ff49dae69f3",
+      "src": ".agents/skills/product-tech-brief/SKILL.md"
+    },
+    ".agents/skills/product-tech-brief/template.md": {
+      "sha256": "d77befcc4ce4ac1090f0916d4718bf6bb65655f5bdb736e7bdc988074d8389b5",
+      "src": ".agents/skills/product-tech-brief/template.md"
+    },
+    ".agents/skills/session-retro/SKILL.md": {
+      "sha256": "2577f95b6e3703533e22f4a677e28a249cd52c882e2c4d1505da147b8a113be4",
+      "src": ".agents/skills/session-retro/SKILL.md"
+    },
+    ".agents/skills/triage/SKILL.md": {
+      "sha256": "db01dc28c97effc3654b2685994ed6b4e8e9b332756509d916d4fd21991b0e13",
+      "src": ".agents/skills/triage/SKILL.md"
+    },
+    ".claude/agents/cold-reader.md": {
+      "sha256": "36181e6ac555b78263bd64a17c93bcf1c7ec862b3aca502f05ba5a9355c280cc",
+      "src": ".claude/agents/cold-reader.md"
+    },
+    ".claude/agents/dod-checker.md": {
+      "sha256": "0ff4563c1c2b9cf9e0d4dc6871b4e61ca4221fe16d303f9fe38ea835fdb9d419",
+      "src": ".claude/agents/dod-checker.md"
+    },
+    ".claude/agents/implementer.md": {
+      "sha256": "8cf4ca17ce8b9a3ef1e51721e567f794780b1eb8ef9ebce92c3488c84df1137e",
+      "src": ".claude/agents/implementer.md"
+    },
+    ".claude/agents/tester.md": {
+      "sha256": "795e9e47d752ee5f389ae7cc30ed6743ac5b51d23664745cd4b1a3abf2b8060d",
+      "src": ".claude/agents/tester.md"
+    },
+    ".claude/hooks/_config.py": {
+      "sha256": "abe1e2683635e09a1f655ce04a08ee6259cfc47807802aeb66601d653cc22f96",
+      "src": ".claude/hooks/_config.py"
+    },
+    ".claude/hooks/_harness.py": {
+      "sha256": "986a4862e276a20683874555dca1df869e8bd5ec81bb491dfa84b31b0bbaef72",
+      "src": ".claude/hooks/_harness.py"
+    },
+    ".claude/hooks/_profile.py": {
+      "sha256": "fc209ed35e121c0407a12e92c4f80ade35be3c791b1cd62d8e9569e0672a97ca",
+      "src": ".claude/hooks/_profile.py"
+    },
+    ".claude/hooks/check-journal.py": {
+      "sha256": "f7c9bc915f4968b161ca212937e3595ef6267dd9e3409fed1629ff6016f62156",
+      "src": ".claude/hooks/check-journal.py"
+    },
+    ".claude/hooks/gate-plan.py": {
+      "sha256": "85e91bf1b7c06bd0c2db733dd32536c61a805378539fc33819d700f537665dc9",
+      "src": ".claude/hooks/gate-plan.py"
+    },
+    ".claude/hooks/guard-commands.py": {
+      "sha256": "6ed17922c1811bcc07f3abc362d2a598f804459a18cc237e2a0eede35f9d3b9a",
+      "src": ".claude/hooks/guard-commands.py"
+    },
+    ".claude/hooks/guard-git-add.py": {
+      "sha256": "4db88047ebad6bb8022f209207e65a7ef16c253d63084db10d47134b1a607d21",
+      "src": ".claude/hooks/guard-git-add.py"
+    },
+    ".claude/hooks/guard-review-brief.py": {
+      "sha256": "f19058a4c6fac7f2fb8b7464b2f09721abc62eb5dfdaccd7396f5f01535f5619",
+      "src": ".claude/hooks/guard-review-brief.py"
+    },
+    ".claude/hooks/guard-tests.py": {
+      "sha256": "ef923a1030b78adccf540c41959444aa04c4f7393fac5b13a866eac631fdd431",
+      "src": ".claude/hooks/guard-tests.py"
+    },
+    ".claude/hooks/inbox.py": {
+      "sha256": "80460187759dd979350ff62a535495948a9228904b916b1d63541335d15d3372",
+      "src": ".claude/hooks/inbox.py"
+    },
+    ".claude/hooks/lint.py": {
+      "sha256": "282eaf74a6525757f3dc3b94d8eeeb0a58860e315755024bb5fade4efb4f6347",
+      "src": ".claude/hooks/lint.py"
+    },
+    ".claude/hooks/memory-compaction.py": {
+      "sha256": "8c5289c5b7ed8b15295f740d126e2d1598101d0d67e965f938132ae0e94ed4c5",
+      "src": ".claude/hooks/memory-compaction.py"
+    },
+    ".claude/hooks/profile.py": {
+      "sha256": "fff54f0cd164b73c27593e9ebe774bc4554d263dc8f67898a2e8d42eaaa8b2f2",
+      "src": ".claude/hooks/profile.py"
+    },
+    ".claude/hooks/session-guard.py": {
+      "sha256": "9e7ac6f47caaa2143096be6fe70e41d6cdf4b8ab576042200560c4b6407221c8",
+      "src": ".claude/hooks/session-guard.py"
+    },
+    ".claude/hooks/skill-nudge.py": {
+      "sha256": "b0dd0a8cc659da3ea8647c8f68ac5b799df2c0dbbb72be976d54e1b404794a2a",
+      "src": ".claude/hooks/skill-nudge.py"
+    },
+    ".claude/profile.env.example": {
+      "sha256": "a6420ead2c0e81d28a8b6a40f7a3171a2c60f2ec5b6bfc1b93c90af2f1cadd21",
+      "src": ".claude/profile.env.example"
+    },
+    ".claude/settings.json": {
+      "sha256": "d2d09e3fea9c359668f61e2326024b9047b2767e8c41a0af6d478e602486a1d6",
+      "src": ".claude/settings.json"
+    },
+    ".cursor/hooks.json": {
+      "sha256": "c7f026f5607dedde8be03236d2c1afcf056c37967c3cb84603419c1c7f266ee8",
+      "src": ".cursor/hooks.json"
+    },
+    ".cursor/hooks/session-start.py": {
+      "sha256": "5974e1bd81a46c0267d9ba25498456dab3f00a352f15d58a11bb963e07589898",
+      "src": ".cursor/hooks/session-start.py"
+    },
+    ".cursor/rules/harness.mdc": {
+      "sha256": "f1ae2e0014c5196c56cc49d7af9509072b5ab80586131304650ac46d0585e8a5",
+      "src": ".cursor/rules/harness.mdc"
+    },
+    ".github/copilot-instructions.md": {
+      "sha256": "5eaba807d1d14a584457f925dc7ee7dcd60cfde4a9b974f1d442ff15fbf68e66",
+      "src": ".github/copilot-instructions.md"
+    },
+    ".github/hooks/guardrails.json": {
+      "sha256": "1aa78d2c0230ce4a0ed8b7ea7e7e7ae955f7ebb58eba7e9ff6199311467e386d",
+      "src": ".github/hooks/guardrails.json"
+    },
+    ".vscode/extensions.json": {
+      "sha256": "48caa7132d4d787d72cddfe92770bd9fa3f0c0099dd7c1da49a583ec526fcacd",
+      "src": ".vscode/extensions.json"
+    },
+    ".vscode/settings.json": {
+      "sha256": "8da828c77ec4903dc8af6c1c8281e0612b3fef0b0588894c3e2e7c3ef12029ef",
+      "src": ".vscode/settings.json"
+    },
+    "AGENTS.md": {
+      "sha256": "d8f5cde568d7c18cbb5c8b207f958f2b5fded6c4d810d232c7133396001f3dfe",
+      "src": "AGENTS.md"
+    },
+    "CLAUDE.md": {
+      "sha256": "2db504fe13abce143dc3cc8f40a64567d84161dfa333a8d23f34cec4230f68c4",
+      "src": "CLAUDE.md"
+    },
+    "Makefile": {
+      "sha256": "b62e1b7a976b1b9f39dab9dffd92d79ac62869eb6c021106e1cea2fb8d5c72bc",
+      "src": "Makefile"
+    },
+    "docs/board.md": {
+      "sha256": "b5ee81f53c31f70865c60dc7d8080ebf83014039f12c1c13d4faa53a220b5fbf",
+      "src": "docs/board.md"
+    },
+    "docs/brownfield.md": {
+      "sha256": "f3c63c97376ea637f6661aad2b870c8aeb742f35a7987393afb24a3313ff250a",
+      "src": "docs/brownfield.md"
+    },
+    "docs/engines.md": {
+      "sha256": "9f1574732d72ae72bfe9ee4a3fcdfa112c324a3d2526a2959424a03dcb92250a",
+      "src": "docs/engines.md"
+    },
+    "docs/epe-cycle.md": {
+      "sha256": "7389a7a0c6916e9c49d509a1f383e95a2f85ea67283c222c54222700d211021d",
+      "src": "docs/epe-cycle.md"
+    },
+    "docs/flavors.md": {
+      "sha256": "bfccda26d06e21538f196e3a75595b3aa8ff2857507517ee9e8518526c86add5",
+      "src": "docs/flavors.md"
+    },
+    "docs/ides.md": {
+      "sha256": "cbfd0f32d41f36d34524c4bb215d1794dd65aba8fe9b7b262dd8236bf6c58444",
+      "src": "docs/ides.md"
+    },
+    "docs/memory.md": {
+      "sha256": "ba41e7a78b0e79cfff7b37e29b0a1d61d1df9a2229f2e64dea3270f0b54f2d4c",
+      "src": "docs/memory.md"
+    },
+    "docs/updating.md": {
+      "sha256": "c42549cdce2bba810285f5fa5806e2ce17d5ef0ac1e1f3037165a3b105f5ab44",
+      "src": "docs/updating.md"
+    },
+    "scripts/adopt.sh": {
+      "sha256": "41157810d327f63393e1e435113cd04bb5fac4767d8036a4237a0fd73ae1d44c",
+      "src": "scripts/adopt.sh"
+    },
+    "scripts/board.py": {
+      "sha256": "701f9a7f59fcf4b013f366924f39d3c001c19fb68bd33b290e12908d1eff6398",
+      "src": "scripts/board.py"
+    },
+    "scripts/check-memory.py": {
+      "sha256": "acffb21b0f9f6f6d223c1c68737e230cc2261df0b0772119031c27517547eda6",
+      "src": "scripts/check-memory.py"
+    },
+    "scripts/check-prs.py": {
+      "sha256": "66b3a6a19584e2754c727f51ab29e365bda3166054e9f0d64d8197e64f22a86c",
+      "src": "scripts/check-prs.py"
+    },
+    "scripts/doctor.sh": {
+      "sha256": "94b4682840e5d097c583359465f621e864193b1afff8db6c895c19cf439ef6fc",
+      "src": "scripts/doctor.sh"
+    },
+    "scripts/epe-new.sh": {
+      "sha256": "621fe7d6d052379f1efdb07d97eef99822cbce4ee12744d065f5430143ab3684",
+      "src": "scripts/epe-new.sh"
+    },
+    "scripts/harness-sync.py": {
+      "sha256": "18467eb827b602ee8f9a5de6b2ddb2afbb9ae92e3fc2a54d023a8feaf4f34104",
+      "src": "scripts/harness-sync.py"
+    },
+    "scripts/inbox.py": {
+      "sha256": "07806d91bdbb15001aed508eb925f188e8944496bc229a9fba5319efff6ec8b2",
+      "src": "scripts/inbox.py"
+    },
+    "scripts/new-project.sh": {
+      "sha256": "64cbe0119af76d84c1d53b131808e2655a3b1b3174a9884774e9c2a8a3f8ba0e",
+      "src": "scripts/new-project.sh"
+    },
+    "scripts/openspec-engine.sh": {
+      "sha256": "1c463c6fd94579663411d528167e56db8590d0b62c986dde1430ea5f7e04e145",
+      "src": "scripts/openspec-engine.sh"
+    },
+    "scripts/profile.sh": {
+      "sha256": "61ae046b785897aa876c240872accbca37002995e251494de2802e99e562c211",
+      "src": "scripts/profile.sh"
+    },
+    "scripts/retro-transcript.py": {
+      "sha256": "b6e0b69c780d83f029442a3fbbd45c72a202fd8144c3b082be2714b399deba19",
+      "src": "scripts/retro-transcript.py"
+    },
+    "scripts/skills-check.py": {
+      "sha256": "d61c93322b77e80e9a5a370027007340d458564206c1689d536b139400932e3d",
+      "src": "scripts/skills-check.py"
+    },
+    "scripts/skills-link.sh": {
+      "sha256": "d85f0cb8463298c382f2b3c623440e53e058efef43075c19b0b689454d37b5bb",
+      "src": "scripts/skills-link.sh"
+    },
+    "scripts/tdd-check.py": {
+      "sha256": "d52b70e346eee25a781f900ef53a56a4845a5b7c21bcf71c6650a3a305fa3d1f",
+      "src": "scripts/tdd-check.py"
+    },
+    "scripts/worktrees.py": {
+      "sha256": "fe65f6e2be61a667e9c0591f3088603f74a16e9f4c7028fe7a3bbde871e4dba4",
+      "src": "scripts/worktrees.py"
+    }
+  },
+  "harness_version": "0.1.0",
+  "installed": "2026-10-11",
+  "mode": "new"
+}

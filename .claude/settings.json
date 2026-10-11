@@ -1,0 +1,78 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git status *)", "Bash(git log *)", "Bash(git diff *)", "Bash(git branch *)",
+      "Bash(git worktree list *)", "Bash(git show *)", "Bash(git ls-files *)",
+      "Bash(make *)", "Bash(ls *)", "Bash(cat *)", "Bash(find *)", "Bash(grep *)", "Bash(rg *)",
+      "Bash(wc *)", "Bash(head *)", "Bash(tail *)", "Bash(sed -n *)",
+      "Bash(python3 scripts/*)", "Bash(python3 .claude/hooks/*)",
+      "Bash(gh pr view *)", "Bash(gh pr list *)", "Bash(gh issue view *)",
+      "WebSearch"
+    ]
+  },
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "",
+        "hooks": [
+          { "type": "command", "command": "python3 \"${CLAUDE_PROJECT_DIR:-.}/.claude/hooks/profile.py\"" },
+          { "type": "command", "command": "python3 \"${CLAUDE_PROJECT_DIR:-.}/.claude/hooks/session-guard.py\"" },
+          { "type": "command", "command": "python3 \"${CLAUDE_PROJECT_DIR:-.}/.claude/hooks/inbox.py\"" },
+          { "type": "command", "command": "python3 \"${CLAUDE_PROJECT_DIR:-.}/.claude/hooks/memory-compaction.py\" notify" }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          { "type": "command", "command": "python3 \"${CLAUDE_PROJECT_DIR:-.}/.claude/hooks/skill-nudge.py\"", "timeout": 10 }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          { "type": "command", "command": "python3 \"${CLAUDE_PROJECT_DIR:-.}/.claude/hooks/guard-commands.py\"" },
+          { "type": "command", "command": "python3 \"${CLAUDE_PROJECT_DIR:-.}/.claude/hooks/guard-git-add.py\"" }
+        ]
+      },
+      {
+        "matcher": "Edit|Write|MultiEdit|NotebookEdit",
+        "hooks": [
+          { "type": "command", "command": "python3 \"${CLAUDE_PROJECT_DIR:-.}/.claude/hooks/gate-plan.py\"" },
+          { "type": "command", "command": "python3 \"${CLAUDE_PROJECT_DIR:-.}/.claude/hooks/guard-tests.py\"" }
+        ]
+      },
+      {
+        "matcher": "Agent|Task",
+        "hooks": [
+          { "type": "command", "command": "python3 \"${CLAUDE_PROJECT_DIR:-.}/.claude/hooks/guard-review-brief.py\"" }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write|MultiEdit",
+        "hooks": [
+          { "type": "command", "command": "python3 \"${CLAUDE_PROJECT_DIR:-.}/.claude/hooks/lint.py\"", "timeout": 30 }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "matcher": "",
+        "hooks": [
+          { "type": "command", "command": "python3 \"${CLAUDE_PROJECT_DIR:-.}/.claude/hooks/check-journal.py\"" }
+        ]
+      }
+    ],
+    "PreCompact": [
+      {
+        "hooks": [
+          { "type": "command", "command": "python3 \"${CLAUDE_PROJECT_DIR:-.}/.claude/hooks/memory-compaction.py\" mark" }
+        ]
+      }
+    ]
+  }
+}

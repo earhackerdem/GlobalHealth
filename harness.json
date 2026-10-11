@@ -1,0 +1,75 @@
+{
+  "name": "sandbox",
+  "description": "development project generated from the harness template on 2026-10-11.",
+  "flavor": "development",
+  "author": "Saúl Pérez",
+  "email": "earhackerdem@gmail.com",
+  "owner": "Saúl Pérez",
+  "changes_dir": "changes",
+  "code": [
+    "src/",
+    "app/",
+    "lib/",
+    "packages/"
+  ],
+  "tests": [
+    "tests/",
+    "test/",
+    "spec/",
+    "__tests__/"
+  ],
+  "exempt": [
+    "memory/",
+    "docs/",
+    "product/",
+    ".claude/",
+    ".agents/",
+    ".github/",
+    ".cursor/",
+    ".vscode/"
+  ],
+  "protected_branches": [
+    "main",
+    "master",
+    "release",
+    "production",
+    "prod"
+  ],
+  "blocked_commands": [],
+  "skill_hints": [
+    {
+      "skill": "triage",
+      "pattern": "\\b(build|add|implement|create|fix|refactor|migrate|write|design|set ?up|integrate|quiero|necesito|agrega\\w*|implementa\\w*|crea\\w*|arregla\\w*|escrib\\w*|dise[ñn]a\\w*)\\b",
+      "only_without_active": true
+    },
+    {
+      "skill": "epe-1-explore",
+      "pattern": "user story|acceptance criteria|\\bAC\\d\\b|as an? .* i want .* so that|brief|historia de usuario|criterios? de aceptaci"
+    },
+    {
+      "skill": "epe-4-review",
+      "pattern": "\\b(review\\w*|pull request|\\bpr\\b|adversarial|revisa\\w*)\\b"
+    },
+    {
+      "skill": "epe-memory",
+      "pattern": "compact\\w*|save (the )?memor|note this for next time|close (the )?session|guarda (las )?memorias|apunta esto"
+    },
+    {
+      "skill": "product-prd",
+      "pattern": "\\bprd\\b|product requirements|epics?\\b|roadmap"
+    },
+    {
+      "skill": "product-tech-brief",
+      "pattern": "which (stack|framework|language)|tech(nical)? brief|non-functional|\\bnfrs?\\b|architecture decision"
+    },
+    {
+      "skill": "codebase-context",
+      "pattern": "existing (codebase|project|repo)|brownfield|legacy|inherited (code|repo)|onboard"
+    }
+  ],
+  "lint": true,
+  "engine": "openspec",
+  "plan_file": "design.md",
+  "openspec_version": "1.14.1",
+  "harness_version": "0.1.0"
+}

@@ -1,0 +1,25 @@
+
+# --- harness rules (written by scripts/openspec-engine.sh; re-running the engine replaces this block only) ---
+rules:
+  proposal:
+    - "Add an Origin line (product/brief.md § …, product/prd.md § epic N, a request, none) and a Triage line (rung — reason, date) right under the title"
+    - "Keep requirement texts short; examples and edge cases go into scenarios (openspec validate --strict warns above 500 characters)"
+  specs:
+    - "Every scenario has concrete data in GIVEN and an observable result in THEN; a scenario is the contract the tester writes from"
+  design:
+    - "Keep the Status line first (Status DRAFT until the person you work with writes plan approved, then Status APPROVED); nothing under harness.json code paths is edited before that (the gate-plan hook enforces it)"
+    - "Fill the Interface contract before any group is marked parallel; one test per scenario in the test plan"
+    - "Cite file and line for anything claimed about existing code; mark external facts [VERIFIED] or [OPINION]"
+  tasks:
+    - "Every group heading ends with · single, · test→impl or · parallel; test→impl when the group touches code and covers 3+ scenarios or 2+ implementation files"
+    - "The tests of a group are committed alone with the test prefix before its implementation; make tdd-check verifies one red commit per test→impl group"
+operations:
+  apply:
+    guidance:
+      - "Re-run the red and the green yourself before each commit; the numbers (run, failures, errors, skipped) go to evidence.md in the change folder"
+      - "Never edit tests to make them pass; a wrong test goes back to the tester with the failing assertion and gets its own test commit"
+      - "Write files with Edit/Write only (never shell redirection or heredocs) so the harness hooks see every edit"
+      - "Close with evidence.md, validation.md (non-technical) and a journal entry in memory/journal/; do not push unless asked"
+  archive:
+    guidance:
+      - "Archive only after the PR is merged or the person you work with confirms; then a CHANGELOG.md entry, refresh docs that asserted the previous state, close inbox rows, clear .epe/active"

@@ -1,0 +1,19 @@
+{
+  "hooks": {
+    "SessionStart": [
+      { "type": "command", "command": "python3 .claude/hooks/profile.py", "timeout": 10 },
+      { "type": "command", "command": "python3 .claude/hooks/session-guard.py", "timeout": 10 },
+      { "type": "command", "command": "python3 .claude/hooks/inbox.py", "timeout": 10 },
+      { "type": "command", "command": "python3 .claude/hooks/memory-compaction.py notify", "timeout": 10 }
+    ],
+    "UserPromptSubmit": [{ "type": "command", "command": "python3 .claude/hooks/skill-nudge.py", "timeout": 10 }],
+    "PreToolUse": [
+      { "type": "command", "command": "python3 .claude/hooks/guard-commands.py", "timeout": 10 },
+      { "type": "command", "command": "python3 .claude/hooks/gate-plan.py", "timeout": 10 },
+      { "type": "command", "command": "python3 .claude/hooks/guard-tests.py", "timeout": 10 }
+    ],
+    "PostToolUse": [{ "type": "command", "command": "python3 .claude/hooks/lint.py", "timeout": 30 }],
+    "Stop": [{ "type": "command", "command": "python3 .claude/hooks/check-journal.py", "timeout": 15 }],
+    "PreCompact": [{ "type": "command", "command": "python3 .claude/hooks/memory-compaction.py mark", "timeout": 10 }]
+  }
+}

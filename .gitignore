@@ -1,0 +1,28 @@
+# Local profile of the person working with the agent (NAME, ROLE, PROFILE): make profile
+.claude/profile.env
+# Personal Claude Code permissions
+.claude/settings.local.json
+# Active EPE change on this machine (written by make epe-new / /epe-2-plan)
+.epe/
+# Derived files (make board): regenerate, never commit
+.harness/
+# Skill evaluation results (skill-creator)
+.agents/skills/*-workspace/
+.claude/skills/*-workspace/
+
+# OS and editors
+.DS_Store
+Thumbs.db
+.idea/
+*.swp
+*~
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# Node (if the project uses it)
+node_modules/
+*.log
