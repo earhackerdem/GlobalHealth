@@ -14,21 +14,21 @@ export default function TestEmail({
 }: TestEmailProps) {
   return (
     <Layout
-      title={`${project_name} - Test email`}
-      preview={`${project_name} email delivery is working`}
+      title={`${project_name} - Correo de prueba`}
+      preview={`El envío de correos de ${project_name} funciona`}
       project_name={project_name}
     >
-      <Heading>Test email</Heading>
-      <Text style={bodyTextStyle}>Hi,</Text>
+      <Heading>Correo de prueba</Heading>
+      <Text style={bodyTextStyle}>Hola:</Text>
       <Text style={bodyTextStyle}>
-        This is a test email from {project_name}. If you're reading it, email
-        delivery is configured correctly.
+        Este es un correo de prueba de {project_name}. Si lo estás leyendo, el
+        envío de correos está configurado correctamente.
       </Text>
       <Callout>
-        <Detail label="Sent to" value={email} />
+        <Detail label="Enviado a" value={email} />
       </Callout>
       <Text style={supportingTextStyle}>
-        If you weren't expecting this email, you can safely ignore it.
+        Si no esperabas este correo, puedes ignorarlo con tranquilidad.
       </Text>
     </Layout>
   )

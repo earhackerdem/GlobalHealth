@@ -20,31 +20,32 @@ export default function NewAccount({
 }: NewAccountProps) {
   return (
     <Layout
-      title={`${project_name} - New account`}
-      preview={`Your ${project_name} account is ready`}
+      title={`${project_name} - Nueva cuenta`}
+      preview={`Tu cuenta de ${project_name} está lista`}
       project_name={project_name}
     >
-      <Heading>Welcome to {project_name}!</Heading>
-      <Text style={bodyTextStyle}>Hi,</Text>
+      <Heading>¡Te damos la bienvenida a {project_name}!</Heading>
+      <Text style={bodyTextStyle}>Hola:</Text>
       <Text style={bodyTextStyle}>
-        Your account has been successfully created and is ready to use. These
-        are your credentials:
+        Creamos tu cuenta para {username} y ya está lista para usarse. Estas
+        son tus credenciales:
       </Text>
       <Callout>
-        <Detail label="Username" value={username} />
-        <Detail label="Password" value={password} />
+        <Detail label="Usuario" value={username} />
+        <Detail label="Contraseña" value={password} />
       </Callout>
       <Text style={bodyTextStyle}>
-        Get started by signing in to your dashboard:
+        Empieza iniciando sesión en tu panel:
       </Text>
-      <LinkButton href={link}>Go to Dashboard</LinkButton>
+      <LinkButton href={link}>Entrar a mi cuenta</LinkButton>
       <Text style={supportingTextStyle}>
-        Or copy and paste this link into your browser:
+        O copia y pega este enlace en tu navegador:
         <br />
         <Link href={link}>{link}</Link>
       </Text>
       <Text style={supportingTextStyle}>
-        For security reasons, change your password after your first sign in.
+        Por seguridad, cambia tu contraseña después de tu primer inicio de
+        sesión.
       </Text>
     </Layout>
   )

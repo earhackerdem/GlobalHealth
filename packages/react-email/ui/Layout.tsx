@@ -42,8 +42,8 @@ export const Layout = ({
               <Hr style={footerRuleStyle} />
               <Section>
                 <Text style={footerStyle}>
-                  © {new Date().getFullYear()} {project_name}. All rights
-                  reserved.
+                  © {new Date().getFullYear()} {project_name}. Todos los
+                  derechos reservados.
                 </Text>
               </Section>
             </Column>
