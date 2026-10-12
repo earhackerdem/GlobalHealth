@@ -42,3 +42,8 @@
 - pre-commit del CI falló 3 veces en el PR #2 por pushes sin pasada prek local (ARG001, typos, end-of-file de las
   specs generadas por openspec archive — el CLI deja lineas en blanco sobrantes). Gate instalado: .git/hooks/pre-push
   local corre prek sobre el diff vs origin/main antes de cada push. Candidato a estandarizar en el harness.
+
+## Cierre (2026-10-12)
+- bd-pruebas-docker archivado tras el merge del PR #2: delta fusionado en openspec/specs/platform/test-isolation
+  (3 requirements, validate --all --strict 3/3), CHANGELOG, ancla de meta-improvements actualizada al path de archivo,
+  .epe/active limpio. Sin sorpresas.
