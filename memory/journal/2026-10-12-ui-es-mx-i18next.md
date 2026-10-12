@@ -21,3 +21,9 @@
 - Saúl Pérez aprobó A completo y B con: tests de pantallas ahora, test del correo de alta, fallbacks traducidos,
   sr-only de ui/ traducidos; C: aserción del toast. Fixer 14/14 + tester 4 archivos (verdes al primer intento).
 - Post-apply: backend 106/0/0 (93.69%), Playwright 65/0, tdd-check ✓ (4 test:). closed.md +2 diferidos.
+
+## Archivado (2026-10-12)
+- PR #4 fusionado por Saúl Pérez (20:35 UTC) con CI 11/11 verde. `openspec archive` fusionó el delta en
+  `openspec/specs/ux/localization/` (3 requirements nuevos) y movió la carpeta a archive/. CHANGELOG + fila
+  es-MX del inbox cerrada (diferida hasta aquí a propósito, tasks 4.3). Sin verdades viejas que refrescar fuera
+  de archive/journal (grep). Siguiente historia acordada: US-04 expediente (E2).
