@@ -6,7 +6,7 @@ from pydantic import EmailStr, model_validator
 from sqlalchemy import Column
 from sqlmodel import Field, Relationship, SQLModel
 
-from app.core.encrypted import EncryptedString
+from app.core.encrypted import EncryptedBytes, EncryptedString
 
 
 def get_datetime_utc() -> datetime:
@@ -191,6 +191,36 @@ class HealthRecordPublic(SQLModel):
 
 class HealthRecordsPublic(SQLModel):
     data: list[HealthRecordPublic]
+    count: int
+
+
+# Attachment of a clinical record (expediente-registros design.md §Interface
+# contract, ADR D16): filename and content encrypted at rest; media_type and
+# size_bytes (of the original, pre-encryption) stay in the clear.
+class HealthRecordAttachment(SQLModel, table=True):
+    id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
+    record_id: uuid.UUID = Field(
+        foreign_key="healthrecord.id", nullable=False, ondelete="CASCADE"
+    )
+    filename: str = Field(sa_column=Column(EncryptedString(), nullable=False))
+    media_type: str = Field(max_length=64)
+    size_bytes: int
+    content: bytes = Field(sa_column=Column(EncryptedBytes(), nullable=False))
+    created_at: datetime = Field(default_factory=get_datetime_utc)
+
+
+# Properties to return via API: metadata only, never the content itself.
+class HealthRecordAttachmentPublic(SQLModel):
+    id: uuid.UUID
+    record_id: uuid.UUID
+    filename: str
+    media_type: str
+    size_bytes: int
+    created_at: datetime
+
+
+class HealthRecordAttachmentsPublic(SQLModel):
+    data: list[HealthRecordAttachmentPublic]
     count: int
 
 

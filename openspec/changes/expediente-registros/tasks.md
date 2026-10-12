@@ -12,10 +12,10 @@
 
 ## 2. Backend adjuntos (tabla, multipart, descarga, validación) · test→impl
 
-- [ ] 2.1 Test: los 3 escenarios de adjuntos en rojo — round-trip PDF íntegro con content-type, rechazo 415/413
+- [x] 2.1 Test: los 3 escenarios de adjuntos en rojo — round-trip PDF íntegro con content-type, rechazo 415/413
       (magic bytes, >10 MB) sin persistir, cifrado en reposo del contenido y filename
-- [ ] 2.2 Impl: `HealthRecordAttachment` + endpoints attach/download/delete + whitelist y magic bytes, hasta verde
-- [ ] 2.3 Verify: pytest 0/0/0, cobertura ≥90; `make tdd-check`
+- [x] 2.2 Impl: `HealthRecordAttachment` + endpoints attach/download/delete + whitelist y magic bytes, hasta verde
+- [x] 2.3 Verify: pytest 0/0/0, cobertura ≥90; `make tdd-check`
 
 ## 3. Frontend expediente es-MX + Playwright · test→impl
 
