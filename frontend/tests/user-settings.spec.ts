@@ -200,9 +200,8 @@ test.describe("Change password validation", () => {
     await page.getByTestId("confirm-password-input").fill(password)
     await page.getByRole("button", { name: "Actualizar contraseña" }).click()
 
-    // backend detail — grupo 3
     await expect(
-      page.getByText("New password cannot be the same as the current one"),
+      page.getByText("La nueva contraseña no puede ser igual a la actual"),
     ).toBeVisible()
   })
 })

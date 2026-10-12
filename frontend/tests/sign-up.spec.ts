@@ -86,9 +86,8 @@ test("Sign up with existing email", async ({ page }) => {
   await fillForm(page, fullName, email, password, password)
   await page.getByRole("button", { name: "Crear cuenta" }).click()
 
-  // backend detail — grupo 3
   await expect(
-    page.getByText("The user with this email already exists in the system"),
+    page.getByText("Ya existe una cuenta con este correo"),
   ).toBeVisible()
 })
 

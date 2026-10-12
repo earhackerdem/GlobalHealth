@@ -48,9 +48,10 @@ test("User can reset password successfully using the link", async ({
 
   const emailHtml = await waitForEmailHtml({
     request,
-    query: `to:${email}`,
+    query: `to:${email} subject:"Recuperación de contraseña para ${email}"`,
   })
 
+  expect(emailHtml).toContain("Restablecer contraseña")
   expect(emailHtml).toContain(resetPath)
   const resetUrl = emailHtml.match(/\/reset-password\?token=[^"]+/)?.[0]
   expect(resetUrl).toBeDefined()
@@ -79,8 +80,7 @@ test("Expired or invalid reset link", async ({ page }) => {
   await page.getByTestId("confirm-password-input").fill(password)
   await page.getByRole("button", { name: "Restablecer contraseña" }).click()
 
-  // backend detail — grupo 3
-  await expect(page.getByText("Invalid token")).toBeVisible()
+  await expect(page.getByText("Token inválido o expirado")).toBeVisible()
 })
 
 test("Weak new password validation", async ({ page, request }) => {
@@ -98,7 +98,7 @@ test("Weak new password validation", async ({ page, request }) => {
 
   const emailHtml = await waitForEmailHtml({
     request,
-    query: `to:${email}`,
+    query: `to:${email} subject:"Recuperación de contraseña para ${email}"`,
   })
 
   expect(emailHtml).toContain(resetPath)
