@@ -1,7 +1,8 @@
 import uuid
-from datetime import UTC, datetime
+from datetime import UTC, date, datetime
+from typing import Literal
 
-from pydantic import EmailStr
+from pydantic import EmailStr, model_validator
 from sqlalchemy import Column
 from sqlmodel import Field, Relationship, SQLModel
 
@@ -102,25 +103,90 @@ class ConsentStatusPublic(SQLModel):
     granted_at: datetime
 
 
-# Minimal health-record stub to exercise require_consent and per-owner
-# isolation; E2 replaces it with the real clinical records
-class HealthRecordStub(SQLModel, table=True):
+# Clinical record (diagnosis or prescription). Encryption rule (NFR-001,
+# expediente-registros design.md): all clinical text encrypted at rest;
+# only type, dates and ids stay in the clear (ordering and FR-025 need them).
+class HealthRecord(SQLModel, table=True):
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
-    # Health data: encrypted at rest (NFR-001), like OAuthIdentity.subject
-    note: str = Field(sa_column=Column(EncryptedString(), nullable=False))
     owner_id: uuid.UUID = Field(
         foreign_key="user.id", nullable=False, ondelete="CASCADE"
     )
+    record_type: str = Field(max_length=32)  # "diagnosis" | "prescription"
+    occurred_on: date
+    title: str = Field(sa_column=Column(EncryptedString(), nullable=False))
+    professional: str | None = Field(
+        default=None, sa_column=Column(EncryptedString(), nullable=True)
+    )
+    notes: str | None = Field(
+        default=None, sa_column=Column(EncryptedString(), nullable=True)
+    )
+    dose: str | None = Field(
+        default=None, sa_column=Column(EncryptedString(), nullable=True)
+    )
+    valid_from: date | None = Field(default=None)
+    valid_to: date | None = Field(default=None)
+    created_at: datetime = Field(default_factory=get_datetime_utc)
+    updated_at: datetime = Field(default_factory=get_datetime_utc)
 
 
+# Properties to receive via API on creation, discriminated by record_type:
+# a diagnosis carries no prescription fields; a prescription requires
+# dose and validity window.
 class HealthRecordCreate(SQLModel):
-    note: str = Field(min_length=1, max_length=255)
+    record_type: Literal["diagnosis", "prescription"]
+    title: str = Field(min_length=1, max_length=255)
+    occurred_on: date
+    professional: str | None = Field(default=None, max_length=255)
+    notes: str | None = Field(default=None, max_length=2000)
+    dose: str | None = Field(default=None, max_length=255)
+    valid_from: date | None = None
+    valid_to: date | None = None
+
+    @model_validator(mode="after")
+    def _validate_fields_by_type(self) -> "HealthRecordCreate":
+        prescription_fields = ("dose", "valid_from", "valid_to")
+        if self.record_type == "diagnosis":
+            present = [f for f in prescription_fields if getattr(self, f) is not None]
+            if present:
+                raise ValueError(
+                    "Un diagnóstico no admite dosis ni vigencia: "
+                    + ", ".join(present)
+                )
+        else:
+            missing = [f for f in prescription_fields if getattr(self, f) is None]
+            if missing:
+                raise ValueError(
+                    "Una receta requiere dosis y vigencia: falta "
+                    + ", ".join(missing)
+                )
+        return self
+
+
+# Properties to receive via API on update, all optional; record_type is
+# immutable and therefore absent here.
+class HealthRecordUpdate(SQLModel):
+    title: str | None = Field(default=None, min_length=1, max_length=255)
+    occurred_on: date | None = None
+    professional: str | None = Field(default=None, max_length=255)
+    notes: str | None = Field(default=None, max_length=2000)
+    dose: str | None = Field(default=None, max_length=255)
+    valid_from: date | None = None
+    valid_to: date | None = None
 
 
 class HealthRecordPublic(SQLModel):
     id: uuid.UUID
-    note: str
+    record_type: str
+    occurred_on: date
+    title: str
+    professional: str | None
+    notes: str | None
+    dose: str | None
+    valid_from: date | None
+    valid_to: date | None
     owner_id: uuid.UUID
+    created_at: datetime
+    updated_at: datetime
 
 
 class HealthRecordsPublic(SQLModel):

@@ -2,13 +2,13 @@
 
 ## 1. Backend registros (modelo, cifrado, migración, CRUD, tests del stub migrados) · test→impl
 
-- [ ] 1.1 Test: los 6 escenarios de registros en rojo — registrar diagnóstico, registrar receta (y 422 por campos
+- [x] 1.1 Test: los 6 escenarios de registros en rojo — registrar diagnóstico, registrar receta (y 422 por campos
       de tipo), cifrado en reposo (SQL directo), `CONSENT_REQUIRED` (migrando `test_consent.py` a los endpoints
       reales), aislamiento/404 indistinguible incl. PATCH/DELETE ajeno (migrando `test_account_isolation.py`),
       corregir y eliminar propio
-- [ ] 1.2 Impl: `HealthRecord` + `EncryptedBytes` + migración Alembic (crea tablas, elimina `healthrecordstub`),
+- [x] 1.2 Impl: `HealthRecord` + `EncryptedBytes` + migración Alembic (crea tablas, elimina `healthrecordstub`),
       `routes/health_records.py` reescrito (POST/GET/GET id/PATCH/DELETE, details es-MX), hasta verde
-- [ ] 1.3 Verify: pytest 0/0/0, cobertura ≥90; `make tdd-check`
+- [x] 1.3 Verify: pytest 0/0/0, cobertura ≥90; `make tdd-check`
 
 ## 2. Backend adjuntos (tabla, multipart, descarga, validación) · test→impl
 
