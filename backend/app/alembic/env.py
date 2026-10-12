@@ -11,7 +11,9 @@ config = context.config
 # Interpret the config file for Python logging.
 # This line sets up loggers basically.
 assert config.config_file_name is not None
-fileConfig(config.config_file_name)
+# disable_existing_loggers=False: the test suite migrates in-process, and the
+# default (True) silenced every already-created app.* logger of the pytest run.
+fileConfig(config.config_file_name, disable_existing_loggers=False)
 
 # add your model's MetaData object here
 # for 'autogenerate' support

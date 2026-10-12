@@ -3,7 +3,7 @@ name: Test Backend
 on:
   push:
     branches:
-      - master
+      - main
   pull_request:
 permissions:
   contents: read
@@ -29,14 +29,16 @@ jobs:
         with:
           version: "latest-known"
       - run: docker compose down -v --remove-orphans
-      - run: docker compose up -d --wait db mailpit
-      - name: Migrate DB
-        run: uv run bash scripts/prestart.sh
-        working-directory: backend
+      # pytest only talks to the ephemeral test DB (TEST_DATABASE_URL from
+      # .env); the suite migrates it itself, so no prestart step is needed.
+      - run: docker compose up -d --wait db-test mailpit
       - name: Run tests
-        run: uv run bash scripts/tests-start.sh "Coverage for ${{ github.sha }}"
+        run: uv run bash scripts/tests-start.sh "Coverage for $SHA"
         working-directory: backend
+        env:
+          SHA: ${{ github.sha }}
       - run: docker compose down -v --remove-orphans
+        if: always()
       - name: Store coverage files
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:

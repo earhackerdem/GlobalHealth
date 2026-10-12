@@ -47,3 +47,7 @@
   del tester del grupo 3 corriendo pytest contra la misma BD en paralelo; verificado aislando (62 passed) después
   del commit. Lección: no correr suites de verificación mientras un subagente ejecuta pytest sobre la misma BD;
   el pipe `pytest | tail` además se traga el exit code (candidato a mejora: verificar exit codes, no solo tail).
+
+## Archivo (2026-10-12)
+- cuenta-consentimiento archivado tras el merge del PR #1: deltas fusionados en openspec/specs/{identity,privacy}
+  (6 requirements), CHANGELOG estrenado, fila de cobertura cerrada en el inbox (93.69%). Sin sorpresas.
