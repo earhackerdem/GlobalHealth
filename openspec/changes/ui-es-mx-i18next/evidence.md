@@ -37,7 +37,7 @@ cd frontend/src && grep -rnE '>[A-Z][a-z]+ [a-z]+|"[A-Z][a-z]+ [a-z]+ [a-z]+' ro
 
 `reset-password.spec.ts` (2 flujos) lee el correo REAL desde Mailpit: asunto
 "{project_name} - Recuperación de contraseña para {email}", cuerpo con botón "Restablecer contraseña", enlace
-funcional hasta cambiar la contraseña. Plantillas regeneradas con `bun run export` (react-email → 
+funcional hasta cambiar la contraseña. Plantillas regeneradas con `bun run export` (react-email →
 backend/app/email-templates/*.html), placeholders `{{ link }}/{{ project_name }}/{{ username }}/{{ valid_hours }}`
 verificados en el HTML generado.
 

@@ -30,6 +30,10 @@ repos:
         language: system
         types: [text]
         files: ^frontend/
+        # The lint script already checks all of frontend/ (biome check ./ from
+        # frontend cwd); appended repo-relative paths resolve to the nonexistent
+        # frontend/frontend/* and crash biome with internal io errors.
+        pass_filenames: false
 
       - id: local-ruff-check
         name: ruff check
