@@ -44,7 +44,7 @@ Ejecutada vía Chrome (Saúl Pérez presente, credenciales suyas en .env local n
   únicamente como proveedor de identidad, como exige el PRD §7).
 - Callback → 200 con `{access_token, token_type: "bearer"}` tras intercambio real del código (con code_verifier
   desde la cookie cifrada) y validación del id_token contra el JWKS de Google.
-- BD verificada: usuario `earhackerdem@gmail.com` creado con `hashed_password NULL`, activo; fila `oauthidentity`
+- BD verificada: usuario de la cuenta Google del propietario creado (correo omitido de los artefactos) con `hashed_password NULL`, activo; fila `oauthidentity`
   con `provider=google` y `subject` en ciphertext Fernet (`gAAAAAB…`); log del server: callback 200 OK.
 
 ## PR

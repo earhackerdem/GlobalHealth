@@ -1,14 +1,15 @@
-# platform/test-isolation — delta
+# platform/test-isolation Specification
 
-## ADDED Requirements
-
+## Purpose
+TBD - created by archiving change bd-pruebas-docker. Update Purpose after archive.
+## Requirements
 ### Requirement: La suite backend corre contra una base de datos de prueba dedicada
 La suite de pruebas del backend SHALL ejecutarse contra una base de datos de prueba propia, servida por un
 contenedor Docker separado del de desarrollo, de modo que ninguna corrida de tests lea ni modifique los datos de
 desarrollo.
 
 #### Scenario: Los datos de desarrollo sobreviven a la suite completa
-- **GIVEN** el stack de desarrollo levantado con datos reales (p. ej. el usuario Google de Saúl con su
+- **GIVEN** el stack de desarrollo levantado con datos reales (p. ej. un usuario OAuth real con su
   consentimiento otorgado) y el contenedor de BD de prueba corriendo
 - **WHEN** se ejecuta la suite backend completa hasta verde
 - **THEN** la base de desarrollo `app` conserva exactamente los mismos usuarios, identidades OAuth y consentimientos

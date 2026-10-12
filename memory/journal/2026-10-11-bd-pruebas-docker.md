@@ -15,7 +15,7 @@
   escenario "sin configuración" era intesteable en máquinas cuyo `.env` ya define la variable). design.md
   actualizado, no recortado.
 - Incidente honesto: la corrida ROJA aún usó el conftest viejo y barrió la BD dev una última vez — se llevó el
-  usuario Google y el consentimiento recién creados por Saúl. Re-sembrada con prestart; el snapshot md5
+  usuario OAuth real y el consentimiento recién creados en la re-verificación manual. Re-sembrada con prestart; el snapshot md5
   antes/después de DOS suites completas salió idéntico (aislamiento probado). Desde 133f056 es imposible por
   construcción.
 - Cobertura: al migrar en-proceso, coverage contó `app/alembic/versions/*` → 85.70% espurio; `omit` en
@@ -42,3 +42,8 @@
 - pre-commit del CI falló 3 veces en el PR #2 por pushes sin pasada prek local (ARG001, typos, end-of-file de las
   specs generadas por openspec archive — el CLI deja lineas en blanco sobrantes). Gate instalado: .git/hooks/pre-push
   local corre prek sobre el diff vs origin/main antes de cada push. Candidato a estandarizar en el harness.
+
+## Cierre (2026-10-12)
+- bd-pruebas-docker archivado tras el merge del PR #2: delta fusionado en openspec/specs/platform/test-isolation
+  (3 requirements, validate --all --strict 3/3), CHANGELOG, ancla de meta-improvements actualizada al path de archivo,
+  .epe/active limpio. Sin sorpresas.
