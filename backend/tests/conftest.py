@@ -58,7 +58,7 @@ except ValueError:
 if not _url_shape_ok:
     pytest.exit(
         "TEST_DATABASE_URL está malformada: no es una URL postgres con hostname. "
-        "No imprimo su valor (puede contener credenciales); revísala contra "
+        "No imprimo su valor (puede incluir credenciales); revísala contra "
         ".env.example.",
         returncode=3,
     )
