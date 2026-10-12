@@ -30,7 +30,7 @@
 
 - [x] 4.1 ADR D16 (adjuntos en Postgres cifrados) en `memory/decisions.md`
 - [x] 4.2 evidence.md con números reales por grupo (rojo y verde) + validation.md no técnico
-- [ ] 4.3 Journal + PR con cuerpo fiel
+- [x] 4.3 Journal + PR con cuerpo fiel
 
 ## Close
-- [ ] evidence.md (red/green per group) · validation.md · journal · PR
+- [x] evidence.md (red/green per group) · validation.md · journal · PR
