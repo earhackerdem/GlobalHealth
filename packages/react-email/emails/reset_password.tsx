@@ -19,28 +19,28 @@ export default function ResetPassword({
 }: ResetPasswordProps) {
   return (
     <Layout
-      title={`${project_name} - Password recovery`}
-      preview={`Reset your ${project_name} password`}
+      title={`${project_name} - Recuperación de contraseña`}
+      preview={`Restablece tu contraseña de ${project_name}`}
       project_name={project_name}
     >
-      <Heading>Reset your password</Heading>
-      <Text style={bodyTextStyle}>Hi {username},</Text>
+      <Heading>Restablece tu contraseña</Heading>
+      <Text style={bodyTextStyle}>Hola {username}:</Text>
       <Text style={bodyTextStyle}>
-        We've received a request to reset the password for your {project_name}{" "}
-        account. Choose a new one by clicking the button below:
+        Recibimos una solicitud para restablecer tu contraseña de{" "}
+        {project_name}. Elige una nueva con el botón de abajo:
       </Text>
-      <LinkButton href={link}>Reset password</LinkButton>
+      <LinkButton href={link}>Restablecer contraseña</LinkButton>
       <Text style={supportingTextStyle}>
-        Or copy and paste this link into your browser:
+        O copia y pega este enlace en tu navegador:
         <br />
         <Link href={link}>{link}</Link>
       </Text>
       <Text style={supportingTextStyle}>
-        This link will expire in {valid_hours} hours.
+        Este enlace expira en {valid_hours} hora(s).
       </Text>
       <Text style={supportingTextStyle}>
-        If you didn't request a password recovery, you can safely ignore this
-        email.
+        Si no solicitaste recuperar tu contraseña, puedes ignorar este correo
+        con tranquilidad.
       </Text>
     </Layout>
   )

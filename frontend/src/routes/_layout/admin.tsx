@@ -1,6 +1,7 @@
 import { useSuspenseQuery } from "@tanstack/react-query"
 import { createFileRoute, redirect } from "@tanstack/react-router"
 import { Suspense } from "react"
+import { useTranslation } from "react-i18next"
 
 import { type UserPublic, UsersService } from "@/client"
 import AddUser from "@/components/Admin/AddUser"
@@ -8,6 +9,7 @@ import { columns, type UserTableData } from "@/components/Admin/columns"
 import { DataTable } from "@/components/Common/DataTable"
 import PendingUsers from "@/components/Pending/PendingUsers"
 import useAuth from "@/hooks/useAuth"
+import i18n from "@/i18n"
 
 function getUsersQueryOptions() {
   return {
@@ -30,7 +32,7 @@ export const Route = createFileRoute("/_layout/admin")({
   head: () => ({
     meta: [
       {
-        title: "Admin - FastAPI Template",
+        title: i18n.t("admin:page.pageTitle"),
       },
     ],
   }),
@@ -57,14 +59,15 @@ function UsersTable() {
 }
 
 function Admin() {
+  const { t } = useTranslation("admin")
   return (
     <div className="flex flex-col gap-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Users</h1>
-          <p className="text-muted-foreground">
-            Manage user accounts and permissions
-          </p>
+          <h1 className="text-2xl font-bold tracking-tight">
+            {t("page.title")}
+          </h1>
+          <p className="text-muted-foreground">{t("page.subtitle")}</p>
         </div>
         <AddUser />
       </div>

@@ -11,7 +11,7 @@ test("Password Recovery title is visible", async ({ page }) => {
   await page.goto("/recover-password")
 
   await expect(
-    page.getByRole("heading", { name: "Password Recovery" }),
+    page.getByRole("heading", { name: "Recuperación de contraseña" }),
   ).toBeVisible()
 })
 
@@ -26,7 +26,7 @@ test("Input is visible, empty and editable", async ({ page }) => {
 test("Continue button is visible", async ({ page }) => {
   await page.goto("/recover-password")
 
-  await expect(page.getByRole("button", { name: "Continue" })).toBeVisible()
+  await expect(page.getByRole("button", { name: "Continuar" })).toBeVisible()
 })
 
 test("User can reset password successfully using the link", async ({
@@ -44,13 +44,18 @@ test("User can reset password successfully using the link", async ({
   await page.goto("/recover-password")
   await page.getByTestId("email-input").fill(email)
 
-  await page.getByRole("button", { name: "Continue" }).click()
+  await page.getByRole("button", { name: "Continuar" }).click()
+
+  await expect(
+    page.getByText("Te enviamos un correo para recuperar tu contraseña"),
+  ).toBeVisible()
 
   const emailHtml = await waitForEmailHtml({
     request,
-    query: `to:${email}`,
+    query: `to:${email} subject:"Recuperación de contraseña para ${email}"`,
   })
 
+  expect(emailHtml).toContain("Restablecer contraseña")
   expect(emailHtml).toContain(resetPath)
   const resetUrl = emailHtml.match(/\/reset-password\?token=[^"]+/)?.[0]
   expect(resetUrl).toBeDefined()
@@ -60,8 +65,10 @@ test("User can reset password successfully using the link", async ({
 
   await page.getByTestId("new-password-input").fill(newPassword)
   await page.getByTestId("confirm-password-input").fill(newPassword)
-  await page.getByRole("button", { name: "Reset Password" }).click()
-  await expect(page.getByText("Password updated successfully")).toBeVisible()
+  await page.getByRole("button", { name: "Restablecer contraseña" }).click()
+  await expect(
+    page.getByText("Contraseña actualizada correctamente"),
+  ).toBeVisible()
 
   // Check if the user is able to login with the new password
   await logInUser(page, email, newPassword)
@@ -75,9 +82,9 @@ test("Expired or invalid reset link", async ({ page }) => {
 
   await page.getByTestId("new-password-input").fill(password)
   await page.getByTestId("confirm-password-input").fill(password)
-  await page.getByRole("button", { name: "Reset Password" }).click()
+  await page.getByRole("button", { name: "Restablecer contraseña" }).click()
 
-  await expect(page.getByText("Invalid token")).toBeVisible()
+  await expect(page.getByText("Token inválido o expirado")).toBeVisible()
 })
 
 test("Weak new password validation", async ({ page, request }) => {
@@ -91,11 +98,11 @@ test("Weak new password validation", async ({ page, request }) => {
 
   await page.goto("/recover-password")
   await page.getByTestId("email-input").fill(email)
-  await page.getByRole("button", { name: "Continue" }).click()
+  await page.getByRole("button", { name: "Continuar" }).click()
 
   const emailHtml = await waitForEmailHtml({
     request,
-    query: `to:${email}`,
+    query: `to:${email} subject:"Recuperación de contraseña para ${email}"`,
   })
 
   expect(emailHtml).toContain(resetPath)
@@ -106,9 +113,9 @@ test("Weak new password validation", async ({ page, request }) => {
   await page.goto(resetUrl!)
   await page.getByTestId("new-password-input").fill(weakPassword)
   await page.getByTestId("confirm-password-input").fill(weakPassword)
-  await page.getByRole("button", { name: "Reset Password" }).click()
+  await page.getByRole("button", { name: "Restablecer contraseña" }).click()
 
   await expect(
-    page.getByText("Password must be at least 8 characters"),
+    page.getByText("La contraseña debe tener al menos 8 caracteres"),
   ).toBeVisible()
 })

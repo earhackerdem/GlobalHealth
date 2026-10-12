@@ -1,4 +1,5 @@
 import { Link } from "@tanstack/react-router"
+import { useTranslation } from "react-i18next"
 
 import { useTheme } from "@/components/theme-provider"
 import { cn } from "@/lib/utils"
@@ -18,6 +19,7 @@ export function Logo({
   className,
   asLink = true,
 }: LogoProps) {
+  const { t } = useTranslation("common")
   const { resolvedTheme } = useTheme()
   const isDark = resolvedTheme === "dark"
 
@@ -29,7 +31,7 @@ export function Logo({
       <>
         <img
           src={fullLogo}
-          alt="FastAPI"
+          alt={t("logoAlt")}
           className={cn(
             "h-6 w-auto group-data-[collapsible=icon]:hidden",
             className,
@@ -37,7 +39,7 @@ export function Logo({
         />
         <img
           src={iconLogo}
-          alt="FastAPI"
+          alt={t("logoAlt")}
           className={cn(
             "size-5 hidden group-data-[collapsible=icon]:block",
             className,
@@ -47,7 +49,7 @@ export function Logo({
     ) : (
       <img
         src={variant === "full" ? fullLogo : iconLogo}
-        alt="FastAPI"
+        alt={t("logoAlt")}
         className={cn(variant === "full" ? "h-6 w-auto" : "size-5", className)}
       />
     )

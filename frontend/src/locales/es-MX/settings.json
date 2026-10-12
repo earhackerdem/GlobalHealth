@@ -1,0 +1,40 @@
+{
+  "page": {
+    "pageTitle": "Configuración - FastAPI Template",
+    "title": "Configuración de usuario",
+    "subtitle": "Administra la configuración y preferencias de tu cuenta"
+  },
+  "tabs": {
+    "myProfile": "Mi perfil",
+    "password": "Contraseña",
+    "dangerZone": "Zona de riesgo"
+  },
+  "userInformation": {
+    "title": "Información del usuario",
+    "fullNameLabel": "Nombre completo",
+    "emailLabel": "Correo electrónico",
+    "notAvailable": "N/D",
+    "save": "Guardar",
+    "cancel": "Cancelar",
+    "edit": "Editar",
+    "successToast": "Usuario actualizado correctamente"
+  },
+  "changePassword": {
+    "title": "Cambiar contraseña",
+    "currentPasswordLabel": "Contraseña actual",
+    "newPasswordLabel": "Nueva contraseña",
+    "confirmPasswordLabel": "Confirmar contraseña",
+    "submit": "Actualizar contraseña",
+    "successToast": "Contraseña actualizada correctamente"
+  },
+  "deleteAccount": {
+    "title": "Eliminar cuenta",
+    "description": "Elimina permanentemente tu cuenta y todos los datos asociados.",
+    "button": "Eliminar cuenta",
+    "confirmTitle": "Confirmación requerida",
+    "confirmDescription": "Todos los datos de tu cuenta se eliminarán <strong>permanentemente</strong>. Si estás seguro, haz clic en <strong>\"Eliminar\"</strong> para continuar. Esta acción no se puede deshacer.",
+    "confirmButton": "Eliminar",
+    "cancel": "Cancelar",
+    "successToast": "Tu cuenta se eliminó correctamente"
+  }
+}

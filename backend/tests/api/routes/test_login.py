@@ -32,6 +32,7 @@ def test_get_access_token_incorrect_password(client: TestClient) -> None:
     }
     r = client.post(f"{settings.API_V1_STR}/login/access-token", data=login_data)
     assert r.status_code == 400
+    assert r.json()["detail"] == "Correo o contraseña incorrectos"
 
 
 def test_use_access_token(
@@ -60,7 +61,7 @@ def test_recovery_password(
         )
         assert r.status_code == 200
         assert r.json() == {
-            "message": "If that email is registered, we sent a password recovery link"
+            "message": "Si ese correo está registrado, enviamos un enlace de recuperación de contraseña"
         }
 
 
@@ -75,7 +76,7 @@ def test_recovery_password_user_not_exits(
     # Should return 200 with generic message to prevent email enumeration attacks
     assert r.status_code == 200
     assert r.json() == {
-        "message": "If that email is registered, we sent a password recovery link"
+        "message": "Si ese correo está registrado, enviamos un enlace de recuperación de contraseña"
     }
 
 
@@ -103,7 +104,7 @@ def test_reset_password(client: TestClient, db: Session) -> None:
     )
 
     assert r.status_code == 200
-    assert r.json() == {"message": "Password updated successfully"}
+    assert r.json() == {"message": "Contraseña actualizada correctamente"}
 
     db.refresh(user)
     assert user.hashed_password is not None
@@ -124,7 +125,7 @@ def test_reset_password_invalid_token(
 
     assert "detail" in response
     assert r.status_code == 400
-    assert response["detail"] == "Invalid token"
+    assert response["detail"] == "Token inválido o expirado"
 
 
 def test_login_with_bcrypt_password_upgrades_to_argon2(

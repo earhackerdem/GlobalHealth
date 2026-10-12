@@ -10,13 +10,15 @@ import { logInUser } from "./utils/user"
 
 test("Items page is accessible and shows correct title", async ({ page }) => {
   await page.goto("/items")
-  await expect(page.getByRole("heading", { name: "Items" })).toBeVisible()
-  await expect(page.getByText("Create and manage your items")).toBeVisible()
+  await expect(page.getByRole("heading", { name: "Elementos" })).toBeVisible()
+  await expect(page.getByText("Crea y administra tus elementos")).toBeVisible()
 })
 
 test("Add Item button is visible", async ({ page }) => {
   await page.goto("/items")
-  await expect(page.getByRole("button", { name: "Add Item" })).toBeVisible()
+  await expect(
+    page.getByRole("button", { name: "Agregar elemento" }),
+  ).toBeVisible()
 })
 
 test.describe("Items management", () => {
@@ -38,40 +40,40 @@ test.describe("Items management", () => {
     const title = randomItemTitle()
     const description = randomItemDescription()
 
-    await page.getByRole("button", { name: "Add Item" }).click()
-    await page.getByLabel("Title").fill(title)
-    await page.getByLabel("Description").fill(description)
-    await page.getByRole("button", { name: "Save" }).click()
+    await page.getByRole("button", { name: "Agregar elemento" }).click()
+    await page.getByLabel("Título").fill(title)
+    await page.getByLabel("Descripción").fill(description)
+    await page.getByRole("button", { name: "Guardar" }).click()
 
-    await expect(page.getByText("Item created successfully")).toBeVisible()
+    await expect(page.getByText("Elemento creado correctamente")).toBeVisible()
     await expect(page.getByText(title)).toBeVisible()
   })
 
   test("Create item with only required fields", async ({ page }) => {
     const title = randomItemTitle()
 
-    await page.getByRole("button", { name: "Add Item" }).click()
-    await page.getByLabel("Title").fill(title)
-    await page.getByRole("button", { name: "Save" }).click()
+    await page.getByRole("button", { name: "Agregar elemento" }).click()
+    await page.getByLabel("Título").fill(title)
+    await page.getByRole("button", { name: "Guardar" }).click()
 
-    await expect(page.getByText("Item created successfully")).toBeVisible()
+    await expect(page.getByText("Elemento creado correctamente")).toBeVisible()
     await expect(page.getByText(title)).toBeVisible()
   })
 
   test("Cancel item creation", async ({ page }) => {
-    await page.getByRole("button", { name: "Add Item" }).click()
-    await page.getByLabel("Title").fill("Test Item")
-    await page.getByRole("button", { name: "Cancel" }).click()
+    await page.getByRole("button", { name: "Agregar elemento" }).click()
+    await page.getByLabel("Título").fill("Test Item")
+    await page.getByRole("button", { name: "Cancelar" }).click()
 
     await expect(page.getByRole("dialog")).not.toBeVisible()
   })
 
   test("Title is required", async ({ page }) => {
-    await page.getByRole("button", { name: "Add Item" }).click()
-    await page.getByLabel("Title").fill("")
-    await page.getByLabel("Title").blur()
+    await page.getByRole("button", { name: "Agregar elemento" }).click()
+    await page.getByLabel("Título").fill("")
+    await page.getByLabel("Título").blur()
 
-    await expect(page.getByText("Title is required")).toBeVisible()
+    await expect(page.getByText("El título es obligatorio")).toBeVisible()
   })
 
   test.describe("Edit and Delete", () => {
@@ -80,35 +82,39 @@ test.describe("Items management", () => {
     test.beforeEach(async ({ page }) => {
       itemTitle = randomItemTitle()
 
-      await page.getByRole("button", { name: "Add Item" }).click()
-      await page.getByLabel("Title").fill(itemTitle)
-      await page.getByRole("button", { name: "Save" }).click()
-      await expect(page.getByText("Item created successfully")).toBeVisible()
+      await page.getByRole("button", { name: "Agregar elemento" }).click()
+      await page.getByLabel("Título").fill(itemTitle)
+      await page.getByRole("button", { name: "Guardar" }).click()
+      await expect(
+        page.getByText("Elemento creado correctamente"),
+      ).toBeVisible()
       await expect(page.getByRole("dialog")).not.toBeVisible()
     })
 
     test("Edit an item successfully", async ({ page }) => {
       const itemRow = page.getByRole("row").filter({ hasText: itemTitle })
       await itemRow.getByRole("button").last().click()
-      await page.getByRole("menuitem", { name: "Edit Item" }).click()
+      await page.getByRole("menuitem", { name: "Editar elemento" }).click()
 
       const updatedTitle = randomItemTitle()
-      await page.getByLabel("Title").fill(updatedTitle)
-      await page.getByRole("button", { name: "Save" }).click()
+      await page.getByLabel("Título").fill(updatedTitle)
+      await page.getByRole("button", { name: "Guardar" }).click()
 
-      await expect(page.getByText("Item updated successfully")).toBeVisible()
+      await expect(
+        page.getByText("Elemento actualizado correctamente"),
+      ).toBeVisible()
       await expect(page.getByText(updatedTitle)).toBeVisible()
     })
 
     test("Delete an item successfully", async ({ page }) => {
       const itemRow = page.getByRole("row").filter({ hasText: itemTitle })
       await itemRow.getByRole("button").last().click()
-      await page.getByRole("menuitem", { name: "Delete Item" }).click()
+      await page.getByRole("menuitem", { name: "Eliminar elemento" }).click()
 
-      await page.getByRole("button", { name: "Delete" }).click()
+      await page.getByRole("button", { name: "Eliminar" }).click()
 
       await expect(
-        page.getByText("The item was deleted successfully"),
+        page.getByText("El elemento se eliminó correctamente"),
       ).toBeVisible()
       await expect(page.getByText(itemTitle)).not.toBeVisible()
     })
@@ -126,7 +132,9 @@ test.describe("Items empty state", () => {
 
     await page.goto("/items")
 
-    await expect(page.getByText("You don't have any items yet")).toBeVisible()
-    await expect(page.getByText("Add a new item to get started")).toBeVisible()
+    await expect(page.getByText("Aún no tienes elementos")).toBeVisible()
+    await expect(
+      page.getByText("Agrega un elemento nuevo para comenzar"),
+    ).toBeVisible()
   })
 })

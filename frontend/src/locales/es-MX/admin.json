@@ -1,0 +1,56 @@
+{
+  "page": {
+    "pageTitle": "Administración - FastAPI Template",
+    "title": "Usuarios",
+    "subtitle": "Administra las cuentas de usuario y sus permisos"
+  },
+  "table": {
+    "fullNameHeader": "Nombre completo",
+    "emailHeader": "Correo electrónico",
+    "roleHeader": "Rol",
+    "statusHeader": "Estado",
+    "youBadge": "Tú",
+    "roleSuperuser": "Superusuario",
+    "roleUser": "Usuario",
+    "statusActive": "Activo",
+    "statusInactive": "Inactivo"
+  },
+  "addUser": {
+    "button": "Agregar usuario",
+    "dialogTitle": "Agregar usuario",
+    "dialogDescription": "Completa el formulario para agregar un usuario nuevo al sistema.",
+    "emailLabel": "Correo electrónico",
+    "emailPlaceholder": "Correo electrónico",
+    "fullNameLabel": "Nombre completo",
+    "fullNamePlaceholder": "Nombre completo",
+    "setPasswordLabel": "Asignar contraseña",
+    "passwordPlaceholder": "Contraseña",
+    "confirmPasswordLabel": "Confirmar contraseña",
+    "confirmPasswordPlaceholder": "Contraseña",
+    "isSuperuserLabel": "¿Es superusuario?",
+    "isActiveLabel": "¿Está activo?",
+    "successToast": "Usuario creado correctamente"
+  },
+  "editUser": {
+    "menuItem": "Editar usuario",
+    "dialogTitle": "Editar usuario",
+    "dialogDescription": "Actualiza los datos del usuario.",
+    "emailLabel": "Correo electrónico",
+    "emailPlaceholder": "Correo electrónico",
+    "fullNameLabel": "Nombre completo",
+    "fullNamePlaceholder": "Nombre completo",
+    "setPasswordLabel": "Asignar contraseña",
+    "passwordPlaceholder": "Contraseña",
+    "confirmPasswordLabel": "Confirmar contraseña",
+    "confirmPasswordPlaceholder": "Contraseña",
+    "isSuperuserLabel": "¿Es superusuario?",
+    "isActiveLabel": "¿Está activo?",
+    "successToast": "Usuario actualizado correctamente"
+  },
+  "deleteUser": {
+    "menuItem": "Eliminar usuario",
+    "dialogTitle": "Eliminar usuario",
+    "dialogDescription": "Todos los elementos asociados a este usuario también se eliminarán <strong>permanentemente</strong>. ¿Estás seguro? No podrás deshacer esta acción.",
+    "successToast": "El usuario se eliminó correctamente"
+  }
+}

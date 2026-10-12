@@ -1,0 +1,30 @@
+{
+  "sidebarCollapse": "Contraer barra lateral",
+  "sidebarOpen": "Abrir barra lateral",
+  "mobileSidebarTitle": "Barra lateral",
+  "mobileSidebarDescription": "Muestra la barra lateral en móvil.",
+  "sidebar": {
+    "dashboard": "Panel",
+    "items": "Elementos",
+    "admin": "Administración",
+    "appearance": "Apariencia",
+    "toggleTheme": "Cambiar tema",
+    "themeLight": "Claro",
+    "themeDark": "Oscuro",
+    "themeSystem": "Sistema",
+    "userSettings": "Configuración de usuario",
+    "logOut": "Cerrar sesión",
+    "userFallbackName": "Usuario"
+  },
+  "footer": {
+    "copyright": "Full Stack FastAPI Template - {{year}}",
+    "githubAria": "GitHub",
+    "xAria": "X",
+    "linkedinAria": "LinkedIn"
+  },
+  "dashboard": {
+    "pageTitle": "Panel - FastAPI Template",
+    "greeting": "Hola, {{name}} 👋",
+    "welcomeBack": "¡Qué gusto verte de nuevo!"
+  }
+}

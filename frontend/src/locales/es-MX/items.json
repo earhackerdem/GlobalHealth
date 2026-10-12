@@ -1,0 +1,44 @@
+{
+  "page": {
+    "pageTitle": "Elementos - FastAPI Template",
+    "title": "Elementos",
+    "subtitle": "Crea y administra tus elementos"
+  },
+  "empty": {
+    "title": "Aún no tienes elementos",
+    "description": "Agrega un elemento nuevo para comenzar"
+  },
+  "table": {
+    "idHeader": "ID",
+    "titleHeader": "Título",
+    "descriptionHeader": "Descripción",
+    "noDescription": "Sin descripción",
+    "copyId": "Copiar ID"
+  },
+  "addItem": {
+    "button": "Agregar elemento",
+    "dialogTitle": "Agregar elemento",
+    "dialogDescription": "Completa los datos para agregar un elemento nuevo.",
+    "titleLabel": "Título",
+    "titlePlaceholder": "Título",
+    "descriptionLabel": "Descripción",
+    "descriptionPlaceholder": "Descripción",
+    "successToast": "Elemento creado correctamente"
+  },
+  "editItem": {
+    "menuItem": "Editar elemento",
+    "dialogTitle": "Editar elemento",
+    "dialogDescription": "Actualiza los datos del elemento.",
+    "titleLabel": "Título",
+    "titlePlaceholder": "Título",
+    "descriptionLabel": "Descripción",
+    "descriptionPlaceholder": "Descripción",
+    "successToast": "Elemento actualizado correctamente"
+  },
+  "deleteItem": {
+    "menuItem": "Eliminar elemento",
+    "dialogTitle": "Eliminar elemento",
+    "dialogDescription": "Este elemento se eliminará permanentemente. ¿Estás seguro? No podrás deshacer esta acción.",
+    "successToast": "El elemento se eliminó correctamente"
+  }
+}

@@ -1,0 +1,53 @@
+{
+  "actions": {
+    "save": "Guardar",
+    "cancel": "Cancelar",
+    "delete": "Eliminar"
+  },
+  "toast": {
+    "successTitle": "¡Listo!",
+    "errorTitle": "¡Algo salió mal!"
+  },
+  "errors": {
+    "generic": "Algo salió mal.",
+    "validation": "Revisa los datos ingresados."
+  },
+  "srClose": "Cerrar",
+  "validation": {
+    "emailInvalid": "Correo electrónico no válido",
+    "passwordRequired": "La contraseña es obligatoria",
+    "passwordMinLength": "La contraseña debe tener al menos 8 caracteres",
+    "passwordConfirmationRequired": "Debes confirmar la contraseña",
+    "confirmPasswordPrompt": "Confirma tu contraseña",
+    "passwordsDontMatch": "Las contraseñas no coinciden",
+    "fullNameRequired": "El nombre completo es obligatorio",
+    "titleRequired": "El título es obligatorio"
+  },
+  "table": {
+    "actions": "Acciones",
+    "noResults": "No se encontraron resultados.",
+    "notAvailable": "N/D",
+    "pagination": {
+      "showingEntries": "Mostrando {{from}} a {{to}} de {{total}} registros",
+      "rowsPerPage": "Filas por página",
+      "pageOf": "Página {{page}} de {{total}}",
+      "goToFirstPage": "Ir a la primera página",
+      "goToPreviousPage": "Ir a la página anterior",
+      "goToNextPage": "Ir a la página siguiente",
+      "goToLastPage": "Ir a la última página"
+    }
+  },
+  "errorPage": {
+    "code": "Error",
+    "oops": "¡Ups!",
+    "message": "Algo salió mal. Inténtalo de nuevo.",
+    "goHome": "Ir al inicio"
+  },
+  "notFoundPage": {
+    "code": "404",
+    "oops": "¡Ups!",
+    "message": "No encontramos la página que buscas.",
+    "goBack": "Volver"
+  },
+  "logoAlt": "FastAPI"
+}

@@ -2,13 +2,14 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router"
 import { useEffect } from "react"
 import { isLoggedIn } from "@/hooks/useAuth"
 import useCustomToast from "@/hooks/useCustomToast"
+import i18n from "@/i18n"
 
 export const Route = createFileRoute("/google-callback")({
   component: GoogleCallback,
   head: () => ({
     meta: [
       {
-        title: "Google - FastAPI Template",
+        title: i18n.t("auth:googleCallback.pageTitle"),
       },
     ],
   }),
@@ -36,7 +37,7 @@ function GoogleCallback() {
       // Re-run without fragment (e.g. StrictMode double effect): already in.
       navigate({ to: "/" })
     } else {
-      showErrorToast("No se pudo iniciar sesión con Google")
+      showErrorToast(i18n.t("auth:googleCallback.errorToast"))
       navigate({ to: "/login" })
     }
   }, [navigate, showErrorToast])

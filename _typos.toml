@@ -6,6 +6,10 @@
 [default.extend-words]
 mis = "mis"
 confidencial = "confidencial"
+# es-MX structural strings in tests/backend (NFR-012): pure-ASCII Spanish
+# words typos mistakes for English typos
+caracteres = "caracteres"
+ser = "ser"
 # nombre real de la action re-actors/alls-green (workflows del template)
 alls = "alls"
 
@@ -14,6 +18,9 @@ extend-exclude = [
     "harness.json",
     # prosa/UI es-MX
     "backend/app/core/consent_text.py",
+    "frontend/src/locales/",
+    "backend/app/email-templates/",
+    "packages/react-email/emails/",
     "frontend/src/components/Consent/",
     "memory/",
     "openspec/",
