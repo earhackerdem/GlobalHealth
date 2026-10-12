@@ -15,7 +15,7 @@
   escenario "sin configuración" era intesteable en máquinas cuyo `.env` ya define la variable). design.md
   actualizado, no recortado.
 - Incidente honesto: la corrida ROJA aún usó el conftest viejo y barrió la BD dev una última vez — se llevó el
-  usuario Google y el consentimiento recién creados por Saúl. Re-sembrada con prestart; el snapshot md5
+  usuario OAuth real y el consentimiento recién creados en la re-verificación manual. Re-sembrada con prestart; el snapshot md5
   antes/después de DOS suites completas salió idéntico (aislamiento probado). Desde 133f056 es imposible por
   construcción.
 - Cobertura: al migrar en-proceso, coverage contó `app/alembic/versions/*` → 85.70% espurio; `omit` en

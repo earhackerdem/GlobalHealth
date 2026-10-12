@@ -53,7 +53,7 @@ xmin: todas las filas conservan xmin 4019–4021 con txid_current=4022 tras amba
 ```
 
 Nota honesta: la corrida ROJA del grupo 2 aún ejecutó el conftest viejo y barrió la BD dev una última vez (borró el
-usuario Google y el consentimiento que Saúl Pérez acababa de crear en su re-verificación manual). Es exactamente el
+usuario OAuth real y el consentimiento recién creados en la re-verificación manual del flujo Google). Es exactamente el
 incidente que este cambio elimina; la BD se re-sembró con prestart antes del snapshot. Desde 133f056 la suite no
 puede abrir conexión alguna contra una base que no termine en `_test`.
 

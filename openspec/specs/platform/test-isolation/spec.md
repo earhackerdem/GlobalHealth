@@ -9,7 +9,7 @@ contenedor Docker separado del de desarrollo, de modo que ninguna corrida de tes
 desarrollo.
 
 #### Scenario: Los datos de desarrollo sobreviven a la suite completa
-- **GIVEN** el stack de desarrollo levantado con datos reales (p. ej. el usuario Google de Saúl con su
+- **GIVEN** el stack de desarrollo levantado con datos reales (p. ej. un usuario OAuth real con su
   consentimiento otorgado) y el contenedor de BD de prueba corriendo
 - **WHEN** se ejecuta la suite backend completa hasta verde
 - **THEN** la base de desarrollo `app` conserva exactamente los mismos usuarios, identidades OAuth y consentimientos
@@ -48,4 +48,3 @@ verde que en local.
 - **WHEN** corre el workflow `test-backend`
 - **THEN** pytest se ejecuta contra el servicio de BD de prueba, la suite pasa con 0 failed / 0 errors / 0 skipped
   y la cobertura sigue cumpliendo el umbral (`--fail-under=90`)
-
