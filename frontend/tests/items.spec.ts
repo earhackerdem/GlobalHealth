@@ -16,7 +16,9 @@ test("Items page is accessible and shows correct title", async ({ page }) => {
 
 test("Add Item button is visible", async ({ page }) => {
   await page.goto("/items")
-  await expect(page.getByRole("button", { name: "Agregar elemento" })).toBeVisible()
+  await expect(
+    page.getByRole("button", { name: "Agregar elemento" }),
+  ).toBeVisible()
 })
 
 test.describe("Items management", () => {
@@ -83,7 +85,9 @@ test.describe("Items management", () => {
       await page.getByRole("button", { name: "Agregar elemento" }).click()
       await page.getByLabel("Título").fill(itemTitle)
       await page.getByRole("button", { name: "Guardar" }).click()
-      await expect(page.getByText("Elemento creado correctamente")).toBeVisible()
+      await expect(
+        page.getByText("Elemento creado correctamente"),
+      ).toBeVisible()
       await expect(page.getByRole("dialog")).not.toBeVisible()
     })
 

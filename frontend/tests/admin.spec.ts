@@ -14,7 +14,9 @@ test("Admin page is accessible and shows correct title", async ({ page }) => {
 
 test("Add User button is visible", async ({ page }) => {
   await page.goto("/admin")
-  await expect(page.getByRole("button", { name: "Agregar usuario" })).toBeVisible()
+  await expect(
+    page.getByRole("button", { name: "Agregar usuario" }),
+  ).toBeVisible()
 })
 
 test.describe("Admin user management", () => {
@@ -149,9 +151,7 @@ test.describe("Admin user management", () => {
     await page.getByPlaceholder("Correo electrónico").fill("invalid-email")
     await page.getByPlaceholder("Correo electrónico").blur()
 
-    await expect(
-      page.getByText("Correo electrónico no válido"),
-    ).toBeVisible()
+    await expect(page.getByText("Correo electrónico no válido")).toBeVisible()
   })
 
   test("Password must be at least 8 characters", async ({ page }) => {
@@ -195,7 +195,9 @@ test.describe("Admin page access control", () => {
 
     await page.goto("/admin")
 
-    await expect(page.getByRole("heading", { name: "Usuarios" })).not.toBeVisible()
+    await expect(
+      page.getByRole("heading", { name: "Usuarios" }),
+    ).not.toBeVisible()
     await expect(page).not.toHaveURL(/\/admin/)
   })
 

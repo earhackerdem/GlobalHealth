@@ -45,7 +45,9 @@ test.describe("Edit user profile", () => {
     await page.getByLabel("Nombre completo").fill(updatedName)
     await page.getByRole("button", { name: "Guardar" }).click()
 
-    await expect(page.getByText("Usuario actualizado correctamente")).toBeVisible()
+    await expect(
+      page.getByText("Usuario actualizado correctamente"),
+    ).toBeVisible()
     await expect(
       page.locator("form").getByText(updatedName, { exact: true }),
     ).toBeVisible()
@@ -58,9 +60,7 @@ test.describe("Edit user profile", () => {
     await page.getByLabel("Correo electrónico").fill("")
     await page.locator("body").click()
 
-    await expect(
-      page.getByText("Correo electrónico no válido"),
-    ).toBeVisible()
+    await expect(page.getByText("Correo electrónico no válido")).toBeVisible()
   })
 })
 
@@ -81,7 +81,9 @@ test.describe("Edit user email", () => {
     await page.getByLabel("Correo electrónico").fill(updatedEmail)
     await page.getByRole("button", { name: "Guardar" }).click()
 
-    await expect(page.getByText("Usuario actualizado correctamente")).toBeVisible()
+    await expect(
+      page.getByText("Usuario actualizado correctamente"),
+    ).toBeVisible()
     await expect(
       page.locator("form").getByText(updatedEmail, { exact: true }),
     ).toBeVisible()

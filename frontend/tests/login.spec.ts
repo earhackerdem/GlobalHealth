@@ -26,7 +26,9 @@ test("Inputs are visible, empty and editable", async ({ page }) => {
 test("Log In button is visible", async ({ page }) => {
   await page.goto("/login")
 
-  await expect(page.getByRole("button", { name: "Iniciar sesión" })).toBeVisible()
+  await expect(
+    page.getByRole("button", { name: "Iniciar sesión" }),
+  ).toBeVisible()
 })
 
 test("Forgot Password link is visible", async ({ page }) => {
@@ -45,9 +47,7 @@ test("Log in with valid email and password ", async ({ page }) => {
 
   await page.waitForURL("/")
 
-  await expect(
-    page.getByText("¡Qué gusto verte de nuevo!"),
-  ).toBeVisible()
+  await expect(page.getByText("¡Qué gusto verte de nuevo!")).toBeVisible()
 })
 
 test("Log in with invalid email", async ({ page }) => {
@@ -66,9 +66,7 @@ test("Log in with invalid password", async ({ page }) => {
   await fillForm(page, firstSuperuser, password)
   await page.getByRole("button", { name: "Iniciar sesión" }).click()
 
-  await expect(
-    page.getByText("Correo o contraseña incorrectos"),
-  ).toBeVisible()
+  await expect(page.getByText("Correo o contraseña incorrectos")).toBeVisible()
 })
 
 test("Successful log out", async ({ page }) => {
@@ -79,9 +77,7 @@ test("Successful log out", async ({ page }) => {
 
   await page.waitForURL("/")
 
-  await expect(
-    page.getByText("¡Qué gusto verte de nuevo!"),
-  ).toBeVisible()
+  await expect(page.getByText("¡Qué gusto verte de nuevo!")).toBeVisible()
 
   await page.getByTestId("user-menu").click()
   await page.getByRole("menuitem", { name: "Cerrar sesión" }).click()
@@ -96,9 +92,7 @@ test("Logged-out user cannot access protected routes", async ({ page }) => {
 
   await page.waitForURL("/")
 
-  await expect(
-    page.getByText("¡Qué gusto verte de nuevo!"),
-  ).toBeVisible()
+  await expect(page.getByText("¡Qué gusto verte de nuevo!")).toBeVisible()
 
   await page.getByTestId("user-menu").click()
   await page.getByRole("menuitem", { name: "Cerrar sesión" }).click()
