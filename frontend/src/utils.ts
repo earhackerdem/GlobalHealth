@@ -6,12 +6,14 @@ function extractErrorMessage(err: Error): string {
   if (err instanceof AxiosError) {
     const errDetail = (err.response?.data as any)?.detail
     if (Array.isArray(errDetail) && errDetail.length > 0) {
-      return errDetail[0].msg
+      // Pydantic 422 validation messages come in English; show es-MX instead.
+      return i18n.t("common:errors.validation")
     }
     if (typeof errDetail === "string") {
+      // Backend details are already es-MX; pass them through.
       return errDetail
     }
-    return err.message
+    return i18n.t("common:errors.generic")
   }
   // t() runs at call time, after i18n init in main.tsx.
   return i18n.t("common:errors.generic")

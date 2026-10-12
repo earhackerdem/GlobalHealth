@@ -29,4 +29,5 @@
 - [x] 4.1 ADR D15 (react-i18next, es-MX único, namespaces; backend sin biblioteca i18n) en `memory/decisions.md`
 - [x] 4.2 `evidence.md` (números rojo/verde por grupo, grep de remanentes, nota del texto de consentimiento
       intacto), `validation.md` no técnico, journal
-- [x] 4.3 Cerrar la fila es-MX del inbox (✅ con ancla al PR) y PR
+- [x] 4.3 PR abierto; fila es-MX del inbox: diferida a post-merge (ediciones en vuelo del PR #3; ver evidence
+      §Deuda)

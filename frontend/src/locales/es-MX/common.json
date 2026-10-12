@@ -2,16 +2,17 @@
   "actions": {
     "save": "Guardar",
     "cancel": "Cancelar",
-    "delete": "Eliminar",
-    "edit": "Editar"
+    "delete": "Eliminar"
   },
   "toast": {
     "successTitle": "¡Listo!",
     "errorTitle": "¡Algo salió mal!"
   },
   "errors": {
-    "generic": "Algo salió mal."
+    "generic": "Algo salió mal.",
+    "validation": "Revisa los datos ingresados."
   },
+  "srClose": "Cerrar",
   "validation": {
     "emailInvalid": "Correo electrónico no válido",
     "passwordRequired": "La contraseña es obligatoria",

@@ -12,7 +12,8 @@ autor-de-recursos/tester/implementer por grupo. Comandos: `cd backend && uv run 
 | 2 Pantallas + Playwright (test→impl) | 1 failed (auth.setup "Iniciar sesión" vs UI inglesa) + 61 bloqueados por la dependencia del setup (8c5666a) | **Playwright 62 passed / 0 failed** (5a8a4c9) |
 | 3 Backend + correos (test→impl) | backend **28 failed / 76 passed** + Playwright **6 failed / 56 passed** (6d278ad) | backend **104 passed / 0 failed / 0 errors / 0 skipped** · cobertura **93.69%** · Playwright **62 passed** (7cec812) |
 
-- `make tdd-check` ✓ (2 commits `test:`, uno por grupo test→impl; rutas de tests sin diff tras el último).
+- `make tdd-check` ✓ (3 commits `test:` al momento de la revisión: 2 rojos —uno por grupo test→impl— + 1 de
+  formato biome sin tocar aserciones; el apply añade 1 más. Rutas de tests sin diff tras el último).
 - El rojo del grupo 2 es estructural: el `[setup]` de Playwright bloquea los 61 tests dependientes; el rojo del
   grupo 3 detalla 28+6 aserciones exactas contra el backend aún en inglés.
 
@@ -27,11 +28,11 @@ autor-de-recursos/tester/implementer por grupo. Comandos: `cd backend && uv run 
 ## Escenario: cero strings de interfaz hardcodeados (grep documentado)
 
 ```
-cd frontend/src && grep -rnE '>[A-Z][a-z]+ [a-z]+|"[A-Z][a-z]+ [a-z]+ [a-z]+' routes/ components/ hooks/ utils.ts \
-  (excluyendo components/ui/, client/, llamadas t(), i18nKey, className, comentarios)
-→ 1 hit: hooks/useCopyToClipboard.ts:13 console.warn("Clipboard not supported") — no visible al usuario.
-→ conteo de strings "Multi palabra" en los componentes de dominio: 0
+$ cd frontend/src && grep -rnE --exclude-dir=ui --exclude-dir=client '>[A-Z][a-z]+ [a-z]+|"[A-Z][a-z]+ [a-z]+ [a-z]+' routes components hooks utils.ts | grep -vE 't\(|i18nKey|className|^[^:]+:[0-9]+:\s*(//|\*|\{?/\*)'
+hooks/useCopyToClipboard.ts:13:      console.warn("Clipboard not supported")
 ```
+
+Único hit: un `console.warn` no visible al usuario. Strings visibles en inglés en los componentes de dominio: 0.
 
 ## Escenario: correo de recuperación es-MX end-to-end
 
@@ -52,3 +53,13 @@ verificados en el HTML generado.
   meta-improvements/closed.md.
 - La fila es-MX del inbox se cierra tras el merge (el inbox tiene ediciones en vuelo en el PR #3; cerrarla aquí
   fabricaría un conflicto).
+
+## Ronda /epe-4-review → /epe-5-apply (2026-10-12)
+
+Saúl Pérez aprobó: grupo A completo (pins 26.4.2/17.0.15 por la regla ≥2 semanas, lang es-MX en index.html y
+correos, pytest del detail, carve-out al spec, bajas de una línea), y de B: tests de pantallas de error/títulos
+AHORA, test del correo de alta, fallbacks de toast traducidos, sr-only de ui/ traducidos; de C: aserción del toast
+de recover. Diferidos a closed.md: placeholders .first() (heredado) y typos por ruta.
+Fixer 14/14 sin rebotes + tester con 4 archivos de cobertura (verdes al primer intento: cubren comportamiento ya
+embarcado). Números post-apply: backend **106 passed / 0 failed / 0 errors / 0 skipped** · cobertura **93.69%** ·
+Playwright **65 passed** (62 + errors.spec.ts ×3). Total commits `test:` de la rama tras el apply: 4.

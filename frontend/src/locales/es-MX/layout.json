@@ -1,4 +1,8 @@
 {
+  "sidebarCollapse": "Contraer barra lateral",
+  "sidebarOpen": "Abrir barra lateral",
+  "mobileSidebarTitle": "Barra lateral",
+  "mobileSidebarDescription": "Muestra la barra lateral en móvil.",
   "sidebar": {
     "dashboard": "Panel",
     "items": "Elementos",

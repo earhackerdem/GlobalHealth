@@ -20,6 +20,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip"
+import i18n from "@/i18n"
 import { cn } from "@/lib/utils"
 import { useIsMobile } from "@/hooks/useMobile"
 
@@ -206,8 +207,10 @@ function Sidebar({
           side={side}
         >
           <SheetHeader className="sr-only">
-            <SheetTitle>Sidebar</SheetTitle>
-            <SheetDescription>Displays the mobile sidebar.</SheetDescription>
+            <SheetTitle>{i18n.t("layout:mobileSidebarTitle")}</SheetTitle>
+            <SheetDescription>
+              {i18n.t("layout:mobileSidebarDescription")}
+            </SheetDescription>
           </SheetHeader>
           <div className="flex h-full w-full flex-col">{children}</div>
         </SheetContent>
@@ -269,7 +272,9 @@ function SidebarTrigger({
   ...props
 }: React.ComponentProps<typeof Button>) {
   const { toggleSidebar, open } = useSidebar()
-  const sidebarCopy = open ? "Collapse Sidebar" : "Open Sidebar"
+  const sidebarCopy = open
+    ? i18n.t("layout:sidebarCollapse")
+    : i18n.t("layout:sidebarOpen")
 
   return (
     <Button

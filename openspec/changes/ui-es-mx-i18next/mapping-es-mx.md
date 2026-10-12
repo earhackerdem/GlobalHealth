@@ -17,7 +17,6 @@ Convenciones:
 | varios (AddUser, EditUser, AddItem, EditItem, UserInformation) | `common:actions.save` | Save | Guardar |
 | varios (todos los diálogos, UserInformation) | `common:actions.cancel` | Cancel | Cancelar |
 | DeleteUser.tsx, DeleteItem.tsx, DeleteConfirmation.tsx | `common:actions.delete` | Delete | Eliminar |
-| UserInformation.tsx | `common:actions.edit` | Edit | Editar |
 | hooks/useCustomToast.ts:5 | `common:toast.successTitle` | Success! | ¡Listo! **[DECISIÓN 1]** |
 | hooks/useCustomToast.ts:11 | `common:toast.errorTitle` | Something went wrong! | ¡Algo salió mal! |
 | utils.ts:14 (fallback de `extractErrorMessage`) | `common:errors.generic` | Something went wrong. | Algo salió mal. |

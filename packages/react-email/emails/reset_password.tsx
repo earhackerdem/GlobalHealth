@@ -36,7 +36,7 @@ export default function ResetPassword({
         <Link href={link}>{link}</Link>
       </Text>
       <Text style={supportingTextStyle}>
-        Este enlace expirará en {valid_hours} horas.
+        Este enlace expira en {valid_hours} hora(s).
       </Text>
       <Text style={supportingTextStyle}>
         Si no solicitaste recuperar tu contraseña, puedes ignorar este correo

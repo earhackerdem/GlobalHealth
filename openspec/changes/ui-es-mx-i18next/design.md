@@ -17,14 +17,16 @@ Approved by: Saúl Pérez (author) on 2026-10-12 ("plan approved")
 ## Goals / Non-Goals
 
 **Goals:** NFR-012 completo (pantallas + toasts con errores del API + correos) con recursos de traducción;
-Playwright como contrato es-MX; infraestructura lista para un segundo idioma sin reescritura.
+Playwright como contrato es-MX; infraestructura lista para un segundo idioma (con selector + recarga; el cambio
+en caliente requiere refactor puntual de los `i18n.t` de module scope).
 **Non-Goals:** selector de idioma y detección de locale del navegador; segundo locale; traducir logs del servidor,
 OpenAPI/docs, Adminer; i18n del backend con biblioteca (los details se traducen como strings es-MX directos:
 un solo locale embarcado no justifica gettext/babel); renombrar claves de la API o códigos de error.
 
 ## Interface contract
 
-- **Paquetes**: `i18next` + `react-i18next` (pin exacto al instalar con bun; versiones vigentes ≥ 2 semanas).
+- **Paquetes**: `i18next@26.4.2` + `react-i18next@17.0.15` (pin exacto; la regla del design exige versiones con
+  ≥ 2 semanas de vigencia, por eso no se toma la última publicada).
 - **`frontend/src/i18n.ts`**: inicializa i18next con `lng: "es-MX"`, `fallbackLng: "es-MX"`,
   `interpolation.escapeValue: false`, recursos importados estáticamente (sin backend HTTP de traducciones).
   Importado por efecto en `frontend/src/main.tsx` antes del render.
@@ -32,18 +34,28 @@ un solo locale embarcado no justifica gettext/babel); renombrar claves de la API
   compartidas), `auth` (login/signup/recover/reset), `layout` (sidebar, user menu, footer), `items`, `admin`,
   `settings`, `consent` (migra los textos ya escritos, sin cambiarlos). Claves kebab/camel descriptivas, no el
   texto inglés como clave.
-- **Componentes**: `const { t } = useTranslation("<ns>")`; textos visibles → `t("clave")`. Los textos es-MX ya
-  existentes (ConsentGate, login Google) se MUEVEN a recursos sin cambiar su redacción (citers: tests de consent).
+- **Componentes (patrón dual)**: en componentes, `const { t } = useTranslation("<ns>")`; textos visibles →
+  `t("clave")`. Para strings de module scope (schemas zod, arrays de columnas) y para las primitivas de
+  `components/ui/`, `import i18n from "@/i18n"` + `i18n.t("ns:clave")`. Nota: un cambio de idioma en caliente
+  exigiría mover los `i18n.t` de module scope a render-time. Los textos es-MX ya existentes (ConsentGate, login
+  Google) se MUEVEN a recursos sin cambiar su redacción (citers: tests de consent).
+- **Fallbacks es-MX de `utils.ts`**: el toast de error nunca muestra inglés: la ruta 422 (lista de errores de
+  Pydantic) cae a `common:errors.validation` y la ruta `err.message` de Axios a `common:errors.generic`; los
+  `detail` string del backend (ya es-MX) pasan tal cual.
 - **Backend details es-MX** (solo los que ve el usuario): los `HTTPException(detail=…)` de `routes/login.py`,
   `routes/users.py`, `routes/items.py`, `routes/utils.py` y los asuntos/plantillas de `app/utils.py`; los tests
   backend que los asiertan se actualizan en el mismo grupo. Los nombres de claves/códigos HTTP no cambian.
 - **Emails**: `packages/react-email/emails/{new_account,reset_password,test_email}.tsx` a es-MX; se regenera
-  `backend/app/email-templates/*.html` con el build del workspace; asuntos en `app/utils.py` a es-MX.
+  `backend/app/email-templates/*.html` con el build del workspace; asuntos en `app/utils.py` a es-MX. El año del
+  footer no se congela en build: la plantilla emite el literal `{{ year }}` y los tres `generate_*` de
+  `app/utils.py` añaden `year` al contexto Jinja.
 - **Playwright**: aserciones de texto migradas a los textos es-MX exactos de los recursos; `tests/utils/*` que
   busca correos por asunto usa los asuntos nuevos.
 - **Guard de no-regresión del idioma**: el gate del cambio incluye una búsqueda documentada (grep en evidence.md)
   de strings visibles en inglés remanentes en `frontend/src/routes` y `frontend/src/components` (excluyendo
-  `components/ui/` del design system, atributos no visibles y el código generado `src/client/`).
+  `components/ui/` del design system, atributos no visibles y el código generado `src/client/`). Carve-out de
+  `components/ui/` acotado: queda fuera del barrido general, pero su texto de accesibilidad (sr-only, aria,
+  SheetTitle/Description del sidebar móvil) sí se traduce vía `i18n.t`.
 
 ## Decisions
 
@@ -56,7 +68,8 @@ un solo locale embarcado no justifica gettext/babel); renombrar claves de la API
 - **Los tests E2E son el contrato del idioma**: el rojo del grupo 2 es Playwright asertando es-MX contra la UI
   inglesa; no hay "test de i18n" sintético aparte.
 - **`components/ui/` (shadcn) fuera del barrido**: son primitivas del design system casi sin texto propio; lo que
-  muestren viene por props desde los componentes de dominio, que sí se traducen.
+  muestren viene por props desde los componentes de dominio, que sí se traducen. Excepción (decisión del dueño):
+  su texto accesible propio (sr-only/aria del dialog y el sidebar) usa recursos es-MX con `i18n.t`.
 
 ## Test plan (one row per scenario, mandatory)
 

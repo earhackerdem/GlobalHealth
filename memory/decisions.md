@@ -174,9 +174,10 @@ link the new one. Order: from most structural to most tactical.
   dominio (`frontend/src/locales/es-MX/`), sin selector de idioma ni detección de locale. El backend NO usa
   biblioteca i18n: `detail=`/`message=` visibles y asuntos de correo son strings es-MX directos; los correos
   transaccionales se redactan en las plantillas React Email y se regeneran con `bun run export`. Los códigos de
-  máquina (p. ej. `CONSENT_REQUIRED`) no se traducen. El texto legal del consentimiento se mueve a recursos byte
-  a byte, nunca se redacta al traducir.
-- **Why:** un solo locale con infraestructura lista para el segundo (añadir JSON + selector) sin pagar hoy
+  máquina (p. ej. `CONSENT_REQUIRED`) no se traducen. El chrome de UI del gate de consentimiento se mueve a
+  recursos byte a byte; el texto legal sigue sirviéndose desde el backend (consent_text.py) y no se toca.
+- **Why:** un solo locale con infraestructura lista para el segundo (añadir JSON + selector, con recarga; el
+  cambio de idioma en caliente exigiría mover los `i18n.t` de module scope a render-time) sin pagar hoy
   gettext/babel en el backend; la suite Playwright con textos es-MX queda como contrato del idioma (177+
   aserciones), que es donde se rompería una regresión.
 - **Discarded:** traducción directa sin biblioteca (decisión explícita de Saúl en contra, inbox 2026-10-12);
