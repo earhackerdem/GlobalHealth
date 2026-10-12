@@ -22,4 +22,5 @@ extend-exclude = [
     "docs/",
     "AGENTS.md",
     "CLAUDE.md",
+    "CHANGELOG.md",
 ]
