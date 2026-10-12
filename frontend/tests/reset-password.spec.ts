@@ -46,6 +46,10 @@ test("User can reset password successfully using the link", async ({
 
   await page.getByRole("button", { name: "Continuar" }).click()
 
+  await expect(
+    page.getByText("Te enviamos un correo para recuperar tu contraseña"),
+  ).toBeVisible()
+
   const emailHtml = await waitForEmailHtml({
     request,
     query: `to:${email} subject:"Recuperación de contraseña para ${email}"`,
