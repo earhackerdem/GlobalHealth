@@ -26,10 +26,12 @@ para los tests no identifica una base de prueba, para que un entorno mal configu
 contra datos de desarrollo.
 
 #### Scenario: Sin configuración de BD de prueba, la suite no corre
-- **GIVEN** un entorno donde la variable de conexión de la BD de prueba no está definida
+- **GIVEN** un entorno donde la variable de conexión de la BD de prueba está definida pero vacía (desactivada
+  explícitamente, sin fallback), o bien no está definida y el `.env` raíz tampoco la define
 - **WHEN** se intenta ejecutar pytest
 - **THEN** la suite aborta antes de ejecutar cualquier test, con un mensaje que indica qué variable falta y cómo
-  definirla, y la base de desarrollo no recibe ninguna conexión de la suite
+  definirla, y la base de desarrollo no recibe ninguna conexión de la suite; solo cuando la variable no está
+  definida y el `.env` raíz sí define una URL válida, la suite procede usando ese valor
 
 #### Scenario: Una URL que apunta a la base de desarrollo es rechazada
 - **GIVEN** la variable de conexión de prueba definida pero apuntando a la base de desarrollo `app`

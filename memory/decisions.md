@@ -149,7 +149,7 @@ link the new one. Order: from most structural to most tactical.
   bytes) y rotan con `ENCRYPTION_KEY_PREVIOUS`.
 
 ## D14 — BD de prueba efímera en Docker; pytest se niega a correr contra otra cosa
-- **Date:** 2026-10-11 · **Status:** Accepted · **Owner:** Saúl Pérez (pedido directo) · **Extiende:** D12
+- **Status:** Accepted · 2026-10-11 · decided by: Saúl Pérez (author/owner), a pedido directo. Extiende D12.
 - **Decision:** servicio `db-test` en `compose.override.yml` (postgres:18, **tmpfs**, base `app_test`, host
   5433) solo para dev/CI: el stack de deploy (`compose.yml + compose.deploy.yml`) nunca lo levanta. La suite
   backend resuelve `TEST_DATABASE_URL` (entorno > `.env` raíz; vacía explícita = desactivada), **aborta** si

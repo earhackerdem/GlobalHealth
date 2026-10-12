@@ -35,13 +35,20 @@ cambiar el runtime de la app (la app en dev/prod sigue usando `DATABASE_URL` tal
 - **.env.example** — nueva variable documentada:
   `TEST_DATABASE_URL=postgresql://postgres:${POSTGRES_PASSWORD}@localhost:5433/app_test`
 - **backend/tests/conftest.py** — ANTES de cualquier import de `app.*` (primeras líneas del módulo):
-  1. lee `TEST_DATABASE_URL` del entorno o del `.env` raíz; si falta → `pytest.exit` con mensaje es-MX que dice
-     qué variable definir y cómo levantar `db-test`
+  1. resuelve `TEST_DATABASE_URL`: el entorno gana; **definida pero vacía = desactivada explícitamente, aborta SIN
+     fallback**; solo la variable NO definida cae al `.env` raíz. Si al final no hay valor → `pytest.exit` con
+     mensaje es-MX que dice qué variable definir y cómo levantar `db-test`
   2. valida que el nombre de base de la URL termina en `_test`; si no → `pytest.exit` ("la base configurada no es
      de prueba; me niego a correr la suite contra ella")
   3. exporta `DATABASE_URL = TEST_DATABASE_URL` en `os.environ` y recién entonces importa la app
   4. fixture de sesión (autouse, antes de `db`): `alembic upgrade head` sobre la BD de prueba
-     (`alembic.config.Config` con `sqlalchemy.url` = TEST_DATABASE_URL; cwd backend/)
+     (`alembic.config.Config` sobre `backend/alembic.ini` + `script_location` absoluto; la URL llega vía `env.py`
+     → `settings.DATABASE_URL`, poblada por el export del paso 3). Antes del upgrade, assert de que el nombre de
+     base efectivo en settings sigue terminando en `_test` (cierra la brecha "algo importó `app.*` antes de la
+     guarda"); si la BD está caída (`OperationalError`) → `pytest.exit` con la remediación
+     (`docker compose up -d --wait db-test`)
+- **backend/pyproject.toml** — coverage con `omit = ["app/alembic/*"]`: las migraciones corren en-proceso al
+  automigrar la suite, son DDL de esquema y quedan fuera del gate de cobertura
 - **.github/workflows/test-backend.yml** — `up -d --wait db-test mailpit`; el paso "Migrate DB" (prestart sobre la
   BD dev) se elimina (la suite se automigra); `TEST_DATABASE_URL` sale del `.env` creado desde `.env.example`
 - **backend/scripts/tests-start.sh / test.sh** — sin cambio de firma; siguen siendo `pytest` + coverage (la

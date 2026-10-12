@@ -22,3 +22,19 @@
   pyproject y la cifra real quedó en 93.69% (= cierre anterior). ADR D14 registrado (extiende D12).
 - Deuda/no-goals: paralelismo de dos pytest simultáneos sobre db-test (fuera de alcance, se decide si duele);
   inbox: la fila de cobertura-al-umbral quedó obsoleta (93.69% desde el apply).
+
+## Ronda review→apply (misma fecha)
+- /epe-4-review: 5 finders → 21 únicos → 4 validadores por reproducción → rondas 2 y 3 NO secas (3 nuevos + 3
+  bajas); parado por calibración y reportado como límite. 3 falsos positivos documentados (md5 "de PII" era el
+  placeholder de .env.example — verificación aritmética; target movido; puerto hardcodeado). Hallazgo estrella de
+  ronda 2: los 3 workflows disparaban push a master con default main → sin CI post-merge (herencia del template).
+- Saúl Pérez aprobó los grupos A/B/C completos. Fixer 15/15 sin rebotes. El validador me atrapó afirmando en
+  evidence que el design reflejaba la versión final cuando git probaba lo contrario — corregido y confesado en el
+  propio evidence.
+- Re-evidencia de aislamiento con GIVEN real sembrado (5 tablas, cifrado verificado en crudo): counts idénticos,
+  dumps normalizados idénticos (pg_dump 18 mete token \restrict aleatorio — gotcha nuevo), y prueba xmin: ninguna
+  transacción escribió en la BD dev durante dos suites (104 passed c/u).
+- Corrección inline a la entrada de arriba: "design.md actualizado, no recortado" era cierto solo para la semántica
+  de vacía-explícita; los pasos 1 y 4 del contrato quedaron viejos hasta este apply (hallazgo G2/H2-1).
+- closed.md +4 filas; meta-improvements: brecha tdd-check/conftest; inbox: despersonalizar artefactos (decisión de
+  Saúl).

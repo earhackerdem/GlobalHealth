@@ -2,8 +2,9 @@
 
 ## 1. Infraestructura: servicio db-test y variables (single)
 
-- [x] 1.1 Añadir servicio `db-test` a `compose.yml` (postgres:18, tmpfs, `POSTGRES_DB=app_test`, healthcheck) y
-      puerto `5433:5432` en `compose.override.yml`
+- [x] 1.1 Añadir servicio `db-test` completo a `compose.override.yml` (postgres:18, tmpfs, `POSTGRES_DB=app_test`,
+      healthcheck, puerto `5433:5432`): solo dev/CI; el stack de deploy (`compose.yml + compose.deploy.yml`) nunca
+      lo ve
 - [x] 1.2 Documentar `TEST_DATABASE_URL` en `.env.example` (localhost:5433/app_test, nota de que es efímera) y
       añadirla al `.env` local
 - [x] 1.3 Verificar: `docker compose up -d --wait db-test` sano conviviendo con `db`; `psql` conecta a 5433/app_test

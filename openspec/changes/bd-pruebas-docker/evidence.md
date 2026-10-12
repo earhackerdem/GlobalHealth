@@ -10,6 +10,9 @@ Fecha: 2026-10-11 · Rama: feat/bd-pruebas-docker · Ejecutor: Claude (orquestad
 | 2 Guarda + automigración (test→impl) | 2 failed / 1 passed (658da3f) | **103 passed / 0 failed / 0 errors / 0 skipped** · cobertura **93.69%** (133f056, e18ad8e) |
 | 3 CI + evidencia aislamiento (single) | n/a | ver §Aislamiento; CI corre en el PR |
 
+94 warnings, todos preexistentes (89 InsecureKeyLengthWarning de pyjwt por el SECRET_KEY de dev, 4 UserWarning de
+config.py, 1 StarletteDeprecationWarning); ninguno introducido por este cambio.
+
 - `make tdd-check` ✓ (2 commits `test:` ≥ 1 grupo test→impl; rutas de tests sin diff tras el último).
 - Comando: `cd backend && uv run coverage run -m pytest -q && uv run coverage report --precision=2 --fail-under=90`.
 
@@ -23,7 +26,8 @@ verificando la barrera por git. El tester solo escribió el rojo (test_db_guard.
 
 `TEST_DATABASE_URL=""` explícita = desactivada (aborta SIN fallback al .env raíz); solo la variable NO definida cae
 al `.env`. Sin esta semántica, el escenario "sin configuración" era intesteable en cualquier máquina cuyo `.env` ya
-define la variable (todas las de desarrollo). design.md §Interface contract refleja la versión final.
+define la variable (todas las de desarrollo). design.md §Interface contract refleja la versión final (corregido en
+el apply de la revisión: los pasos 1 y 4 habían quedado desactualizados y esta afirmación era falsa hasta entonces).
 
 ## Escenario: la BD de prueba es efímera y se reconstruye sola
 
@@ -33,12 +37,19 @@ completa inmediata: verde 103/0/0 con `alembic upgrade head` ejecutado por la pr
 
 ## Escenario: los datos de desarrollo sobreviven a la suite (aislamiento)
 
-Snapshot psql de la BD dev `app` (count de user/oauthidentity/consentgrant + md5 de emails|ids ordenados):
+**Re-ejecutado en el apply de la revisión** (la primera toma era vacua: BD degenerada con 0 identidades/consentimientos,
+hallazgo confirmado; y el md5 de emails commiteado resultó ser del placeholder de .env.example — falso positivo de PII,
+pero el criterio queda: no se commitean hashes derivados de datos). GIVEN real sembrado vía los modelos de la app:
+usuario con OAuthIdentity google (subject cifrado `gAAAAAB…` verificado en crudo), ConsentGrant v1, Item y
+HealthRecordStub (note cifrada). Snapshot = counts de las CINCO tablas + md5 local del pg_dump completo normalizado
+(pg_dump 18 inserta un token aleatorio `\restrict` por dump; se filtra). El hash NO se commitea.
 
 ```
-antes:   1|0|0|f3c7951797a069c31f14b0b82540450a
-después: 1|0|0|f3c7951797a069c31f14b0b82540450a   (tras DOS suites completas)
-diff: vacío
+antes:   2|1|1|1|1   (user|oauthidentity|consentgrant|item|healthrecordstub)
+después: 2|1|1|1|1   tras DOS suites completas (104 passed cada una)
+dumps normalizados: md5 local idéntico · diff de counts: vacío
+xmin: todas las filas conservan xmin 4019–4021 con txid_current=4022 tras ambas suites
+      → ninguna transacción escribió en esas tablas durante las corridas (prueba más fuerte que el dump)
 ```
 
 Nota honesta: la corrida ROJA del grupo 2 aún ejecutó el conftest viejo y barrió la BD dev una última vez (borró el
@@ -56,4 +67,4 @@ lógica unit-testeable). Total real sin migraciones: **93.69%**, idéntico al ci
 
 `test-backend.yml`: `up -d --wait db-test mailpit` y paso "Migrate DB" eliminado (la suite se automigra).
 `test-docker-compose.yml` sin cambios (no ejecuta pytest; `up` con servicios nombrados no arranca db-test).
-Playwright sin cambios (stack real). Resultado esperado en el PR: los 4 workflows verdes.
+Playwright sin cambios (stack real). 11/11 checks verdes en el head 2aede4d (run test-backend 38185638754, 52 s).
