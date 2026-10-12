@@ -14,3 +14,10 @@
 - Deuda: "Test email sent" en routes/utils.py (sin test), span de énfasis perdido en paginación del DataTable,
   baseURL default de playwright.config apunta al dev server; fila es-MX del inbox se cierra tras el merge (hay
   ediciones del inbox en vuelo en el PR #3).
+
+## Ronda review→apply (2026-10-12, mismo PR)
+- /epe-4-review: 5 finders → 21 únicos → 2 validadores (15/15 confirmados, 0 FP) → ronda 2 con 4 nuevos (no seca;
+  parado por calibración). Estrella: pins con 0 y 6 días de vida violando la regla ≥2 semanas del PROPIO design.
+- Saúl Pérez aprobó A completo y B con: tests de pantallas ahora, test del correo de alta, fallbacks traducidos,
+  sr-only de ui/ traducidos; C: aserción del toast. Fixer 14/14 + tester 4 archivos (verdes al primer intento).
+- Post-apply: backend 106/0/0 (93.69%), Playwright 65/0, tdd-check ✓ (4 test:). closed.md +2 diferidos.
