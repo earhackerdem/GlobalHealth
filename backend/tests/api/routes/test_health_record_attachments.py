@@ -58,9 +58,7 @@ def attachment_url(record_id: Any, attachment_id: Any) -> str:
     return f"{attachments_url(record_id)}/{attachment_id}"
 
 
-def own_diagnosis(
-    client: TestClient, db: Session
-) -> tuple[dict[str, str], str]:
+def own_diagnosis(client: TestClient, db: Session) -> tuple[dict[str, str], str]:
     """Fresh consented user with one diagnosis record of their own."""
     headers = consented_user_headers(client, db)
     r = post_record(client, headers, diagnosis_payload())
@@ -142,9 +140,7 @@ def test_ac2_renamed_exe_is_rejected_415_and_nothing_persists(
     )
 
     assert r.status_code == 415, r.text
-    assert r.json() == {
-        "detail": "Tipo de archivo no permitido (solo PDF, JPEG o PNG)"
-    }
+    assert r.json() == {"detail": "Tipo de archivo no permitido (solo PDF, JPEG o PNG)"}
 
     r_list = client.get(attachments_url(record_id), headers=headers)
     assert r_list.status_code == 200, r_list.text
@@ -197,9 +193,7 @@ def test_ac3_attachment_is_encrypted_at_rest(client: TestClient, db: Session) ->
     db.expire_all()
     row = (
         db.execute(
-            text(
-                "SELECT * FROM healthrecordattachment WHERE id = CAST(:id AS uuid)"
-            ),
+            text("SELECT * FROM healthrecordattachment WHERE id = CAST(:id AS uuid)"),
             {"id": str(attachment_id)},
         )
         .mappings()
@@ -344,9 +338,7 @@ def test_ac5_delete_own_attachment_returns_adjunto_eliminado(
     assert r_att.status_code == 201, r_att.text
     attachment_id = r_att.json()["id"]
 
-    r_delete = client.delete(
-        attachment_url(record_id, attachment_id), headers=headers
-    )
+    r_delete = client.delete(attachment_url(record_id, attachment_id), headers=headers)
     assert r_delete.status_code == 200, r_delete.text
     assert r_delete.json() == {"message": "Adjunto eliminado"}
 
