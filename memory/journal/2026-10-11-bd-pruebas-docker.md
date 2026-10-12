@@ -38,3 +38,7 @@
   de vacía-explícita; los pasos 1 y 4 del contrato quedaron viejos hasta este apply (hallazgo G2/H2-1).
 - closed.md +4 filas; meta-improvements: brecha tdd-check/conftest; inbox: despersonalizar artefactos (decisión de
   Saúl).
+
+- pre-commit del CI falló 3 veces en el PR #2 por pushes sin pasada prek local (ARG001, typos, end-of-file de las
+  specs generadas por openspec archive — el CLI deja lineas en blanco sobrantes). Gate instalado: .git/hooks/pre-push
+  local corre prek sobre el diff vs origin/main antes de cada push. Candidato a estandarizar en el harness.
