@@ -24,12 +24,12 @@
       inválido
 - [x] 3.2 Impl: cliente regenerado, ruta `/_layout/expediente`, `components/Records/` (patrón Items), namespace
       `records.json`, entrada del sidebar, hasta Playwright verde completo
-- [ ] 3.3 Verify: suite Playwright completa verde; grep de strings visibles en inglés en los archivos nuevos
+- [x] 3.3 Verify: suite Playwright completa verde; grep de strings visibles en inglés en los archivos nuevos
 
 ## 4. Cierre documental · single
 
-- [ ] 4.1 ADR D16 (adjuntos en Postgres cifrados) en `memory/decisions.md`
-- [ ] 4.2 evidence.md con números reales por grupo (rojo y verde) + validation.md no técnico
+- [x] 4.1 ADR D16 (adjuntos en Postgres cifrados) en `memory/decisions.md`
+- [x] 4.2 evidence.md con números reales por grupo (rojo y verde) + validation.md no técnico
 - [ ] 4.3 Journal + PR con cuerpo fiel
 
 ## Close
