@@ -19,10 +19,10 @@
 
 ## 3. Frontend expediente es-MX + Playwright · test→impl
 
-- [ ] 3.1 Test: `frontend/tests/health-records.spec.ts` en rojo asertando los textos es-MX de `records.json`
+- [x] 3.1 Test: `frontend/tests/health-records.spec.ts` en rojo asertando los textos es-MX de `records.json`
       sobre: agregar diagnóstico, agregar receta, editar, eliminar, adjuntar y descargar, error de archivo
       inválido
-- [ ] 3.2 Impl: cliente regenerado, ruta `/_layout/expediente`, `components/Records/` (patrón Items), namespace
+- [x] 3.2 Impl: cliente regenerado, ruta `/_layout/expediente`, `components/Records/` (patrón Items), namespace
       `records.json`, entrada del sidebar, hasta Playwright verde completo
 - [ ] 3.3 Verify: suite Playwright completa verde; grep de strings visibles en inglés en los archivos nuevos
 

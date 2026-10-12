@@ -1,0 +1,205 @@
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
+import { Download, Trash2, Upload } from "lucide-react"
+import { useRef, useState } from "react"
+import { useTranslation } from "react-i18next"
+
+import {
+  type HealthRecordAttachmentPublic,
+  type HealthRecordPublic,
+  HealthRecordsService,
+} from "@/client"
+import { Button } from "@/components/ui/button"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog"
+import useCustomToast from "@/hooks/useCustomToast"
+import i18n from "@/i18n"
+import { handleError } from "@/utils"
+
+function getAttachmentsQueryKey(recordId: string) {
+  return ["health-records", recordId, "attachments"]
+}
+
+interface AttachmentsPanelProps {
+  recordId: string
+}
+
+function AttachmentsPanel({ recordId }: AttachmentsPanelProps) {
+  const { t } = useTranslation("records")
+  const queryClient = useQueryClient()
+  const { showSuccessToast, showErrorToast } = useCustomToast()
+  const fileInputRef = useRef<HTMLInputElement>(null)
+
+  const { data: attachments } = useQuery({
+    queryKey: getAttachmentsQueryKey(recordId),
+    queryFn: async () =>
+      (
+        await HealthRecordsService.recordsReadHealthRecordAttachments({
+          path: { id: recordId },
+        })
+      ).data,
+  })
+
+  const uploadMutation = useMutation({
+    mutationFn: (file: File) =>
+      HealthRecordsService.recordsCreateHealthRecordAttachment({
+        path: { id: recordId },
+        body: { file },
+      }),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({
+        queryKey: getAttachmentsQueryKey(recordId),
+      })
+      showSuccessToast(t("attachments.addedToast"))
+    },
+    onError: handleError.bind(showErrorToast),
+  })
+
+  const deleteMutation = useMutation({
+    mutationFn: (attachmentId: string) =>
+      HealthRecordsService.recordsDeleteHealthRecordAttachment({
+        path: { id: recordId, attachment_id: attachmentId },
+      }),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({
+        queryKey: getAttachmentsQueryKey(recordId),
+      })
+      showSuccessToast(t("attachments.deletedToast"))
+    },
+    onError: handleError.bind(showErrorToast),
+  })
+
+  // The generated client types this download as JSON; the response is binary
+  // (decrypted bytes + Content-Disposition), so we fetch directly with the
+  // bearer token and hand the blob to the browser as a named download.
+  const handleDownload = async (attachment: HealthRecordAttachmentPublic) => {
+    try {
+      const baseUrl = import.meta.env.VITE_API_URL ?? ""
+      const token = localStorage.getItem("access_token") ?? ""
+      const response = await fetch(
+        `${baseUrl}/api/v1/health-records/${recordId}/attachments/${attachment.id}`,
+        { headers: { Authorization: `Bearer ${token}` } },
+      )
+      if (!response.ok) {
+        throw new Error(i18n.t("common:errors.generic"))
+      }
+      const blob = await response.blob()
+      const url = URL.createObjectURL(blob)
+      const link = document.createElement("a")
+      link.href = url
+      link.download = attachment.filename
+      document.body.appendChild(link)
+      link.click()
+      link.remove()
+      setTimeout(() => URL.revokeObjectURL(url), 1000)
+    } catch {
+      showErrorToast(i18n.t("common:errors.generic"))
+    }
+  }
+
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    if (file) {
+      uploadMutation.mutate(file)
+    }
+    event.target.value = ""
+  }
+
+  return (
+    <div className="flex flex-col gap-4">
+      {attachments && attachments.data.length > 0 ? (
+        <ul className="flex flex-col gap-2">
+          {attachments.data.map((attachment) => (
+            <li
+              key={attachment.id}
+              className="flex items-center justify-between gap-2 rounded-md border px-3 py-2"
+            >
+              <span className="truncate text-sm">{attachment.filename}</span>
+              <div className="flex shrink-0 gap-1">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => handleDownload(attachment)}
+                >
+                  <Download />
+                  {t("attachments.download")}
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  disabled={deleteMutation.isPending}
+                  onClick={() => deleteMutation.mutate(attachment.id)}
+                >
+                  <Trash2 />
+                  {t("attachments.delete")}
+                </Button>
+              </div>
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <p className="text-sm text-muted-foreground">
+          {t("attachments.empty")}
+        </p>
+      )}
+
+      <div>
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="application/pdf,image/jpeg,image/png"
+          className="hidden"
+          onChange={handleFileChange}
+        />
+        <Button
+          variant="outline"
+          disabled={uploadMutation.isPending}
+          onClick={() => fileInputRef.current?.click()}
+        >
+          <Upload />
+          {t("attachments.upload")}
+        </Button>
+      </div>
+    </div>
+  )
+}
+
+interface RecordTitleProps {
+  record: HealthRecordPublic
+}
+
+/**
+ * The record title opens its attachments panel (dialog) when clicked.
+ */
+export function RecordTitle({ record }: RecordTitleProps) {
+  const { t } = useTranslation("records")
+  const [isOpen, setIsOpen] = useState(false)
+
+  return (
+    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+      <DialogTrigger asChild>
+        <button
+          type="button"
+          className="text-left font-medium underline-offset-4 hover:underline"
+          aria-label={t("attachments.openPanel", { title: record.title })}
+        >
+          {record.title}
+        </button>
+      </DialogTrigger>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>{t("attachments.title")}</DialogTitle>
+          <DialogDescription>
+            {t("attachments.dialogDescription")}
+          </DialogDescription>
+        </DialogHeader>
+        <AttachmentsPanel recordId={record.id} />
+      </DialogContent>
+    </Dialog>
+  )
+}
