@@ -10,6 +10,10 @@ confidencial = "confidencial"
 # words typos mistakes for English typos
 caracteres = "caracteres"
 ser = "ser"
+profesional = "profesional"
+excede = "excede"
+requiere = "requiere"
+directos = "directos"
 # nombre real de la action re-actors/alls-green (workflows del template)
 alls = "alls"
 

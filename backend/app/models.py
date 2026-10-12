@@ -143,21 +143,19 @@ class HealthRecordCreate(SQLModel):
     valid_to: date | None = None
 
     @model_validator(mode="after")
-    def _validate_fields_by_type(self) -> "HealthRecordCreate":
+    def _validate_fields_by_type(self) -> HealthRecordCreate:
         prescription_fields = ("dose", "valid_from", "valid_to")
         if self.record_type == "diagnosis":
             present = [f for f in prescription_fields if getattr(self, f) is not None]
             if present:
                 raise ValueError(
-                    "Un diagnóstico no admite dosis ni vigencia: "
-                    + ", ".join(present)
+                    "Un diagnóstico no admite dosis ni vigencia: " + ", ".join(present)
                 )
         else:
             missing = [f for f in prescription_fields if getattr(self, f) is None]
             if missing:
                 raise ValueError(
-                    "Una receta requiere dosis y vigencia: falta "
-                    + ", ".join(missing)
+                    "Una receta requiere dosis y vigencia: falta " + ", ".join(missing)
                 )
         return self
 
