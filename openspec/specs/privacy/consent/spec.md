@@ -36,3 +36,4 @@ el inicio de sesión social no lo sustituye.
 - **WHEN** llega al expediente sin haber aceptado el texto de consentimiento
 - **THEN** la captura de datos de salud sigue bloqueada hasta que lo acepte
 
+

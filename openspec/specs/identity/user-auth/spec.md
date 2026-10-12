@@ -44,3 +44,4 @@ El sistema SHALL garantizar que ninguna operación de una cuenta lea o modifique
 - **WHEN** la cuenta A lista sus registros
 - **THEN** recibe exactamente sus 2 registros y ninguno de B
 
+
