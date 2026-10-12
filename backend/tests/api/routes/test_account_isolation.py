@@ -5,15 +5,18 @@ Spec: openspec/changes/cuenta-consentimiento/specs/identity/user-auth/spec.md
 recurso ajeno por identificador", "Listados solo propios").
 
 Contract (openspec/changes/cuenta-consentimiento/design.md §Interface contract
-+ approved review findings H7/H13):
++ approved review findings H7/H13, health-records payload migrated to
+openspec/changes/expediente-registros/design.md §Interface contract):
 - POST /api/v1/users/signup and POST /api/v1/login/access-token (template).
-- POST /api/v1/health-records/ {"note": str} -> auth + consent required ->
-  201 {"id", "note", "owner_id"} persisted with the session user's owner_id.
+- POST /api/v1/health-records/ {"record_type": "diagnosis", "title": str,
+  "occurred_on": "YYYY-MM-DD"} -> auth + consent required -> 201 {"id",
+  "title", "owner_id", ...} persisted with the session user's owner_id.
 - GET /api/v1/health-records/ -> template envelope {"data": [...], "count": N}
   with skip/limit, listing ONLY the session user's records.
 - Foreign record by id -> not-found/not-authorized, resource never exposed.
-- HealthRecordStub.note is encrypted at rest (EncryptedString): the ORM/API
-  read plaintext, the raw column holds only ciphertext.
+- HealthRecord.title is encrypted at rest (EncryptedString) in table
+  ``healthrecord``: the ORM/API read plaintext, the raw column holds only
+  ciphertext.
 
 Email scenarios already partially covered by the template
 (tests/api/routes/test_users.py): this file adds only the observable
@@ -68,17 +71,21 @@ def consented_user_headers(client: TestClient, db: Session) -> dict[str, str]:
 
 
 def create_record(
-    client: TestClient, headers: dict[str, str], note: str
+    client: TestClient, headers: dict[str, str], title: str
 ) -> dict[str, Any]:
     r = client.post(
         f"{settings.API_V1_STR}/health-records/",
         headers=headers,
-        json={"note": note},
+        json={
+            "record_type": "diagnosis",
+            "title": title,
+            "occurred_on": "2026-09-30",
+        },
     )
     assert r.status_code == 201, r.text
     record = r.json()
     assert record["id"]
-    assert record["note"] == note
+    assert record["title"] == title
     return record
 
 
@@ -140,10 +147,10 @@ def test_ac_isolation_owner_reads_own_record_detail(
 
     Guard against a vacuous pass of the foreign-access test: a missing
     detail route is also a 404. The detail endpoint must exist and return
-    200 with the note for its owner.
+    200 with the title for its owner.
     """
     headers_b = consented_user_headers(client, db)
-    record = create_record(client, headers_b, note="nota propia de B")
+    record = create_record(client, headers_b, title="nota propia de B")
 
     r = client.get(
         f"{settings.API_V1_STR}/health-records/{record['id']}", headers=headers_b
@@ -152,7 +159,7 @@ def test_ac_isolation_owner_reads_own_record_detail(
     assert r.status_code == 200, r.text
     body = r.json()
     assert str(body["id"]) == str(record["id"])
-    assert body["note"] == "nota propia de B"
+    assert body["title"] == "nota propia de B"
     assert str(body["owner_id"]) == str(record["owner_id"])
 
 
@@ -163,7 +170,7 @@ def test_ac_isolation_foreign_record_by_id_not_exposed(
     headers_a = consented_user_headers(client, db)
     headers_b = consented_user_headers(client, db)
     secret_note = f"diagnóstico-confidencial-{random_lower_string()}"
-    record_b = create_record(client, headers_b, note=secret_note)
+    record_b = create_record(client, headers_b, title=secret_note)
 
     r = client.get(
         f"{settings.API_V1_STR}/health-records/{record_b['id']}", headers=headers_a
@@ -189,9 +196,9 @@ def test_ac_isolation_list_returns_only_own_records(
 
     notes_a = [f"nota-A-{i}-{random_lower_string()}" for i in range(2)]
     notes_b = [f"nota-B-{i}-{random_lower_string()}" for i in range(3)]
-    records_a = [create_record(client, headers_a, note) for note in notes_a]
-    for note in notes_b:
-        create_record(client, headers_b, note)
+    records_a = [create_record(client, headers_a, title) for title in notes_a]
+    for title in notes_b:
+        create_record(client, headers_b, title)
 
     r = client.get(f"{settings.API_V1_STR}/health-records/", headers=headers_a)
 
@@ -201,7 +208,7 @@ def test_ac_isolation_list_returns_only_own_records(
     listed = body["data"]
     assert len(listed) == 2
     assert {str(item["id"]) for item in listed} == {str(rec["id"]) for rec in records_a}
-    assert {item["note"] for item in listed} == set(notes_a)
+    assert {item["title"] for item in listed} == set(notes_a)
     for note in notes_b:
         assert note not in r.text
 
@@ -223,25 +230,25 @@ def test_ac_isolation_list_returns_only_own_records(
 def test_health_record_note_is_encrypted_at_rest(
     client: TestClient, db: Session
 ) -> None:
-    """La nota se guarda cifrada: el SQL crudo no contiene el plaintext."""
+    """El título se guarda cifrado: el SQL crudo no contiene el plaintext."""
     headers = consented_user_headers(client, db)
     secret_note = f"nota-en-reposo-{random_lower_string()}"
-    record = create_record(client, headers, note=secret_note)
+    record = create_record(client, headers, title=secret_note)
 
     raw_rows = db.execute(
-        text("SELECT note FROM healthrecordstub WHERE id = CAST(:id AS uuid)"),
+        text("SELECT title FROM healthrecord WHERE id = CAST(:id AS uuid)"),
         {"id": str(record["id"])},
     ).all()
     assert len(raw_rows) == 1
-    raw_note = raw_rows[0][0]
-    assert raw_note != secret_note
-    assert secret_note not in str(raw_note)
+    raw_title = raw_rows[0][0]
+    assert raw_title != secret_note
+    assert secret_note not in str(raw_title)
     # Fernet tokens are versioned with the 0x80 byte: urlsafe-b64 "gAAAA".
-    assert str(raw_note).startswith("gAAAA")
+    assert str(raw_title).startswith("gAAAA")
 
     # And the ORM/API still read the plaintext back.
     r = client.get(
         f"{settings.API_V1_STR}/health-records/{record['id']}", headers=headers
     )
     assert r.status_code == 200
-    assert r.json()["note"] == secret_note
+    assert r.json()["title"] == secret_note

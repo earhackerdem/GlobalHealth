@@ -10,7 +10,9 @@ Contract (openspec/changes/cuenta-consentimiento/design.md §Interface contract
   not from inferring on hashed_password.
 - require_consent demands a grant of the CURRENT version (max of
   CONSENT_TEXTS): a v1 grant stops opening capture once v2 exists. Probed
-  through POST /api/v1/health-records/ {"note": str} -> 201.
+  through POST /api/v1/health-records/ with a diagnosis payload
+  {"record_type": "diagnosis", "title": str, "occurred_on": "YYYY-MM-DD"}
+  -> 201 (expediente-registros design.md §Interface contract).
 - Google signup (GET /api/v1/login/google/callback) does NOT imply consent.
 
 Spec: openspec/changes/cuenta-consentimiento/specs/privacy/consent/spec.md.
@@ -68,12 +70,16 @@ def get_consent(client: TestClient, headers: dict[str, str]) -> Any:
 
 
 def post_health_record(
-    client: TestClient, headers: dict[str, str], note: str = "diagnóstico x"
+    client: TestClient, headers: dict[str, str], title: str = "diagnóstico x"
 ) -> Any:
     return client.post(
         f"{settings.API_V1_STR}/health-records/",
         headers=headers,
-        json={"note": note},
+        json={
+            "record_type": "diagnosis",
+            "title": title,
+            "occurred_on": "2026-09-30",
+        },
     )
 
 
@@ -83,7 +89,7 @@ def test_ac1_capture_without_consent_is_rejected_with_consent_required(
     """Intento de captura sin consentimiento: 403 CONSENT_REQUIRED."""
     _user, headers = random_user_token_headers(client, db)
 
-    r = post_health_record(client, headers, note="diagnóstico x")
+    r = post_health_record(client, headers, title="diagnóstico x")
 
     assert r.status_code == 403
     assert r.json()["detail"] == "CONSENT_REQUIRED"
@@ -104,11 +110,11 @@ def test_ac2_granting_consent_records_evidence_and_enables_capture(
     # Password login session: the amr claim fixes the auth method exactly.
     assert grant["auth_method"] == "password"
 
-    r_record = post_health_record(client, headers, note="diagnóstico x")
+    r_record = post_health_record(client, headers, title="diagnóstico x")
     assert r_record.status_code == 201
     record = r_record.json()
     assert record["id"]
-    assert record["note"] == "diagnóstico x"
+    assert record["title"] == "diagnóstico x"
     assert str(record["owner_id"]) == str(user.id)
 
 
@@ -193,7 +199,7 @@ def test_ac4_google_signup_does_not_imply_consent(client: TestClient) -> None:
     token = token_from_redirect(r_callback)
     headers = {"Authorization": f"Bearer {token}"}
 
-    r = post_health_record(client, headers, note="diagnóstico x")
+    r = post_health_record(client, headers, title="diagnóstico x")
 
     assert r.status_code == 403
     assert r.json()["detail"] == "CONSENT_REQUIRED"
