@@ -1,5 +1,7 @@
 import { AxiosError } from "axios"
 
+import i18n from "@/i18n"
+
 function extractErrorMessage(err: Error): string {
   if (err instanceof AxiosError) {
     const errDetail = (err.response?.data as any)?.detail
@@ -11,7 +13,8 @@ function extractErrorMessage(err: Error): string {
     }
     return err.message
   }
-  return "Something went wrong."
+  // t() runs at call time, after i18n init in main.tsx.
+  return i18n.t("common:errors.generic")
 }
 
 export const handleError = function (this: (msg: string) => void, err: Error) {

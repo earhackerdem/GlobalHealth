@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
+import { useTranslation } from "react-i18next"
 
 import { ConsentService } from "@/client"
 import { Button } from "@/components/ui/button"
@@ -20,6 +21,7 @@ import { handleError } from "@/utils"
  * collects it. Applies to both signup methods (password and Google).
  */
 function ConsentGate() {
+  const { t } = useTranslation("consent")
   const queryClient = useQueryClient()
   const { showSuccessToast, showErrorToast } = useCustomToast()
 
@@ -40,7 +42,7 @@ function ConsentGate() {
     mutationFn: (version: string) =>
       ConsentService.grantConsent({ body: { version } }),
     onSuccess: () => {
-      showSuccessToast("Consentimiento registrado")
+      showSuccessToast(t("gate.successToast"))
       queryClient.invalidateQueries({ queryKey: ["consent"] })
     },
     onError: handleError.bind(showErrorToast),
@@ -53,12 +55,9 @@ function ConsentGate() {
   return (
     <Card className="mt-6 max-w-2xl" data-testid="consent-gate">
       <CardHeader>
-        <CardTitle>
-          Consentimiento para el tratamiento de datos de salud
-        </CardTitle>
+        <CardTitle>{t("gate.title")}</CardTitle>
         <CardDescription>
-          Antes de capturar cualquier dato de salud necesitamos tu
-          consentimiento expreso (versión {consentText.version}).
+          {t("gate.description", { version: consentText.version })}
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -72,7 +71,7 @@ function ConsentGate() {
           disabled={grantMutation.isPending}
           onClick={() => grantMutation.mutate(consentText.version)}
         >
-          Acepto el tratamiento de mis datos sensibles
+          {t("gate.acceptButton")}
         </Button>
       </CardFooter>
     </Card>

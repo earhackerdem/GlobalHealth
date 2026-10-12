@@ -1,14 +1,16 @@
 import type { ColumnDef } from "@tanstack/react-table"
 import { Check, Copy } from "lucide-react"
-
+import { useTranslation } from "react-i18next"
 import type { ItemPublic } from "@/client"
 import type { DataTableFeatures } from "@/components/Common/DataTable"
 import { Button } from "@/components/ui/button"
 import { useCopyToClipboard } from "@/hooks/useCopyToClipboard"
+import i18n from "@/i18n"
 import { cn } from "@/lib/utils"
 import { ItemActionsMenu } from "./ItemActionsMenu"
 
 function CopyId({ id }: { id: string }) {
+  const { t } = useTranslation("items")
   const [copiedText, copy] = useCopyToClipboard()
   const isCopied = copiedText === id
 
@@ -26,7 +28,7 @@ function CopyId({ id }: { id: string }) {
         ) : (
           <Copy className="size-3" />
         )}
-        <span className="sr-only">Copy ID</span>
+        <span className="sr-only">{t("table.copyId")}</span>
       </Button>
     </div>
   )
@@ -35,19 +37,19 @@ function CopyId({ id }: { id: string }) {
 export const columns: ColumnDef<DataTableFeatures, ItemPublic>[] = [
   {
     accessorKey: "id",
-    header: "ID",
+    header: () => i18n.t("items:table.idHeader"),
     cell: ({ row }) => <CopyId id={row.original.id} />,
   },
   {
     accessorKey: "title",
-    header: "Title",
+    header: () => i18n.t("items:table.titleHeader"),
     cell: ({ row }) => (
       <span className="font-medium">{row.original.title}</span>
     ),
   },
   {
     accessorKey: "description",
-    header: "Description",
+    header: () => i18n.t("items:table.descriptionHeader"),
     cell: ({ row }) => {
       const description = row.original.description
       return (
@@ -57,14 +59,16 @@ export const columns: ColumnDef<DataTableFeatures, ItemPublic>[] = [
             !description && "italic",
           )}
         >
-          {description || "No description"}
+          {description || i18n.t("items:table.noDescription")}
         </span>
       )
     },
   },
   {
     id: "actions",
-    header: () => <span className="sr-only">Actions</span>,
+    header: () => (
+      <span className="sr-only">{i18n.t("common:table.actions")}</span>
+    ),
     cell: ({ row }) => (
       <div className="flex justify-end">
         <ItemActionsMenu item={row.original} />
