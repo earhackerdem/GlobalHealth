@@ -1,0 +1,8 @@
+{
+  "gate": {
+    "title": "Consentimiento para el tratamiento de datos de salud",
+    "description": "Antes de capturar cualquier dato de salud necesitamos tu consentimiento expreso (versión {{version}}).",
+    "acceptButton": "Acepto el tratamiento de mis datos sensibles",
+    "successToast": "Consentimiento registrado"
+  }
+}

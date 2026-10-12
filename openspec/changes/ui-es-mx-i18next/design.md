@@ -1,7 +1,7 @@
 # Design
 
-Status: DRAFT   <!-- the harness gate: "plan approved" from the person you work with → `Status: APPROVED` -->
-Approved by: <pendiente>
+Status: APPROVED
+Approved by: Saúl Pérez (author) on 2026-10-12 ("plan approved")
 
 ## Context
 
