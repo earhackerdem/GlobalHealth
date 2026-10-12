@@ -1,4 +1,4 @@
-import { expect, test, type Page } from "@playwright/test"
+import { expect, type Page, test } from "@playwright/test"
 import { createUser } from "./utils/privateApi"
 import { randomEmail, randomPassword } from "./utils/random"
 import { logInUser } from "./utils/user"
@@ -67,9 +67,16 @@ async function addPrescription(
  * visible con ese nombre lo usa; si no, abre el menú del registro (último
  * botón del contenedor que tiene el título) y elige el menuitem.
  */
-async function clickRecordAction(page: Page, recordText: string, action: string) {
+async function clickRecordAction(
+  page: Page,
+  recordText: string,
+  action: string,
+) {
   const directButton = page.getByRole("button", { name: action })
-  if ((await directButton.count()) > 0 && (await directButton.first().isVisible())) {
+  if (
+    (await directButton.count()) > 0 &&
+    (await directButton.first().isVisible())
+  ) {
     await directButton.first().click()
     return
   }
@@ -101,7 +108,12 @@ async function uploadAttachment(
 /** Abre el panel de adjuntos de un registro si la sección no está ya visible. */
 async function openAttachmentsPanel(page: Page, recordText: string) {
   const section = page.getByText("Adjuntos")
-  if (!(await section.first().isVisible().catch(() => false))) {
+  if (
+    !(await section
+      .first()
+      .isVisible()
+      .catch(() => false))
+  ) {
     await page.getByText(recordText).click()
   }
   await expect(page.getByText("Adjuntos")).toBeVisible()
@@ -141,7 +153,9 @@ test.describe("Expediente — registros clínicos", () => {
 
     await expect(page.getByText("Receta registrada.")).toBeVisible()
     await expect(page.getByText("Levotiroxina 50 µg")).toBeVisible()
-    await expect(page.getByText("Receta", { exact: true }).first()).toBeVisible()
+    await expect(
+      page.getByText("Receta", { exact: true }).first(),
+    ).toBeVisible()
   })
 
   test("AC3: corregir la dosis de una receta persiste el cambio", async ({
@@ -171,7 +185,11 @@ test.describe("Expediente — registros clínicos", () => {
     await expect(page.getByText("Diagnóstico registrado.")).toBeVisible()
     await expect(page.getByRole("dialog")).not.toBeVisible()
 
-    await clickRecordAction(page, "Hipotiroidismo subclínico", "Eliminar registro")
+    await clickRecordAction(
+      page,
+      "Hipotiroidismo subclínico",
+      "Eliminar registro",
+    )
 
     await expect(
       page.getByText(
@@ -222,7 +240,10 @@ test.describe("Expediente — registros clínicos", () => {
 
     // Bytes de ejecutable (MZ…) con mimeType de PDF: el servidor rechaza por
     // magic bytes, no por extensión ni por content-type declarado.
-    const exeBuffer = Buffer.from("MZ\x90\x00\x03\x00\x00\x00programa", "latin1")
+    const exeBuffer = Buffer.from(
+      "MZ\x90\x00\x03\x00\x00\x00programa",
+      "latin1",
+    )
     await uploadAttachment(page, {
       name: "reporte.exe",
       mimeType: "application/pdf",
