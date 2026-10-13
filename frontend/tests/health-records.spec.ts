@@ -62,47 +62,41 @@ async function addPrescription(
 }
 
 /**
- * Dispara una acción sobre un registro ("Editar registro", "Eliminar registro",
- * "Descargar", …). Flexible ante menú u botones directos: si hay un botón
- * visible con ese nombre lo usa; si no, abre el menú del registro (último
- * botón del contenedor que tiene el título) y elige el menuitem.
+ * Dispara una acción del menú o botones de un registro ("Editar registro",
+ * "Eliminar registro"): abre el menú de acciones (botón accesible
+ * "Abrir menú de acciones") DENTRO de la fila que contiene el texto del
+ * registro y elige el menuitem por nombre.
  */
 async function clickRecordAction(
   page: Page,
   recordText: string,
   action: string,
 ) {
-  const directButton = page.getByRole("button", { name: action })
-  if (
-    (await directButton.count()) > 0 &&
-    (await directButton.first().isVisible())
-  ) {
-    await directButton.first().click()
-    return
-  }
-  const container = page
-    .locator("tr, li, article, [data-record]")
-    .filter({ hasText: recordText })
-    .first()
-  await container.getByRole("button").last().click()
+  const row = page.getByRole("row").filter({ hasText: recordText })
+  await row.getByRole("button", { name: "Abrir menú de acciones" }).click()
   await page.getByRole("menuitem", { name: action }).click()
 }
 
-/** Sube un archivo en la sección "Adjuntos", vía input de archivo o filechooser. */
+/**
+ * Dispara una acción de un adjunto ("Descargar", "Eliminar adjunto"): el botón
+ * se localiza DENTRO del elemento de lista que contiene el nombre del archivo.
+ */
+async function clickAttachmentAction(
+  page: Page,
+  fileName: string,
+  action: string,
+) {
+  const item = page.locator("li").filter({ hasText: fileName })
+  await item.getByRole("button", { name: action }).click()
+}
+
+/** Sube un archivo en la sección "Adjuntos" vía el input de archivo oculto. */
 async function uploadAttachment(
   page: Page,
   file: { name: string; mimeType: string; buffer: Buffer },
 ) {
   await expect(page.getByText("Adjuntos")).toBeVisible()
-  const fileInput = page.locator('input[type="file"]')
-  if ((await fileInput.count()) > 0) {
-    await fileInput.first().setInputFiles(file)
-  } else {
-    const chooserPromise = page.waitForEvent("filechooser")
-    await page.getByRole("button", { name: "Subir archivo" }).click()
-    const chooser = await chooserPromise
-    await chooser.setFiles(file)
-  }
+  await page.locator('input[type="file"]').setInputFiles(file)
 }
 
 /** Abre el panel de adjuntos de un registro si la sección no está ya visible. */
@@ -224,7 +218,7 @@ test.describe("Expediente — registros clínicos", () => {
     await expect(page.getByText("perfil-tiroideo.pdf")).toBeVisible()
 
     const downloadPromise = page.waitForEvent("download")
-    await clickRecordAction(page, "perfil-tiroideo.pdf", "Descargar")
+    await clickAttachmentAction(page, "perfil-tiroideo.pdf", "Descargar")
     const download = await downloadPromise
     expect(download.suggestedFilename()).toBe("perfil-tiroideo.pdf")
   })

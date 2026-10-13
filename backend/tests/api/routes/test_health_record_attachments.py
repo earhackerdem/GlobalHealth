@@ -30,6 +30,7 @@ Spec: openspec/changes/expediente-registros/specs/records/clinical-records/spec.
 import uuid
 from typing import Any
 
+import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import text
 from sqlmodel import Session
@@ -39,6 +40,7 @@ from tests.api.routes.test_health_records import (
     consented_user_headers,
     diagnosis_payload,
     post_record,
+    user_without_consent_headers,
 )
 
 TEN_MB = 10 * 1024 * 1024
@@ -346,3 +348,95 @@ def test_ac5_delete_own_attachment_returns_adjunto_eliminado(
     assert r_list.status_code == 200, r_list.text
     assert r_list.json()["count"] == 0
     assert r_list.json()["data"] == []
+
+
+# --- Review coverage (PR #6): consent gate over attachment endpoints -------------
+
+
+@pytest.mark.parametrize(
+    "method,url_builder,kwargs",
+    [
+        pytest.param(
+            "POST",
+            lambda rid, aid: attachments_url(rid),
+            {"files": {"file": ("x.pdf", PDF_BYTES, "application/pdf")}},
+            id="post-upload",
+        ),
+        pytest.param("GET", lambda rid, aid: attachments_url(rid), {}, id="get-list"),
+        pytest.param(
+            "GET", lambda rid, aid: attachment_url(rid, aid), {}, id="get-download"
+        ),
+        pytest.param(
+            "DELETE", lambda rid, aid: attachment_url(rid, aid), {}, id="delete"
+        ),
+    ],
+)
+def test_review_b1_attachment_endpoints_without_consent_are_403_consent_required(
+    client: TestClient,
+    db: Session,
+    method: str,
+    url_builder: Any,
+    kwargs: dict[str, Any],
+) -> None:
+    """Los 4 endpoints de adjuntos sin consentimiento: 403 CONSENT_REQUIRED."""
+    headers = user_without_consent_headers(client, db)
+    record_id = str(uuid.uuid4())
+    attachment_id = str(uuid.uuid4())
+
+    r = client.request(
+        method, url_builder(record_id, attachment_id), headers=headers, **kwargs
+    )
+
+    assert r.status_code == 403, (method, r.text)
+    assert r.json()["detail"] == "CONSENT_REQUIRED", (method, r.text)
+
+
+# --- Review coverage (PR #6): image types by magic bytes -------------------------
+
+
+def test_review_b3_minimal_jpeg_is_accepted_as_image_jpeg(
+    client: TestClient, db: Session
+) -> None:
+    """JPEG mínimo (magic \\xff\\xd8\\xff\\xe0) como image/jpeg: 201 image/jpeg."""
+    headers, record_id = own_diagnosis(client, db)
+    jpeg_bytes = b"\xff\xd8\xff\xe0" + b"\x00" * 64
+
+    r = upload(client, headers, record_id, "radiografia.jpg", jpeg_bytes, "image/jpeg")
+
+    assert r.status_code == 201, r.text
+    meta = r.json()
+    assert meta["media_type"] == "image/jpeg"
+    assert meta["filename"] == "radiografia.jpg"
+    assert meta["size_bytes"] == len(jpeg_bytes)
+
+
+def test_review_b3_minimal_png_is_accepted_as_image_png(
+    client: TestClient, db: Session
+) -> None:
+    """PNG mínimo (firma \\x89PNG\\r\\n\\x1a\\n) como image/png: 201 image/png."""
+    headers, record_id = own_diagnosis(client, db)
+    png_bytes = b"\x89PNG\r\n\x1a\n" + b"\x00" * 64
+
+    r = upload(client, headers, record_id, "ultrasonido.png", png_bytes, "image/png")
+
+    assert r.status_code == 201, r.text
+    meta = r.json()
+    assert meta["media_type"] == "image/png"
+    assert meta["filename"] == "ultrasonido.png"
+    assert meta["size_bytes"] == len(png_bytes)
+
+
+def test_review_b3_pdf_content_declared_as_png_is_rejected_415(
+    client: TestClient, db: Session
+) -> None:
+    """Contenido %PDF declarado image/png: 415 (los magic bytes mandan)."""
+    headers, record_id = own_diagnosis(client, db)
+
+    r = upload(client, headers, record_id, "captura.png", PDF_BYTES, "image/png")
+
+    assert r.status_code == 415, r.text
+    assert r.json() == {"detail": "Tipo de archivo no permitido (solo PDF, JPEG o PNG)"}
+
+    r_list = client.get(attachments_url(record_id), headers=headers)
+    assert r_list.status_code == 200, r_list.text
+    assert r_list.json()["count"] == 0

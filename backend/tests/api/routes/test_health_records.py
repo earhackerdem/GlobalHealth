@@ -386,3 +386,103 @@ def test_ac6_delete_own_record_then_gone(client: TestClient, db: Session) -> Non
     assert r_list.status_code == 200, r_list.text
     assert r_list.json()["count"] == 0
     assert str(record_id) not in r_list.text
+
+
+# --- Review coverage (PR #6): listing order ------------------------------------
+
+
+def test_review_b2_list_returns_records_in_occurred_on_desc_order(
+    client: TestClient, db: Session
+) -> None:
+    """GET /health-records/ devuelve los registros en occurred_on DESC."""
+    headers = consented_user_headers(client, db)
+    for occurred_on, title in (
+        ("2026-05-10", "Control intermedio"),
+        ("2026-09-01", "Control reciente"),
+        ("2026-01-15", "Control antiguo"),
+    ):
+        r = post_record(
+            client, headers, diagnosis_payload(title=title, occurred_on=occurred_on)
+        )
+        assert r.status_code == 201, r.text
+
+    r_list = list_records(client, headers)
+
+    assert r_list.status_code == 200, r_list.text
+    body = r_list.json()
+    assert body["count"] == 3
+    assert [item["occurred_on"] for item in body["data"]] == [
+        "2026-09-01",
+        "2026-05-10",
+        "2026-01-15",
+    ]
+    assert [item["title"] for item in body["data"]] == [
+        "Control reciente",
+        "Control intermedio",
+        "Control antiguo",
+    ]
+
+
+# --- Review coverage (PR #6, fix A1): PATCH cross-type fields -------------------
+
+
+def test_review_a1_patch_diagnosis_with_prescription_fields_is_422_es_mx(
+    client: TestClient, db: Session
+) -> None:
+    """PATCH de un diagnóstico con dose/valid_from/valid_to: 422 con detail es-MX.
+
+    The route raises an HTTPException: ``detail`` is a STRING, not the Pydantic
+    error list.
+    """
+    headers = consented_user_headers(client, db)
+    r_create = post_record(client, headers, diagnosis_payload())
+    assert r_create.status_code == 201, r_create.text
+    record_id = r_create.json()["id"]
+
+    r_patch = client.patch(
+        f"{settings.API_V1_STR}/health-records/{record_id}",
+        headers=headers,
+        json={"dose": "x", "valid_from": "2026-10-01", "valid_to": "2026-12-30"},
+    )
+
+    assert r_patch.status_code == 422, r_patch.text
+    detail = r_patch.json()["detail"]
+    assert isinstance(detail, str), detail
+    assert detail.startswith("Un diagnóstico no admite dosis ni vigencia"), detail
+
+    # The record is untouched: prescription fields stay null.
+    r_get = client.get(
+        f"{settings.API_V1_STR}/health-records/{record_id}", headers=headers
+    )
+    assert r_get.status_code == 200, r_get.text
+    assert r_get.json()["dose"] is None
+    assert r_get.json()["valid_from"] is None
+    assert r_get.json()["valid_to"] is None
+
+
+def test_review_a1_patch_prescription_nulling_dose_is_422_es_mx(
+    client: TestClient, db: Session
+) -> None:
+    """PATCH de una receta con {"dose": null}: 422 con detail STRING es-MX."""
+    headers = consented_user_headers(client, db)
+    r_create = post_record(client, headers, prescription_payload())
+    assert r_create.status_code == 201, r_create.text
+    record_id = r_create.json()["id"]
+
+    r_patch = client.patch(
+        f"{settings.API_V1_STR}/health-records/{record_id}",
+        headers=headers,
+        json={"dose": None},
+    )
+
+    assert r_patch.status_code == 422, r_patch.text
+    detail = r_patch.json()["detail"]
+    assert isinstance(detail, str), detail
+    assert detail.startswith("Una receta requiere dosis y vigencia"), detail
+
+    # The prescription keeps its original dose.
+    r_get = client.get(
+        f"{settings.API_V1_STR}/health-records/{record_id}", headers=headers
+    )
+    assert r_get.status_code == 200, r_get.text
+    assert r_get.json()["dose"] == "1 tableta en ayunas cada 24 h"
