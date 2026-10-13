@@ -103,7 +103,9 @@ demo Items del template; thumbnails o preview de adjuntos.
 
 - [Fechas en claro filtran metadatos (cuándo hubo consultas, duración de tratamientos)] → aceptado y documentado:
   sin ellas no hay orden ni recordatorios; el texto clínico que da significado va cifrado. Re-evaluar si se
-  adopta cifrado con índices (p.ej. deterministic encryption) más adelante.
+  adopta cifrado con índices (p.ej. deterministic encryption) más adelante. El mismo trade-off cubre el
+  `record_type` en claro: con las vigencias en claro el tipo es inferible de todos modos (solo las recetas las
+  llevan), y ocultarlo exigiría cifrar también las fechas.
 - [BD crece con adjuntos grandes] → límite 10 MB/archivo + ADR D16 fija el umbral de re-evaluación (~1 GB).
 - [Reemplazar el stub rompe sus tests] → los dos tests citers migran en el MISMO grupo que reescribe la API;
   `tdd-check` y la suite completa lo vigilan.

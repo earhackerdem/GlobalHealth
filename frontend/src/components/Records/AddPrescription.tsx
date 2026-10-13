@@ -39,9 +39,15 @@ const formSchema = z.object({
   occurred_on: z
     .string()
     .min(1, { message: i18n.t("records:validation.dateRequired") }),
-  dose: z.string().optional(),
-  valid_from: z.string().optional(),
-  valid_to: z.string().optional(),
+  dose: z
+    .string()
+    .min(1, { message: i18n.t("records:validation.doseRequired") }),
+  valid_from: z
+    .string()
+    .min(1, { message: i18n.t("records:validation.validFromRequired") }),
+  valid_to: z
+    .string()
+    .min(1, { message: i18n.t("records:validation.validToRequired") }),
 })
 
 type FormData = z.infer<typeof formSchema>
@@ -104,7 +110,7 @@ const AddPrescription = () => {
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)}>
+          <form onSubmit={form.handleSubmit(onSubmit)} noValidate>
             <div className="grid gap-4 py-4">
               <FormField
                 control={form.control}
@@ -145,9 +151,12 @@ const AddPrescription = () => {
                 name="dose"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>{t("fields.dose")}</FormLabel>
+                    <FormLabel>
+                      {t("fields.dose")}{" "}
+                      <span className="text-destructive">*</span>
+                    </FormLabel>
                     <FormControl>
-                      <Input type="text" {...field} />
+                      <Input type="text" {...field} required />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -159,9 +168,12 @@ const AddPrescription = () => {
                 name="valid_from"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>{t("fields.validFrom")}</FormLabel>
+                    <FormLabel>
+                      {t("fields.validFrom")}{" "}
+                      <span className="text-destructive">*</span>
+                    </FormLabel>
                     <FormControl>
-                      <Input type="date" {...field} />
+                      <Input type="date" {...field} required />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -173,9 +185,12 @@ const AddPrescription = () => {
                 name="valid_to"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>{t("fields.validTo")}</FormLabel>
+                    <FormLabel>
+                      {t("fields.validTo")}{" "}
+                      <span className="text-destructive">*</span>
+                    </FormLabel>
                     <FormControl>
-                      <Input type="date" {...field} />
+                      <Input type="date" {...field} required />
                     </FormControl>
                     <FormMessage />
                   </FormItem>

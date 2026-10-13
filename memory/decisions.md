@@ -132,7 +132,9 @@ link the new one. Order: from most structural to most tactical.
   `cuenta-consentimiento` (/epe-4-review → /epe-5-apply)
 - **Decision:** el cifrado de datos sensibles en reposo (NFR-001) es app-level con **Fernet** (simétrico,
   autenticado) a través del TypeDecorator `EncryptedString` (`backend/app/core/encrypted.py`), aplicado hoy a
-  `OAuthIdentity.subject` y `HealthRecordStub.note`. Derivación de claves **por propósito** desde el mismo
+  `OAuthIdentity.subject` y `HealthRecordStub.note` (nota 2026-10-12: `HealthRecordStub` fue sustituido por
+  `HealthRecord` en expediente-registros; su texto clínico usa el mismo mecanismo). Derivación de claves **por
+  propósito** desde el mismo
   material: la clave de datos es `ENCRYPTION_KEY` tal cual (o, solo en dev, derivada determinista de `SECRET_KEY`)
   y la de la cookie PKCE se deriva con tag (`sha256(key material + b"pkce")`), de modo que comprometer una no
   expone la otra. **`ENCRYPTION_KEY` es obligatoria fuera de development** (el arranque falla sin ella; en dev solo

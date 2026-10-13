@@ -70,7 +70,7 @@ function Expediente() {
           <h1 className="text-2xl font-bold tracking-tight">{t("title")}</h1>
           <p className="text-muted-foreground">{t("page.subtitle")}</p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           <AddDiagnosis />
           <AddPrescription />
         </div>

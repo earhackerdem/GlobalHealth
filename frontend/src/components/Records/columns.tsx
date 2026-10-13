@@ -25,9 +25,16 @@ export const columns: ColumnDef<DataTableFeatures, HealthRecordPublic>[] = [
   {
     accessorKey: "occurred_on",
     header: () => i18n.t("records:table.dateHeader"),
-    cell: ({ row }) => (
-      <span className="text-muted-foreground">{row.original.occurred_on}</span>
-    ),
+    cell: ({ row }) => {
+      // Parse "YYYY-MM-DD" by parts: new Date("YYYY-MM-DD") is UTC and
+      // shifts the day in negative-offset timezones (finding C4).
+      const [year, month, day] = row.original.occurred_on.split("-")
+      return (
+        <span className="text-muted-foreground">
+          {`${day}/${month}/${year}`}
+        </span>
+      )
+    },
   },
   {
     id: "actions",

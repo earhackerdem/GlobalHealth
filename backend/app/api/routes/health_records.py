@@ -6,11 +6,12 @@ SAME 404 for a nonexistent id and a foreign one; clinical text encrypted at
 rest by the model (EncryptedString, NFR-001).
 """
 
+import urllib.parse
 import uuid
 from typing import Any
 
 from fastapi import APIRouter, HTTPException, Response, UploadFile
-from sqlmodel import col, func, select
+from sqlmodel import col, delete, func, select
 
 from app.api.deps import ConsentedUser, SessionDep
 from app.models import (
@@ -24,6 +25,7 @@ from app.models import (
     HealthRecordUpdate,
     Message,
     get_datetime_utc,
+    validate_health_record_fields_by_type,
 )
 
 router = APIRouter(prefix="/health-records", tags=["health-records"])
@@ -109,9 +111,24 @@ def update_health_record(
     id: uuid.UUID,
     record_in: HealthRecordUpdate,
 ) -> Any:
-    """Partial update of an owned record; ``record_type`` is immutable."""
+    """Partial update of an owned record; ``record_type`` is immutable.
+
+    The RESULTANT state after applying the partial update must satisfy the
+    same discriminated contract as the Create (finding A1 of the adversarial
+    review): a prescription keeps dose + validity non-null, a diagnosis
+    admits none of them. Raised as an HTTP 422 with the same es-MX message
+    as the Create validator.
+    """
     record = _get_owned_record(session, current_user, id)
     update_dict = record_in.model_dump(exclude_unset=True)
+    resultant = {
+        field: update_dict.get(field, getattr(record, field))
+        for field in ("dose", "valid_from", "valid_to")
+    }
+    try:
+        validate_health_record_fields_by_type(record.record_type, **resultant)
+    except ValueError as e:
+        raise HTTPException(status_code=422, detail=str(e)) from e
     record.sqlmodel_update(update_dict)
     record.updated_at = get_datetime_utc()
     session.add(record)
@@ -131,22 +148,30 @@ def delete_health_record(
     return Message(message="Registro eliminado")
 
 
-def _get_owned_attachment(
+def _check_owned_attachment(
     session: SessionDep,
     current_user: ConsentedUser,
     id: uuid.UUID,
     attachment_id: uuid.UUID,
-) -> HealthRecordAttachment:
-    """Fetch an attachment only through an owned record.
+) -> None:
+    """Validate that the attachment hangs from an owned record.
 
     A missing or foreign RECORD keeps the record-level 404 (indistinguishable
     from nonexistent); a missing attachment on an own record gets its own 404.
+    The check queries a LIGHT projection (id/record_id) so it never
+    materializes ``content`` (EncryptedBytes): decrypting before the
+    ownership check is both a timing oracle and a per-request cost
+    (finding A3 of the adversarial review). Callers load the full row only
+    after this check, and only when they need the bytes.
     """
     record = _get_owned_record(session, current_user, id)
-    attachment = session.get(HealthRecordAttachment, attachment_id)
-    if not attachment or attachment.record_id != record.id:
+    row = session.exec(
+        select(HealthRecordAttachment.id, HealthRecordAttachment.record_id).where(
+            HealthRecordAttachment.id == attachment_id
+        )
+    ).first()
+    if row is None or row.record_id != record.id:
         raise HTTPException(status_code=404, detail="Adjunto no encontrado")
-    return attachment
 
 
 @router.post(
@@ -167,6 +192,13 @@ def create_health_record_attachment(
     the whitelist (415 otherwise); size limited to 10 MB inclusive (413).
     """
     record = _get_owned_record(session, current_user, id)
+    # Pre-check before reading the body into memory (finding C3): when the
+    # multipart layer knows the size, reject oversize uploads without the
+    # read. file.size can be None, so the post-read check below stays.
+    if file.size is not None and file.size > _MAX_ATTACHMENT_BYTES:
+        raise HTTPException(
+            status_code=413, detail="El archivo excede el límite de 10 MB"
+        )
     content = file.file.read()
     magic = _ALLOWED_MAGIC.get(file.content_type or "")
     if magic is None or not content.startswith(magic):
@@ -195,19 +227,38 @@ def create_health_record_attachment(
 def read_health_record_attachments(
     session: SessionDep, current_user: ConsentedUser, id: uuid.UUID
 ) -> Any:
-    """List the attachments of an owned record (envelope {"data", "count"})."""
+    """List the attachments of an owned record (envelope {"data", "count"}).
+
+    Selects ONLY the public columns: loading full rows would decrypt every
+    ``content`` (EncryptedBytes) just to return metadata (finding A3).
+    ``filename`` is EncryptedString and does get decrypted — that one is cheap.
+    """
     record = _get_owned_record(session, current_user, id)
-    attachments = session.exec(
-        select(HealthRecordAttachment)
+    rows = session.exec(
+        select(
+            HealthRecordAttachment.id,
+            HealthRecordAttachment.record_id,
+            HealthRecordAttachment.filename,
+            HealthRecordAttachment.media_type,
+            HealthRecordAttachment.size_bytes,
+            HealthRecordAttachment.created_at,
+        )
         .where(HealthRecordAttachment.record_id == record.id)
         .order_by(col(HealthRecordAttachment.created_at).asc())
     ).all()
     return HealthRecordAttachmentsPublic(
         data=[
-            HealthRecordAttachmentPublic.model_validate(attachment)
-            for attachment in attachments
+            HealthRecordAttachmentPublic(
+                id=row.id,
+                record_id=row.record_id,
+                filename=row.filename,
+                media_type=row.media_type,
+                size_bytes=row.size_bytes,
+                created_at=row.created_at,
+            )
+            for row in rows
         ],
-        count=len(attachments),
+        count=len(rows),
     )
 
 
@@ -218,13 +269,33 @@ def download_health_record_attachment(
     id: uuid.UUID,
     attachment_id: uuid.UUID,
 ) -> Response:
-    """Download the original bytes with the stored media type and filename."""
-    attachment = _get_owned_attachment(session, current_user, id, attachment_id)
+    """Download the original bytes with the stored media type and filename.
+
+    Content-Disposition per RFC 6266/5987 (finding A2): an ASCII fallback
+    ``filename`` (non-ASCII replaced, quote/backslash escaped — a raw name
+    broke the latin-1 header encoding with a 500) plus ``filename*`` with
+    the real UTF-8 name percent-encoded. ``nosniff`` per finding C1.
+    """
+    _check_owned_attachment(session, current_user, id, attachment_id)
+    attachment = session.get(HealthRecordAttachment, attachment_id)
+    if attachment is None:
+        raise HTTPException(status_code=404, detail="Adjunto no encontrado")
+    ascii_fallback = (
+        attachment.filename.encode("ascii", errors="replace")
+        .decode("ascii")
+        .replace("\\", "\\\\")
+        .replace('"', '\\"')
+    )
+    utf8_name = urllib.parse.quote(attachment.filename, safe="")
     return Response(
         content=attachment.content,
         media_type=attachment.media_type,
         headers={
-            "Content-Disposition": f'attachment; filename="{attachment.filename}"'
+            "Content-Disposition": (
+                f'attachment; filename="{ascii_fallback}"; '
+                f"filename*=UTF-8''{utf8_name}"
+            ),
+            "X-Content-Type-Options": "nosniff",
         },
     )
 
@@ -236,8 +307,16 @@ def delete_health_record_attachment(
     id: uuid.UUID,
     attachment_id: uuid.UUID,
 ) -> Message:
-    """Delete one attachment of an owned record."""
-    attachment = _get_owned_attachment(session, current_user, id, attachment_id)
-    session.delete(attachment)
+    """Delete one attachment of an owned record.
+
+    Deletes by id without materializing the row: loading it would decrypt
+    ``content`` only to throw it away (finding A3).
+    """
+    _check_owned_attachment(session, current_user, id, attachment_id)
+    session.exec(
+        delete(HealthRecordAttachment).where(
+            col(HealthRecordAttachment.id) == attachment_id
+        )
+    )
     session.commit()
     return Message(message="Adjunto eliminado")

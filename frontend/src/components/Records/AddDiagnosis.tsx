@@ -101,7 +101,7 @@ const AddDiagnosis = () => {
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)}>
+          <form onSubmit={form.handleSubmit(onSubmit)} noValidate>
             <div className="grid gap-4 py-4">
               <FormField
                 control={form.control}

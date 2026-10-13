@@ -17,7 +17,9 @@ provienen del re-run del orquestador, no del reporte del tester.
   **126 passed / 0 failed / 0 errors / 0 skipped** · `coverage report` → **TOTAL 94%** (gate ≥90).
 - Playwright, suite completa: `cd frontend && bunx playwright test --project=chromium` →
   **71 passed / 0 failed / 0 skipped** (6 nuevos de `health-records.spec.ts`; ninguno existente roto).
-- `make tdd-check` → ✓ (commit `test:` más reciente `551f4f4`, formato puro; rutas de tests intactas después).
+- `make tdd-check` → ✓ (commit `test:` más reciente `88722a4`, formato puro; rutas de tests intactas después).
+  Los commits sobre tests posteriores a la medición del rojo (`2acd594`, `88722a4`) fueron formato puro
+  (re-envoltura ruff), verificado: aserciones intactas.
 - Lint/types: `bun run lint` (biome) limpio · `tsc --noEmit` limpio.
 
 ## Criterio → test

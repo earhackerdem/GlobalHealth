@@ -11,7 +11,8 @@ consentimiento aceptado.
 ## 2. Registrar una receta
 1. Pulsa **Agregar receta**; llena medicamento, fecha, dosis y las dos fechas de vigencia; **Guardar**.
 2. Intenta guardar una receta sin dosis.
-- [ ] La receta completa se registra ("Receta registrada."); la incompleta no pasa (el formulario lo impide).
+- [ ] La receta completa se registra ("Receta registrada."); la incompleta no se envía: el formulario señala los
+      campos obligatorios con un mensaje en español bajo cada campo.
 
 ## 3. Corregir y eliminar
 1. En un registro, abre el menú → **Editar registro**, cambia la dosis y guarda.

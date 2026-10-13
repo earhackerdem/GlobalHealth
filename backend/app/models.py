@@ -129,6 +129,31 @@ class HealthRecord(SQLModel, table=True):
     updated_at: datetime = Field(default_factory=get_datetime_utc)
 
 
+# Discriminated validation shared by the Create model_validator and the
+# PATCH handler (which validates the RESULTANT state after a partial update):
+# a diagnosis carries no prescription fields; a prescription requires
+# dose and validity window. Raises ValueError with the es-MX message.
+def validate_health_record_fields_by_type(
+    record_type: str,
+    dose: str | None,
+    valid_from: date | None,
+    valid_to: date | None,
+) -> None:
+    values = {"dose": dose, "valid_from": valid_from, "valid_to": valid_to}
+    if record_type == "diagnosis":
+        present = [f for f, v in values.items() if v is not None]
+        if present:
+            raise ValueError(
+                "Un diagnóstico no admite dosis ni vigencia: " + ", ".join(present)
+            )
+    else:
+        missing = [f for f, v in values.items() if v is None]
+        if missing:
+            raise ValueError(
+                "Una receta requiere dosis y vigencia: falta " + ", ".join(missing)
+            )
+
+
 # Properties to receive via API on creation, discriminated by record_type:
 # a diagnosis carries no prescription fields; a prescription requires
 # dose and validity window.
@@ -144,19 +169,9 @@ class HealthRecordCreate(SQLModel):
 
     @model_validator(mode="after")
     def _validate_fields_by_type(self) -> HealthRecordCreate:
-        prescription_fields = ("dose", "valid_from", "valid_to")
-        if self.record_type == "diagnosis":
-            present = [f for f in prescription_fields if getattr(self, f) is not None]
-            if present:
-                raise ValueError(
-                    "Un diagnóstico no admite dosis ni vigencia: " + ", ".join(present)
-                )
-        else:
-            missing = [f for f in prescription_fields if getattr(self, f) is None]
-            if missing:
-                raise ValueError(
-                    "Una receta requiere dosis y vigencia: falta " + ", ".join(missing)
-                )
+        validate_health_record_fields_by_type(
+            self.record_type, self.dose, self.valid_from, self.valid_to
+        )
         return self
 
 

@@ -25,7 +25,8 @@
     "validTo": "Fin de vigencia"
   },
   "actions": {
-    "save": "Guardar"
+    "save": "Guardar",
+    "openMenu": "Abrir menú de acciones"
   },
   "addDiagnosis": {
     "button": "Agregar diagnóstico",
@@ -65,6 +66,9 @@
   },
   "validation": {
     "titleRequired": "Este campo es obligatorio",
-    "dateRequired": "La fecha es obligatoria"
+    "dateRequired": "La fecha es obligatoria",
+    "doseRequired": "La dosis es obligatoria",
+    "validFromRequired": "El inicio de vigencia es obligatorio",
+    "validToRequired": "El fin de vigencia es obligatorio"
   }
 }
