@@ -52,3 +52,14 @@ dentro del carve-out del spec de localización. Cero strings visibles en inglés
   `DateTime(timezone=True)` en el modelo (la migración sí lo fija), asimetría heredada de ConsentGrant.
 - `scripts/generate-client.sh` reformatea todo el árbol del frontend como efecto colateral (`--write --unsafe`);
   sorprendió al implementer del grupo 3. Anotado para meta-mejora/inbox.
+
+## Ronda review→apply (2026-10-12)
+
+- Gate de Saúl Pérez: "todos" — A1-A6, B1-B3, C1-C4, D1-D7 aplicados; E asentado como deuda (closed.md);
+  el `await invalidateQueries` antes del toast queda como divergencia deliberada del template (estabiliza los
+  e2e), sin acción.
+- Fixer 16/16 sin rebotes · tester 10 casos backend nuevos + helpers del spec sin selectores posicionales.
+- Verificación del orquestador post-apply: backend **136 passed / 0 / 0 · cobertura 94%** · Playwright
+  **71 passed / 0 / 0** · `make tdd-check` ✓ (test: más reciente = cobertura del apply).
+- Nota A1: el 422 del PATCH devuelve `detail` string (HTTPException) con el mismo texto es-MX del validador
+  del POST (lista de Pydantic); contrato de mensaje conservado, shape distinto, asertado así por los tests.

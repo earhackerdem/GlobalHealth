@@ -22,3 +22,12 @@
   generate-client.sh reformatea todo el árbol (candidato a inbox/meta-mejora).
 - Dato perdido consciente: la migración tiró `healthrecordstub` con las notas dev del propietario (documentado
   en design/evidence/validation).
+
+## Ronda review→apply (2026-10-12, mismo PR)
+- /epe-4-review: 5 finders → 31 únicos tras dedupe → 4 validadores por reproducción (0 FP completos; 2 medias
+  verdades descartadas reproduciendo: el hook del inbox sí lista la fila, no hay bug de timezone). Estrellas:
+  descarga 500 con filename es-MX (U+2014, latin-1), PATCH rompiendo el invariante del tipo, listado
+  descifrando 5 MB para tirar los bytes, overflow móvil reproducido a 375px.
+- Saúl Pérez aprobó "todos": fixer 16/16 sin rebotes + tester 10 casos y helpers endurecidos (verdes a la
+  primera). Post-apply: backend 136/0/0 (94%), Playwright 71/0/0, tdd-check ✓. E → 5 filas ⏸️ en closed.md.
+- Convergencia: una sola ronda, reportada honestamente como no-seca.
