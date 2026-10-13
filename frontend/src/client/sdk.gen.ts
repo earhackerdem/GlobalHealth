@@ -519,6 +519,12 @@ export class HealthRecordsService {
      * Update Health Record
      *
      * Partial update of an owned record; ``record_type`` is immutable.
+     *
+     * The RESULTANT state after applying the partial update must satisfy the
+     * same discriminated contract as the Create (finding A1 of the adversarial
+     * review): a prescription keeps dose + validity non-null, a diagnosis
+     * admits none of them. Raised as an HTTP 422 with the same es-MX message
+     * as the Create validator.
      */
     public static recordsUpdateHealthRecord<ThrowOnError extends boolean = true>(options: Options<healthRecordsUpdateHealthRecordData, ThrowOnError>) {
         return (options.client ?? client).patch<healthRecordsUpdateHealthRecordResponses, healthRecordsUpdateHealthRecordErrors, ThrowOnError>({
@@ -537,6 +543,10 @@ export class HealthRecordsService {
      * Read Health Record Attachments
      *
      * List the attachments of an owned record (envelope {"data", "count"}).
+     *
+     * Selects ONLY the public columns: loading full rows would decrypt every
+     * ``content`` (EncryptedBytes) just to return metadata (finding A3).
+     * ``filename`` is EncryptedString and does get decrypted — that one is cheap.
      */
     public static recordsReadHealthRecordAttachments<ThrowOnError extends boolean = true>(options: Options<healthRecordsReadHealthRecordAttachmentsData, ThrowOnError>) {
         return (options.client ?? client).get<healthRecordsReadHealthRecordAttachmentsResponses, healthRecordsReadHealthRecordAttachmentsErrors, ThrowOnError>({
@@ -573,6 +583,9 @@ export class HealthRecordsService {
      * Delete Health Record Attachment
      *
      * Delete one attachment of an owned record.
+     *
+     * Deletes by id without materializing the row: loading it would decrypt
+     * ``content`` only to throw it away (finding A3).
      */
     public static recordsDeleteHealthRecordAttachment<ThrowOnError extends boolean = true>(options: Options<healthRecordsDeleteHealthRecordAttachmentData, ThrowOnError>) {
         return (options.client ?? client).delete<healthRecordsDeleteHealthRecordAttachmentResponses, healthRecordsDeleteHealthRecordAttachmentErrors, ThrowOnError>({
@@ -587,6 +600,11 @@ export class HealthRecordsService {
      * Download Health Record Attachment
      *
      * Download the original bytes with the stored media type and filename.
+     *
+     * Content-Disposition per RFC 6266/5987 (finding A2): an ASCII fallback
+     * ``filename`` (non-ASCII replaced, quote/backslash escaped — a raw name
+     * broke the latin-1 header encoding with a 500) plus ``filename*`` with
+     * the real UTF-8 name percent-encoded. ``nosniff`` per finding C1.
      */
     public static recordsDownloadHealthRecordAttachment<ThrowOnError extends boolean = true>(options: Options<healthRecordsDownloadHealthRecordAttachmentData, ThrowOnError>) {
         return (options.client ?? client).get<healthRecordsDownloadHealthRecordAttachmentResponses, healthRecordsDownloadHealthRecordAttachmentErrors, ThrowOnError>({

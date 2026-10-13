@@ -8,9 +8,10 @@ rest by the model (EncryptedString, NFR-001).
 
 import urllib.parse
 import uuid
-from typing import Any
+from typing import Any, cast
 
 from fastapi import APIRouter, HTTPException, Response, UploadFile
+from sqlalchemy.orm import InstrumentedAttribute, load_only
 from sqlmodel import col, delete, func, select
 
 from app.api.deps import ConsentedUser, SessionDep
@@ -165,12 +166,12 @@ def _check_owned_attachment(
     after this check, and only when they need the bytes.
     """
     record = _get_owned_record(session, current_user, id)
-    row = session.exec(
-        select(HealthRecordAttachment.id, HealthRecordAttachment.record_id).where(
+    owner_record_id = session.exec(
+        select(HealthRecordAttachment.record_id).where(
             HealthRecordAttachment.id == attachment_id
         )
     ).first()
-    if row is None or row.record_id != record.id:
+    if owner_record_id is None or owner_record_id != record.id:
         raise HTTPException(status_code=404, detail="Adjunto no encontrado")
 
 
@@ -234,8 +235,9 @@ def read_health_record_attachments(
     ``filename`` is EncryptedString and does get decrypted — that one is cheap.
     """
     record = _get_owned_record(session, current_user, id)
-    rows = session.exec(
-        select(
+    public_columns = [
+        cast("InstrumentedAttribute[Any]", column)
+        for column in (
             HealthRecordAttachment.id,
             HealthRecordAttachment.record_id,
             HealthRecordAttachment.filename,
@@ -243,21 +245,15 @@ def read_health_record_attachments(
             HealthRecordAttachment.size_bytes,
             HealthRecordAttachment.created_at,
         )
+    ]
+    rows = session.exec(
+        select(HealthRecordAttachment)
         .where(HealthRecordAttachment.record_id == record.id)
         .order_by(col(HealthRecordAttachment.created_at).asc())
+        .options(load_only(*public_columns))
     ).all()
     return HealthRecordAttachmentsPublic(
-        data=[
-            HealthRecordAttachmentPublic(
-                id=row.id,
-                record_id=row.record_id,
-                filename=row.filename,
-                media_type=row.media_type,
-                size_bytes=row.size_bytes,
-                created_at=row.created_at,
-            )
-            for row in rows
-        ],
+        data=[HealthRecordAttachmentPublic.model_validate(row) for row in rows],
         count=len(rows),
     )
 
