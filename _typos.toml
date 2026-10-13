@@ -16,6 +16,8 @@ alls = "alls"
 [files]
 extend-exclude = [
     "harness.json",
+    # comentarios es-MX de los comandos del proyecto
+    "project.mk",
     # prosa/UI es-MX
     "backend/app/core/consent_text.py",
     "frontend/src/locales/",
