@@ -5,6 +5,16 @@ export type ClientOptions = {
 };
 
 /**
+ * Body_health-records-create_health_record_attachment
+ */
+export type Body_health_records_create_health_record_attachment = {
+    /**
+     * File
+     */
+    file: Blob | File;
+};
+
+/**
  * Body_login-login_access_token
  */
 export type Body_login_login_access_token = {
@@ -87,13 +97,85 @@ export type HTTPValidationError = {
 };
 
 /**
+ * HealthRecordAttachmentPublic
+ */
+export type HealthRecordAttachmentPublic = {
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Record Id
+     */
+    record_id: string;
+    /**
+     * Filename
+     */
+    filename: string;
+    /**
+     * Media Type
+     */
+    media_type: string;
+    /**
+     * Size Bytes
+     */
+    size_bytes: number;
+    /**
+     * Created At
+     */
+    created_at: string;
+};
+
+/**
+ * HealthRecordAttachmentsPublic
+ */
+export type HealthRecordAttachmentsPublic = {
+    /**
+     * Data
+     */
+    data: Array<HealthRecordAttachmentPublic>;
+    /**
+     * Count
+     */
+    count: number;
+};
+
+/**
  * HealthRecordCreate
  */
 export type HealthRecordCreate = {
     /**
-     * Note
+     * Record Type
      */
-    note: string;
+    record_type: 'diagnosis' | 'prescription';
+    /**
+     * Title
+     */
+    title: string;
+    /**
+     * Occurred On
+     */
+    occurred_on: string;
+    /**
+     * Professional
+     */
+    professional?: string | null;
+    /**
+     * Notes
+     */
+    notes?: string | null;
+    /**
+     * Dose
+     */
+    dose?: string | null;
+    /**
+     * Valid From
+     */
+    valid_from?: string | null;
+    /**
+     * Valid To
+     */
+    valid_to?: string | null;
 };
 
 /**
@@ -105,13 +187,83 @@ export type HealthRecordPublic = {
      */
     id: string;
     /**
-     * Note
+     * Record Type
      */
-    note: string;
+    record_type: string;
+    /**
+     * Occurred On
+     */
+    occurred_on: string;
+    /**
+     * Title
+     */
+    title: string;
+    /**
+     * Professional
+     */
+    professional: string | null;
+    /**
+     * Notes
+     */
+    notes: string | null;
+    /**
+     * Dose
+     */
+    dose: string | null;
+    /**
+     * Valid From
+     */
+    valid_from: string | null;
+    /**
+     * Valid To
+     */
+    valid_to: string | null;
     /**
      * Owner Id
      */
     owner_id: string;
+    /**
+     * Created At
+     */
+    created_at: string;
+    /**
+     * Updated At
+     */
+    updated_at: string;
+};
+
+/**
+ * HealthRecordUpdate
+ */
+export type HealthRecordUpdate = {
+    /**
+     * Title
+     */
+    title?: string | null;
+    /**
+     * Occurred On
+     */
+    occurred_on?: string | null;
+    /**
+     * Professional
+     */
+    professional?: string | null;
+    /**
+     * Notes
+     */
+    notes?: string | null;
+    /**
+     * Dose
+     */
+    dose?: string | null;
+    /**
+     * Valid From
+     */
+    valid_from?: string | null;
+    /**
+     * Valid To
+     */
+    valid_to?: string | null;
 };
 
 /**
@@ -1171,6 +1323,36 @@ export type healthRecordsCreateHealthRecordResponses = {
 
 export type healthRecordsCreateHealthRecordResponse = healthRecordsCreateHealthRecordResponses[keyof healthRecordsCreateHealthRecordResponses];
 
+export type healthRecordsDeleteHealthRecordData = {
+    body?: never;
+    path: {
+        /**
+         * Id
+         */
+        id: string;
+    };
+    query?: never;
+    url: '/api/v1/health-records/{id}';
+};
+
+export type healthRecordsDeleteHealthRecordErrors = {
+    /**
+     * Validation Error
+     */
+    422: HTTPValidationError;
+};
+
+export type healthRecordsDeleteHealthRecordError = healthRecordsDeleteHealthRecordErrors[keyof healthRecordsDeleteHealthRecordErrors];
+
+export type healthRecordsDeleteHealthRecordResponses = {
+    /**
+     * Successful Response
+     */
+    200: Message;
+};
+
+export type healthRecordsDeleteHealthRecordResponse = healthRecordsDeleteHealthRecordResponses[keyof healthRecordsDeleteHealthRecordResponses];
+
 export type healthRecordsReadHealthRecordData = {
     body?: never;
     path: {
@@ -1200,6 +1382,162 @@ export type healthRecordsReadHealthRecordResponses = {
 };
 
 export type healthRecordsReadHealthRecordResponse = healthRecordsReadHealthRecordResponses[keyof healthRecordsReadHealthRecordResponses];
+
+export type healthRecordsUpdateHealthRecordData = {
+    body: HealthRecordUpdate;
+    path: {
+        /**
+         * Id
+         */
+        id: string;
+    };
+    query?: never;
+    url: '/api/v1/health-records/{id}';
+};
+
+export type healthRecordsUpdateHealthRecordErrors = {
+    /**
+     * Validation Error
+     */
+    422: HTTPValidationError;
+};
+
+export type healthRecordsUpdateHealthRecordError = healthRecordsUpdateHealthRecordErrors[keyof healthRecordsUpdateHealthRecordErrors];
+
+export type healthRecordsUpdateHealthRecordResponses = {
+    /**
+     * Successful Response
+     */
+    200: HealthRecordPublic;
+};
+
+export type healthRecordsUpdateHealthRecordResponse = healthRecordsUpdateHealthRecordResponses[keyof healthRecordsUpdateHealthRecordResponses];
+
+export type healthRecordsReadHealthRecordAttachmentsData = {
+    body?: never;
+    path: {
+        /**
+         * Id
+         */
+        id: string;
+    };
+    query?: never;
+    url: '/api/v1/health-records/{id}/attachments';
+};
+
+export type healthRecordsReadHealthRecordAttachmentsErrors = {
+    /**
+     * Validation Error
+     */
+    422: HTTPValidationError;
+};
+
+export type healthRecordsReadHealthRecordAttachmentsError = healthRecordsReadHealthRecordAttachmentsErrors[keyof healthRecordsReadHealthRecordAttachmentsErrors];
+
+export type healthRecordsReadHealthRecordAttachmentsResponses = {
+    /**
+     * Successful Response
+     */
+    200: HealthRecordAttachmentsPublic;
+};
+
+export type healthRecordsReadHealthRecordAttachmentsResponse = healthRecordsReadHealthRecordAttachmentsResponses[keyof healthRecordsReadHealthRecordAttachmentsResponses];
+
+export type healthRecordsCreateHealthRecordAttachmentData = {
+    body: Body_health_records_create_health_record_attachment;
+    path: {
+        /**
+         * Id
+         */
+        id: string;
+    };
+    query?: never;
+    url: '/api/v1/health-records/{id}/attachments';
+};
+
+export type healthRecordsCreateHealthRecordAttachmentErrors = {
+    /**
+     * Validation Error
+     */
+    422: HTTPValidationError;
+};
+
+export type healthRecordsCreateHealthRecordAttachmentError = healthRecordsCreateHealthRecordAttachmentErrors[keyof healthRecordsCreateHealthRecordAttachmentErrors];
+
+export type healthRecordsCreateHealthRecordAttachmentResponses = {
+    /**
+     * Successful Response
+     */
+    201: HealthRecordAttachmentPublic;
+};
+
+export type healthRecordsCreateHealthRecordAttachmentResponse = healthRecordsCreateHealthRecordAttachmentResponses[keyof healthRecordsCreateHealthRecordAttachmentResponses];
+
+export type healthRecordsDeleteHealthRecordAttachmentData = {
+    body?: never;
+    path: {
+        /**
+         * Id
+         */
+        id: string;
+        /**
+         * Attachment Id
+         */
+        attachment_id: string;
+    };
+    query?: never;
+    url: '/api/v1/health-records/{id}/attachments/{attachment_id}';
+};
+
+export type healthRecordsDeleteHealthRecordAttachmentErrors = {
+    /**
+     * Validation Error
+     */
+    422: HTTPValidationError;
+};
+
+export type healthRecordsDeleteHealthRecordAttachmentError = healthRecordsDeleteHealthRecordAttachmentErrors[keyof healthRecordsDeleteHealthRecordAttachmentErrors];
+
+export type healthRecordsDeleteHealthRecordAttachmentResponses = {
+    /**
+     * Successful Response
+     */
+    200: Message;
+};
+
+export type healthRecordsDeleteHealthRecordAttachmentResponse = healthRecordsDeleteHealthRecordAttachmentResponses[keyof healthRecordsDeleteHealthRecordAttachmentResponses];
+
+export type healthRecordsDownloadHealthRecordAttachmentData = {
+    body?: never;
+    path: {
+        /**
+         * Id
+         */
+        id: string;
+        /**
+         * Attachment Id
+         */
+        attachment_id: string;
+    };
+    query?: never;
+    url: '/api/v1/health-records/{id}/attachments/{attachment_id}';
+};
+
+export type healthRecordsDownloadHealthRecordAttachmentErrors = {
+    /**
+     * Validation Error
+     */
+    422: HTTPValidationError;
+};
+
+export type healthRecordsDownloadHealthRecordAttachmentError = healthRecordsDownloadHealthRecordAttachmentErrors[keyof healthRecordsDownloadHealthRecordAttachmentErrors];
+
+export type healthRecordsDownloadHealthRecordAttachmentResponses = {
+    /**
+     * Successful Response
+     */
+    200: unknown;
+};
 
 export type privateCreateUserData = {
     body: PrivateUserCreate;

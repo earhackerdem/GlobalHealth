@@ -6,6 +6,7 @@
   "sidebar": {
     "dashboard": "Panel",
     "items": "Elementos",
+    "expediente": "Expediente",
     "admin": "Administración",
     "appearance": "Apariencia",
     "toggleTheme": "Cambiar tema",

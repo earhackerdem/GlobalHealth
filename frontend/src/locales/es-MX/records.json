@@ -1,0 +1,74 @@
+{
+  "title": "Expediente",
+  "page": {
+    "pageTitle": "Expediente",
+    "subtitle": "Registra tus diagnósticos, recetas y resultados",
+    "empty": "Aún no tienes registros."
+  },
+  "types": {
+    "diagnosis": "Diagnóstico",
+    "prescription": "Receta"
+  },
+  "table": {
+    "typeHeader": "Tipo",
+    "titleHeader": "Título",
+    "dateHeader": "Fecha"
+  },
+  "fields": {
+    "diagnosis": "Diagnóstico",
+    "date": "Fecha",
+    "professional": "Profesional",
+    "notes": "Notas",
+    "medication": "Medicamento",
+    "dose": "Dosis",
+    "validFrom": "Inicio de vigencia",
+    "validTo": "Fin de vigencia"
+  },
+  "actions": {
+    "save": "Guardar",
+    "openMenu": "Abrir menú de acciones"
+  },
+  "addDiagnosis": {
+    "button": "Agregar diagnóstico",
+    "dialogTitle": "Nuevo registro clínico",
+    "dialogDescription": "Captura los datos y guarda para sumarlo a tu expediente.",
+    "successToast": "Diagnóstico registrado."
+  },
+  "addPrescription": {
+    "button": "Agregar receta",
+    "dialogTitle": "Nueva receta",
+    "dialogDescription": "Captura los datos y guarda para sumarla a tu expediente.",
+    "successToast": "Receta registrada."
+  },
+  "editRecord": {
+    "menuItem": "Editar registro",
+    "dialogTitle": "Editar registro",
+    "dialogDescription": "Corrige los datos y guarda los cambios.",
+    "successToast": "Registro actualizado."
+  },
+  "deleteRecord": {
+    "menuItem": "Eliminar registro",
+    "dialogTitle": "Eliminar registro",
+    "dialogDescription": "¿Seguro que quieres eliminar este registro? Se eliminarán también sus adjuntos.",
+    "confirmButton": "Eliminar",
+    "successToast": "Registro eliminado."
+  },
+  "attachments": {
+    "title": "Adjuntos",
+    "dialogDescription": "Archivos del registro: sube, descarga o elimina.",
+    "openPanel": "Ver archivos de {{title}}",
+    "empty": "Sin archivos todavía.",
+    "upload": "Subir archivo",
+    "download": "Descargar",
+    "delete": "Eliminar adjunto",
+    "addedToast": "Adjunto agregado.",
+    "deletedToast": "Adjunto eliminado."
+  },
+  "validation": {
+    "titleRequired": "Este campo es obligatorio",
+    "dateRequired": "La fecha es obligatoria",
+    "doseRequired": "La dosis es obligatoria",
+    "validFromRequired": "El inicio de vigencia es obligatorio",
+    "validToRequired": "El fin de vigencia es obligatorio"
+  }
+}

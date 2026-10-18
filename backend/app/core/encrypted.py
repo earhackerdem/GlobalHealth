@@ -25,7 +25,7 @@ from functools import lru_cache
 from typing import Any
 
 from cryptography.fernet import Fernet, InvalidToken, MultiFernet
-from sqlalchemy import String
+from sqlalchemy import LargeBinary, String
 from sqlalchemy.engine import Dialect
 from sqlalchemy.types import TypeDecorator
 
@@ -101,3 +101,24 @@ class EncryptedString(TypeDecorator[str]):
         if value is None:
             return None
         return _data_fernet().decrypt(str(value).encode()).decode()
+
+
+class EncryptedBytes(TypeDecorator[bytes]):
+    """Binary column stored encrypted at rest (Fernet token bytes in bytea).
+
+    Same purpose-scoped MultiFernet as ``EncryptedString`` (ADR D13). Fernet
+    is already bytes -> bytes, so no extra base64 round-trip is added.
+    """
+
+    impl = LargeBinary
+    cache_ok = True
+
+    def process_bind_param(self, value: Any, dialect: Dialect) -> bytes | None:
+        if value is None:
+            return None
+        return _data_fernet().encrypt(bytes(value))
+
+    def process_result_value(self, value: Any, dialect: Dialect) -> bytes | None:
+        if value is None:
+            return None
+        return _data_fernet().decrypt(bytes(value))
