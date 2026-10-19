@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { Download, Trash2, Upload } from "lucide-react"
-import { useRef, useState } from "react"
+import { useRef } from "react"
 import { useTranslation } from "react-i18next"
 
 import {
@@ -8,15 +8,8 @@ import {
   type HealthRecordPublic,
   HealthRecordsService,
 } from "@/client"
+import { useRecordDialogs } from "@/components/Records/RecordDialogsContext"
 import { Button } from "@/components/ui/button"
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog"
 import useCustomToast from "@/hooks/useCustomToast"
 import i18n from "@/i18n"
 import { handleError } from "@/utils"
@@ -29,7 +22,7 @@ interface AttachmentsPanelProps {
   recordId: string
 }
 
-function AttachmentsPanel({ recordId }: AttachmentsPanelProps) {
+export function AttachmentsPanel({ recordId }: AttachmentsPanelProps) {
   const { t } = useTranslation("records")
   const queryClient = useQueryClient()
   const { showSuccessToast, showErrorToast } = useCustomToast()
@@ -174,53 +167,44 @@ interface RecordTitleProps {
 }
 
 /**
- * The record title opens its attachments panel (dialog) when clicked. For a
- * prescription (title is null in the new model) the clickable summary is the
- * prescribing doctor plus the medicines list ("name — dose · frequency").
+ * The record title opens the READ-ONLY detail dialog when clicked (delta
+ * AC10: consulting never edits nor asks for a file). For a prescription
+ * (title is null in the new model) the clickable summary is the prescribing
+ * doctor plus the medicines list ("name — dose · frequency"). The dialog
+ * itself lives at page level (RecordDialogsProvider): a cell unmount on
+ * refetch must never close it (AC8).
  */
 export function RecordTitle({ record }: RecordTitleProps) {
   const { t } = useTranslation("records")
-  const [isOpen, setIsOpen] = useState(false)
+  const { openDetail } = useRecordDialogs()
   const isPrescription = record.record_type === "prescription"
   const displayTitle = isPrescription
     ? (record.professional ?? t("types.prescription"))
     : (record.title ?? "")
 
   return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DialogTrigger asChild>
-        <button
-          type="button"
-          className="text-left font-medium underline-offset-4 hover:underline"
-          aria-label={t("attachments.openPanel", { title: displayTitle })}
-        >
-          {isPrescription ? (
-            <span className="flex flex-col gap-1">
-              <span>{displayTitle}</span>
-              <ul className="list-disc pl-5 font-normal">
-                {record.medicines.map((medicine) => (
-                  <li key={medicine.id}>
-                    <strong>{medicine.name}</strong>
-                    {medicine.dose ? ` — ${medicine.dose}` : ""}
-                    {medicine.frequency ? ` · ${medicine.frequency}` : ""}
-                  </li>
-                ))}
-              </ul>
-            </span>
-          ) : (
-            record.title
-          )}
-        </button>
-      </DialogTrigger>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle>{t("attachments.title")}</DialogTitle>
-          <DialogDescription>
-            {t("attachments.dialogDescription")}
-          </DialogDescription>
-        </DialogHeader>
-        <AttachmentsPanel recordId={record.id} />
-      </DialogContent>
-    </Dialog>
+    <button
+      type="button"
+      className="text-left font-medium underline-offset-4 hover:underline"
+      aria-label={t("detail.open", { title: displayTitle })}
+      onClick={() => openDetail(record.id)}
+    >
+      {isPrescription ? (
+        <span className="flex flex-col gap-1">
+          <span>{displayTitle}</span>
+          <ul className="list-disc pl-5 font-normal">
+            {record.medicines.map((medicine) => (
+              <li key={medicine.id}>
+                <strong>{medicine.name}</strong>
+                {medicine.dose ? ` — ${medicine.dose}` : ""}
+                {medicine.frequency ? ` · ${medicine.frequency}` : ""}
+              </li>
+            ))}
+          </ul>
+        </span>
+      ) : (
+        record.title
+      )}
+    </button>
   )
 }

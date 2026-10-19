@@ -1,5 +1,6 @@
 import { zodResolver } from "@hookform/resolvers/zod"
 import { X } from "lucide-react"
+import type { ReactNode } from "react"
 import { useFieldArray, useForm } from "react-hook-form"
 import { useTranslation } from "react-i18next"
 import { z } from "zod"
@@ -17,6 +18,7 @@ import {
 } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
 import { LoadingButton } from "@/components/ui/loading-button"
+import { Textarea } from "@/components/ui/textarea"
 import i18n from "@/i18n"
 
 const medicineSchema = z.object({
@@ -60,6 +62,9 @@ interface PrescriptionFormProps {
   defaultValues: PrescriptionFormData
   pending: boolean
   onSubmit: (data: PrescriptionFormData) => void
+  /** Optional extra control (e.g. the creation-only attachment input, delta
+   * AC11) rendered after the notes field, inside the form grid. */
+  attachmentSlot?: ReactNode
 }
 
 /**
@@ -72,6 +77,7 @@ const PrescriptionForm = ({
   defaultValues,
   pending,
   onSubmit,
+  attachmentSlot,
 }: PrescriptionFormProps) => {
   const { t } = useTranslation("records")
 
@@ -229,12 +235,16 @@ const PrescriptionForm = ({
               <FormItem>
                 <FormLabel>{t("prescriptionForm.notes")}</FormLabel>
                 <FormControl>
-                  <Input type="text" {...field} />
+                  {/* Textarea: Enter inserts a line break and never submits
+                      the form (delta AC9). */}
+                  <Textarea {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
             )}
           />
+
+          {attachmentSlot}
         </div>
 
         <DialogFooter>

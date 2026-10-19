@@ -28,6 +28,7 @@ import {
 } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
 import { LoadingButton } from "@/components/ui/loading-button"
+import { Textarea } from "@/components/ui/textarea"
 import useCustomToast from "@/hooks/useCustomToast"
 import i18n from "@/i18n"
 import { handleError } from "@/utils"
@@ -158,7 +159,9 @@ const AddDiagnosis = () => {
                   <FormItem>
                     <FormLabel>{t("fields.notes")}</FormLabel>
                     <FormControl>
-                      <Input type="text" {...field} />
+                      {/* Textarea: Enter inserts a line break and never
+                          submits the form (delta AC9). */}
+                      <Textarea {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>

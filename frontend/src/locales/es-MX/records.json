@@ -32,10 +32,15 @@
     "successToast": "Diagnóstico registrado."
   },
   "addPrescription": {
-    "button": "A mano",
+    "button": "Registrar receta",
     "dialogTitle": "Captura tu receta",
     "dialogDescription": "Captura los datos y guarda para sumarla a tu expediente.",
-    "successToast": "Receta guardada."
+    "successToast": "Receta guardada.",
+    "dictate": "Dictar",
+    "scan": "Escanear",
+    "comingSoon": "Próximamente",
+    "attachmentLabel": "Foto o PDF de la receta (opcional)",
+    "attachmentFailedToast": "La receta se guardó, pero el archivo no se pudo subir. Inténtalo de nuevo desde su detalle."
   },
   "prescriptionForm": {
     "doctor": "Médico que la expide",
@@ -61,6 +66,22 @@
     "unconfirmed": "sin confirmar"
   },
   "diagnosisChip": "Dx: {{diagnosis}}",
+  "detail": {
+    "prescriptionTitle": "Detalle de la receta",
+    "diagnosisTitle": "Detalle del diagnóstico",
+    "description": "Consulta de solo lectura.",
+    "open": "Ver detalle de {{title}}",
+    "doctor": "Médico",
+    "date": "Fecha",
+    "professional": "Profesional",
+    "medicines": "Medicinas",
+    "diagnosisLabel": "Dx",
+    "notes": "Notas",
+    "edit": "Editar",
+    "confirmTitle": "¿Modificar este registro?",
+    "confirmDescription": "Vas a cambiar datos de tu expediente. ¿Quieres continuar?",
+    "confirmButton": "Sí, editar"
+  },
   "editRecord": {
     "menuItem": "Editar registro",
     "dialogTitle": "Editar registro",

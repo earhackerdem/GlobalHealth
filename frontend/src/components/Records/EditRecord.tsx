@@ -1,7 +1,6 @@
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { Pencil } from "lucide-react"
-import { useState } from "react"
 import { useForm } from "react-hook-form"
 import { useTranslation } from "react-i18next"
 import { z } from "zod"
@@ -16,6 +15,7 @@ import PrescriptionForm, {
   medicinesPayload,
   type PrescriptionFormData,
 } from "@/components/Records/PrescriptionForm"
+import { useRecordDialogs } from "@/components/Records/RecordDialogsContext"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -37,6 +37,7 @@ import {
 } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
 import { LoadingButton } from "@/components/ui/loading-button"
+import { Textarea } from "@/components/ui/textarea"
 import useCustomToast from "@/hooks/useCustomToast"
 import i18n from "@/i18n"
 import { handleError } from "@/utils"
@@ -56,12 +57,38 @@ type DiagnosisFormData = z.infer<typeof diagnosisSchema>
 
 interface EditRecordProps {
   record: HealthRecordPublic
-  onSuccess: () => void
 }
 
-const EditRecord = ({ record, onSuccess }: EditRecordProps) => {
+/**
+ * "Editar registro" menu item. It only ASKS the page-level provider to open
+ * the edit dialog by id: the dialog itself must not live inside the dropdown
+ * content, which Radix unmounts when the menu closes (e.g. on focus loss) —
+ * that unmount was the reported data-loss bug (delta 2026-10-18, AC8).
+ */
+const EditRecord = ({ record }: EditRecordProps) => {
   const { t } = useTranslation("records")
-  const [isOpen, setIsOpen] = useState(false)
+  const { openEdit } = useRecordDialogs()
+
+  return (
+    <DropdownMenuItem onSelect={() => openEdit(record.id)}>
+      <Pencil />
+      {t("editRecord.menuItem")}
+    </DropdownMenuItem>
+  )
+}
+
+interface EditRecordDialogProps {
+  record: HealthRecordPublic
+  onClose: () => void
+}
+
+/**
+ * The actual edit dialog, rendered at page level by RecordDialogsProvider.
+ * It stays mounted across list refetches (same record id → same element), so
+ * the form keeps whatever the user already typed (AC8).
+ */
+export const EditRecordDialog = ({ record, onClose }: EditRecordDialogProps) => {
+  const { t } = useTranslation("records")
   const queryClient = useQueryClient()
   const { showSuccessToast, showErrorToast } = useCustomToast()
   const isDiagnosis = record.record_type === "diagnosis"
@@ -87,8 +114,7 @@ const EditRecord = ({ record, onSuccess }: EditRecordProps) => {
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ["health-records"] })
       showSuccessToast(t("editRecord.successToast"))
-      setIsOpen(false)
-      onSuccess()
+      onClose()
     },
     onError: handleError.bind(showErrorToast),
   })
@@ -116,15 +142,15 @@ const EditRecord = ({ record, onSuccess }: EditRecordProps) => {
   }
 
   return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DropdownMenuItem
-        onSelect={(e) => e.preventDefault()}
-        onClick={() => setIsOpen(true)}
-      >
-        <Pencil />
-        {t("editRecord.menuItem")}
-      </DropdownMenuItem>
-      <DialogContent className="sm:max-w-lg">
+    <Dialog
+      open
+      onOpenChange={(open) => {
+        if (!open) {
+          onClose()
+        }
+      }}
+    >
+      <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
         <DialogHeader>
           <DialogTitle>{t("editRecord.dialogTitle")}</DialogTitle>
           <DialogDescription>
@@ -190,7 +216,7 @@ const EditRecord = ({ record, onSuccess }: EditRecordProps) => {
                     <FormItem>
                       <FormLabel>{t("fields.notes")}</FormLabel>
                       <FormControl>
-                        <Input type="text" {...field} />
+                        <Textarea {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>

@@ -10,6 +10,7 @@ import PendingItems from "@/components/Pending/PendingItems"
 import AddDiagnosis from "@/components/Records/AddDiagnosis"
 import AddPrescription from "@/components/Records/AddPrescription"
 import { columns } from "@/components/Records/columns"
+import { RecordDialogsProvider } from "@/components/Records/RecordDialogs"
 import i18n from "@/i18n"
 
 function getRecordsQueryOptions() {
@@ -56,15 +57,22 @@ function RecordsTableContent() {
   const archived = records.data.filter((record) => record.archived)
 
   return (
-    <div className="flex flex-col gap-6">
-      <DataTable columns={columns} data={active} />
-      {archived.length > 0 && (
-        <section className="flex flex-col gap-2">
-          <h2 className="text-lg font-semibold">{t("page.archivedHeading")}</h2>
-          <DataTable columns={columns} data={archived} />
-        </section>
-      )}
-    </div>
+    // The provider owns the detail/confirm/edit dialogs at page level, by
+    // record id: a row re-render (refetch on window focus) or a dropdown
+    // unmount can never close them (delta AC8/AC10).
+    <RecordDialogsProvider records={records.data}>
+      <div className="flex flex-col gap-6">
+        <DataTable columns={columns} data={active} />
+        {archived.length > 0 && (
+          <section className="flex flex-col gap-2">
+            <h2 className="text-lg font-semibold">
+              {t("page.archivedHeading")}
+            </h2>
+            <DataTable columns={columns} data={archived} />
+          </section>
+        )}
+      </div>
+    </RecordDialogsProvider>
   )
 }
 
