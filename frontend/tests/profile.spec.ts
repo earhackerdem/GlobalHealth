@@ -1,4 +1,4 @@
-import { expect, type Page, test } from "@playwright/test"
+import { expect, type Locator, type Page, test } from "@playwright/test"
 import { createUser } from "./utils/privateApi"
 import { randomEmail, randomPassword } from "./utils/random"
 import { logInUser, logOutUser } from "./utils/user"
@@ -89,6 +89,30 @@ async function logInExpectingExpediente(
   await page.waitForURL(/\/expediente/)
 }
 
+/**
+ * En viewport móvil (s26-ultra, 384×832) la navegación y el menú de usuario
+ * viven detrás del trigger del sidebar (sr-only de SidebarTrigger: "Abrir
+ * barra lateral" / "Contraer barra lateral"; en móvil el texto sigue el
+ * estado de ESCRITORIO, quirk preexistente del componente, de ahí el regex).
+ * Abre el menú SOLO si el objetivo no está ya visible; en escritorio no toca
+ * nada. Ninguna aserción se debilita: el objetivo debe quedar visible.
+ */
+async function revealInSidebar(page: Page, target: Locator) {
+  if (await target.isVisible().catch(() => false)) return
+  await page.getByRole("button", { name: /barra lateral/ }).click()
+  await expect(target).toBeVisible()
+}
+
+/**
+ * Cierra sesión siendo robusto al viewport: en móvil abre primero el sidebar
+ * para que el user-menu exista; luego delega en logOutUser (utils/user.ts),
+ * que otras suites usan tal cual y no se toca.
+ */
+async function logOutRobust(page: Page) {
+  await revealInSidebar(page, page.getByTestId("user-menu"))
+  await logOutUser(page)
+}
+
 /** Cierra el onboarding con el "Ahora no" global y aterriza en el expediente. */
 async function skipOnboardingToExpediente(page: Page) {
   const wizard = page.getByTestId("onboarding-wizard")
@@ -118,7 +142,7 @@ test.describe("Perfil médico — onboarding y /perfil", () => {
 
     // Cerrar sesión y volver a entrar: el onboarding NO se vuelve a ofrecer
     // (el cierre vive en el servidor) y se ve el expediente directo.
-    await logOutUser(page)
+    await logOutRobust(page)
     await logInExpectingExpediente(page, email, password)
     await expect(
       page.getByRole("button", { name: "Registrar receta" }),
@@ -184,8 +208,11 @@ test.describe("Perfil médico — onboarding y /perfil", () => {
     await freshUserWithConsent(page)
     await skipOnboardingToExpediente(page)
 
-    // La navegación tiene la entrada "Mi perfil médico" y lleva a /perfil.
-    await page.getByRole("link", { name: "Mi perfil médico" }).click()
+    // La navegación tiene la entrada "Mi perfil médico" y lleva a /perfil
+    // (en móvil, tras abrir el menú colapsado).
+    const perfilLink = page.getByRole("link", { name: "Mi perfil médico" })
+    await revealInSidebar(page, perfilLink)
+    await perfilLink.click()
     await page.waitForURL(/\/perfil/)
     await expect(
       page.getByRole("heading", { name: "Mi perfil médico" }),
