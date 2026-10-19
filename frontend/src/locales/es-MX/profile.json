@@ -63,7 +63,11 @@
     "height": "Estatura"
   },
   "family": {
-    "heading": "Antecedentes familiares"
+    "heading": "Antecedentes familiares",
+    "edit": "Editar antecedentes",
+    "editDescription": "Marca las condiciones de tu familia y elige los parentescos.",
+    "save": "Guardar",
+    "savedToast": "Antecedentes guardados"
   },
   "pending": {
     "heading": "Más secciones de tu historial",

@@ -6,6 +6,7 @@ import { useTranslation } from "react-i18next"
 import { ProfileService } from "@/client"
 import PendingItems from "@/components/Pending/PendingItems"
 import EditBasicData from "@/components/Profile/EditBasicData"
+import EditFamilyHistory from "@/components/Profile/EditFamilyHistory"
 import { ageFrom, formatDateMx } from "@/components/Profile/format"
 import { Badge } from "@/components/ui/badge"
 import i18n from "@/i18n"
@@ -106,7 +107,10 @@ function ProfileContent() {
         data-testid="profile-family-history"
         className="flex flex-col gap-3 rounded-lg border p-4"
       >
-        <h2 className="text-lg font-semibold">{t("family.heading")}</h2>
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <h2 className="text-lg font-semibold">{t("family.heading")}</h2>
+          <EditFamilyHistory entries={familyHistory.data} />
+        </div>
         {familyHistory.data.length === 0 ? (
           <p className="text-sm text-muted-foreground">{t("noEntries")}</p>
         ) : (

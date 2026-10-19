@@ -18,39 +18,17 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
-import { Checkbox } from "@/components/ui/checkbox"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { LoadingButton } from "@/components/ui/loading-button"
 import { Textarea } from "@/components/ui/textarea"
 import useCustomToast from "@/hooks/useCustomToast"
 import { handleError } from "@/utils"
+import FamilyHistoryFields, {
+  CONDITIONS,
+  type HistoryMap,
+} from "./FamilyHistoryFields"
 import { ageFrom, formatDateMx } from "./format"
-
-const CONDITIONS = [
-  "diabetes",
-  "cancer",
-  "hypertension",
-  "heart_disease",
-  "other",
-] as const
-
-const RELATIVES = [
-  "mother",
-  "father",
-  "maternal_grandmother",
-  "maternal_grandfather",
-  "paternal_grandmother",
-  "paternal_grandfather",
-  "sibling",
-  "other",
-] as const
-
-type Condition = (typeof CONDITIONS)[number]
-type Relative = (typeof RELATIVES)[number]
-
-/** Per-condition draft: presence in the map means the condition is checked. */
-type HistoryDraft = { relatives: Relative[]; detail: string }
 
 type Sex = NonNullable<PatientProfileUpdate["sex"]>
 
@@ -75,9 +53,7 @@ function OnboardingWizard() {
   const [weight, setWeight] = useState("")
   const [height, setHeight] = useState("")
   const [allergies, setAllergies] = useState("")
-  const [history, setHistory] = useState<
-    Partial<Record<Condition, HistoryDraft>>
-  >({})
+  const [history, setHistory] = useState<HistoryMap>({})
 
   const closeAndLeave = async () => {
     await queryClient.invalidateQueries({ queryKey: ["profile"] })
@@ -243,91 +219,11 @@ function OnboardingWizard() {
 
         {step === 1 && (
           <div className="grid gap-4">
-            {CONDITIONS.map((condition) => {
-              const draft = history[condition]
-              return (
-                <fieldset
-                  key={condition}
-                  className="m-0 grid min-w-0 gap-2 border-0 p-0"
-                >
-                  <div className="flex items-center gap-2">
-                    <Checkbox
-                      id={`condition-${condition}`}
-                      checked={!!draft}
-                      onCheckedChange={(checked) =>
-                        setHistory((prev) => {
-                          const next = { ...prev }
-                          if (checked) {
-                            next[condition] = { relatives: [], detail: "" }
-                          } else {
-                            delete next[condition]
-                          }
-                          return next
-                        })
-                      }
-                    />
-                    <Label htmlFor={`condition-${condition}`}>
-                      {t(`conditions.${condition}`)}
-                    </Label>
-                  </div>
-                  {draft && (
-                    <div className="ml-6 grid gap-2">
-                      <div className="flex flex-wrap gap-x-4 gap-y-2">
-                        {RELATIVES.map((relative) => (
-                          <div
-                            key={relative}
-                            className="flex items-center gap-2"
-                          >
-                            <Checkbox
-                              id={`relative-${condition}-${relative}`}
-                              checked={draft.relatives.includes(relative)}
-                              onCheckedChange={(checked) =>
-                                setHistory((prev) => {
-                                  const current = prev[condition]
-                                  if (!current) return prev
-                                  const relatives = checked
-                                    ? [...current.relatives, relative]
-                                    : current.relatives.filter(
-                                        (r) => r !== relative,
-                                      )
-                                  return {
-                                    ...prev,
-                                    [condition]: { ...current, relatives },
-                                  }
-                                })
-                              }
-                            />
-                            <Label
-                              htmlFor={`relative-${condition}-${relative}`}
-                            >
-                              {t(`relatives.${relative}`)}
-                            </Label>
-                          </div>
-                        ))}
-                      </div>
-                      <Input
-                        aria-label={t("fields.detail")}
-                        placeholder={t("fields.detail")}
-                        value={draft.detail}
-                        onChange={(e) =>
-                          setHistory((prev) => {
-                            const current = prev[condition]
-                            if (!current) return prev
-                            return {
-                              ...prev,
-                              [condition]: {
-                                ...current,
-                                detail: e.target.value,
-                              },
-                            }
-                          })
-                        }
-                      />
-                    </div>
-                  )}
-                </fieldset>
-              )
-            })}
+            <FamilyHistoryFields
+              value={history}
+              onChange={setHistory}
+              idPrefix="onboarding"
+            />
             <div className="grid gap-2">
               <Label htmlFor="onboarding-allergies">
                 {t("fields.allergies")}
@@ -385,16 +281,19 @@ function OnboardingWizard() {
         )}
       </CardContent>
       <CardFooter className="flex flex-wrap justify-between gap-2">
-        <Button
-          variant="ghost"
-          disabled={isPending}
-          onClick={() => skipMutation.mutate()}
-        >
-          {t("wizard.notNow")}
-        </Button>
-        <div className="flex gap-2">
-          {step < 2 ? (
-            <>
+        {/* "Ahora no" only while something can still be skipped: on the
+            summary, with everything captured, it reads as confusing
+            (feedback de Saúl Pérez, 2026-10-19). */}
+        {step < 2 ? (
+          <>
+            <Button
+              variant="ghost"
+              disabled={isPending}
+              onClick={() => skipMutation.mutate()}
+            >
+              {t("wizard.notNow")}
+            </Button>
+            <div className="flex gap-2">
               <Button
                 variant="outline"
                 disabled={isPending}
@@ -405,17 +304,17 @@ function OnboardingWizard() {
               <Button disabled={isPending} onClick={() => setStep(step + 1)}>
                 {t("wizard.continue")}
               </Button>
-            </>
-          ) : (
-            <LoadingButton
-              loading={saveMutation.isPending}
-              disabled={skipMutation.isPending}
-              onClick={() => saveMutation.mutate()}
-            >
-              {t("wizard.save")}
-            </LoadingButton>
-          )}
-        </div>
+            </div>
+          </>
+        ) : (
+          <LoadingButton
+            className="ml-auto"
+            loading={saveMutation.isPending}
+            onClick={() => saveMutation.mutate()}
+          >
+            {t("wizard.save")}
+          </LoadingButton>
+        )}
       </CardFooter>
     </Card>
   )
