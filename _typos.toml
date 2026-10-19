@@ -16,6 +16,7 @@ requiere = "requiere"
 directos = "directos"
 accesible = "accesible"
 foto = "foto"
+importante = "importante"
 visibles = "visibles"
 # nombre real de la action re-actors/alls-green (workflows del template)
 alls = "alls"
