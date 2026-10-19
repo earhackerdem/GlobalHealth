@@ -88,11 +88,12 @@ dd{margin:0}
     <li><strong>AC-1</strong> Tras aceptar el consentimiento se ofrece el onboarding una sola vez; «Ahora no» te lleva directo al expediente.</li>
     <li><strong>AC-2</strong> Fecha de nacimiento válida (nunca futura); la edad se calcula y se muestra.</li>
     <li><strong>AC-3</strong> Peso (kg) y estatura (cm) opcionales; cada valor queda con la fecha en que lo anotaste (Q1: medición, no valor que se pierde al sobreescribir).</li>
-    <li><strong>AC-4</strong> Antecedentes familiares por condición + parentesco(s), varios por condición (Q2: lista frecuente + «otra», no texto libre suelto).</li>
+    <li><strong>AC-4</strong> Antecedentes familiares por condición + parentesco(s) <em>con línea materna/paterna</em> y detalle opcional (edad al diagnóstico) — pedido de Saúl 2026-10-19.</li>
     <li><strong>AC-5</strong> Todo es omitible por paso (Q3) y se completa o corrige después desde «Mi perfil».</li>
     <li><strong>AC-6</strong> Sexo de la ficha de identificación, con «Prefiero no decir» (propuesta Q4).</li>
     <li><strong>AC-7</strong> Alergias a medicamentos como campo simple (propuesta Q4: es lo primero que preguntan).</li>
     <li><strong>AC-8</strong> Todo el perfil es dato sensible: cifrado en reposo igual que el resto del expediente (criterio técnico, no clickeable).</li>
+    <li><strong>AC-9</strong> Al terminar (u omitir) el onboarding, «Mi perfil médico» muestra las demás secciones (crónicas, hepatitis, cirugías, fracturas, transfusiones, hábitos) vacías y sugiere completarlas sin estorbar; su llenado es la siguiente historia.</li>
   </ol>
 </div>
 
@@ -168,6 +169,12 @@ dd{margin:0}
   <p class="sub" id="perfilPista"></p>
 </div>
 
+<div class="card" id="secciones" hidden>
+  <h2>Mi perfil médico<span class="ac">AC-9</span></h2>
+  <p class="sub">Lo que un médico suele preguntar, por secciones. Complétalas cuando quieras — nada es obligatorio.</p>
+  <div id="listaSecciones"></div>
+</div>
+
 <div id="toast" hidden>…</div>
 
 <script>
@@ -175,8 +182,16 @@ dd{margin:0}
 const $ = (s) => document.querySelector(s);
 const $$ = (s) => [...document.querySelectorAll(s)];
 const CONDICIONES = ["Diabetes", "Cáncer", "Hipertensión", "Enfermedad del corazón", "Otra condición"];
-const PARIENTES = ["Madre", "Padre", "Abuela/o", "Hermana/o", "Otro"];
-const perfil = { nac:"", sexo:"", peso:"", talla:"", alergias:"", ahf:{} };
+const PARIENTES = ["Madre", "Padre", "Abuela materna", "Abuelo materno", "Abuela paterna", "Abuelo paterno", "Hermana/o", "Otro"];
+const SECCIONES = [
+  ["Enfermedades crónicas", "las que tú ya sabes que tienes (diabetes, hipertensión…)"],
+  ["Enfermedades pasadas e infecciosas", "hepatitis, varicela… y cuándo fueron"],
+  ["Cirugías y hospitalizaciones", "qué, cuándo y si hubo complicaciones"],
+  ["Fracturas y lesiones", "qué hueso o lesión, cuándo, secuelas"],
+  ["Transfusiones y grupo sanguíneo", "fecha, motivo y tu tipo de sangre"],
+  ["Hábitos", "tabaco, alcohol, ejercicio, vacunas"],
+];
+const perfil = { nac:"", sexo:"", peso:"", talla:"", alergias:"", ahf:{}, ahfNota:{} };
 
 function pintarCondiciones(){
   const z = $("#condiciones"); z.textContent = "";
@@ -184,12 +199,17 @@ function pintarCondiciones(){
     const d = document.createElement("div"); d.className = "cond";
     d.innerHTML = `<label style="display:flex; gap:8px; align-items:center; margin:0; cursor:pointer">
         <input type="checkbox" style="width:auto"> ${c}</label>
-      <div class="paren"><span class="hint">¿De quién?</span>
-        <div class="chips">${PARIENTES.map(p => `<button type="button" aria-pressed="false">${p}</button>`).join("")}</div>
+      <div class="paren"><span class="hint">¿De quién? (la línea materna o paterna le importa a tu médico)</span>
+        <div class="chips">${PARIENTES.map(p => `<button type="button" aria-pressed="false">${p}</button>`).join("")}
+        <input class="ahf-nota" placeholder="Detalle opcional: tipo, edad al diagnóstico…" style="margin-top:6px">
       </div>`;
-    const chk = d.querySelector("input");
-    chk.onchange = () => { d.classList.toggle("activa", chk.checked); if(!chk.checked){ delete perfil.ahf[c];
+    const chk = d.querySelector("input[type=checkbox]");
+    chk.onchange = () => { d.classList.toggle("activa", chk.checked);
+      if(chk.checked){ perfil.ahf[c] = perfil.ahf[c] || []; }
+      if(!chk.checked){ delete perfil.ahf[c];
+      delete perfil.ahfNota[c]; d.querySelector(".ahf-nota").value = "";
       d.querySelectorAll(".chips button").forEach(b => b.setAttribute("aria-pressed","false")); } };
+    d.querySelector(".ahf-nota").oninput = (ev) => { perfil.ahfNota[c] = ev.target.value.trim(); };
     d.querySelectorAll(".chips button").forEach(b => b.onclick = () => {
       const on = b.getAttribute("aria-pressed") !== "true";
       b.setAttribute("aria-pressed", String(on));
@@ -234,7 +254,7 @@ $$("[data-omitir]").forEach(b => b.onclick = () => { toast("Sin problema: lo pue
 
 function pintarResumen(){
   const e = edadDe(perfil.nac);
-  const ahf = Object.entries(perfil.ahf).filter(([,qs]) => true);
+  const ahf = Object.entries(perfil.ahf);
   const filas = [
     ["Nacimiento", perfil.nac ? `${fmt(perfil.nac)}${e !== null ? ` (${e} años)` : ""}` : "— sin llenar"],
     ["Sexo", perfil.sexo || "— sin llenar"],
@@ -244,7 +264,7 @@ function pintarResumen(){
   ];
   $("#resumen").innerHTML = `<dl>${filas.map(([k,v]) => `<dt>${k}</dt><dd>${esc(v)}</dd>`).join("")}</dl>
     <h3>Antecedentes familiares</h3>
-    ${ahf.length ? ahf.map(([c,qs]) => `<div><strong>${esc(c)}</strong>: ${qs.length ? qs.map(esc).map(q => `<span class="chip">${q}</span>`).join(" ") : '<span class="sub">sin parentesco indicado</span>'}</div>`).join("")
+    ${ahf.length ? ahf.map(([c,qs]) => `<div><strong>${esc(c)}</strong>: ${qs.length ? qs.map(esc).map(q => `<span class="chip">${q}</span>`).join(" ") : '<span class="sub">sin parentesco indicado</span>'}${perfil.ahfNota[c] ? ` <span class="sub">· ${esc(perfil.ahfNota[c])}</span>` : ""}</div>`).join("")
       : `<p class="sub">Ninguno marcado — también es un dato útil.</p>`}
     <p class="hint">Nada de esto sale de tu expediente; se guarda cifrado como todo lo demás.<span class="ac">AC-8</span></p>`;
 }
@@ -271,10 +291,27 @@ function pintarPerfil(){
       ${perfil.alergias ? `<dt>Alergias</dt><dd>${esc(perfil.alergias)}</dd>` : ""}
     </dl>
     ${ahf.length ? `<h3>Antecedentes familiares</h3>` + ahf.map(([c,qs]) =>
-      `<div><strong>${esc(c)}</strong>: ${qs.length ? qs.map(esc).map(q => `<span class="chip">${q}</span>`).join(" ") : '<span class="sub">parentesco sin indicar</span>'}</div>`).join("") : ""}`;
+      `<div><strong>${esc(c)}</strong>: ${qs.length ? qs.map(esc).map(q => `<span class="chip">${q}</span>`).join(" ") : '<span class="sub">parentesco sin indicar</span>'}${perfil.ahfNota[c] ? ` <span class="sub">· ${esc(perfil.ahfNota[c])}</span>` : ""}</div>`).join("") : ""}`;
+  pintarSecciones();
+  $("#secciones").hidden = false;
   $("#perfilPista").textContent = ahf.some(([c]) => c === "Diabetes") ?
     "Con antecedente familiar de diabetes, la IA podrá avisarte si no hay un tamizaje registrado (aviso proactivo con fuente)." :
     "Tus médicos y la IA usarán este contexto; compartes solo lo que cada enlace permita.";
+}
+function pintarSecciones(){
+  const z = $("#listaSecciones"); z.textContent = "";
+  const nAhf = Object.keys(perfil.ahf).length;
+  const todas = [["Antecedentes familiares", "diabetes, cáncer… y de quién", nAhf], ...SECCIONES.map(([t,d]) => [t,d,0])];
+  for(const [t,d,n] of todas){
+    const fila = document.createElement("div"); fila.className = "cond";
+    fila.innerHTML = `<div style="display:flex; justify-content:space-between; gap:8px; align-items:center; flex-wrap:wrap">
+      <div style="min-width:0"><strong>${esc(t)}</strong><div class="hint">${esc(d)}</div></div>
+      ${n ? `<span class="chip">✓ ${n} registrado${n>1?"s":""}</span>` : `<button type="button" class="link">+ Añadir</button>`}</div>`;
+    const b = fila.querySelector("button");
+    if(b) b.onclick = () => toast(t === "Antecedentes familiares" ? "Edita tus antecedentes con «Editar», arriba." :
+      "Esta sección se llena en la siguiente historia; por ahora valida que tenga sentido que exista.");
+    z.append(fila);
+  }
 }
 $("#guardar").onclick = () => cerrarOnboarding(true);
 $("#ahoraNo").onclick = () => cerrarOnboarding(false);

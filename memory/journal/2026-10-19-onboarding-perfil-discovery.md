@@ -31,3 +31,14 @@ capturar AHF, todo omitible, ¿entran sexo y alergias?). Con el gate cerrado: FR
 `make epe-new SLUG=onboarding-perfil`.
 
 **Deuda:** ninguna nueva; la captura foto/OCR y el resto del inbox siguen donde estaban.
+
+**Segunda ronda del gate (2026-10-19, mismo día):** Saúl Pérez respondió Q3 (**todo omitible**), pidió más
+especificidad en AHF (línea materna/paterna, "si el cáncer fue en abuelo paterno o materno"), aportó más datos
+valiosos (fracturas, hepatitis, crónica reconocida) y reencuadró el feature como **"perfil médico" con secciones**,
+preguntando si tanto dato cabe en el onboarding o mejor sugerirlo al terminar. Se investigó la anamnesis estándar
+(APP: crónicas/infecciosas/quirúrgicos/traumáticos/transfusionales/alérgicos; APNP; AHF a 3 generaciones por
+línea con edad al diagnóstico) con fuentes en research.md; dominio.md ganó la sección "El perfil médico por
+secciones" (tabla sección → onboarding sí/no) y la Q4 nueva (alcance de la primera story); prototipo v2: parentescos
+con línea, detalle opcional por condición, y pantalla "Mi perfil médico" con las secciones vacías sugeridas al
+terminar u omitir. Verificado headless (Playwright: flujo completo, cero errores de consola) y visual en Chrome.
+Cuestionarios por especialidad (urólogo, proctólogo, ORL…): diferidos a E4/FR-022, registrado en dominio.
