@@ -1,4 +1,4 @@
-import { expect, type Page, test } from "@playwright/test"
+import { expect, type Locator, type Page, test } from "@playwright/test"
 import { createUser } from "./utils/privateApi"
 import { randomEmail, randomPassword } from "./utils/random"
 import { logInUser } from "./utils/user"
@@ -42,23 +42,67 @@ async function addDiagnosis(
   await page.getByRole("button", { name: "Guardar" }).click()
 }
 
+type Medicine = { name: string; dose: string; frequency?: string }
+
+/**
+ * Rellena la fila de medicina `index` del diálogo de captura. Las filas llevan
+ * los campos "Medicina", "Dosis e indicación" y "Frecuencia (opcional)"
+ * (contrato: product/prototipos/receta-primero.html).
+ */
+async function fillMedicineRow(dialog: Locator, index: number, med: Medicine) {
+  await dialog.getByLabel("Medicina", { exact: true }).nth(index).fill(med.name)
+  await dialog.getByLabel("Dosis e indicación").nth(index).fill(med.dose)
+  if (med.frequency !== undefined) {
+    await dialog.getByLabel(/Frecuencia/).nth(index).fill(med.frequency)
+  }
+}
+
+/**
+ * Captura una receta "A mano" (modelo nuevo: medicinas[], diagnóstico
+ * opcional, sin vigencia) y la guarda con "Guardar receta".
+ */
 async function addPrescription(
   page: Page,
   {
-    medication = "Levotiroxina 50 µg",
-    date = "2026-10-01",
-    dosage = "1 tableta en ayunas cada 24 h",
-    validFrom = "2026-10-01",
-    validUntil = "2026-12-30",
+    doctor = "Dra. Islas (endocrinología)",
+    date = "2026-10-12",
+    medicines = [
+      {
+        name: "Levotiroxina 50 µg",
+        dose: "1 tableta en ayunas",
+        frequency: "cada 8 h",
+      },
+      {
+        name: "Omeprazol 20 mg",
+        dose: "1 cápsula antes del desayuno por 14 días",
+      },
+    ] as Medicine[],
+    diagnosis = "",
   } = {},
 ) {
-  await page.getByRole("button", { name: "Agregar receta" }).click()
-  await page.getByLabel("Medicamento").fill(medication)
-  await page.getByLabel("Fecha").fill(date)
-  await page.getByLabel("Dosis").fill(dosage)
-  await page.getByLabel("Inicio de vigencia").fill(validFrom)
-  await page.getByLabel("Fin de vigencia").fill(validUntil)
-  await page.getByRole("button", { name: "Guardar" }).click()
+  await page.getByRole("button", { name: "A mano" }).click()
+  const dialog = page.getByRole("dialog")
+  await expect(dialog).toBeVisible()
+
+  await dialog.getByLabel("Médico que la expide").fill(doctor)
+  await dialog.getByLabel("Fecha de la receta").fill(date)
+  for (let i = 0; i < medicines.length; i++) {
+    if (i > 0) {
+      await dialog
+        .getByRole("button", { name: "+ Agregar otra medicina" })
+        .click()
+    }
+    await fillMedicineRow(dialog, i, medicines[i])
+  }
+  if (diagnosis) {
+    await dialog.getByLabel(/Diagnóstico/).fill(diagnosis)
+  }
+  await dialog.getByRole("button", { name: "Guardar receta" }).click()
+}
+
+/** La fila (role=row) del registro que contiene el texto dado. */
+function recordRow(page: Page, recordText: string): Locator {
+  return page.getByRole("row").filter({ hasText: recordText })
 }
 
 /**
@@ -70,11 +114,35 @@ async function addPrescription(
 async function clickRecordAction(
   page: Page,
   recordText: string,
-  action: string,
+  action: string | RegExp,
 ) {
-  const row = page.getByRole("row").filter({ hasText: recordText })
+  const row = recordRow(page, recordText)
   await row.getByRole("button", { name: "Abrir menú de acciones" }).click()
   await page.getByRole("menuitem", { name: action }).click()
+}
+
+/**
+ * Como clickRecordAction, pero acepta la acción como botón directo en la fila
+ * (patrón del prototipo: "Archivar (tratamiento terminado)" es un botón de la
+ * tarjeta) o como menuitem del menú de acciones de la fila.
+ */
+async function clickRecordActionFlexible(
+  page: Page,
+  recordText: string,
+  action: string | RegExp,
+) {
+  const row = recordRow(page, recordText)
+  const inline = row.getByRole("button", { name: action })
+  if (
+    await inline
+      .first()
+      .isVisible()
+      .catch(() => false)
+  ) {
+    await inline.first().click()
+    return
+  }
+  await clickRecordAction(page, recordText, action)
 }
 
 /**
@@ -113,90 +181,226 @@ async function openAttachmentsPanel(page: Page, recordText: string) {
   await expect(page.getByText("Adjuntos")).toBeVisible()
 }
 
+/** PNG 1x1 válido (magic bytes reales): el servidor valida por contenido. */
+const PNG_1X1 = Buffer.from(
+  "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==",
+  "base64",
+)
+
 // --- Escenarios ------------------------------------------------------------
 
-test.describe("Expediente — registros clínicos", () => {
+test.describe("Expediente — receta a la mexicana", () => {
   test.beforeEach(async ({ page }) => {
     await freshUserOnExpediente(page)
   })
 
-  test("AC1: agregar un diagnóstico lo registra y lo muestra en la lista", async ({
+  test("AC1: capturar a mano una receta con 2 medicinas (una sin frecuencia) y sin diagnóstico la muestra en la lista", async ({
     page,
   }) => {
-    await expect(
-      page.getByRole("heading", { name: "Expediente" }),
-    ).toBeVisible()
-    await expect(
-      page.getByText("Registra tus diagnósticos, recetas y resultados"),
-    ).toBeVisible()
-    await expect(page.getByText("Aún no tienes registros.")).toBeVisible()
+    await addPrescription(page, {
+      doctor: "Dra. Islas (endocrinología)",
+      date: "2026-10-12",
+      medicines: [
+        {
+          name: "Levotiroxina 50 µg",
+          dose: "1 tableta en ayunas",
+          frequency: "cada 8 h",
+        },
+        {
+          name: "Omeprazol 20 mg",
+          dose: "1 cápsula antes del desayuno por 14 días",
+        },
+      ],
+    })
 
-    await addDiagnosis(page)
-
-    await expect(page.getByText("Diagnóstico registrado.")).toBeVisible()
-    await expect(page.getByText("Hipotiroidismo subclínico")).toBeVisible()
-    await expect(
-      page.getByText("Diagnóstico", { exact: true }).first(),
-    ).toBeVisible()
-  })
-
-  test("AC2: agregar una receta la registra y la muestra en la lista", async ({
-    page,
-  }) => {
-    await addPrescription(page)
-
-    await expect(page.getByText("Receta registrada.")).toBeVisible()
-    await expect(page.getByText("Levotiroxina 50 µg")).toBeVisible()
-    await expect(
-      page.getByText("Receta", { exact: true }).first(),
-    ).toBeVisible()
-  })
-
-  test("AC3: corregir la dosis de una receta persiste el cambio", async ({
-    page,
-  }) => {
-    await addPrescription(page)
-    await expect(page.getByText("Receta registrada.")).toBeVisible()
+    await expect(page.getByText("Receta guardada.")).toBeVisible()
     await expect(page.getByRole("dialog")).not.toBeVisible()
 
-    const newDosage = "1 tableta en ayunas cada 24 h, lunes a sábado"
+    const row = recordRow(page, "Levotiroxina 50 µg")
+    await expect(row).toBeVisible()
+    await expect(row.getByText("Omeprazol 20 mg")).toBeVisible()
+    await expect(row.getByText("cada 8 h")).toBeVisible()
+    await expect(row.getByText("Dra. Islas (endocrinología)")).toBeVisible()
+    // Fecha en formato es-MX dd/mm/aaaa.
+    await expect(row.getByText("12/10/2026")).toBeVisible()
+  })
+
+  test("AC2: una receta con diagnóstico opcional muestra el diagnóstico", async ({
+    page,
+  }) => {
+    await addPrescription(page, {
+      doctor: "Dr. Ramos (medicina general)",
+      date: "2026-10-05",
+      medicines: [
+        {
+          name: "Amoxicilina 500 mg",
+          dose: "1 cápsula hasta terminarlas",
+          frequency: "cada 12 h",
+        },
+      ],
+      diagnosis: "faringitis",
+    })
+
+    await expect(page.getByText("Receta guardada.")).toBeVisible()
+    const row = recordRow(page, "Amoxicilina 500 mg")
+    await expect(row).toBeVisible()
+    await expect(row.getByText(/faringitis/)).toBeVisible()
+  })
+
+  test("AC3: guardar sin ninguna medicina avisa en es-MX y no crea la receta", async ({
+    page,
+  }) => {
+    await page.getByRole("button", { name: "A mano" }).click()
+    const dialog = page.getByRole("dialog")
+    await expect(dialog).toBeVisible()
+
+    await dialog.getByLabel("Médico que la expide").fill("Dr. Sin Medicinas")
+    await dialog.getByLabel("Fecha de la receta").fill("2026-10-12")
+    // Ninguna medicina capturada.
+    await dialog.getByRole("button", { name: "Guardar receta" }).click()
+
+    await expect(page.getByText("Agrega al menos una medicina.")).toBeVisible()
+    // El diálogo sigue abierto: nada se guardó.
+    await expect(dialog).toBeVisible()
+
+    await dialog.getByRole("button", { name: "Cancelar" }).click()
+    await expect(dialog).not.toBeVisible()
+    await expect(page.getByText("Dr. Sin Medicinas")).not.toBeVisible()
+  })
+
+  test("AC4: corregir una receta — cambiar frecuencia, quitar una medicina y agregar otra", async ({
+    page,
+  }) => {
+    await addPrescription(page, {
+      medicines: [
+        {
+          name: "Levotiroxina 50 µg",
+          dose: "1 tableta en ayunas",
+          frequency: "cada 24 h",
+        },
+        {
+          name: "Omeprazol 20 mg",
+          dose: "1 cápsula antes del desayuno por 14 días",
+        },
+      ],
+    })
+    await expect(page.getByText("Receta guardada.")).toBeVisible()
+    await expect(page.getByRole("dialog")).not.toBeVisible()
+
     await clickRecordAction(page, "Levotiroxina 50 µg", "Editar registro")
-    await page.getByLabel("Dosis").fill(newDosage)
-    await page.getByRole("button", { name: "Guardar" }).click()
+    const dialog = page.getByRole("dialog")
+    await expect(dialog).toBeVisible()
 
-    await expect(page.getByText("Registro actualizado.")).toBeVisible()
-    await expect(page.getByRole("dialog")).not.toBeVisible()
+    // Cambiar la frecuencia de la Levotiroxina (fila 0).
+    await dialog
+      .getByLabel(/Frecuencia/)
+      .nth(0)
+      .fill("cada 24 h, lunes a sábado")
+    // Quitar el Omeprazol (fila 1).
+    await dialog.getByRole("button", { name: "Quitar medicina" }).nth(1).click()
+    // Agregar el Ibuprofeno como nueva fila.
+    await dialog.getByRole("button", { name: "+ Agregar otra medicina" }).click()
+    await fillMedicineRow(dialog, 1, {
+      name: "Ibuprofeno 400 mg",
+      dose: "1 tableta por 5 días",
+      frequency: "cada 8 h",
+    })
+    await dialog.getByRole("button", { name: "Guardar receta" }).click()
+    await expect(dialog).not.toBeVisible()
 
-    // Reabrir el registro: la dosis nueva es la que quedó guardada.
-    await clickRecordAction(page, "Levotiroxina 50 µg", "Editar registro")
-    await expect(page.getByLabel("Dosis")).toHaveValue(newDosage)
+    const row = recordRow(page, "Levotiroxina 50 µg")
+    await expect(row.getByText("cada 24 h, lunes a sábado")).toBeVisible()
+    await expect(row.getByText("Ibuprofeno 400 mg")).toBeVisible()
+    await expect(page.getByText("Omeprazol 20 mg")).not.toBeVisible()
   })
 
-  test("AC4: eliminar un registro pide confirmación y lo quita de la lista", async ({
+  test("AC5: archivar una receta la mueve a 'Archivadas' y desarchivar la devuelve a activas", async ({
     page,
   }) => {
-    await addDiagnosis(page)
-    await expect(page.getByText("Diagnóstico registrado.")).toBeVisible()
+    await addPrescription(page, {
+      medicines: [
+        {
+          name: "Paracetamol 500 mg",
+          dose: "1 tableta por 3 días",
+          frequency: "cada 8 h",
+        },
+      ],
+    })
+    await expect(page.getByText("Receta guardada.")).toBeVisible()
     await expect(page.getByRole("dialog")).not.toBeVisible()
 
-    await clickRecordAction(
+    await expect(
+      page.getByRole("heading", { name: "Archivadas" }),
+    ).not.toBeVisible()
+
+    await clickRecordActionFlexible(
       page,
-      "Hipotiroidismo subclínico",
-      "Eliminar registro",
+      "Paracetamol 500 mg",
+      "Archivar (tratamiento terminado)",
     )
 
+    // Aparece la sección "Archivadas" y la receta queda marcada como archivada.
     await expect(
-      page.getByText(
-        "¿Seguro que quieres eliminar este registro? Se eliminarán también sus adjuntos.",
-      ),
+      page.getByRole("heading", { name: "Archivadas" }),
     ).toBeVisible()
-    await page.getByRole("button", { name: "Eliminar", exact: true }).click()
+    const row = recordRow(page, "Paracetamol 500 mg")
+    await expect(row).toBeVisible()
+    await expect(row.getByText(/Archivada/)).toBeVisible()
+    // Ya no ofrece archivarla de nuevo: salió de las activas.
+    await expect(
+      row.getByRole("button", { name: "Archivar (tratamiento terminado)" }),
+    ).not.toBeVisible()
 
-    await expect(page.getByText("Registro eliminado.")).toBeVisible()
-    await expect(page.getByText("Hipotiroidismo subclínico")).not.toBeVisible()
+    // Desarchivar la devuelve a activas sin pérdida de datos.
+    await clickRecordActionFlexible(page, "Paracetamol 500 mg", /Desarchivar/)
+    await expect(
+      page.getByRole("heading", { name: "Archivadas" }),
+    ).not.toBeVisible()
+    const activeRow = recordRow(page, "Paracetamol 500 mg")
+    await expect(activeRow).toBeVisible()
+    await expect(activeRow.getByText("cada 8 h")).toBeVisible()
+    await expect(activeRow.getByText(/Archivada/)).not.toBeVisible()
   })
 
-  test("AC5: adjuntar un PDF a un diagnóstico y descargarlo", async ({
+  test("AC6: un diagnóstico suelto nace con estado 'sin confirmar'", async ({
+    page,
+  }) => {
+    await addDiagnosis(page)
+
+    await expect(page.getByText("Diagnóstico registrado.")).toBeVisible()
+    const row = recordRow(page, "Hipotiroidismo subclínico")
+    await expect(row).toBeVisible()
+    await expect(row.getByText("sin confirmar")).toBeVisible()
+  })
+
+  test("AC7: adjuntar la foto de la receta y verla listada (AC-4)", async ({
+    page,
+  }) => {
+    await addPrescription(page, {
+      medicines: [
+        {
+          name: "Levotiroxina 50 µg",
+          dose: "1 tableta en ayunas",
+          frequency: "cada 24 h",
+        },
+      ],
+    })
+    await expect(page.getByText("Receta guardada.")).toBeVisible()
+    await expect(page.getByRole("dialog")).not.toBeVisible()
+
+    await openAttachmentsPanel(page, "Levotiroxina 50 µg")
+
+    await uploadAttachment(page, {
+      name: "receta-dra-islas.png",
+      mimeType: "image/png",
+      buffer: PNG_1X1,
+    })
+
+    await expect(page.getByText("Adjunto agregado.")).toBeVisible()
+    await expect(page.getByText("receta-dra-islas.png")).toBeVisible()
+  })
+
+  test("adjuntos: un PDF en un diagnóstico se adjunta y se descarga", async ({
     page,
   }) => {
     await addDiagnosis(page)
@@ -223,7 +427,7 @@ test.describe("Expediente — registros clínicos", () => {
     expect(download.suggestedFilename()).toBe("perfil-tiroideo.pdf")
   })
 
-  test("AC6: un archivo que no es PDF/JPEG/PNG se rechaza y no se lista", async ({
+  test("adjuntos: un archivo que no es PDF/JPEG/PNG se rechaza y no se lista", async ({
     page,
   }) => {
     await addDiagnosis(page)
