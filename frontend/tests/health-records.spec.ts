@@ -53,7 +53,10 @@ async function fillMedicineRow(dialog: Locator, index: number, med: Medicine) {
   await dialog.getByLabel("Medicina", { exact: true }).nth(index).fill(med.name)
   await dialog.getByLabel("Dosis e indicación").nth(index).fill(med.dose)
   if (med.frequency !== undefined) {
-    await dialog.getByLabel(/Frecuencia/).nth(index).fill(med.frequency)
+    await dialog
+      .getByLabel(/Frecuencia/)
+      .nth(index)
+      .fill(med.frequency)
   }
 }
 
@@ -299,7 +302,9 @@ test.describe("Expediente — receta a la mexicana", () => {
     // Quitar el Omeprazol (fila 1).
     await dialog.getByRole("button", { name: "Quitar medicina" }).nth(1).click()
     // Agregar el Ibuprofeno como nueva fila.
-    await dialog.getByRole("button", { name: "+ Agregar otra medicina" }).click()
+    await dialog
+      .getByRole("button", { name: "+ Agregar otra medicina" })
+      .click()
     await fillMedicineRow(dialog, 1, {
       name: "Ibuprofeno 400 mg",
       dose: "1 tableta por 5 días",

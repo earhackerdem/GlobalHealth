@@ -473,7 +473,10 @@ def test_foreign_record_indistinguishable_404(client: TestClient, db: Session) -
         )
         assert r_foreign.status_code == 404, (method, kwargs, r_foreign.text)
         assert r_missing.status_code == 404, (method, kwargs, r_missing.text)
-        assert r_foreign.json() == {"detail": "Registro no encontrado"}, (method, kwargs)
+        assert r_foreign.json() == {"detail": "Registro no encontrado"}, (
+            method,
+            kwargs,
+        )
         assert r_foreign.json() == r_missing.json(), (method, kwargs)
         assert "Levotiroxina" not in r_foreign.text, (method, kwargs)
 
