@@ -1,5 +1,12 @@
 # CHANGELOG
 
+- 2026-10-18 · expediente-registros · PR #6 · El paciente registra su expediente real: diagnósticos (fecha,
+  profesional, notas) y recetas (medicamento, dosis, vigencia), corrige y elimina lo propio (ARCO), y adjunta
+  imágenes o PDF que se descargan íntegros; todo el texto clínico y los archivos quedan cifrados en reposo y
+  aislados por cuenta (ADR D16: adjuntos en Postgres, sin servicios nuevos). Pantalla "Expediente" completa en
+  es-MX con la suite Playwright como contrato. Endurecido por revisión adversarial aplicada al 100% (PR #6) y
+  acompañado por: variables de Google al backend Docker (PR #7) y comandos make del proyecto (PR #8).
+
 - 2026-10-12 · cuenta-consentimiento · PR #1 · El paciente puede crear su cuenta con Google o con
   correo/contraseña, otorgando consentimiento expreso (LFPDPPP) cuya evidencia se conserva; sus datos quedan
   aislados por cuenta y los campos sensibles cifrados en reposo. Incluye el esqueleto del producto (template
