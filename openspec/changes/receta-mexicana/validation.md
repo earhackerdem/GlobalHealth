@@ -4,7 +4,7 @@ Cómo probarlo: `make up`, entra a http://localhost:5173 (o el puerto de tu `mak
 **Expediente**. Cada bloque es un criterio del prototipo que navegaste; marca lo que veas.
 
 ## AC-1 · Una receta registra varias medicinas
-1. Pulsa **A mano** y captura: médico "Dra. Islas (endocrinología)", fecha de hoy, medicina 1 "Levotiroxina 50 µg"
+1. Pulsa **Registrar receta** y captura: médico "Dra. Islas (endocrinología)", fecha de hoy, medicina 1 "Levotiroxina 50 µg"
    con dosis "1 tableta en ayunas" y frecuencia "cada 24 h"; **+ Agregar otra medicina**: "Omeprazol 20 mg",
    dosis "1 cápsula antes del desayuno por 14 días", sin frecuencia. Guarda.
 - [ ] Aparece la receta con LAS DOS medicinas y la fecha en dd/mm/aaaa.
@@ -55,3 +55,16 @@ Cómo probarlo: `make up`, entra a http://localhost:5173 (o el puerto de tu `mak
   líneas).
 - [ ] Clic en una receta: detalle en solo lectura con sus adjuntos; **Editar** pide confirmación ("Sí, editar").
 - [ ] Al crear una receta puedes adjuntar la imagen/PDF ahí mismo (opcional).
+
+## Correcciones del review que aprobaste (2026-10-19)
+
+- [ ] Cada medicina ahora tiene campo **Vía** (opcional, p. ej. "oral"); al editar una receta la vía que ya
+  tenía NO se pierde.
+- [ ] **Eliminar adjunto** (dentro del detalle) ahora pide confirmación antes de borrar.
+- [ ] **Editar desde el menú ⋯** de la fila también pide confirmación ("Sí, editar") — incluidos los diagnósticos.
+- [ ] Una fila de medicina con dosis pero **sin nombre** ya no se descarta en silencio: avisa y no guarda.
+- [ ] "**Próximamente**" en Dictar/Escanear ahora se ve (ya no era alcanzable ni con hover ni en móvil).
+- [ ] El botón de adjuntar dice **es-MX** (ya no "Choose File").
+- [ ] El detalle de un diagnóstico muestra su chip **"sin confirmar"**.
+- [ ] En un viewport de teléfono (tu S26 Ultra: 384×832) todo es usable sin scroll horizontal — los e2e corren
+  también en ese tamaño desde ahora.

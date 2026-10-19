@@ -119,10 +119,10 @@ Nuevo requirement en el spec delta ("La captura y la consulta protegen el trabaj
 
 | Spec · scenario (delta) | Test |
 |---|---|
-| Cambiar de pestaña no cierra el modal | e2e "AC8: el modal sobrevive al cambio de pestaña" (page.evaluate blur/visibilitychange) |
-| Notas con varias líneas | e2e "AC9: notas multilínea con Enter" |
-| Consultar es solo lectura; editar deliberado | e2e "AC10: detalle solo lectura + Editar con confirmación" |
-| Adjuntar desde el formulario de creación | e2e "AC11: crear receta con adjunto opcional" |
+| Cambiar de pestaña no cierra el modal | e2e "D1: el modal sobrevive al cambio de pestaña" (espera >1 s por el clamp de staleTime + visibilitychange en window + waitForResponse del refetch; renombrado de "AC8" en el apply del review para no chocar con los AC del prototipo) |
+| Notas con varias líneas | e2e "D2: notas multilínea con Enter" |
+| Consultar es solo lectura; editar deliberado | e2e "D3: detalle solo lectura + Editar con confirmación" |
+| Adjuntar desde el formulario de creación | e2e "D4: crear receta con adjunto opcional" |
 
 ## Gate that closes the work
 

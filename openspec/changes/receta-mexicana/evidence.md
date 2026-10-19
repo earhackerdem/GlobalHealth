@@ -40,6 +40,10 @@ Fecha: 2026-10-18 · Rama: `feat/receta-mexicana` · Ejecutores: tester/implemen
 | Desarchivar | `test_unarchive_prescription` + e2e "AC5" | ídem | ✅ |
 | Diagnóstico nace "sin confirmar" | `test_diagnosis_confirmation_status_unconfirmed` + e2e "AC6" | ídem | ✅ |
 | Flujo completo de captura manual (prototipo) | e2e AC1–AC7 + adjuntos conservados | frontend/tests/health-records.spec.ts | ✅ |
+| Cambiar de pestaña no cierra el modal (delta) | e2e "D1: el modal sobrevive al cambio de pestaña — captura" y "— edición" | frontend/tests/health-records.spec.ts | ✅ |
+| Notas con varias líneas (delta) | e2e "D2: notas multilínea con Enter" | ídem | ✅ |
+| Consultar es solo lectura; editar deliberado (delta) | e2e "D3: detalle solo lectura + Editar con confirmación" | ídem | ✅ |
+| Adjuntar desde el formulario de creación (delta) | e2e "D4: crear receta con adjunto opcional" | ídem | ✅ |
 
 ## Superficie visible ejercitada de verdad
 
@@ -69,3 +73,19 @@ edición con reemplazo, archivar/desarchivar con sección "Archivadas", diagnós
   lista vacía (el caso real era el de editar/menú).
 - Deuda nueva: `DeleteRecord.tsx` conserva su Dialog dentro del menú (misma familia del bug AC8, sin test); clave
   `records:attachments.openPanel` sin uso.
+
+## Apply del review adversarial (2026-10-19) — re-corrido por el orquestador desde limpio
+
+Dos fixers (backend y frontend) aplicaron los hallazgos aprobados por Saúl Pérez; **cero rebotados**. Detalle
+hallazgo→cambio en el comentario `<!-- review-agent: fixer -->` del PR #13.
+
+- Backend: `uv run pytest -q tests/` → **146 passed, 0 failed, 0 errors, 0 skipped** (antes 137; +9: ramas del
+  PATCH, híbrido legacy, null explícito, tope de medicinas y 2 del ciclo de migración). `uv run mypy app` → Success.
+- Migración (CRÍTICO S2): `backend/tests/test_migration_receta_mexicana.py` corre el ciclo contra una BD efímera —
+  llave correcta → fold verificado (incl. las 3 variantes de vigencia de K1); llave equivocada → `InvalidToken`
+  y rollback íntegro (filas byte a byte intactas).
+- Frontend: `bunx tsc --noEmit` limpio; `bunx playwright test tests/health-records.spec.ts` → **33 passed (25.4s)**
+  = setup + 16 × chromium (desktop) + 16 × **s26-ultra** (384×832, el viewport CSS real del teléfono de Saúl;
+  proyecto nuevo en playwright.config.ts). El helper del tab-switch ahora provoca y aserta el refetch real
+  (espera >1 s por el clamp de staleTime, `visibilitychange` en window, `waitForResponse` del GET): la mutación
+  que antes pasaba en verde ya revienta los D1. E2e de eliminar registro restaurado desde main.

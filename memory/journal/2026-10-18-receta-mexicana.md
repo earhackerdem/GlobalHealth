@@ -17,3 +17,7 @@ implementers; fila en inbox. (2) GET /health-records/ hace lazy-load de medicina
 -d --build backend`. (4) Dictado y OCR/IA diferidos con razón (design § Non-Goals).
 
 **Siguiente:** PR y /epe-4-review en otra sesión u ojos.
+
+**Corrección (2026-10-19, hallazgo H1 del review):** este asiento se escribió al cierre de los grupos 1-3 y no se
+actualizó tras el grupo 4 (delta del gate humano, mismo día): la suite e2e quedó en **16/16**, el botón "A mano"
+se renombró a "Registrar receta" y la causa raíz del cierre del modal quedó documentada en evidence.md § Grupo 4.
