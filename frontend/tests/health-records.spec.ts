@@ -581,9 +581,9 @@ test.describe("Expediente — receta a la mexicana", () => {
     await expect(dialog.getByLabel("Médico que la expide")).toHaveValue(
       "Dra. Foco Perdido",
     )
-    await expect(dialog.getByLabel("Medicina", { exact: true }).nth(0)).toHaveValue(
-      "Ibuprofeno 400 mg",
-    )
+    await expect(
+      dialog.getByLabel("Medicina", { exact: true }).nth(0),
+    ).toHaveValue("Ibuprofeno 400 mg")
   })
 
   test("AC8: el modal de edición sobrevive al cambio de pestaña/foco sin perder lo escrito", async ({
@@ -659,7 +659,9 @@ test.describe("Expediente — receta a la mexicana", () => {
     await expect(dxDialog).toBeVisible()
     await dxDialog.getByLabel("Diagnóstico").fill("Faringitis aguda")
     await dxDialog.getByLabel("Fecha").fill("2026-10-01")
-    await dxDialog.getByLabel("Profesional").fill("Dr. Ramos (medicina general)")
+    await dxDialog
+      .getByLabel("Profesional")
+      .fill("Dr. Ramos (medicina general)")
     await typeTwoLineNotes(dxDialog.getByLabel("Notas"))
 
     await expect(dxDialog).toBeVisible()
