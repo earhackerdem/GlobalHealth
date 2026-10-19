@@ -688,7 +688,9 @@ def test_family_history_relatives_deduped_and_bounded(
 
 _AHF_ID = "00000000-0000-0000-0000-000000000000"
 _AHF_PAYLOAD = {"condition": "diabetes", "relatives": ["mother"]}
-CONSENT_GATED_ROUTES: list[tuple[str, str, dict[str, Any] | None, dict[str, str] | None]] = [
+CONSENT_GATED_ROUTES: list[
+    tuple[str, str, dict[str, Any] | None, dict[str, str] | None]
+] = [
     ("GET", "", None, None),
     ("PUT", "", {"birth_date": "1990-03-15"}, None),
     ("POST", "/onboarding", {"outcome": "completed"}, None),
