@@ -1,4 +1,5 @@
 import uuid
+from collections.abc import Sequence
 from datetime import UTC, date, datetime
 from typing import Any, Literal
 
@@ -357,8 +358,10 @@ class HealthRecordAttachmentsPublic(SQLModel):
 #
 # Decision 2: three tables. Sensitive values encrypted at rest with the same
 # EncryptedString as health records (D13/D16); the onboarding state and the
-# measurement/condition discriminators stay in the clear (ordering/filtering
-# need them, same trade-off as HealthRecord.record_type).
+# measurement type discriminator stay in the clear (ordering/filtering need
+# them, same trade-off as HealthRecord.record_type). family_history.condition
+# is encrypted too (review G2, Saúl's call: the spec mandates it); its catalog
+# is still enforced by the Literal on the Create/Update schema.
 
 PROFILE_MIN_BIRTH_DATE = date(1900, 1, 1)
 
@@ -383,6 +386,23 @@ def validate_measurement_value(type_: str, value: float) -> None:
         raise ValueError("El peso debe ser mayor que 0 y de hasta 400 kg")
     if type_ == "height" and not (30 <= value <= 250):
         raise ValueError("La estatura debe estar entre 30 y 250 cm")
+
+
+# Upper bound of relatives per family-history entry: the cardinality of the
+# relative enum (review G11/M5). Enforced in the shared helper, not with
+# pydantic max_length, so the 422 detail stays a STRING in es-MX.
+MAX_FAMILY_HISTORY_RELATIVES = 8
+
+
+def normalize_relatives(relatives: Sequence[str]) -> list[str]:
+    """Bound (es-MX ValueError over the enum cardinality) and dedupe
+    preserving order before persisting (review G11/M5)."""
+    if len(relatives) > MAX_FAMILY_HISTORY_RELATIVES:
+        raise ValueError(
+            "La lista de parentescos admite como máximo "
+            f"{MAX_FAMILY_HISTORY_RELATIVES} elementos"
+        )
+    return list(dict.fromkeys(relatives))
 
 
 # 1:1 with user; birth_date/sex/allergies are Fernet tokens at rest. The
@@ -428,6 +448,8 @@ class BodyMeasurement(SQLModel, table=True):
 
 # One row per condition; relatives is a JSON array serialized INSIDE the
 # encrypted field (accepted trade-off: not SQL-filterable, read by owner only).
+# condition is a Fernet token at rest (review G2), so uniqueness per user
+# cannot be a partial index: the route dedupes by decrypt-and-compare (G3).
 class FamilyHistory(SQLModel, table=True):
     __tablename__ = "family_history"
 
@@ -435,7 +457,7 @@ class FamilyHistory(SQLModel, table=True):
     user_id: uuid.UUID = Field(
         foreign_key="user.id", nullable=False, ondelete="CASCADE"
     )
-    condition: str = Field(max_length=32)
+    condition: str = Field(sa_column=Column(EncryptedString(), nullable=False))
     other_text: str | None = Field(
         default=None, sa_column=Column(EncryptedString(), nullable=True)
     )

@@ -12,10 +12,11 @@ envelope ``{"data": [...], "count": N}``.
 
 import json
 import uuid
-from datetime import date
-from typing import Any
+from datetime import date, datetime
+from typing import Any, Literal
+from zoneinfo import ZoneInfo
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Query
 from sqlmodel import col, func, select
 
 from app.api.deps import ConsentedUser, SessionDep
@@ -35,6 +36,7 @@ from app.models import (
     PatientProfilePublic,
     PatientProfileUpdate,
     get_datetime_utc,
+    normalize_relatives,
     validate_birth_date,
     validate_measurement_value,
 )
@@ -197,7 +199,9 @@ def create_measurement(
         user_id=current_user.id,
         type=measurement_in.type,
         value=str(measurement_in.value),
-        measured_on=date.today(),
+        # Single-market es-MX product: "today" is Mexico City's today, not the
+        # server's UTC date (review G8).
+        measured_on=datetime.now(ZoneInfo("America/Mexico_City")).date(),
     )
     session.add(measurement)
     session.commit()
@@ -209,9 +213,9 @@ def create_measurement(
 def read_measurements(
     session: SessionDep,
     current_user: ConsentedUser,
-    type: str,
-    skip: int = 0,
-    limit: int = 100,
+    type: Literal["weight", "height"],
+    skip: int = Query(0, ge=0),
+    limit: int = Query(100, ge=1, le=100),
 ) -> Any:
     """ONLY the session user's captures of one type, newest first (same-day
     ties broken by capture time)."""
@@ -245,12 +249,37 @@ def create_family_history(
     entry_in: FamilyHistoryCreate,
 ) -> Any:
     """Persist one family antecedent; relatives travel as a JSON array
-    serialized INSIDE the encrypted column (design.md trade-off)."""
+    serialized INSIDE the encrypted column (design.md trade-off), bounded and
+    deduped (review G11/M5).
+
+    condition is encrypted at rest (review G2), so per-user uniqueness cannot
+    be a partial index (Fernet is non-deterministic): dedupe happens HERE by
+    comparing the decrypted conditions the ORM already returns (review G3).
+    "other" admits several entries, told apart by other_text.
+    """
+    try:
+        relatives = normalize_relatives(entry_in.relatives)
+    except ValueError as e:
+        raise HTTPException(status_code=422, detail=str(e)) from e
+    if entry_in.condition != "other":
+        existing_conditions = session.exec(
+            select(FamilyHistory.condition).where(
+                FamilyHistory.user_id == current_user.id
+            )
+        ).all()
+        if entry_in.condition in existing_conditions:
+            raise HTTPException(
+                status_code=409,
+                detail=(
+                    "Ya tienes un antecedente de esa condición; edítalo en "
+                    "lugar de crearlo"
+                ),
+            )
     entry = FamilyHistory(
         user_id=current_user.id,
         condition=entry_in.condition,
         other_text=entry_in.other_text,
-        relatives=json.dumps(entry_in.relatives),
+        relatives=json.dumps(relatives),
         note=entry_in.note,
     )
     session.add(entry)
@@ -261,7 +290,10 @@ def create_family_history(
 
 @router.get("/family-history", response_model=FamilyHistoriesPublic)
 def read_family_history(
-    session: SessionDep, current_user: ConsentedUser, skip: int = 0, limit: int = 100
+    session: SessionDep,
+    current_user: ConsentedUser,
+    skip: int = Query(0, ge=0),
+    limit: int = Query(100, ge=1, le=100),
 ) -> Any:
     """ONLY the session user's antecedents, in capture order."""
     count = session.exec(
@@ -289,11 +321,33 @@ def update_family_history(
     id: uuid.UUID,
     entry_in: FamilyHistoryCreate,
 ) -> Any:
-    """Full update of an owned antecedent (same fields as the create)."""
+    """Full update of an owned antecedent (same fields as the create);
+    relatives bounded and deduped like on create (review G11/M5)."""
+    try:
+        relatives = normalize_relatives(entry_in.relatives)
+    except ValueError as e:
+        raise HTTPException(status_code=422, detail=str(e)) from e
     entry = _get_owned_family_history(session, current_user, id)
+    # Renaming into an already-used condition would create the duplicate the
+    # POST dedupe forbids (review G3) — same rule, same door.
+    if entry_in.condition != "other" and entry_in.condition != entry.condition:
+        existing_conditions = session.exec(
+            select(FamilyHistory.condition).where(
+                FamilyHistory.user_id == current_user.id,
+                col(FamilyHistory.id) != entry.id,
+            )
+        ).all()
+        if entry_in.condition in existing_conditions:
+            raise HTTPException(
+                status_code=409,
+                detail=(
+                    "Ya tienes un antecedente de esa condición; edítalo en "
+                    "lugar de crearlo"
+                ),
+            )
     entry.condition = entry_in.condition
     entry.other_text = entry_in.other_text
-    entry.relatives = json.dumps(entry_in.relatives)
+    entry.relatives = json.dumps(relatives)
     entry.note = entry_in.note
     session.add(entry)
     session.commit()
