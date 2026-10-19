@@ -151,7 +151,7 @@ export type HealthRecordCreate = {
     /**
      * Title
      */
-    title: string;
+    title?: string | null;
     /**
      * Occurred On
      */
@@ -161,9 +161,17 @@ export type HealthRecordCreate = {
      */
     professional?: string | null;
     /**
+     * Diagnosis
+     */
+    diagnosis?: string | null;
+    /**
      * Notes
      */
     notes?: string | null;
+    /**
+     * Medicines
+     */
+    medicines?: Array<HealthRecordMedicineCreate>;
     /**
      * Dose
      */
@@ -176,6 +184,54 @@ export type HealthRecordCreate = {
      * Valid To
      */
     valid_to?: string | null;
+};
+
+/**
+ * HealthRecordMedicineCreate
+ */
+export type HealthRecordMedicineCreate = {
+    /**
+     * Name
+     */
+    name: string;
+    /**
+     * Dose
+     */
+    dose?: string | null;
+    /**
+     * Frequency
+     */
+    frequency?: string | null;
+    /**
+     * Route
+     */
+    route?: string | null;
+};
+
+/**
+ * HealthRecordMedicinePublic
+ */
+export type HealthRecordMedicinePublic = {
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Name
+     */
+    name: string;
+    /**
+     * Dose
+     */
+    dose: string | null;
+    /**
+     * Frequency
+     */
+    frequency: string | null;
+    /**
+     * Route
+     */
+    route: string | null;
 };
 
 /**
@@ -197,27 +253,31 @@ export type HealthRecordPublic = {
     /**
      * Title
      */
-    title: string;
+    title: string | null;
     /**
      * Professional
      */
     professional: string | null;
     /**
+     * Diagnosis
+     */
+    diagnosis: string | null;
+    /**
      * Notes
      */
     notes: string | null;
     /**
-     * Dose
+     * Archived
      */
-    dose: string | null;
+    archived: boolean;
     /**
-     * Valid From
+     * Confirmation Status
      */
-    valid_from: string | null;
+    confirmation_status: string | null;
     /**
-     * Valid To
+     * Medicines
      */
-    valid_to: string | null;
+    medicines: Array<HealthRecordMedicinePublic>;
     /**
      * Owner Id
      */
@@ -249,9 +309,21 @@ export type HealthRecordUpdate = {
      */
     professional?: string | null;
     /**
+     * Diagnosis
+     */
+    diagnosis?: string | null;
+    /**
      * Notes
      */
     notes?: string | null;
+    /**
+     * Archived
+     */
+    archived?: boolean | null;
+    /**
+     * Medicines
+     */
+    medicines?: Array<HealthRecordMedicineCreate> | null;
     /**
      * Dose
      */

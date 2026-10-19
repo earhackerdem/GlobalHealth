@@ -473,6 +473,11 @@ export class HealthRecordsService {
      * Create Health Record
      *
      * Persist a clinical record owned by the session user (consent required).
+     *
+     * The discriminated validation runs HERE (not in a pydantic validator) so
+     * the 422 carries a string es-MX detail: a legacy payload (record-level
+     * dose/validity) is rejected by name; a diagnosis requires a title and no
+     * medicines; a prescription requires 1..N medicines and no title.
      */
     public static recordsCreateHealthRecord<ThrowOnError extends boolean = true>(options: Options<healthRecordsCreateHealthRecordData, ThrowOnError>) {
         return (options.client ?? client).post<healthRecordsCreateHealthRecordResponses, healthRecordsCreateHealthRecordErrors, ThrowOnError>({
@@ -520,11 +525,13 @@ export class HealthRecordsService {
      *
      * Partial update of an owned record; ``record_type`` is immutable.
      *
-     * The RESULTANT state after applying the partial update must satisfy the
-     * same discriminated contract as the Create (finding A1 of the adversarial
-     * review): a prescription keeps dose + validity non-null, a diagnosis
-     * admits none of them. Raised as an HTTP 422 with the same es-MX message
-     * as the Create validator.
+     * ``medicines`` present = FULL replacement of the list (delete + insert,
+     * Decision 2 of receta-mexicana design.md); ``archived`` archives or
+     * unarchives. The RESULTANT state after applying the partial update must
+     * satisfy the same discriminated contract as the Create (finding A1 of
+     * the adversarial review), raised as an HTTP 422 with the same es-MX
+     * string detail. ``confirmation_status`` has no operation to change it:
+     * the field is not part of the Update schema and gets ignored.
      */
     public static recordsUpdateHealthRecord<ThrowOnError extends boolean = true>(options: Options<healthRecordsUpdateHealthRecordData, ThrowOnError>) {
         return (options.client ?? client).patch<healthRecordsUpdateHealthRecordResponses, healthRecordsUpdateHealthRecordErrors, ThrowOnError>({

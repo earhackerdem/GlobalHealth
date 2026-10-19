@@ -35,3 +35,25 @@ task: if the person you work with doesn't mention it, it is not started.
   "gratis" vía Google AI Studio DESCARTADA para datos reales (términos permiten entrenamiento + revisores humanos;
   memory/research.md 2026-10-18). Diseñar con lista blanca de proveedores/modos compatibles con NFR-005 y análisis
   LFPDPPP. Entra al tech-brief del proveedor junto con el spike on-device (D17).
+- [2026-10-18] `scripts/generate-client.sh` y `bun run lint` (biome `--write --unsafe`) reformatean también
+  `frontend/tests/`: el implementer del grupo 2 de receta-mexicana tuvo que restaurar el spec del tester con git.
+  Candidato: excluir `tests/` del barrido de biome en el script (se suma a la fila existente del blast radius).
+- [2026-10-18] Enlace diagnóstico↔receta + confirmación por correo (idea de Saúl Pérez tras validar receta-mexicana):
+  cuando haya proveedor de IA resuelto, permitir enlazar un diagnóstico no confirmado a recetas y, si la receta trae
+  los datos del médico, enviarle un correo para que confirme que esa receta corresponde a ese diagnóstico. Extiende
+  § Diagnóstico suelto y su confirmación de product/dominio.md; aterriza con E3/E4 (enlaces) + decisión de correo.
+- [2026-10-18] Pruebas exploratorias con Claude in Chrome como paso del ciclo (pedido de Saúl Pérez): tras el verde
+  de /epe-3-execute, el orquestador navega la app como usuario real E intenta romperla (datos raros, cambios de
+  pestaña, doble submit) antes del gate humano. Candidato a regla en epe-3-execute § Final verification del template.
+- [2026-10-18] SIGUIENTE TAREA (pedido de Saúl Pérez, prioridad al cerrar receta-mexicana): **onboarding de perfil
+  del paciente** justo después de aceptar el consentimiento — fecha de nacimiento, peso actual, estatura, y
+  antecedentes médicos familiares ("lo que preguntan mucho los médicos": diabetes o cáncer en la familia…).
+  Encaje: rebanada nueva de discovery (catálogo perfil/antecedentes AHF; la evidencia de las 74 fotos ya mostró
+  AHF/APP/APNP en la nota IMSS y signos vitales dispersos en recetas) → FR nuevo en el PRD → story con prototipo.
+  Dato sensible todo (LFPDPPP art. 3-VI: salud + datos de familiares): cifrado y consentimiento ya resueltos.
+
+- [2026-10-19] Las suites e2e heredadas del template (login, user-settings, admin) NO pasan en viewport móvil
+  384×832 (timeouts/elementos no visibles — visto en CI del PR #13 cuando el proyecto s26-ultra corrió sin
+  testMatch). El proyecto quedó acotado a health-records.spec.ts; extender la cobertura móvil al resto de la UI
+  (y arreglar esas pantallas en 384px) es trabajo propio, probablemente junto con la primera pasada responsive
+  general.

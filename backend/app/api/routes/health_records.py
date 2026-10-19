@@ -1,9 +1,13 @@
 """Clinical record book (expediente): diagnoses and prescriptions.
 
-Contract in openspec/changes/expediente-registros/design.md §Interface
-contract: everything behind ``ConsentedUser``; per-owner isolation with the
-SAME 404 for a nonexistent id and a foreign one; clinical text encrypted at
-rest by the model (EncryptedString, NFR-001).
+Contract in openspec/changes/receta-mexicana/design.md §Interface contract
+(remodel of expediente-registros): everything behind ``ConsentedUser``;
+per-owner isolation with the SAME 404 for a nonexistent id and a foreign
+one; clinical text encrypted at rest by the model (EncryptedString,
+NFR-001). A prescription carries ``medicines`` 1..N (child table, capture
+order); PATCH with ``medicines`` present REPLACES the whole list; the
+resultant state is validated by the shared discriminated helper and any
+violation surfaces as a 422 with a STRING detail in es-MX.
 """
 
 import urllib.parse
@@ -21,11 +25,15 @@ from app.models import (
     HealthRecordAttachmentPublic,
     HealthRecordAttachmentsPublic,
     HealthRecordCreate,
+    HealthRecordMedicine,
+    HealthRecordMedicineCreate,
     HealthRecordPublic,
     HealthRecordsPublic,
     HealthRecordUpdate,
     Message,
     get_datetime_utc,
+    reject_legacy_health_record_fields,
+    reject_null_update_fields,
     validate_health_record_fields_by_type,
 )
 
@@ -56,6 +64,22 @@ def _get_owned_record(
     return record
 
 
+def _build_medicines(
+    medicines_in: list[HealthRecordMedicineCreate],
+) -> list[HealthRecordMedicine]:
+    """Child rows in capture order: ``position`` = arrival index."""
+    return [
+        HealthRecordMedicine(
+            position=position,
+            name=medicine.name,
+            dose=medicine.dose,
+            frequency=medicine.frequency,
+            route=medicine.route,
+        )
+        for position, medicine in enumerate(medicines_in)
+    ]
+
+
 @router.post("/", response_model=HealthRecordPublic, status_code=201)
 def create_health_record(
     *,
@@ -63,9 +87,39 @@ def create_health_record(
     current_user: ConsentedUser,
     record_in: HealthRecordCreate,
 ) -> Any:
-    """Persist a clinical record owned by the session user (consent required)."""
-    record = HealthRecord.model_validate(
-        record_in, update={"owner_id": current_user.id}
+    """Persist a clinical record owned by the session user (consent required).
+
+    The discriminated validation runs HERE (not in a pydantic validator) so
+    the 422 carries a string es-MX detail: a legacy payload (record-level
+    dose/validity) is rejected by name; a diagnosis requires a title and no
+    medicines; a prescription requires 1..N medicines and no title.
+    """
+    try:
+        reject_legacy_health_record_fields(
+            record_in.dose, record_in.valid_from, record_in.valid_to
+        )
+        validate_health_record_fields_by_type(
+            record_in.record_type,
+            record_in.title,
+            record_in.diagnosis,
+            [medicine.name for medicine in record_in.medicines],
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=422, detail=str(e)) from e
+    record = HealthRecord(
+        owner_id=current_user.id,
+        record_type=record_in.record_type,
+        occurred_on=record_in.occurred_on,
+        title=record_in.title,
+        professional=record_in.professional,
+        diagnosis=record_in.diagnosis,
+        notes=record_in.notes,
+        # Informational only (no confirmation flow yet): a diagnosis is born
+        # "unconfirmed"; a prescription carries no status.
+        confirmation_status=(
+            "unconfirmed" if record_in.record_type == "diagnosis" else None
+        ),
+        medicines=_build_medicines(record_in.medicines),
     )
     session.add(record)
     session.commit()
@@ -114,23 +168,45 @@ def update_health_record(
 ) -> Any:
     """Partial update of an owned record; ``record_type`` is immutable.
 
-    The RESULTANT state after applying the partial update must satisfy the
-    same discriminated contract as the Create (finding A1 of the adversarial
-    review): a prescription keeps dose + validity non-null, a diagnosis
-    admits none of them. Raised as an HTTP 422 with the same es-MX message
-    as the Create validator.
+    ``medicines`` present = FULL replacement of the list (delete + insert,
+    Decision 2 of receta-mexicana design.md); ``archived`` archives or
+    unarchives. The RESULTANT state after applying the partial update must
+    satisfy the same discriminated contract as the Create (finding A1 of
+    the adversarial review), raised as an HTTP 422 with the same es-MX
+    string detail. ``confirmation_status`` has no operation to change it:
+    the field is not part of the Update schema and gets ignored.
     """
     record = _get_owned_record(session, current_user, id)
     update_dict = record_in.model_dump(exclude_unset=True)
-    resultant = {
-        field: update_dict.get(field, getattr(record, field))
-        for field in ("dose", "valid_from", "valid_to")
-    }
+    replacement = update_dict.pop("medicines", None)
     try:
-        validate_health_record_fields_by_type(record.record_type, **resultant)
+        reject_legacy_health_record_fields(
+            record_in.dose, record_in.valid_from, record_in.valid_to
+        )
+        for legacy_field in ("dose", "valid_from", "valid_to"):
+            update_dict.pop(legacy_field, None)
+        # Explicit null on a NOT NULL column would be a 500 at flush time
+        # (finding S3): reject it here as the same es-MX 422.
+        reject_null_update_fields(update_dict)
+        resultant_names = (
+            [medicine["name"] for medicine in replacement]
+            if replacement is not None
+            else [medicine.name for medicine in record.medicines]
+        )
+        validate_health_record_fields_by_type(
+            record.record_type,
+            update_dict.get("title", record.title),
+            update_dict.get("diagnosis", record.diagnosis),
+            resultant_names,
+        )
     except ValueError as e:
         raise HTTPException(status_code=422, detail=str(e)) from e
     record.sqlmodel_update(update_dict)
+    if replacement is not None:
+        # delete-orphan on the relationship removes the previous rows.
+        record.medicines = _build_medicines(
+            [HealthRecordMedicineCreate(**medicine) for medicine in replacement]
+        )
     record.updated_at = get_datetime_utc()
     session.add(record)
     session.commit()

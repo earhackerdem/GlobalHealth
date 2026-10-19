@@ -1,4 +1,4 @@
-import { expect, type Page, test } from "@playwright/test"
+import { expect, type Locator, type Page, test } from "@playwright/test"
 import { createUser } from "./utils/privateApi"
 import { randomEmail, randomPassword } from "./utils/random"
 import { logInUser } from "./utils/user"
@@ -42,23 +42,71 @@ async function addDiagnosis(
   await page.getByRole("button", { name: "Guardar" }).click()
 }
 
+type Medicine = { name: string; dose: string; frequency?: string }
+
+/**
+ * Rellena la fila de medicina `index` del diálogo de captura. Las filas llevan
+ * los campos "Medicina", "Dosis e indicación" y "Frecuencia (opcional)"
+ * (contrato: product/prototipos/receta-primero.html).
+ */
+async function fillMedicineRow(dialog: Locator, index: number, med: Medicine) {
+  await dialog.getByLabel("Medicina", { exact: true }).nth(index).fill(med.name)
+  await dialog.getByLabel("Dosis e indicación").nth(index).fill(med.dose)
+  if (med.frequency !== undefined) {
+    await dialog
+      .getByLabel(/Frecuencia/)
+      .nth(index)
+      .fill(med.frequency)
+  }
+}
+
+/**
+ * Captura una receta con "Registrar receta" (modelo nuevo: medicinas[],
+ * diagnóstico opcional, sin vigencia) y la guarda con "Guardar receta".
+ * (Renombre del gate humano: el botón ya no se llama "A mano".)
+ */
 async function addPrescription(
   page: Page,
   {
-    medication = "Levotiroxina 50 µg",
-    date = "2026-10-01",
-    dosage = "1 tableta en ayunas cada 24 h",
-    validFrom = "2026-10-01",
-    validUntil = "2026-12-30",
+    doctor = "Dra. Islas (endocrinología)",
+    date = "2026-10-12",
+    medicines = [
+      {
+        name: "Levotiroxina 50 µg",
+        dose: "1 tableta en ayunas",
+        frequency: "cada 8 h",
+      },
+      {
+        name: "Omeprazol 20 mg",
+        dose: "1 cápsula antes del desayuno por 14 días",
+      },
+    ] as Medicine[],
+    diagnosis = "",
   } = {},
 ) {
-  await page.getByRole("button", { name: "Agregar receta" }).click()
-  await page.getByLabel("Medicamento").fill(medication)
-  await page.getByLabel("Fecha").fill(date)
-  await page.getByLabel("Dosis").fill(dosage)
-  await page.getByLabel("Inicio de vigencia").fill(validFrom)
-  await page.getByLabel("Fin de vigencia").fill(validUntil)
-  await page.getByRole("button", { name: "Guardar" }).click()
+  await page.getByRole("button", { name: "Registrar receta" }).click()
+  const dialog = page.getByRole("dialog")
+  await expect(dialog).toBeVisible()
+
+  await dialog.getByLabel("Médico que la expide").fill(doctor)
+  await dialog.getByLabel("Fecha de la receta").fill(date)
+  for (let i = 0; i < medicines.length; i++) {
+    if (i > 0) {
+      await dialog
+        .getByRole("button", { name: "+ Agregar otra medicina" })
+        .click()
+    }
+    await fillMedicineRow(dialog, i, medicines[i])
+  }
+  if (diagnosis) {
+    await dialog.getByLabel(/Diagnóstico/).fill(diagnosis)
+  }
+  await dialog.getByRole("button", { name: "Guardar receta" }).click()
+}
+
+/** La fila (role=row) del registro que contiene el texto dado. */
+function recordRow(page: Page, recordText: string): Locator {
+  return page.getByRole("row").filter({ hasText: recordText })
 }
 
 /**
@@ -70,11 +118,35 @@ async function addPrescription(
 async function clickRecordAction(
   page: Page,
   recordText: string,
-  action: string,
+  action: string | RegExp,
 ) {
-  const row = page.getByRole("row").filter({ hasText: recordText })
+  const row = recordRow(page, recordText)
   await row.getByRole("button", { name: "Abrir menú de acciones" }).click()
   await page.getByRole("menuitem", { name: action }).click()
+}
+
+/**
+ * Como clickRecordAction, pero acepta la acción como botón directo en la fila
+ * (patrón del prototipo: "Archivar (tratamiento terminado)" es un botón de la
+ * tarjeta) o como menuitem del menú de acciones de la fila.
+ */
+async function clickRecordActionFlexible(
+  page: Page,
+  recordText: string,
+  action: string | RegExp,
+) {
+  const row = recordRow(page, recordText)
+  const inline = row.getByRole("button", { name: action })
+  if (
+    await inline
+      .first()
+      .isVisible()
+      .catch(() => false)
+  ) {
+    await inline.first().click()
+    return
+  }
+  await clickRecordAction(page, recordText, action)
 }
 
 /**
@@ -113,90 +185,328 @@ async function openAttachmentsPanel(page: Page, recordText: string) {
   await expect(page.getByText("Adjuntos")).toBeVisible()
 }
 
+/** PNG 1x1 válido (magic bytes reales): el servidor valida por contenido. */
+const PNG_1X1 = Buffer.from(
+  "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==",
+  "base64",
+)
+
+// --- Helpers del delta del gate humano (2026-10-18) -------------------------
+
+/**
+ * Simula el cambio de pestaña/pérdida de foco del navegador y ASEGURA que el
+ * refetch real de la lista ocurre (hallazgo C1/T1: la versión anterior
+ * despachaba visibilitychange en document — TanStack Query escucha en
+ * window — y no esperaba el clamp de staleTime, así que los tests pasaban
+ * aun con la regresión presente). Receta verificada:
+ *  (a) esperar >1000 ms ANTES de disparar (useSuspenseQuery fuerza
+ *      staleTime ≥ 1000 ms; si la query no está stale no hay refetch),
+ *  (b) despachar visibilitychange en WINDOW,
+ *  (c) asertar el refetch real esperando el GET de /api/v1/health-records.
+ */
+async function simulateTabSwitch(page: Page) {
+  await page.waitForTimeout(1100)
+  const refetch = page.waitForResponse(
+    (response) =>
+      response.request().method() === "GET" &&
+      /\/api\/v1\/health-records\/?(\?|$)/.test(response.url()),
+  )
+  await page.evaluate(() => {
+    window.dispatchEvent(new Event("visibilitychange"))
+  })
+  await refetch
+}
+
+/**
+ * Abre el detalle (solo lectura) de un registro haciendo clic en su texto en
+ * la lista. Contrato del delta: la consulta abre una vista de solo lectura
+ * con el mismo layout del modal.
+ */
+async function openRecordDetail(
+  page: Page,
+  recordText: string,
+): Promise<Locator> {
+  await page.getByText(recordText).first().click()
+  const detail = page.getByRole("dialog")
+  await expect(detail).toBeVisible()
+  return detail
+}
+
+/**
+ * Llega al formulario EDITABLE de una receta por el camino deliberado del
+ * delta: detalle solo lectura → botón "Editar" → confirmación ("Sí, editar")
+ * → formulario con "Guardar receta".
+ */
+async function openPrescriptionEditForm(
+  page: Page,
+  recordText: string,
+): Promise<Locator> {
+  const detail = await openRecordDetail(page, recordText)
+  await detail.getByRole("button", { name: "Editar", exact: true }).click()
+  await page.getByRole("button", { name: "Sí, editar" }).click()
+  const form = page
+    .getByRole("dialog")
+    .filter({ has: page.getByRole("button", { name: "Guardar receta" }) })
+  await expect(form).toBeVisible()
+  return form
+}
+
+/**
+ * Escribe dos líneas en el campo de notas separadas por Enter (el Enter debe
+ * insertar salto de línea, no enviar el formulario).
+ */
+async function typeTwoLineNotes(notes: Locator) {
+  await notes.click()
+  await notes.pressSequentially("No tomar alcohol")
+  await notes.press("Enter")
+  await notes.pressSequentially("Correr 1 hora 3 veces a la semana")
+}
+
+/**
+ * El botón placeholder ("Dictar" / "Escanear") está visible, DESHABILITADO y
+ * anuncia "Próximamente" de forma accesible (aria-label, title,
+ * aria-describedby o texto propio).
+ */
+async function expectComingSoonPlaceholder(dialog: Locator, name: RegExp) {
+  const button = dialog.getByRole("button", { name })
+  await expect(button).toBeVisible()
+  await expect(button).toBeDisabled()
+  const announcesComingSoon = await button.evaluate((el) => {
+    const direct =
+      (el.getAttribute("aria-label") ?? "") + (el.getAttribute("title") ?? "")
+    if (direct.includes("Próximamente")) return true
+    const describedBy = el.getAttribute("aria-describedby")
+    if (describedBy) {
+      const described = describedBy
+        .split(/\s+/)
+        .map((id) => document.getElementById(id)?.textContent ?? "")
+        .join(" ")
+      if (described.includes("Próximamente")) return true
+    }
+    return el.textContent?.includes("Próximamente") ?? false
+  })
+  expect(announcesComingSoon).toBe(true)
+}
+
 // --- Escenarios ------------------------------------------------------------
 
-test.describe("Expediente — registros clínicos", () => {
+test.describe("Expediente — receta a la mexicana", () => {
   test.beforeEach(async ({ page }) => {
     await freshUserOnExpediente(page)
   })
 
-  test("AC1: agregar un diagnóstico lo registra y lo muestra en la lista", async ({
+  test("AC1: capturar a mano una receta con 2 medicinas (una sin frecuencia) y sin diagnóstico la muestra en la lista", async ({
     page,
   }) => {
-    await expect(
-      page.getByRole("heading", { name: "Expediente" }),
-    ).toBeVisible()
-    await expect(
-      page.getByText("Registra tus diagnósticos, recetas y resultados"),
-    ).toBeVisible()
-    await expect(page.getByText("Aún no tienes registros.")).toBeVisible()
+    await addPrescription(page, {
+      doctor: "Dra. Islas (endocrinología)",
+      date: "2026-10-12",
+      medicines: [
+        {
+          name: "Levotiroxina 50 µg",
+          dose: "1 tableta en ayunas",
+          frequency: "cada 8 h",
+        },
+        {
+          name: "Omeprazol 20 mg",
+          dose: "1 cápsula antes del desayuno por 14 días",
+        },
+      ],
+    })
 
-    await addDiagnosis(page)
-
-    await expect(page.getByText("Diagnóstico registrado.")).toBeVisible()
-    await expect(page.getByText("Hipotiroidismo subclínico")).toBeVisible()
-    await expect(
-      page.getByText("Diagnóstico", { exact: true }).first(),
-    ).toBeVisible()
-  })
-
-  test("AC2: agregar una receta la registra y la muestra en la lista", async ({
-    page,
-  }) => {
-    await addPrescription(page)
-
-    await expect(page.getByText("Receta registrada.")).toBeVisible()
-    await expect(page.getByText("Levotiroxina 50 µg")).toBeVisible()
-    await expect(
-      page.getByText("Receta", { exact: true }).first(),
-    ).toBeVisible()
-  })
-
-  test("AC3: corregir la dosis de una receta persiste el cambio", async ({
-    page,
-  }) => {
-    await addPrescription(page)
-    await expect(page.getByText("Receta registrada.")).toBeVisible()
+    await expect(page.getByText("Receta guardada.")).toBeVisible()
     await expect(page.getByRole("dialog")).not.toBeVisible()
 
-    const newDosage = "1 tableta en ayunas cada 24 h, lunes a sábado"
+    const row = recordRow(page, "Levotiroxina 50 µg")
+    await expect(row).toBeVisible()
+    await expect(row.getByText("Omeprazol 20 mg")).toBeVisible()
+    await expect(row.getByText("cada 8 h")).toBeVisible()
+    await expect(row.getByText("Dra. Islas (endocrinología)")).toBeVisible()
+    // Fecha en formato es-MX dd/mm/aaaa.
+    await expect(row.getByText("12/10/2026")).toBeVisible()
+  })
+
+  test("AC2: una receta con diagnóstico opcional muestra el diagnóstico", async ({
+    page,
+  }) => {
+    await addPrescription(page, {
+      doctor: "Dr. Ramos (medicina general)",
+      date: "2026-10-05",
+      medicines: [
+        {
+          name: "Amoxicilina 500 mg",
+          dose: "1 cápsula hasta terminarlas",
+          frequency: "cada 12 h",
+        },
+      ],
+      diagnosis: "faringitis",
+    })
+
+    await expect(page.getByText("Receta guardada.")).toBeVisible()
+    const row = recordRow(page, "Amoxicilina 500 mg")
+    await expect(row).toBeVisible()
+    await expect(row.getByText(/faringitis/)).toBeVisible()
+  })
+
+  test("AC3: guardar sin ninguna medicina avisa en es-MX y no crea la receta", async ({
+    page,
+  }) => {
+    await page.getByRole("button", { name: "Registrar receta" }).click()
+    const dialog = page.getByRole("dialog")
+    await expect(dialog).toBeVisible()
+
+    await dialog.getByLabel("Médico que la expide").fill("Dr. Sin Medicinas")
+    await dialog.getByLabel("Fecha de la receta").fill("2026-10-12")
+    // Ninguna medicina capturada.
+    await dialog.getByRole("button", { name: "Guardar receta" }).click()
+
+    await expect(page.getByText("Agrega al menos una medicina.")).toBeVisible()
+    // El diálogo sigue abierto: nada se guardó.
+    await expect(dialog).toBeVisible()
+
+    await dialog.getByRole("button", { name: "Cancelar" }).click()
+    await expect(dialog).not.toBeVisible()
+    await expect(page.getByText("Dr. Sin Medicinas")).not.toBeVisible()
+  })
+
+  test("AC4: corregir una receta — cambiar frecuencia, quitar una medicina y agregar otra", async ({
+    page,
+  }) => {
+    await addPrescription(page, {
+      medicines: [
+        {
+          name: "Levotiroxina 50 µg",
+          dose: "1 tableta en ayunas",
+          frequency: "cada 24 h",
+        },
+        {
+          name: "Omeprazol 20 mg",
+          dose: "1 cápsula antes del desayuno por 14 días",
+        },
+      ],
+    })
+    await expect(page.getByText("Receta guardada.")).toBeVisible()
+    await expect(page.getByRole("dialog")).not.toBeVisible()
+
     await clickRecordAction(page, "Levotiroxina 50 µg", "Editar registro")
-    await page.getByLabel("Dosis").fill(newDosage)
-    await page.getByRole("button", { name: "Guardar" }).click()
+    // Editar desde el menú ⋯ pasa por la MISMA confirmación que el camino
+    // del detalle (hallazgo C7).
+    await page.getByRole("button", { name: "Sí, editar" }).click()
+    const dialog = page.getByRole("dialog")
+    await expect(dialog).toBeVisible()
 
-    await expect(page.getByText("Registro actualizado.")).toBeVisible()
-    await expect(page.getByRole("dialog")).not.toBeVisible()
+    // Cambiar la frecuencia de la Levotiroxina (fila 0).
+    await dialog
+      .getByLabel(/Frecuencia/)
+      .nth(0)
+      .fill("cada 24 h, lunes a sábado")
+    // Quitar el Omeprazol (fila 1).
+    await dialog.getByRole("button", { name: "Quitar medicina" }).nth(1).click()
+    // Agregar el Ibuprofeno como nueva fila.
+    await dialog
+      .getByRole("button", { name: "+ Agregar otra medicina" })
+      .click()
+    await fillMedicineRow(dialog, 1, {
+      name: "Ibuprofeno 400 mg",
+      dose: "1 tableta por 5 días",
+      frequency: "cada 8 h",
+    })
+    await dialog.getByRole("button", { name: "Guardar receta" }).click()
+    await expect(dialog).not.toBeVisible()
 
-    // Reabrir el registro: la dosis nueva es la que quedó guardada.
-    await clickRecordAction(page, "Levotiroxina 50 µg", "Editar registro")
-    await expect(page.getByLabel("Dosis")).toHaveValue(newDosage)
+    const row = recordRow(page, "Levotiroxina 50 µg")
+    await expect(row.getByText("cada 24 h, lunes a sábado")).toBeVisible()
+    await expect(row.getByText("Ibuprofeno 400 mg")).toBeVisible()
+    await expect(page.getByText("Omeprazol 20 mg")).not.toBeVisible()
   })
 
-  test("AC4: eliminar un registro pide confirmación y lo quita de la lista", async ({
+  test("AC5: archivar una receta la mueve a 'Archivadas' y desarchivar la devuelve a activas", async ({
     page,
   }) => {
-    await addDiagnosis(page)
-    await expect(page.getByText("Diagnóstico registrado.")).toBeVisible()
+    await addPrescription(page, {
+      medicines: [
+        {
+          name: "Paracetamol 500 mg",
+          dose: "1 tableta por 3 días",
+          frequency: "cada 8 h",
+        },
+      ],
+    })
+    await expect(page.getByText("Receta guardada.")).toBeVisible()
     await expect(page.getByRole("dialog")).not.toBeVisible()
 
-    await clickRecordAction(
+    await expect(
+      page.getByRole("heading", { name: "Archivadas" }),
+    ).not.toBeVisible()
+
+    await clickRecordActionFlexible(
       page,
-      "Hipotiroidismo subclínico",
-      "Eliminar registro",
+      "Paracetamol 500 mg",
+      "Archivar (tratamiento terminado)",
     )
 
+    // Aparece la sección "Archivadas" y la receta queda marcada como archivada.
     await expect(
-      page.getByText(
-        "¿Seguro que quieres eliminar este registro? Se eliminarán también sus adjuntos.",
-      ),
+      page.getByRole("heading", { name: "Archivadas" }),
     ).toBeVisible()
-    await page.getByRole("button", { name: "Eliminar", exact: true }).click()
+    const row = recordRow(page, "Paracetamol 500 mg")
+    await expect(row).toBeVisible()
+    await expect(row.getByText(/Archivada/)).toBeVisible()
+    // Ya no ofrece archivarla de nuevo: salió de las activas.
+    await expect(
+      row.getByRole("button", { name: "Archivar (tratamiento terminado)" }),
+    ).not.toBeVisible()
 
-    await expect(page.getByText("Registro eliminado.")).toBeVisible()
-    await expect(page.getByText("Hipotiroidismo subclínico")).not.toBeVisible()
+    // Desarchivar la devuelve a activas sin pérdida de datos.
+    await clickRecordActionFlexible(page, "Paracetamol 500 mg", /Desarchivar/)
+    await expect(
+      page.getByRole("heading", { name: "Archivadas" }),
+    ).not.toBeVisible()
+    const activeRow = recordRow(page, "Paracetamol 500 mg")
+    await expect(activeRow).toBeVisible()
+    await expect(activeRow.getByText("cada 8 h")).toBeVisible()
+    await expect(activeRow.getByText(/Archivada/)).not.toBeVisible()
   })
 
-  test("AC5: adjuntar un PDF a un diagnóstico y descargarlo", async ({
+  test("AC6: un diagnóstico suelto nace con estado 'sin confirmar'", async ({
+    page,
+  }) => {
+    await addDiagnosis(page)
+
+    await expect(page.getByText("Diagnóstico registrado.")).toBeVisible()
+    const row = recordRow(page, "Hipotiroidismo subclínico")
+    await expect(row).toBeVisible()
+    await expect(row.getByText("sin confirmar")).toBeVisible()
+  })
+
+  test("AC7: adjuntar la foto de la receta y verla listada (AC-4)", async ({
+    page,
+  }) => {
+    await addPrescription(page, {
+      medicines: [
+        {
+          name: "Levotiroxina 50 µg",
+          dose: "1 tableta en ayunas",
+          frequency: "cada 24 h",
+        },
+      ],
+    })
+    await expect(page.getByText("Receta guardada.")).toBeVisible()
+    await expect(page.getByRole("dialog")).not.toBeVisible()
+
+    await openAttachmentsPanel(page, "Levotiroxina 50 µg")
+
+    await uploadAttachment(page, {
+      name: "receta-dra-islas.png",
+      mimeType: "image/png",
+      buffer: PNG_1X1,
+    })
+
+    await expect(page.getByText("Adjunto agregado.")).toBeVisible()
+    await expect(page.getByText("receta-dra-islas.png")).toBeVisible()
+  })
+
+  test("adjuntos: un PDF en un diagnóstico se adjunta y se descarga", async ({
     page,
   }) => {
     await addDiagnosis(page)
@@ -223,7 +533,7 @@ test.describe("Expediente — registros clínicos", () => {
     expect(download.suggestedFilename()).toBe("perfil-tiroideo.pdf")
   })
 
-  test("AC6: un archivo que no es PDF/JPEG/PNG se rechaza y no se lista", async ({
+  test("adjuntos: un archivo que no es PDF/JPEG/PNG se rechaza y no se lista", async ({
     page,
   }) => {
     await addDiagnosis(page)
@@ -248,5 +558,283 @@ test.describe("Expediente — registros clínicos", () => {
       page.getByText("Tipo de archivo no permitido (solo PDF, JPEG o PNG)"),
     ).toBeVisible()
     await expect(page.getByText("reporte.exe")).not.toBeVisible()
+  })
+
+  // Recuperado de main (hallazgo T5): el rewrite del spec lo había tirado.
+  test("eliminar un registro pide confirmación y lo quita de la lista", async ({
+    page,
+  }) => {
+    await addDiagnosis(page)
+    await expect(page.getByText("Diagnóstico registrado.")).toBeVisible()
+    await expect(page.getByRole("dialog")).not.toBeVisible()
+
+    await clickRecordAction(
+      page,
+      "Hipotiroidismo subclínico",
+      "Eliminar registro",
+    )
+
+    await expect(
+      page.getByText(
+        "¿Seguro que quieres eliminar este registro? Se eliminarán también sus adjuntos.",
+      ),
+    ).toBeVisible()
+    await page.getByRole("button", { name: "Eliminar", exact: true }).click()
+
+    await expect(page.getByText("Registro eliminado.")).toBeVisible()
+    await expect(page.getByText("Hipotiroidismo subclínico")).not.toBeVisible()
+  })
+
+  // --- Delta del gate humano (2026-10-18): protección del trabajo y los datos
+
+  test("D1: el modal sobrevive al cambio de pestaña — captura", async ({
+    page,
+  }) => {
+    // Lista ya cargada: una receta existente provoca el refetch al foco.
+    await addPrescription(page, {
+      medicines: [
+        {
+          name: "Paracetamol 500 mg",
+          dose: "1 tableta por 3 días",
+          frequency: "cada 8 h",
+        },
+      ],
+    })
+    await expect(page.getByText("Receta guardada.")).toBeVisible()
+    await expect(page.getByRole("dialog")).not.toBeVisible()
+
+    await page.getByRole("button", { name: "Registrar receta" }).click()
+    const dialog = page.getByRole("dialog")
+    await expect(dialog).toBeVisible()
+    await dialog.getByLabel("Médico que la expide").fill("Dra. Foco Perdido")
+    await fillMedicineRow(dialog, 0, {
+      name: "Ibuprofeno 400 mg",
+      dose: "1 tableta por 5 días",
+    })
+
+    await simulateTabSwitch(page)
+
+    // El modal sigue abierto con todo lo escrito intacto.
+    await expect(dialog).toBeVisible()
+    await expect(dialog.getByLabel("Médico que la expide")).toHaveValue(
+      "Dra. Foco Perdido",
+    )
+    await expect(
+      dialog.getByLabel("Medicina", { exact: true }).nth(0),
+    ).toHaveValue("Ibuprofeno 400 mg")
+  })
+
+  test("D1: el modal sobrevive al cambio de pestaña — edición", async ({
+    page,
+  }) => {
+    await addPrescription(page, {
+      medicines: [
+        {
+          name: "Levotiroxina 50 µg",
+          dose: "1 tableta en ayunas",
+          frequency: "cada 24 h",
+        },
+      ],
+    })
+    await expect(page.getByText("Receta guardada.")).toBeVisible()
+    await expect(page.getByRole("dialog")).not.toBeVisible()
+
+    const form = await openPrescriptionEditForm(page, "Levotiroxina 50 µg")
+    await form
+      .getByLabel(/Frecuencia/)
+      .nth(0)
+      .fill("cada 24 h, lunes a sábado")
+
+    await simulateTabSwitch(page)
+
+    // El caso reportado por Saúl Pérez: la edición no se pierde.
+    await expect(form).toBeVisible()
+    await expect(form.getByLabel(/Frecuencia/).nth(0)).toHaveValue(
+      "cada 24 h, lunes a sábado",
+    )
+  })
+
+  test("D2: notas multilínea con Enter", async ({ page }) => {
+    // --- Receta -------------------------------------------------------------
+    await page.getByRole("button", { name: "Registrar receta" }).click()
+    const dialog = page.getByRole("dialog")
+    await expect(dialog).toBeVisible()
+    await dialog
+      .getByLabel("Médico que la expide")
+      .fill("Dra. Islas (endocrinología)")
+    await dialog.getByLabel("Fecha de la receta").fill("2026-10-12")
+    await fillMedicineRow(dialog, 0, {
+      name: "Metformina 850 mg",
+      dose: "1 tableta con la cena",
+    })
+    await typeTwoLineNotes(dialog.getByLabel(/Notas/))
+
+    // El Enter NO envió el formulario.
+    await expect(dialog).toBeVisible()
+    await expect(page.getByText("Receta guardada.")).not.toBeVisible()
+
+    await dialog.getByRole("button", { name: "Guardar receta" }).click()
+    await expect(page.getByText("Receta guardada.")).toBeVisible()
+    await expect(page.getByRole("dialog")).not.toBeVisible()
+
+    // Al consultar el detalle, las dos líneas se ven como líneas separadas.
+    const detail = await openRecordDetail(page, "Metformina 850 mg")
+    const recetaNotes = await detail
+      .getByText(/No tomar alcohol/)
+      .first()
+      .innerText()
+    expect(recetaNotes).toMatch(
+      /No tomar alcohol\s*\n\s*Correr 1 hora 3 veces a la semana/,
+    )
+    await page.keyboard.press("Escape")
+    await expect(page.getByRole("dialog")).not.toBeVisible()
+
+    // --- Diagnóstico ----------------------------------------------------------
+    await page.getByRole("button", { name: "Agregar diagnóstico" }).click()
+    const dxDialog = page.getByRole("dialog")
+    await expect(dxDialog).toBeVisible()
+    await dxDialog.getByLabel("Diagnóstico").fill("Faringitis aguda")
+    await dxDialog.getByLabel("Fecha").fill("2026-10-01")
+    await dxDialog
+      .getByLabel("Profesional")
+      .fill("Dr. Ramos (medicina general)")
+    await typeTwoLineNotes(dxDialog.getByLabel("Notas"))
+
+    await expect(dxDialog).toBeVisible()
+    await expect(page.getByText("Diagnóstico registrado.")).not.toBeVisible()
+
+    await dxDialog.getByRole("button", { name: "Guardar" }).click()
+    await expect(page.getByText("Diagnóstico registrado.")).toBeVisible()
+    await expect(page.getByRole("dialog")).not.toBeVisible()
+
+    await openRecordDetail(page, "Faringitis aguda")
+    const dxNotes = await page
+      .getByRole("dialog")
+      .getByText(/No tomar alcohol/)
+      .first()
+      .innerText()
+    expect(dxNotes).toMatch(
+      /No tomar alcohol\s*\n\s*Correr 1 hora 3 veces a la semana/,
+    )
+  })
+
+  test("D3: detalle solo lectura + Editar con confirmación", async ({
+    page,
+  }) => {
+    await addPrescription(page, {
+      doctor: "Dra. Islas (endocrinología)",
+      date: "2026-10-12",
+      medicines: [
+        {
+          name: "Levotiroxina 50 µg",
+          dose: "1 tableta en ayunas",
+          frequency: "cada 24 h",
+        },
+      ],
+      diagnosis: "Hipotiroidismo subclínico",
+    })
+    await expect(page.getByText("Receta guardada.")).toBeVisible()
+    await expect(page.getByRole("dialog")).not.toBeVisible()
+
+    // El clic NO debe pedir subir archivo (comportamiento viejo reportado).
+    let fileChooserOpened = false
+    page.on("filechooser", () => {
+      fileChooserOpened = true
+    })
+
+    const detail = await openRecordDetail(page, "Levotiroxina 50 µg")
+
+    // Datos completos en solo lectura.
+    await expect(detail.getByText("Dra. Islas (endocrinología)")).toBeVisible()
+    await expect(detail.getByText("12/10/2026")).toBeVisible()
+    await expect(detail.getByText("Levotiroxina 50 µg")).toBeVisible()
+    await expect(detail.getByText("1 tableta en ayunas")).toBeVisible()
+    await expect(detail.getByText("cada 24 h")).toBeVisible()
+    await expect(detail.getByText(/Hipotiroidismo subclínico/)).toBeVisible()
+
+    // No es el formulario editable y no pidió subir archivo. La aserción del
+    // filechooser deja pasar un margen determinista para que un chooser
+    // tardío (la regresión original) la haga fallar (hallazgo C2, parte test).
+    await expect(detail.getByText("Consulta de solo lectura.")).toBeVisible()
+    await expect(
+      detail.getByRole("button", { name: "Guardar receta" }),
+    ).not.toBeVisible()
+    await page.waitForTimeout(500)
+    expect(fileChooserOpened).toBe(false)
+
+    // Editar es deliberado: botón "Editar" + confirmación previa.
+    await detail.getByRole("button", { name: "Editar", exact: true }).click()
+    const confirm = page.getByRole("button", { name: "Sí, editar" })
+    await expect(confirm).toBeVisible()
+    // Antes de confirmar todavía no hay formulario editable.
+    await expect(
+      page.getByRole("button", { name: "Guardar receta" }),
+    ).not.toBeVisible()
+
+    await confirm.click()
+    const form = page
+      .getByRole("dialog")
+      .filter({ has: page.getByRole("button", { name: "Guardar receta" }) })
+    await expect(form).toBeVisible()
+    await expect(form.getByLabel("Médico que la expide")).toHaveValue(
+      "Dra. Islas (endocrinología)",
+    )
+  })
+
+  test("D4: crear receta con adjunto opcional", async ({ page }) => {
+    // Con adjunto: el control vive DENTRO del formulario de creación.
+    await page.getByRole("button", { name: "Registrar receta" }).click()
+    const dialog = page.getByRole("dialog")
+    await expect(dialog).toBeVisible()
+    await dialog
+      .getByLabel("Médico que la expide")
+      .fill("Dra. Islas (endocrinología)")
+    await dialog.getByLabel("Fecha de la receta").fill("2026-10-12")
+    await fillMedicineRow(dialog, 0, {
+      name: "Metformina 850 mg",
+      dose: "1 tableta con la cena",
+    })
+    await dialog.locator('input[type="file"]').setInputFiles({
+      name: "receta-dra-islas.png",
+      mimeType: "image/png",
+      buffer: PNG_1X1,
+    })
+    await dialog.getByRole("button", { name: "Guardar receta" }).click()
+
+    await expect(page.getByText("Receta guardada.")).toBeVisible()
+    await expect(page.getByRole("dialog")).not.toBeVisible()
+    await expect(recordRow(page, "Metformina 850 mg")).toBeVisible()
+
+    // El adjunto aparece listado en el detalle de la receta.
+    const detail = await openRecordDetail(page, "Metformina 850 mg")
+    await expect(detail.getByText("receta-dra-islas.png")).toBeVisible()
+    await page.keyboard.press("Escape")
+    await expect(page.getByRole("dialog")).not.toBeVisible()
+
+    // Sin adjunto: la receta se guarda igual.
+    await addPrescription(page, {
+      doctor: "Dr. Ramos (medicina general)",
+      date: "2026-10-05",
+      medicines: [{ name: "Loratadina 10 mg", dose: "1 tableta al día" }],
+    })
+    await expect(recordRow(page, "Loratadina 10 mg")).toBeVisible()
+  })
+
+  test("renombre: 'Registrar receta' abre el modal con 'Dictar' y 'Escanear' deshabilitados como 'Próximamente'", async ({
+    page,
+  }) => {
+    // El botón viejo "A mano" ya no existe.
+    await expect(page.getByRole("button", { name: "A mano" })).not.toBeVisible()
+
+    await page.getByRole("button", { name: "Registrar receta" }).click()
+    const dialog = page.getByRole("dialog")
+    await expect(dialog).toBeVisible()
+
+    // Placeholders de la escalera de captura: visibles y deshabilitados.
+    await expectComingSoonPlaceholder(dialog, /Dictar/)
+    await expectComingSoonPlaceholder(dialog, /Escanear/)
+
+    // El formulario manual sigue siendo utilizable en el mismo modal.
+    await expect(dialog.getByLabel("Médico que la expide")).toBeVisible()
   })
 })

@@ -3,7 +3,8 @@
   "page": {
     "pageTitle": "Expediente",
     "subtitle": "Registra tus diagnósticos, recetas y resultados",
-    "empty": "Aún no tienes registros."
+    "empty": "Aún no tienes registros.",
+    "archivedHeading": "Archivadas"
   },
   "types": {
     "diagnosis": "Diagnóstico",
@@ -18,11 +19,7 @@
     "diagnosis": "Diagnóstico",
     "date": "Fecha",
     "professional": "Profesional",
-    "notes": "Notas",
-    "medication": "Medicamento",
-    "dose": "Dosis",
-    "validFrom": "Inicio de vigencia",
-    "validTo": "Fin de vigencia"
+    "notes": "Notas"
   },
   "actions": {
     "save": "Guardar",
@@ -35,10 +32,59 @@
     "successToast": "Diagnóstico registrado."
   },
   "addPrescription": {
-    "button": "Agregar receta",
-    "dialogTitle": "Nueva receta",
+    "button": "Registrar receta",
+    "dialogTitle": "Captura tu receta",
     "dialogDescription": "Captura los datos y guarda para sumarla a tu expediente.",
-    "successToast": "Receta registrada."
+    "successToast": "Receta guardada.",
+    "dictate": "Dictar",
+    "scan": "Escanear",
+    "comingSoon": "Próximamente",
+    "attachmentLabel": "Foto o PDF de la receta (opcional)",
+    "attachmentButton": "Adjuntar imagen o PDF",
+    "attachmentEmpty": "Ningún archivo seleccionado",
+    "attachmentFailedToast": "La receta se guardó, pero el archivo no se pudo subir. Inténtalo de nuevo desde su detalle."
+  },
+  "prescriptionForm": {
+    "doctor": "Médico que la expide",
+    "date": "Fecha de la receta",
+    "medicines": "Medicinas",
+    "medicineName": "Medicina",
+    "medicineDose": "Dosis e indicación",
+    "medicineFrequency": "Frecuencia (opcional)",
+    "medicineRoute": "Vía (opcional)",
+    "medicineRowGroup": "Medicina {{number}}",
+    "addMedicine": "+ Agregar otra medicina",
+    "removeMedicine": "Quitar medicina",
+    "diagnosis": "Diagnóstico (opcional)",
+    "notes": "Notas (opcional)",
+    "submit": "Guardar receta"
+  },
+  "archive": {
+    "archive": "Archivar (tratamiento terminado)",
+    "unarchive": "Desarchivar",
+    "archivedChip": "Archivada",
+    "archivedToast": "Receta archivada.",
+    "unarchivedToast": "Receta desarchivada."
+  },
+  "confirmation": {
+    "unconfirmed": "sin confirmar"
+  },
+  "diagnosisChip": "Dx: {{diagnosis}}",
+  "detail": {
+    "prescriptionTitle": "Detalle de la receta",
+    "diagnosisTitle": "Detalle del diagnóstico",
+    "description": "Consulta de solo lectura.",
+    "open": "Ver detalle de {{title}} ({{date}})",
+    "doctor": "Médico",
+    "date": "Fecha",
+    "professional": "Profesional",
+    "medicines": "Medicinas",
+    "diagnosisLabel": "Dx",
+    "notes": "Notas",
+    "edit": "Editar",
+    "confirmTitle": "¿Modificar este registro?",
+    "confirmDescription": "Vas a cambiar datos de tu expediente. ¿Quieres continuar?",
+    "confirmButton": "Sí, editar"
   },
   "editRecord": {
     "menuItem": "Editar registro",
@@ -61,14 +107,16 @@
     "upload": "Subir archivo",
     "download": "Descargar",
     "delete": "Eliminar adjunto",
+    "deleteDialogTitle": "Eliminar adjunto",
+    "deleteDialogDescription": "¿Seguro que quieres eliminar {{filename}}? Esta acción no se puede deshacer.",
+    "deleteConfirmButton": "Eliminar",
     "addedToast": "Adjunto agregado.",
     "deletedToast": "Adjunto eliminado."
   },
   "validation": {
     "titleRequired": "Este campo es obligatorio",
     "dateRequired": "La fecha es obligatoria",
-    "doseRequired": "La dosis es obligatoria",
-    "validFromRequired": "El inicio de vigencia es obligatorio",
-    "validToRequired": "El fin de vigencia es obligatorio"
+    "medicinesRequired": "Agrega al menos una medicina.",
+    "medicineNameRequired": "Agrega el nombre de la medicina."
   }
 }

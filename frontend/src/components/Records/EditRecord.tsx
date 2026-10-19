@@ -1,7 +1,6 @@
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { Pencil } from "lucide-react"
-import { useState } from "react"
 import { useForm } from "react-hook-form"
 import { useTranslation } from "react-i18next"
 import { z } from "zod"
@@ -11,6 +10,12 @@ import {
   HealthRecordsService,
   type HealthRecordUpdate,
 } from "@/client"
+import PrescriptionForm, {
+  emptyMedicineRow,
+  medicinesPayload,
+  type PrescriptionFormData,
+} from "@/components/Records/PrescriptionForm"
+import { useRecordDialogs } from "@/components/Records/RecordDialogsContext"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -32,11 +37,12 @@ import {
 } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
 import { LoadingButton } from "@/components/ui/loading-button"
+import { Textarea } from "@/components/ui/textarea"
 import useCustomToast from "@/hooks/useCustomToast"
 import i18n from "@/i18n"
 import { handleError } from "@/utils"
 
-const formSchema = z.object({
+const diagnosisSchema = z.object({
   title: z
     .string()
     .min(1, { message: i18n.t("records:validation.titleRequired") }),
@@ -45,37 +51,68 @@ const formSchema = z.object({
     .min(1, { message: i18n.t("records:validation.dateRequired") }),
   professional: z.string().optional(),
   notes: z.string().optional(),
-  dose: z.string().optional(),
-  valid_from: z.string().optional(),
-  valid_to: z.string().optional(),
 })
 
-type FormData = z.infer<typeof formSchema>
+type DiagnosisFormData = z.infer<typeof diagnosisSchema>
 
 interface EditRecordProps {
   record: HealthRecordPublic
-  onSuccess: () => void
 }
 
-const EditRecord = ({ record, onSuccess }: EditRecordProps) => {
+/**
+ * "Editar registro" menu item. It only ASKS the page-level provider to open
+ * the edit flow by id: the dialog itself must not live inside the dropdown
+ * content, which Radix unmounts when the menu closes (e.g. on focus loss) —
+ * that unmount was the reported data-loss bug (delta 2026-10-18, AC8).
+ *
+ * It opens the CONFIRMATION first ("Sí, editar"), the same deliberate step
+ * as the detail path (finding C7): every edit — prescription or diagnosis —
+ * is confirmed before the form appears.
+ */
+const EditRecord = ({ record }: EditRecordProps) => {
   const { t } = useTranslation("records")
-  const [isOpen, setIsOpen] = useState(false)
+  const { openConfirm } = useRecordDialogs()
+
+  return (
+    <DropdownMenuItem onSelect={() => openConfirm(record.id)}>
+      <Pencil />
+      {t("editRecord.menuItem")}
+    </DropdownMenuItem>
+  )
+}
+
+interface EditRecordDialogProps {
+  record: HealthRecordPublic
+  onClose: () => void
+  /** Radix close-autofocus hook: the provider restores focus to the element
+   * that opened the flow instead of letting it fall to <body> (finding K6). */
+  onCloseAutoFocus?: (event: Event) => void
+}
+
+/**
+ * The actual edit dialog, rendered at page level by RecordDialogsProvider.
+ * It stays mounted across list refetches (same record id → same element), so
+ * the form keeps whatever the user already typed (AC8).
+ */
+export const EditRecordDialog = ({
+  record,
+  onClose,
+  onCloseAutoFocus,
+}: EditRecordDialogProps) => {
+  const { t } = useTranslation("records")
   const queryClient = useQueryClient()
   const { showSuccessToast, showErrorToast } = useCustomToast()
   const isDiagnosis = record.record_type === "diagnosis"
 
-  const form = useForm<FormData>({
-    resolver: zodResolver(formSchema),
+  const form = useForm<DiagnosisFormData>({
+    resolver: zodResolver(diagnosisSchema),
     mode: "onBlur",
     criteriaMode: "all",
     defaultValues: {
-      title: record.title,
+      title: record.title ?? "",
       occurred_on: record.occurred_on,
       professional: record.professional ?? "",
       notes: record.notes ?? "",
-      dose: record.dose ?? "",
-      valid_from: record.valid_from ?? "",
-      valid_to: record.valid_to ?? "",
     },
   })
 
@@ -88,172 +125,153 @@ const EditRecord = ({ record, onSuccess }: EditRecordProps) => {
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ["health-records"] })
       showSuccessToast(t("editRecord.successToast"))
-      setIsOpen(false)
-      onSuccess()
+      onClose()
     },
     onError: handleError.bind(showErrorToast),
   })
 
-  const onSubmit = (data: FormData) => {
-    // record_type is immutable: it is never sent in the PATCH body.
-    const body: HealthRecordUpdate = isDiagnosis
-      ? {
-          title: data.title,
-          occurred_on: data.occurred_on,
-          professional: data.professional || null,
-          notes: data.notes || null,
-        }
-      : {
-          title: data.title,
-          occurred_on: data.occurred_on,
-          dose: data.dose || null,
-          valid_from: data.valid_from || null,
-          valid_to: data.valid_to || null,
-        }
-    mutation.mutate(body)
+  // record_type is immutable: it is never sent in the PATCH body.
+  const onSubmitDiagnosis = (data: DiagnosisFormData) => {
+    mutation.mutate({
+      title: data.title,
+      occurred_on: data.occurred_on,
+      professional: data.professional || null,
+      notes: data.notes || null,
+    })
+  }
+
+  // `medicines` in the PATCH is a FULL replacement of the list (design,
+  // Decision 2): the form always submits the resulting list.
+  const onSubmitPrescription = (data: PrescriptionFormData) => {
+    mutation.mutate({
+      occurred_on: data.occurred_on,
+      professional: data.professional.trim() || null,
+      diagnosis: data.diagnosis.trim() || null,
+      notes: data.notes.trim() || null,
+      medicines: medicinesPayload(data),
+    })
   }
 
   return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DropdownMenuItem
-        onSelect={(e) => e.preventDefault()}
-        onClick={() => setIsOpen(true)}
+    <Dialog
+      open
+      onOpenChange={(open) => {
+        if (!open) {
+          onClose()
+        }
+      }}
+    >
+      <DialogContent
+        className="max-h-[90vh] overflow-y-auto sm:max-w-lg"
+        onCloseAutoFocus={onCloseAutoFocus}
       >
-        <Pencil />
-        {t("editRecord.menuItem")}
-      </DropdownMenuItem>
-      <DialogContent className="sm:max-w-md">
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)}>
-            <DialogHeader>
-              <DialogTitle>{t("editRecord.dialogTitle")}</DialogTitle>
-              <DialogDescription>
-                {t("editRecord.dialogDescription")}
-              </DialogDescription>
-            </DialogHeader>
-            <div className="grid gap-4 py-4">
-              <FormField
-                control={form.control}
-                name="title"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>
-                      {isDiagnosis
-                        ? t("fields.diagnosis")
-                        : t("fields.medication")}{" "}
-                      <span className="text-destructive">*</span>
-                    </FormLabel>
-                    <FormControl>
-                      <Input type="text" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+        <DialogHeader>
+          <DialogTitle>{t("editRecord.dialogTitle")}</DialogTitle>
+          <DialogDescription>
+            {t("editRecord.dialogDescription")}
+          </DialogDescription>
+        </DialogHeader>
+        {isDiagnosis ? (
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmitDiagnosis)} noValidate>
+              <div className="grid gap-4 py-4">
+                <FormField
+                  control={form.control}
+                  name="title"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>
+                        {t("fields.diagnosis")}{" "}
+                        <span className="text-destructive">*</span>
+                      </FormLabel>
+                      <FormControl>
+                        <Input type="text" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
-              <FormField
-                control={form.control}
-                name="occurred_on"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>
-                      {t("fields.date")}{" "}
-                      <span className="text-destructive">*</span>
-                    </FormLabel>
-                    <FormControl>
-                      <Input type="date" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+                <FormField
+                  control={form.control}
+                  name="occurred_on"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>
+                        {t("fields.date")}{" "}
+                        <span className="text-destructive">*</span>
+                      </FormLabel>
+                      <FormControl>
+                        <Input type="date" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
-              {isDiagnosis ? (
-                <>
-                  <FormField
-                    control={form.control}
-                    name="professional"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>{t("fields.professional")}</FormLabel>
-                        <FormControl>
-                          <Input type="text" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="notes"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>{t("fields.notes")}</FormLabel>
-                        <FormControl>
-                          <Input type="text" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </>
-              ) : (
-                <>
-                  <FormField
-                    control={form.control}
-                    name="dose"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>{t("fields.dose")}</FormLabel>
-                        <FormControl>
-                          <Input type="text" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="valid_from"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>{t("fields.validFrom")}</FormLabel>
-                        <FormControl>
-                          <Input type="date" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="valid_to"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>{t("fields.validTo")}</FormLabel>
-                        <FormControl>
-                          <Input type="date" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </>
-              )}
-            </div>
+                <FormField
+                  control={form.control}
+                  name="professional"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>{t("fields.professional")}</FormLabel>
+                      <FormControl>
+                        <Input type="text" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
-            <DialogFooter>
-              <DialogClose asChild>
-                <Button variant="outline" disabled={mutation.isPending}>
-                  {t("common:actions.cancel")}
-                </Button>
-              </DialogClose>
-              <LoadingButton type="submit" loading={mutation.isPending}>
-                {t("actions.save")}
-              </LoadingButton>
-            </DialogFooter>
-          </form>
-        </Form>
+                <FormField
+                  control={form.control}
+                  name="notes"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>{t("fields.notes")}</FormLabel>
+                      <FormControl>
+                        <Textarea {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              <DialogFooter>
+                <DialogClose asChild>
+                  <Button variant="outline" disabled={mutation.isPending}>
+                    {t("common:actions.cancel")}
+                  </Button>
+                </DialogClose>
+                <LoadingButton type="submit" loading={mutation.isPending}>
+                  {t("actions.save")}
+                </LoadingButton>
+              </DialogFooter>
+            </form>
+          </Form>
+        ) : (
+          <PrescriptionForm
+            defaultValues={{
+              professional: record.professional ?? "",
+              occurred_on: record.occurred_on,
+              medicines: record.medicines.length
+                ? record.medicines.map((m) => ({
+                    name: m.name,
+                    dose: m.dose ?? "",
+                    frequency: m.frequency ?? "",
+                    // Full round-trip: without `route` in the form, the PATCH
+                    // (full list replacement) silently erased it (finding S5).
+                    route: m.route ?? "",
+                  }))
+                : [{ ...emptyMedicineRow }],
+              diagnosis: record.diagnosis ?? "",
+              notes: record.notes ?? "",
+            }}
+            pending={mutation.isPending}
+            onSubmit={onSubmitPrescription}
+          />
+        )}
       </DialogContent>
     </Dialog>
   )
