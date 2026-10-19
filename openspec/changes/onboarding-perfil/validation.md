@@ -42,7 +42,7 @@ ofrece una vez por cuenta; si usas una vieja, la verás una única vez al entrar
 
 - Las 6 secciones adicionales (crónicas, hepatitis/pasadas, cirugías, fracturas, transfusiones, hábitos) se VEN
   pero aún no se capturan: ese llenado es la siguiente historia (FR-028/US-18).
-- Si escribes una fecha de nacimiento futura en el wizard, el campo simplemente la ignora sin avisarte (el
-  servidor sí la rechaza); el mensaje amable en pantalla quedó como deuda.
+- Si escribes una fecha de nacimiento futura, el sistema la rechaza y te lo dice en español (tras el review
+  adversarial, además del aviso ahora hay mensaje junto al campo).
 - La pantalla de inicio ("Panel") ya no es el aterrizaje: con consentimiento dado, entrar te lleva al expediente.
 - Nada de esto se comparte aún con médicos (eso llega con los enlaces, E3/E4) ni alimenta avisos de la IA (E5).

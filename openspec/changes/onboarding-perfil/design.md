@@ -41,8 +41,11 @@ Infraestructura existente que se reutiliza, verificada:
    cambio de dispositivo y el guidance del repo prohíbe estado confiable en el navegador.
 2. **Tres tablas nuevas**: `patient_profile` (1:1 con user; birth_date, sex, allergies cifrados), `body_measurement`
    (type weight|height, value cifrado, measured_on; nunca UPDATE del valor: siempre INSERT) y `family_history`
-   (condition enum + other_text cifrado, relatives serializado cifrado, note cifrado). Alternativa descartada:
-   columnas sueltas en User (mezcla identidad con dato clínico y rompe el patrón de aislamiento por recurso).
+   (**condition cifrada** — corregido en el review 2026-10-19 G2: es el dato clínico nuclear y nada lo consulta por
+   SQL; el dedupe por condición se hace en la ruta, no por índice —, other_text/relatives/note cifrados).
+   **Frontera de cifrado ratificada (G19)**: en claro solo lo que el SQL consulta — `body_measurement.type` y
+   `measured_on` (WHERE/ORDER BY reales). Alternativa descartada: columnas sueltas en User (mezcla identidad con
+   dato clínico y rompe el patrón de aislamiento por recurso).
 3. **Identificadores en inglés, UI en es-MX** (veredicto congelado en memory/closed.md): enums `sex:
    female|male|unspecified`; `condition: diabetes|cancer|hypertension|heart_disease|other`; `relative: mother|
    father|maternal_grandmother|maternal_grandfather|paternal_grandmother|paternal_grandfather|sibling|other`.

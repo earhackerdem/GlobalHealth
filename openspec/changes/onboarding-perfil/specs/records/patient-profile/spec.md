@@ -30,8 +30,9 @@ reposo. Donde el perfil se muestre, la edad SHALL derivarse de la fecha de nacim
 ### Requirement: Peso y estatura como mediciones con fecha
 El sistema SHALL registrar peso (kg) y estatura (cm) como mediciones con fecha, nunca como un valor que se
 sobreescribe: registrar un valor nuevo SHALL conservar los anteriores, y el perfil SHALL mostrar la medición más
-reciente de cada tipo con su fecha. Valores fuera de rango plausible SHALL rechazarse. Las mediciones SHALL
-almacenarse cifradas en reposo.
+reciente de cada tipo con su fecha. Valores fuera de rango plausible SHALL rechazarse. El VALOR de la medición
+SHALL almacenarse cifrado en reposo; el tipo y la fecha quedan en claro porque el sistema consulta por ellos
+(frontera ratificada en el review 2026-10-19, G19).
 
 #### Scenario: La medición nueva no borra la anterior
 - **GIVEN** un paciente con peso 72 kg registrado el 2026-10-19
@@ -102,5 +103,6 @@ responder de forma indistinguible ante un recurso inexistente y uno ajeno.
 
 #### Scenario: Perfil ajeno indistinguible de inexistente
 - **GIVEN** dos pacientes A y B, cada uno con perfil propio
-- **WHEN** A consulta por identificador una medición de B y una medición que no existe
-- **THEN** ambas respuestas son indistinguibles entre sí y no revelan datos de B
+- **WHEN** A consulta, modifica o elimina por identificador un antecedente familiar de B y uno que no existe
+  (las mediciones no exponen operaciones por identificador; su no-fuga se verifica por el listado aislado)
+- **THEN** ambas respuestas son indistinguibles entre sí (mismo status y mismo cuerpo) y no revelan datos de B

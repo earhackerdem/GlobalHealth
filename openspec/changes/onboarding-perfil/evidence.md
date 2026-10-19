@@ -25,7 +25,7 @@ Los números de abajo son corridas re-ejecutadas por el orquestador (no reportes
 
 | # | Escenario del spec | Test | Estado |
 |---|---|---|---|
-| 1 | Perfil básico + edad + cifrado | test_ac1_save_basic_profile_and_read_back_encrypted_at_rest | ✅ |
+| 1 | Perfil básico + cifrado (la edad se asierta en e2e /perfil, no aquí: es derivada en cliente) | test_ac1_save_basic_profile_and_read_back_encrypted_at_rest + profile.spec.ts Esc. 10 | ✅ |
 | 2 | Fecha futura rechazada (es-MX) | test_ac2_future_birth_date_rejected_profile_unchanged | ✅ |
 | 3 | Perfil vacío válido | test_ac3_empty_profile_put_is_valid_with_null_fields | ✅ |
 | 4 | Medición nueva conserva la anterior | test_ac4_new_measurement_keeps_previous_and_updates_latest | ✅ |
@@ -76,9 +76,10 @@ Recorrido como usuario real sobre :5173 (cuenta nueva de prueba local + la cuent
   en /perfil.
 - ✅ Cambio de pestaña real a medio wizard (peso escrito sin guardar): lo escrito persiste al volver (la
   lección C1 de receta-mexicana no se repite).
-- ⚠️ Fecha de nacimiento futura: el input del navegador la DESCARTA en silencio (el campo queda vacío, nadie
-  avisa). El backend la rechazaría con 422 es-MX (test AC2), pero por el camino del cliente el usuario no ve
-  mensaje. UX menor → deuda declarada abajo.
+- ~~⚠️ Fecha de nacimiento futura: el input la descarta en silencio~~ **CORREGIDO en el review (2026-10-19,
+  falso positivo del orquestador):** el validador frontend reprodujo que el valor SÍ se conserva, el PUT devuelve
+  422 y el usuario VE el mensaje es-MX exacto en toast — el criterio se cumplía de punta a punta. Lo observado en
+  la exploración fue un artefacto del tecleo automatizado. El apply añade además mensaje inline (G16).
 - ℹ️ La home redirige a /expediente cuando el onboarding ya cerró: el "Panel" del template dejó de ser el
   aterrizaje para usuarios con consentimiento (consecuencia directa de la decisión 5 del design).
 - ℹ️ Cuentas pre-existentes (admin) ven el wizard a su siguiente visita a la home — decisión documentada en el
@@ -86,8 +87,8 @@ Recorrido como usuario real sobre :5173 (cuenta nueva de prueba local + la cuent
 
 ## Deuda declarada
 
-- Fecha futura descartada en silencio por el input del wizard (sin aviso al usuario); el backend sí la rechaza.
-  Candidata a mensaje de validación en cliente.
+- ~~Fecha futura descartada en silencio~~ (falso positivo, ver corrección arriba; el mensaje inline entró en el
+  apply del review).
 - El contenedor backend NO corre migraciones al (re)arrancar: la BD dev necesitó `alembic upgrade head` a mano
   (lo hizo el implementer del grupo 2 al toparse con el 500). Fila nueva en memory/inbox.md.
 - sr-only del SidebarTrigger deriva del estado del sidebar de ESCRITORIO aunque el sheet móvil esté cerrado
@@ -95,6 +96,20 @@ Recorrido como usuario real sobre :5173 (cuenta nueva de prueba local + la cuent
 - PUT exitoso de family-history propio sin test directo (solo las ramas 404); profile.py ~294-301 sin cubrir.
 - `body_measurement`/`family_history` llevan `created_at` como desempate de orden (no estaba en el boceto del
   design; aditivo y compatible).
+
+## Apply del review adversarial (2026-10-19)
+
+Gate de Saúl Pérez: "todo" (28 confirmados; 2 falsos positivos con prueba — uno del propio orquestador). 3 fixers
+con prefijo NO-CLOSED, cero descartes propios, 1 rebote parcial (EditFamilyHistory→RHF, ⏸️ en closed.md).
+Números finales re-corridos por el orquestador desde limpio:
+
+- Backend: **168 passed / 0 failed / 0 skipped** · cobertura **95%** · mypy limpio · migración f4b2c7d81e93
+  (condition cifrada, re-cifrado idempotente) corrida en BD _test y en el contenedor dev.
+- Frontend: tsc limpio · lint limpio · Playwright **109 passed / 0 failed** (profile.spec: 6 escenarios × 2
+  viewports + setup = 13 passed).
+- Los 2 CRÍTICOS cerrados: AddMeasurement en /perfil (G1) y condition cifrada (G2); el guardado del wizard ya es
+  idempotente ante reintentos (G3, verificado por el nuevo flujo que re-lee el servidor + 409 del backend).
+- `openspec validate --strict` verde tras las enmiendas del spec (Esc. 12 implementable, frontera de cifrado G19).
 
 ## Deuda declarada por los agentes
 
