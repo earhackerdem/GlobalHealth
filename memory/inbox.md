@@ -22,3 +22,16 @@ task: if the person you work with doesn't mention it, it is not started.
 | 2026-10-11 | Cobertura backend exactamente en 90% (= umbral del CI) | ✅ Resuelto en el apply de la revisión del PR #1 (tests de google_oauth con httpx mockeado + decrypt_str): 93.69% real, ~3.7 pts de margen. Archivado con cuenta-consentimiento (2026-10-12) |
 | 2026-10-11 | Decidir nombre del producto (candidatos: Vitacora, Anamnesis; colisiones de GlobalHealth en research.md#naming) | 💤 Decisión de Saúl Pérez (2026-10-12): se queda GlobalHealth por el momento; re-evaluar ANTES de publicar en tiendas o abrir el repo (ahí la colisión de marca sí muerde). Candidatos siguen en research.md#naming |
 | 2026-10-11 | Despersonalizar los artefactos (identidad Google real narrada como dato dev — G20) | ✅ Aplicado a pedido de Saúl Pérez (2026-10-12, PR #3): specs, evidence y journal reescritos a "usuario OAuth real"/"cuenta Google del propietario"; correo literal retirado de evidence. LÍMITE honesto: la historia de git conserva las versiones viejas — una apertura del repo exigiría además squash/reescritura de historia o repo nuevo. La identidad git de los commits (nombre+correo) se mantiene: es metadato de autoría presente en cada commit |
+- [2026-10-18] Spike Android / IA en dispositivo (pedido implícito de Saúl Pérez al anunciar su S26 Ultra 1TB/16GB):
+  evaluar ML Kit GenAI (Gemini Nano on-device) leyendo recetas del corpus real de 74 fotos como candidato a
+  proveedor Q4/NFR-005 — cero retención por construcción, costo cero. Acotado: un spike con criterios medibles
+  (¿cuántas recetas impresas/manuscritas extrae bien? ¿límite de tokens de salida alcanza?), NO la app Android
+  completa. Entra vía tech-brief cuando se cierre el gate del discovery. Recomendación del harness registrada:
+  web primero mientras el modelo de dominio se asienta.
+- [2026-10-18] Q1-B diferida (decisión de Saúl Pérez al cerrar Q1 con A): vigencia derivada de la duración del
+  tratamiento (inferida por IA, editable) como complemento del archivado manual — retomar cuando el proveedor de
+  IA (Q4/tech-brief) esté resuelto.
+- [2026-10-18] BYOK para la capa IA (idea de Saúl Pérez): el usuario elige proveedor/API key propia; opción
+  "gratis" vía Google AI Studio DESCARTADA para datos reales (términos permiten entrenamiento + revisores humanos;
+  memory/research.md 2026-10-18). Diseñar con lista blanca de proveedores/modos compatibles con NFR-005 y análisis
+  LFPDPPP. Entra al tech-brief del proveedor junto con el spike on-device (D17).

@@ -1,0 +1,269 @@
+<title>Receta primero</title>
+<style>
+/* Layout: una columna móvil-primero (el paciente usa Android); tarjetas de receta + hoja de captura */
+:root{
+  --bg:#f7f5f2; --surface:#ffffff; --fg:#2b2a27; --muted:#6f6a61;
+  --accent:#0f766e; --accent-fg:#ffffff; --line:#e4e0d8; --warn-bg:#fdf3e2; --warn-fg:#7a5410;
+  --chip:#eef4f3;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#171a19; --surface:#202423; --fg:#e8e6e1; --muted:#a39d92;
+  --accent:#2dd4bf; --accent-fg:#0c2b27; --line:#343a38; --warn-bg:#3a2f14; --warn-fg:#e8c27a;
+  --chip:#263230; color-scheme:dark
+}}
+:root[data-theme="dark"]{
+  --bg:#171a19; --surface:#202423; --fg:#e8e6e1; --muted:#a39d92;
+  --accent:#2dd4bf; --accent-fg:#0c2b27; --line:#343a38; --warn-bg:#3a2f14; --warn-fg:#e8c27a;
+  --chip:#263230; color-scheme:dark
+}
+body{background:var(--bg); color:var(--fg); font:16px/1.5 "Atkinson Hyperlegible",system-ui,sans-serif;
+  padding-inline:16px; padding-block:8px 48px; max-width:560px; margin:0 auto}
+h1{font-size:1.35rem; margin:.4rem 0 0}
+h2{font-size:1.05rem; margin:0}
+p{margin:.35rem 0}
+.sub{color:var(--muted); font-size:.9rem}
+.banner{background:var(--warn-bg); color:var(--warn-fg); border-radius:8px; padding:8px 12px; font-size:.85rem; margin:12px 0}
+button{font:inherit; border:1px solid var(--line); background:var(--surface); color:var(--fg);
+  border-radius:10px; padding:10px 14px; cursor:pointer}
+button.primary{background:var(--accent); color:var(--accent-fg); border-color:transparent; font-weight:700}
+button.link{border:none; background:none; color:var(--accent); padding:4px; font-weight:600}
+button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px solid var(--accent); outline-offset:2px}
+.actions{display:flex; flex-wrap:wrap; gap:8px; margin:14px 0; align-items:center}
+.card{background:var(--surface); border:1px solid var(--line); border-radius:12px; padding:14px; min-width:0}
+.list{display:flex; flex-direction:column; gap:10px; margin-top:6px}
+.card header{display:flex; justify-content:space-between; gap:8px; align-items:baseline; flex-wrap:wrap}
+.fecha{color:var(--muted); font-size:.85rem; font-variant-numeric:tabular-nums}
+.meds{margin:.4rem 0 0; padding-left:1.1rem}
+.meds li{margin:.15rem 0}
+.chip{display:inline-block; background:var(--chip); color:var(--fg); border-radius:999px; padding:1px 10px; font-size:.78rem}
+.foto{color:var(--muted); font-size:.85rem; margin-top:.45rem}
+dialog{border:1px solid var(--line); border-radius:14px; background:var(--surface); color:var(--fg);
+  width:min(520px, calc(100vw - 32px)); padding:18px}
+dialog::backdrop{background:rgba(0,0,0,.45)}
+form{display:flex; flex-direction:column; gap:12px; margin-top:10px}
+label{font-size:.85rem; font-weight:700; display:block; margin-bottom:3px}
+label .opt{font-weight:400; color:var(--muted)}
+input,textarea{font:inherit; width:100%; box-sizing:border-box; border:1px solid var(--line);
+  border-radius:8px; padding:8px 10px; background:var(--bg); color:var(--fg)}
+.medrow{display:flex; gap:8px; align-items:end; flex-wrap:wrap}
+.medrow>div{flex:1 1 130px; min-width:0}
+.medrow .quitar{flex:0 0 auto}
+.hint{font-size:.8rem; color:var(--muted); margin-top:2px}
+.ocr{display:flex; gap:10px; align-items:center; background:var(--chip); border-radius:10px; padding:10px 12px}
+.ocr[hidden]{display:none}
+.spin{width:16px; height:16px; border:2px solid var(--muted); border-top-color:var(--accent);
+  border-radius:50%; animation:g .8s linear infinite; flex:0 0 auto}
+@keyframes g{to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion: reduce){ .spin{animation:none} }
+#toast{position:fixed; left:50%; transform:translateX(-50%); bottom:calc(14px + env(safe-area-inset-bottom,0px));
+  background:var(--fg); color:var(--bg); border-radius:999px; padding:8px 18px; font-size:.9rem; transition:opacity .3s}
+#toast[hidden]{display:block; opacity:0; pointer-events:none}
+.vacio{color:var(--muted); text-align:center; padding:26px 10px; border:1px dashed var(--line); border-radius:12px}
+.ac{display:none; font-size:.7rem; font-weight:700; letter-spacing:.03em; background:var(--accent); color:var(--bg);
+  border-radius:6px; padding:1px 6px; vertical-align:middle; margin-left:6px}
+.show-ac .ac{display:inline-block}
+#leyenda{display:none; background:var(--surface); border:1px solid var(--line); border-radius:10px;
+  padding:10px 14px; margin:0 0 10px; font-size:.85rem}
+.show-ac #leyenda{display:block}
+#leyenda ol{padding-left:1.2rem; margin:.3rem 0}
+#leyenda li{margin:.2rem 0}
+</style>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&display=swap">
+
+<h1>Mi expediente</h1>
+<p class="sub">Tres formas de capturar tu receta — foto, dictado o a mano — y tú siempre confirmas antes de guardar.</p>
+<div class="banner">Prototipo con datos de ejemplo — nada se guarda ni sale de esta página. La lectura de la foto y el dictado están simulados para validar el flujo (en el producto: OCR para impresas, voz en el dispositivo, IA solo cuando haga falta).</div>
+
+<div class="actions">
+  <button class="primary" id="btnFoto">📷 Con foto<span class="ac">AC-2</span></button>
+  <button id="btnDictar">🎤 Dictarla<span class="ac">AC-7</span></button>
+  <button id="btnManual">⌨️ A mano<span class="ac">AC-5</span></button>
+  <button class="link" id="verAc" aria-pressed="false">Ver criterios</button>
+  <input type="file" id="archivo" accept="image/*,application/pdf" hidden>
+</div>
+
+<div id="leyenda">
+  <p style="margin:.2rem 0 .6rem"><strong>Historia de usuario (borrador, gate pendiente):</strong><br>
+  <em>Como paciente, quiero registrar una receta con foto, dictado o a mano —confirmando siempre antes de
+  guardar— para tener mis medicinas y su contexto de salud sin depender del papel.</em><br>
+  <span class="sub">Origin: product/dominio.md (discovery receta-mexicana) · se formaliza en story.md al abrir el cambio.</span></p>
+  <strong>Criterios de aceptación candidatos</strong> (cada etiqueta marca el botón o campo que lo cumple):
+  <ol>
+    <li><strong>AC-1</strong> Una receta registra varias medicinas (nombre y dosis cada una).</li>
+    <li><strong>AC-2</strong> Subir foto (o tomarla) prellena los campos; nada se guarda sin tu confirmación.</li>
+    <li><strong>AC-3</strong> El diagnóstico es opcional: la receta se guarda sin él.</li>
+    <li><strong>AC-4</strong> La foto original queda adjunta al registro.</li>
+    <li><strong>AC-5</strong> También puedes capturar a mano, sin foto.</li>
+    <li><strong>AC-6</strong> Todo lo leído es corregible antes de guardar; lo que no se lee queda vacío, nunca inventado.</li>
+    <li><strong>AC-7</strong> Dictar la receta con el micrófono también prellena los campos.</li>
+    <li><strong>AC-8</strong> Una receta se archiva manualmente cuando terminó el tratamiento (no hay vigencia impresa).</li>
+    <li><strong>AC-9</strong> Cada medicina puede llevar frecuencia/horario opcional (para futuros recordatorios).</li>
+  </ol>
+</div>
+
+<h2>Mis recetas</h2>
+<div class="list" id="lista"></div>
+
+<dialog id="captura">
+  <h2 id="tituloCaptura">Confirma tu receta</h2>
+  <div class="ocr" id="ocrEstado" hidden><span class="spin"></span><span id="ocrTexto">Leyendo la receta…</span><span class="ac">AC-6</span></div>
+  <form id="forma" novalidate>
+    <div>
+      <label for="medico">Médico que la expide</label>
+      <input id="medico" name="medico" autocomplete="off">
+    </div>
+    <div>
+      <label for="fecha">Fecha de la receta</label>
+      <input id="fecha" name="fecha" type="date">
+    </div>
+    <div>
+      <label>Medicinas<span class="ac">AC-1</span></label>
+      <div id="medsZona" style="display:flex;flex-direction:column;gap:8px"></div>
+      <button type="button" class="link" id="masMed">+ Agregar otra medicina</button>
+    </div>
+    <div>
+      <label for="dx">Diagnóstico <span class="opt">(opcional — la receta no suele traerlo; anótalo si te lo dijeron)</span><span class="ac">AC-3</span></label>
+      <input id="dx" name="dx" autocomplete="off">
+    </div>
+    <div>
+      <label for="notas">Notas <span class="opt">(opcional)</span></label>
+      <textarea id="notas" rows="2"></textarea>
+    </div>
+    <div class="actions" style="margin:0; justify-content:flex-end">
+      <button type="button" id="cancelar">Cancelar</button>
+      <button type="submit" class="primary">Guardar receta</button>
+    </div>
+  </form>
+</dialog>
+
+<div id="toast" hidden>…</div>
+
+<script>
+"use strict";
+const $ = (s) => document.querySelector(s);
+const recetas = [
+  { medico: "Dr. Ramos (medicina general)", fecha: "2026-09-14", foto: "receta-dr-ramos.jpg", arch: false,
+    meds: [{n:"Paracetamol 500 mg", d:"1 tableta por 3 días", f:"cada 8 h"}], dx: "", notas: "" },
+  { medico: "Dra. Peña (odontología)", fecha: "2026-06-02", foto: "", arch: true,
+    meds: [{n:"Amoxicilina 500 mg", d:"1 cápsula hasta terminarlas", f:"cada 12 h"}], dx: "", notas: "" },
+];
+const ocrDemo = {
+  medico: "Dra. Islas (endocrinología)", fecha: "2026-10-12",
+  meds: [{n:"Levotiroxina 50 µg", d:"1 tableta en ayunas", f:"cada 24 h"},
+         {n:"Omeprazol 20 mg", d:"1 cápsula antes del desayuno por 14 días", f:""}],
+  dx: "", notas: ""
+};
+// Dictado simulado: la fecha queda vacía a propósito — lo que no se oye no se inventa (AC-6)
+const dictadoDemo = {
+  transcript: "«Ibuprofeno cuatrocientos, una tableta cada ocho horas por cinco días, me la dio el doctor Ramos»",
+  datos: { medico: "Dr. Ramos", fecha: "",
+    meds: [{n:"Ibuprofeno 400 mg", d:"1 tableta por 5 días", f:"cada 8 h"}], dx: "", notas: "" }
+};
+let fotoPendiente = null;
+
+function pintar(){
+  const zona = $("#lista"); zona.textContent = "";
+  const activas = recetas.filter(r => !r.arch), arch = recetas.filter(r => r.arch);
+  if(!activas.length){
+    const v = document.createElement("div"); v.className = "vacio";
+    v.textContent = "No tienes recetas activas. Captúrala con foto, dictado o a mano."; zona.append(v);
+  }
+  for(const r of activas) zona.append(tarjeta(r, false));
+  if(arch.length){
+    const h = document.createElement("h2"); h.innerHTML = `Archivadas <span class="sub">(${arch.length})</span>`;
+    h.style.marginTop = "18px"; zona.append(h);
+    for(const r of arch) zona.append(tarjeta(r, true));
+  }
+}
+function tarjeta(r, archivada){
+  const c = document.createElement("article"); c.className = "card";
+  if(archivada) c.style.opacity = ".65";
+  const meds = r.meds.map(m => `<li><strong>${esc(m.n)}</strong> — ${esc(m.d)}${m.f ? ` · ${esc(m.f)}` : ""}</li>`).join("");
+  c.innerHTML = `<header><h2>${esc(r.medico || "Receta")}</h2><span class="fecha">${fmt(r.fecha)}</span></header>
+    ${archivada ? `<span class="chip">📁 Archivada</span>` : ""}
+    ${r.dx ? `<span class="chip">Dx: ${esc(r.dx)}</span>` : ""}
+    <ul class="meds">${meds}</ul>
+    ${r.foto ? `<div class="foto">📎 Foto original: ${esc(r.foto)}<span class="ac">AC-4</span></div>` : ""}
+    ${r.notas ? `<p class="sub">${esc(r.notas)}</p>` : ""}
+    ${archivada ? "" : `<div class="actions" style="margin:10px 0 0"><button type="button" class="link arch-btn">Archivar (tratamiento terminado)<span class="ac">AC-8</span></button></div>`}`;
+  const b = c.querySelector(".arch-btn");
+  if(b) b.onclick = () => { r.arch = true; pintar(); toast("Receta archivada: ya no cuenta para recordatorios."); };
+  return c;
+}
+function esc(t){ const d = document.createElement("span"); d.textContent = t ?? ""; return d.innerHTML; }
+function fmt(iso){ if(!iso) return ""; const [a,m,d] = iso.split("-"); return `${d}/${m}/${a}`; }
+
+function filaMed(n = "", d = "", f = ""){
+  const w = document.createElement("div"); w.className = "medrow";
+  w.innerHTML = `<div><label>Medicina</label><input class="med-n" value="${esc(n)}"></div>
+    <div><label>Dosis e indicación</label><input class="med-d" value="${esc(d)}"></div>
+    <div><label>Frecuencia <span class="opt">(opcional)</span><span class="ac">AC-9</span></label><input class="med-f" value="${esc(f)}" placeholder="cada 8 h"></div>
+    <button type="button" class="quitar" aria-label="Quitar medicina">✕</button>`;
+  w.querySelector(".quitar").onclick = () => { if($("#medsZona").children.length > 1) w.remove(); };
+  return w;
+}
+function llenar(datos){
+  $("#medico").value = datos.medico || ""; $("#fecha").value = datos.fecha || "";
+  $("#dx").value = datos.dx || ""; $("#notas").value = datos.notas || "";
+  const z = $("#medsZona"); z.textContent = "";
+  (datos.meds && datos.meds.length ? datos.meds : [{n:"",d:"",f:""}]).forEach(m => z.append(filaMed(m.n, m.d, m.f)));
+}
+function abrir(titulo, datos){
+  $("#tituloCaptura").textContent = titulo; llenar(datos);
+  const dlg = $("#captura"); if(!dlg.open) dlg.showModal();
+}
+
+$("#verAc").onclick = () => {
+  const on = document.body.classList.toggle("show-ac");
+  $("#verAc").setAttribute("aria-pressed", String(on));
+  $("#verAc").textContent = on ? "Ocultar criterios" : "Ver criterios";
+};
+$("#btnManual").onclick = () => { fotoPendiente = null; abrir("Captura tu receta", {meds:[{n:"",d:"",f:""}]}); };
+$("#btnFoto").onclick = () => $("#archivo").click();
+$("#archivo").onchange = () => {
+  const f = $("#archivo").files[0]; if(!f) return;
+  fotoPendiente = f.name; $("#archivo").value = "";
+  abrir("Confirma tu receta", {meds:[{n:"",d:"",f:""}]});
+  leyendo("Leyendo la receta…", ocrDemo,
+    "Listo: revisa que los datos coincidan con tu receta y corrige lo necesario.");
+};
+$("#btnDictar").onclick = () => {
+  fotoPendiente = null;
+  abrir("Confirma tu receta", {meds:[{n:"",d:"",f:""}]});
+  leyendo("🎤 Escuchando… (simulado)", dictadoDemo.datos,
+    `Entendí ${dictadoDemo.transcript}. La fecha no la dijiste: quedó vacía, ponla si la quieres.`);
+};
+function leyendo(msj, datos, fin){
+  const est = $("#ocrEstado"); est.hidden = false;
+  est.querySelector(".spin").style.display = "";
+  $("#ocrTexto").textContent = msj;
+  $("#forma").style.opacity = ".4";
+  setTimeout(() => {
+    llenar(datos);
+    $("#ocrTexto").textContent = fin;
+    est.querySelector(".spin").style.display = "none";
+    $("#forma").style.opacity = "";
+  }, 1400);
+}
+$("#masMed").onclick = () => $("#medsZona").append(filaMed());
+$("#cancelar").onclick = () => $("#captura").close();
+
+$("#forma").onsubmit = (e) => {
+  e.preventDefault();
+  const meds = [...$("#medsZona").children].map(w => ({
+    n: w.querySelector(".med-n").value.trim(), d: w.querySelector(".med-d").value.trim(),
+    f: w.querySelector(".med-f").value.trim()
+  })).filter(m => m.n);
+  if(!meds.length){ toast("Agrega al menos una medicina."); return; }
+  recetas.unshift({ medico: $("#medico").value.trim(), fecha: $("#fecha").value, arch: false,
+    meds, dx: $("#dx").value.trim(), notas: $("#notas").value.trim(), foto: fotoPendiente });
+  fotoPendiente = null;
+  $("#captura").close(); $("#ocrEstado").hidden = true;
+  const sp = $("#ocrEstado .spin"); sp.style.display = "";
+  pintar(); toast("Receta guardada.");
+};
+let tTimer;
+function toast(msg){ const t = $("#toast"); t.textContent = msg; t.hidden = false;
+  clearTimeout(tTimer); tTimer = setTimeout(() => t.hidden = true, 2600); }
+pintar();
+</script>
