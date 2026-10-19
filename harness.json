@@ -78,5 +78,5 @@
   "engine": "openspec",
   "plan_file": "design.md",
   "openspec_version": "1.14.1",
-  "harness_version": "0.1.0"
+  "harness_version": "0.2.0"
 }

@@ -52,6 +52,11 @@ Without a contract, `parallel` degrades to `test→impl`.
 
 **`single`**: you do it yourself, with the per-task cycle above.
 
+**Known asymmetry — implementation living under tests paths** (conftest.py, fixtures, test infra): the tester
+must not write it (it is implementation) and the implementer cannot (the hook blocks tests paths), so the
+orchestrator writes it and commits it with the `test:` prefix — and must SAY so in evidence.md, because for that
+group `make tdd-check` passes vacuously (it only proves tests paths untouched after the red). Declared, not hidden.
+
 Other harnesses (Cursor, Copilot): the roles run as two turns or sessions with `HARNESS_ROLE=tester` then
 `HARNESS_ROLE=implementer` exported; `tdd-check` is identical. Content flavor: no split; the pair is writer and
 `cold-reader` (`produce-content` rule j).

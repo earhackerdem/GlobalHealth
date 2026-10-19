@@ -18,12 +18,32 @@ rsync -a --exclude '.git' --exclude 'memory' --exclude 'changes' --exclude '.epe
   --exclude '/README.md' --exclude '/harness.json' --exclude '/VERSION' --exclude '/CHANGELOG.md' "$ROOT/" "$DEST/"
 bash "$DEST/scripts/skills-link.sh" >/dev/null
 
+# 1b. Starter project.mk (project-owned recipes; harness-update never touches it)
+cat > "$DEST/project.mk" <<'MK'
+# Project-owned make recipes (loaded by the harness Makefile via -include project.mk; never overwritten by
+# harness-update). Replace the placeholders with your stack's real commands as soon as it exists.
+.PHONY: setup up front down stop logs
+setup: ## Prepare the local environment (.env, dependencies)
+	@echo "define 'setup' in project.mk for your stack (copy .env.example, install deps)"
+up: ## Start the application (e.g. docker compose up -d --wait <services>)
+	@echo "define 'up' in project.mk for your stack"
+front: ## Start the frontend dev server, if any
+	@echo "define 'front' in project.mk for your stack"
+down: ## Stop and remove containers
+	@echo "define 'down' in project.mk for your stack"
+stop: ## Stop containers without removing them
+	@echo "define 'stop' in project.mk for your stack"
+logs: ## Follow the main service logs
+	@echo "define 'logs' in project.mk for your stack"
+MK
+
 # 2. harness.json with identity and flavor defaults
 if [ "$FLAVOR" = "development" ]; then CODE='["src/", "app/", "lib/", "packages/"]'; TESTS='["tests/", "test/", "spec/", "__tests__/"]'; else CODE='["content/"]'; TESTS='[]'; fi
 python3 - "$DEST" "$FLAVOR" "$NAME" "$AUTHOR" "$EMAIL" "$OWNER" "$CODE" "$TESTS" <<'PY'
 import datetime, json, sys
 dest, flavor, name, author, email, owner, code, tests = sys.argv[1:9]
 hints = [
+  {"skill": "product-discovery", "pattern": "gestionar|qu[eé] datos|cat[aá]logo|roles y permisos|levantamiento|discovery|quiero (un sistema|una app|registrar)"},
   {"skill": "triage", "pattern": "\\b(build|add|implement|create|fix|refactor|migrate|write|design|set ?up|integrate|quiero|necesito|agrega\\w*|implementa\\w*|crea\\w*|arregla\\w*|escrib\\w*|dise[ñn]a\\w*)\\b", "only_without_active": True},
   {"skill": "epe-1-explore", "pattern": "user story|acceptance criteria|\\bAC\\d\\b|as an? .* i want .* so that|brief|historia de usuario|criterios? de aceptaci"},
   {"skill": "epe-4-review", "pattern": "\\b(review\\w*|pull request|\\bpr\\b|adversarial|revisa\\w*)\\b"},

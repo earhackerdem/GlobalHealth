@@ -16,6 +16,14 @@ use?** This skill asks it first and refuses to continue without the answer.
    - Is there a development team (or a maintainer)? How many, what seniority?
    - What languages, frameworks, databases, hosting and CI do they use **today**? What are they fluent in?
    - Budget and deadline for infrastructure and tooling; licensing constraints; compliance (data residency, PII).
+   - **Platform, explicit**: web, desktop, mobile Android/iOS, or PWA — per audience surface, naming the factor
+     that decides it (where the user physically is, offline needs, camera, store distribution).
+   - **Interaction mode of the heavy criteria** (read discovery's processes if they exist): photo/camera-first
+     vs forms, offline capture, notifications — one question per criterion that smells like UI.
+   - **Expected users and concurrency**, now and in a year. Unknown numbers get an explicit default recorded
+     as an assumption (e.g. "≤100 users, single region"), never silence: the NFR budget needs a number.
+   - **Local development environment**: DB in Docker or native? venv/dependency manager? what does
+     "run it on my machine" take? (lesson from origin: stack and hosting decided, local env undecided → ad-hoc ADR).
    - Brownfield: is there an existing codebase this must live in or integrate with? (then run `/codebase-context` first
      if `AGENTS.md` has no `<!-- harness:context -->` block).
    Write the answers verbatim in §1. **If a stack exists, it wins**: the brief only records where the PRD strains it

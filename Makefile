@@ -1,7 +1,7 @@
 # Harness: day-to-day recipes. `make` alone lists them.
 SHELL := /bin/bash
 .DEFAULT_GOAL := help
-.PHONY: help doctor profile skills-link skills-check new adopt engine-openspec harness-status harness-update hook-test epe-new epe-status tdd-check board board-serve product-init inbox memory-check memory-swept retro check-prs worktrees worktrees-clean
+.PHONY: help doctor profile skills-link skills-check new adopt engine-openspec harness-status harness-update harness-harvest install-hooks hook-test epe-new epe-status tdd-check board board-serve product-init inbox memory-check memory-swept retro check-prs worktrees worktrees-clean
 
 help: ## List the recipes
 	@grep -hE '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-16s\033[0m %s\n", $$1, $$2}'
@@ -33,6 +33,12 @@ harness-status: ## What `make harness-update` would do, writes nothing: make har
 
 harness-update: ## Bring a newer harness in: overwrites untouched owned files, keeps and lists forks, removes retired files. make harness-update SRC=../harness [FORCE=1]
 	@python3 "$(SRC)/scripts/harness-sync.py" update --root . --src "$(SRC)" $(if $(FORCE),--force,)
+
+harness-harvest: ## Lessons from a project back into the template (read-only diff of meta-improvements): make harness-harvest SRC=../my-project
+	@python3 scripts/harness-harvest.py "$(SRC)"
+
+install-hooks: ## Install the local pre-push gate: prek over the diff vs the base branch before every push
+	@bash scripts/install-hooks.sh
 
 hook-test: ## Run a hook with a payload FROM A FILE: make hook-test HOOK=gate-plan PAYLOAD_FILE=/tmp/p.json [PROFILE=autonomous]
 	@HARNESS_PROFILE=$(or $(PROFILE),supervised) python3 .claude/hooks/$(HOOK).py < "$(PAYLOAD_FILE)"; echo "(exit $$?)"

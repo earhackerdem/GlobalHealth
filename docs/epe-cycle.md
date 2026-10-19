@@ -11,7 +11,9 @@ acceptance criteria in `Given / When / Then` with concrete data. Without that, t
 `evidence.md`, `validation.md`, and a PR whose description links to all of it.
 
 ## Before the first story: the optional product layer
-Nothing above `changes/` is required. When there is a product behind the stories, three optional artefacts fix intent
+Nothing above `changes/` is required. When there is a product behind the stories, optional artefacts fix intent
+— starting with `/product-discovery` (data catalogs, states, processes, roles matrix, validated with a navigable
+mock) when structured data is behind it —
 once (`make product-init`): `product/brief.md` (`/product-brief`, one page), `product/prd.md` (`/product-prd`, only when
 more than one person must agree or more than one epic must not diverge) and `product/technical-brief.md`
 (`/product-tech-brief`: team and existing stack first, then candidates, then the measurable NFR budget every change

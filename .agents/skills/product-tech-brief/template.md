@@ -11,6 +11,10 @@ Date: YYYY-MM-DD · Author: <name (role)> · Status: draft | agreed · Source: p
 | Fluency and preferences | |
 | Budget, deadline, licensing, compliance | |
 | Existing codebase to live in or integrate with | <none · path/repo; `/codebase-context` run on YYYY-MM-DD> |
+| Platform per surface (web / desktop / Android / iOS / PWA) and the deciding factor | |
+| Interaction mode of the heavy criteria (photo-first, offline, camera, notifications) | |
+| Expected users / concurrency (now · in 1 year; defaults recorded as assumptions) | |
+| Local development environment (DB in Docker? deps manager? one-command run?) | |
 
 **Verdict:** <existing stack wins · no stack: candidates below>
 
