@@ -4,6 +4,9 @@ Date: 2026-10-18 · Interviewed: Saúl Pérez (author, haciendo de paciente-inte
 probar el expediente v1) · Evidencia: 74 fotos reales de documentos propios aportadas por Saúl el 2026-10-18
 (§ Evidencia empírica; las fotos NO entran al repo, aquí solo su estructura) · Status: **draft — gate pendiente:
 validar el prototipo y las 4 preguntas abiertas**
+Prototipo: **`product/prototipos/receta-primero.html`** (fuente de verdad, se abre en cualquier navegador; la
+publicación en claude.ai es solo conveniencia y está ligada a una cuenta). Incluye la historia de usuario borrador
+y los AC-1…AC-9 con el toggle "Ver criterios".
 Alcance: SOLO el dominio de la receta y su captura. El resto del producto ya está en product/prd.md; esta rebanada
 corrige el modelo que la v1 del expediente asumió mal.
 

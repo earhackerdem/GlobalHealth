@@ -17,3 +17,4 @@ Includes rejections: a retro that repeats the previous one's menu manufactures f
   ciclo completo. Propuesta upstream: paso opcional de prototipo mock navegable junto a las specs (artifact clickeable
   con datos de ejemplo, o prompt generado para Claude Design/v0/Stitch), y el gate pide validar el prototipo además
   de aprobar el plan. Demostrado ad hoc en GlobalHealth: https://claude.ai/artifact/PJUNDJ5d2c8R8YHq6qPXtZ
+| 2026-10-18 | Prototype gate: el HTML del mock se versiona en el repo (`product/prototipos/`) — los artifacts hospedados están ligados a una cuenta (Saúl usa varias) — y el panel de criterios abre con la historia de usuario textual | ✅ aplicado upstream (template commit 2911d83: product-discovery paso 6 + epe-2-plan prototype gate); llega aquí con el próximo `make harness-update` | Saúl Pérez |
