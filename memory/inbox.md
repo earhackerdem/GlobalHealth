@@ -38,3 +38,10 @@ task: if the person you work with doesn't mention it, it is not started.
 - [2026-10-18] `scripts/generate-client.sh` y `bun run lint` (biome `--write --unsafe`) reformatean también
   `frontend/tests/`: el implementer del grupo 2 de receta-mexicana tuvo que restaurar el spec del tester con git.
   Candidato: excluir `tests/` del barrido de biome en el script (se suma a la fila existente del blast radius).
+- [2026-10-18] Enlace diagnóstico↔receta + confirmación por correo (idea de Saúl Pérez tras validar receta-mexicana):
+  cuando haya proveedor de IA resuelto, permitir enlazar un diagnóstico no confirmado a recetas y, si la receta trae
+  los datos del médico, enviarle un correo para que confirme que esa receta corresponde a ese diagnóstico. Extiende
+  § Diagnóstico suelto y su confirmación de product/dominio.md; aterriza con E3/E4 (enlaces) + decisión de correo.
+- [2026-10-18] Pruebas exploratorias con Claude in Chrome como paso del ciclo (pedido de Saúl Pérez): tras el verde
+  de /epe-3-execute, el orquestador navega la app como usuario real E intenta romperla (datos raros, cambios de
+  pestaña, doble submit) antes del gate humano. Candidato a regla en epe-3-execute § Final verification del template.
