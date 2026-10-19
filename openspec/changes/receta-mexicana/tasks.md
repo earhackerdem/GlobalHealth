@@ -20,13 +20,13 @@ files is `test→impl`; smaller groups are `single`. `make tdd-check` requires o
 
 ## 2. Frontend: captura manual según el prototipo, archivar y es-MX · test→impl
 
-- [ ] 2.1 Test (red): Playwright `frontend/tests/health-records.spec.ts` — crear receta con 2 medicinas (una con
+- [x] 2.1 Test (red): Playwright `frontend/tests/health-records.spec.ts` — crear receta con 2 medicinas (una con
       frecuencia, otra sin), dx opcional, corregir medicinas, archivar → sección "Archivadas", desarchivar,
       diagnóstico suelto "sin confirmar", foto adjunta visible en la receta (AC-4). Commit `test:`.
-- [ ] 2.2 Impl: regenerar SDK; `components/Records/*` (form con filas de medicinas + frecuencia opcional, campo
+- [x] 2.2 Impl: regenerar SDK; `components/Records/*` (form con filas de medicinas + frecuencia opcional, campo
       diagnóstico opcional, acción archivar, lista activas/archivadas), `routes/_layout/expediente.tsx`,
       `locales/es-MX/records.json` (claves nuevas; dd/mm/aaaa vía split). Verde sin tocar tests.
-- [ ] 2.3 Orquestador: rojo/verde re-corridos, `make tdd-check`, commits.
+- [x] 2.3 Orquestador: rojo/verde re-corridos, `make tdd-check`, commits.
 
 ## 3. Cierre: evidencia, validación y PR · single
 
