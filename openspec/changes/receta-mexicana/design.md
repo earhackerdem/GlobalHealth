@@ -1,7 +1,7 @@
 # Design
 
-Status: DRAFT
-Approved by: (grupos 1-3: Saúl Pérez, 2026-10-18, "procede"; el Delta del gate humano espera nueva aprobación)
+Status: APPROVED
+Approved by: Saúl Pérez (author) on 2026-10-18 — grupos 1-3 "procede"; Delta del gate humano "plan approved"
 
 ## Context
 
