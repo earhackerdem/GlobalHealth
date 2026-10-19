@@ -2,7 +2,7 @@ import uuid
 from datetime import UTC, date, datetime
 from typing import Literal
 
-from pydantic import EmailStr, model_validator
+from pydantic import EmailStr
 from sqlalchemy import Column
 from sqlmodel import Field, Relationship, SQLModel
 
@@ -106,6 +106,10 @@ class ConsentStatusPublic(SQLModel):
 # Clinical record (diagnosis or prescription). Encryption rule (NFR-001,
 # expediente-registros design.md): all clinical text encrypted at rest;
 # only type, dates and ids stay in the clear (ordering and FR-025 need them).
+# receta-mexicana design.md: a prescription carries medicines[] 1..N (child
+# table) and no title/dose/validity at record level; `archived` and
+# `confirmation_status` are flow metadata and stay in the clear (Decision 3,
+# same trade-off as record_type).
 class HealthRecord(SQLModel, table=True):
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
     owner_id: uuid.UUID = Field(
@@ -113,90 +117,168 @@ class HealthRecord(SQLModel, table=True):
     )
     record_type: str = Field(max_length=32)  # "diagnosis" | "prescription"
     occurred_on: date
-    title: str = Field(sa_column=Column(EncryptedString(), nullable=False))
+    # Nullable: only a diagnosis carries a title (prescriptions carry medicines)
+    title: str | None = Field(
+        default=None, sa_column=Column(EncryptedString(), nullable=True)
+    )
     professional: str | None = Field(
+        default=None, sa_column=Column(EncryptedString(), nullable=True)
+    )
+    diagnosis: str | None = Field(
         default=None, sa_column=Column(EncryptedString(), nullable=True)
     )
     notes: str | None = Field(
         default=None, sa_column=Column(EncryptedString(), nullable=True)
     )
+    archived: bool = Field(default=False, sa_column_kwargs={"server_default": "false"})
+    # "unconfirmed" for a diagnosis, None for a prescription; informational
+    # only — no API operation flips it (receta-mexicana design.md).
+    confirmation_status: str | None = Field(default=None, max_length=32)
+    created_at: datetime = Field(default_factory=get_datetime_utc)
+    updated_at: datetime = Field(default_factory=get_datetime_utc)
+    medicines: list[HealthRecordMedicine] = Relationship(
+        back_populates="record",
+        cascade_delete=True,
+        sa_relationship_kwargs={"order_by": "HealthRecordMedicine.position"},
+    )
+
+
+# One medicine of a prescription (receta-mexicana design.md, Decision 1):
+# child table, not JSON — per-field encryption with EncryptedString and a
+# clean CASCADE; `position` preserves the capture order.
+class HealthRecordMedicine(SQLModel, table=True):
+    id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
+    # Optional in Python (the relationship assigns it on flush), NOT NULL
+    # in the database.
+    record_id: uuid.UUID | None = Field(
+        default=None, foreign_key="healthrecord.id", nullable=False, ondelete="CASCADE"
+    )
+    position: int
+    name: str = Field(sa_column=Column(EncryptedString(), nullable=False))
     dose: str | None = Field(
         default=None, sa_column=Column(EncryptedString(), nullable=True)
     )
-    valid_from: date | None = Field(default=None)
-    valid_to: date | None = Field(default=None)
-    created_at: datetime = Field(default_factory=get_datetime_utc)
-    updated_at: datetime = Field(default_factory=get_datetime_utc)
+    frequency: str | None = Field(
+        default=None, sa_column=Column(EncryptedString(), nullable=True)
+    )
+    route: str | None = Field(
+        default=None, sa_column=Column(EncryptedString(), nullable=True)
+    )
+    record: HealthRecord | None = Relationship(back_populates="medicines")
 
 
-# Discriminated validation shared by the Create model_validator and the
-# PATCH handler (which validates the RESULTANT state after a partial update):
-# a diagnosis carries no prescription fields; a prescription requires
-# dose and validity window. Raises ValueError with the es-MX message.
+# Record-level fields of the RETIRED model (pre receta-mexicana). They stay
+# on the input schemas only so a legacy payload gets a NAMED es-MX 422
+# instead of being silently ignored.
+LEGACY_HEALTH_RECORD_FIELDS = ("dose", "valid_from", "valid_to")
+
+
+def reject_legacy_health_record_fields(
+    dose: str | None, valid_from: date | None, valid_to: date | None
+) -> None:
+    """Raise es-MX ValueError when the retired record-level fields appear."""
+    values = {"dose": dose, "valid_from": valid_from, "valid_to": valid_to}
+    present = [f for f, v in values.items() if v is not None]
+    if present:
+        raise ValueError(
+            "El registro ya no lleva dosis ni vigencia a nivel de receta "
+            "(campos retirados: " + ", ".join(present) + "); captura cada "
+            "medicina en la lista medicines"
+        )
+
+
+# Discriminated validation shared by the Create handler and the PATCH
+# handler (which validates the RESULTANT state after a partial update):
+# a diagnosis requires a title and admits neither medicines nor the
+# `diagnosis` field; a prescription requires 1..N medicines (each with a
+# non-empty name) and admits no title. Raises ValueError with the es-MX
+# message; the routes surface it as an HTTP 422 with a string detail.
 def validate_health_record_fields_by_type(
     record_type: str,
-    dose: str | None,
-    valid_from: date | None,
-    valid_to: date | None,
+    title: str | None,
+    diagnosis: str | None,
+    medicine_names: list[str],
 ) -> None:
-    values = {"dose": dose, "valid_from": valid_from, "valid_to": valid_to}
     if record_type == "diagnosis":
-        present = [f for f, v in values.items() if v is not None]
-        if present:
+        if not title:
+            raise ValueError("Un diagnóstico requiere un título")
+        if medicine_names:
+            raise ValueError("Un diagnóstico no admite medicinas")
+        if diagnosis is not None:
             raise ValueError(
-                "Un diagnóstico no admite dosis ni vigencia: " + ", ".join(present)
+                "Un diagnóstico no admite el campo diagnosis; usa el título"
             )
     else:
-        missing = [f for f, v in values.items() if v is None]
-        if missing:
-            raise ValueError(
-                "Una receta requiere dosis y vigencia: falta " + ", ".join(missing)
-            )
+        if title is not None:
+            raise ValueError("Una receta no admite título; captura sus medicinas")
+        if not medicine_names:
+            raise ValueError("Una receta requiere al menos una medicina")
+        if any(not name.strip() for name in medicine_names):
+            raise ValueError("Cada medicina requiere un nombre")
+
+
+# One medicine as received on create or on a PATCH replacement.
+class HealthRecordMedicineCreate(SQLModel):
+    name: str = Field(max_length=255)
+    dose: str | None = Field(default=None, max_length=255)
+    frequency: str | None = Field(default=None, max_length=255)
+    route: str | None = Field(default=None, max_length=255)
 
 
 # Properties to receive via API on creation, discriminated by record_type:
-# a diagnosis carries no prescription fields; a prescription requires
-# dose and validity window.
+# a diagnosis carries title and no medicines; a prescription carries
+# medicines 1..N and no title. The discriminated check lives in the route
+# (not a model_validator) so the 422 detail is a STRING in es-MX.
 class HealthRecordCreate(SQLModel):
     record_type: Literal["diagnosis", "prescription"]
-    title: str = Field(min_length=1, max_length=255)
+    title: str | None = Field(default=None, max_length=255)
     occurred_on: date
     professional: str | None = Field(default=None, max_length=255)
+    diagnosis: str | None = Field(default=None, max_length=2000)
     notes: str | None = Field(default=None, max_length=2000)
+    medicines: list[HealthRecordMedicineCreate] = []
+    # Retired model, accepted only to be rejected by name (es-MX 422).
     dose: str | None = Field(default=None, max_length=255)
     valid_from: date | None = None
     valid_to: date | None = None
-
-    @model_validator(mode="after")
-    def _validate_fields_by_type(self) -> HealthRecordCreate:
-        validate_health_record_fields_by_type(
-            self.record_type, self.dose, self.valid_from, self.valid_to
-        )
-        return self
 
 
 # Properties to receive via API on update, all optional; record_type is
-# immutable and therefore absent here.
+# immutable and therefore absent here. `medicines` present = FULL
+# replacement of the list; `archived` archives/unarchives.
 class HealthRecordUpdate(SQLModel):
-    title: str | None = Field(default=None, min_length=1, max_length=255)
+    title: str | None = Field(default=None, max_length=255)
     occurred_on: date | None = None
     professional: str | None = Field(default=None, max_length=255)
+    diagnosis: str | None = Field(default=None, max_length=2000)
     notes: str | None = Field(default=None, max_length=2000)
+    archived: bool | None = None
+    medicines: list[HealthRecordMedicineCreate] | None = None
+    # Retired model, accepted only to be rejected by name (es-MX 422).
     dose: str | None = Field(default=None, max_length=255)
     valid_from: date | None = None
     valid_to: date | None = None
+
+
+class HealthRecordMedicinePublic(SQLModel):
+    id: uuid.UUID
+    name: str
+    dose: str | None
+    frequency: str | None
+    route: str | None
 
 
 class HealthRecordPublic(SQLModel):
     id: uuid.UUID
     record_type: str
     occurred_on: date
-    title: str
+    title: str | None
     professional: str | None
+    diagnosis: str | None
     notes: str | None
-    dose: str | None
-    valid_from: date | None
-    valid_to: date | None
+    archived: bool
+    confirmation_status: str | None
+    medicines: list[HealthRecordMedicinePublic]
     owner_id: uuid.UUID
     created_at: datetime
     updated_at: datetime
