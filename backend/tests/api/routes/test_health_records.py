@@ -28,12 +28,14 @@ Spec: openspec/changes/receta-mexicana/specs/records/clinical-records/spec.md.
 import uuid
 from typing import Any
 
+import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import text
 from sqlmodel import Session
 
 from app import crud
 from app.core.config import settings
+from app.core.encrypted import decrypt_str
 from app.models import UserCreate
 from tests.utils.utils import random_email, random_lower_string
 
@@ -276,6 +278,7 @@ def test_prescription_requires_medicines(client: TestClient, db: Session) -> Non
     assert r_empty.status_code == 422, r_empty.text
     detail = r_empty.json()["detail"]
     assert isinstance(detail, str), detail
+    assert detail == "Una receta requiere al menos una medicina"
 
     r_no_name = post_record(
         client,
@@ -283,6 +286,7 @@ def test_prescription_requires_medicines(client: TestClient, db: Session) -> Non
         prescription_payload(medicines=[{"name": "", "dose": "1 tableta"}]),
     )
     assert r_no_name.status_code == 422, r_no_name.text
+    assert r_no_name.json()["detail"] == "Cada medicina requiere un nombre"
 
     r_list = list_records(client, headers)
     assert r_list.status_code == 200, r_list.text
@@ -332,6 +336,11 @@ def test_legacy_prescription_payload_rejected(client: TestClient, db: Session) -
     assert r.status_code == 422, r.text
     detail = r.json()["detail"]
     assert isinstance(detail, str), detail
+    assert detail == (
+        "El registro ya no lleva dosis ni vigencia a nivel de receta "
+        "(campos retirados: dose, valid_from, valid_to); captura cada "
+        "medicina en la lista medicines"
+    )
 
     r_list = list_records(client, headers)
     assert r_list.status_code == 200, r_list.text
@@ -351,8 +360,24 @@ def test_clinical_content_encrypted_at_rest(client: TestClient, db: Session) -> 
     """
     headers = consented_user_headers(client, db)
 
+    rx_notes = "Notas clínicas sensibles de la receta"
+    rx_route = "oral sublingual"
     r_rx = post_record(
-        client, headers, prescription_payload(diagnosis="Hipotiroidismo subclínico")
+        client,
+        headers,
+        prescription_payload(
+            diagnosis="Hipotiroidismo subclínico",
+            notes=rx_notes,
+            medicines=[
+                {
+                    "name": "Levotiroxina 50 µg",
+                    "dose": "1 tableta en ayunas",
+                    "frequency": "cada 24 h",
+                    "route": rx_route,
+                },
+                {"name": "Omeprazol 20 mg"},
+            ],
+        ),
     )
     assert r_rx.status_code == 201, r_rx.text
     rx_id = r_rx.json()["id"]
@@ -392,7 +417,7 @@ def test_clinical_content_encrypted_at_rest(client: TestClient, db: Session) -> 
     assert len(medicine_rows) == 2
 
     # Clinical columns of the record rows are ciphertext.
-    for column in ("professional", "diagnosis"):
+    for column in ("professional", "diagnosis", "notes"):
         assert str(rx_row[column]).startswith("gAAAA"), (column, rx_row[column])
     for column in ("title", "professional", "notes"):
         assert str(diag_row[column]).startswith("gAAAA"), (column, diag_row[column])
@@ -404,11 +429,21 @@ def test_clinical_content_encrypted_at_rest(client: TestClient, db: Session) -> 
             if value is not None:
                 assert str(value).startswith("gAAAA"), (column, value)
 
+    # Review S4: prescription ``notes`` and medicine ``route`` round-trip —
+    # what is stored is not the plaintext AND decrypts back to the value.
+    assert decrypt_str(str(rx_row["notes"])) == rx_notes
+    route_raw = medicine_rows[0]["route"]
+    assert route_raw is not None
+    assert str(route_raw).startswith("gAAAA"), route_raw
+    assert decrypt_str(str(route_raw)) == rx_route
+
     # No raw column anywhere leaks the clinical terms in the clear.
     for row in (rx_row, diag_row, *medicine_rows):
         for value in row.values():
             assert "Levotiroxina" not in str(value)
             assert "Hipotiroidismo" not in str(value)
+            assert "Notas clínicas" not in str(value)
+            assert "sublingual" not in str(value)
 
 
 # --- Scenario: Sin consentimiento no entra ni un dato ----------------------------
@@ -530,6 +565,7 @@ def test_patch_replaces_medicines_validates_result(
     assert r_empty.status_code == 422, r_empty.text
     detail = r_empty.json()["detail"]
     assert isinstance(detail, str), detail
+    assert detail == "Una receta requiere al menos una medicina"
 
     r_after = get_record(client, headers, record_id)
     assert r_after.status_code == 200, r_after.text
@@ -769,3 +805,169 @@ def test_review_b2_list_returns_records_in_occurred_on_desc_order(
         "Control intermedio",
         "Control antiguo",
     ]
+
+
+# --- Review coverage (PR #13, T2): ramas del estado resultante del PATCH ----------
+
+
+@pytest.mark.parametrize(
+    ("record_kind", "body", "expected_detail"),
+    [
+        ("diagnosis", {"title": None}, "Un diagnóstico requiere un título"),
+        (
+            "diagnosis",
+            {"medicines": [{"name": "Paracetamol 500 mg"}]},
+            "Un diagnóstico no admite medicinas",
+        ),
+        (
+            "diagnosis",
+            {"diagnosis": "texto en el campo diagnosis"},
+            "Un diagnóstico no admite el campo diagnosis; usa el título",
+        ),
+        (
+            "prescription",
+            {"title": "Receta con título"},
+            "Una receta no admite título; captura sus medicinas",
+        ),
+    ],
+)
+def test_review_t2_patch_resultant_state_branches(
+    client: TestClient,
+    db: Session,
+    record_kind: str,
+    body: dict[str, Any],
+    expected_detail: str,
+) -> None:
+    """Cada rama viva de la validación del estado resultante: 422 con es-MX."""
+    headers = consented_user_headers(client, db)
+    payload = (
+        diagnosis_payload() if record_kind == "diagnosis" else prescription_payload()
+    )
+    r_create = post_record(client, headers, payload)
+    assert r_create.status_code == 201, r_create.text
+    record_id = r_create.json()["id"]
+
+    r_patch = patch_record(client, headers, record_id, body)
+
+    assert r_patch.status_code == 422, r_patch.text
+    assert r_patch.json()["detail"] == expected_detail
+
+    # The rejected PATCH leaves the record untouched.
+    r_get = get_record(client, headers, record_id)
+    assert r_get.status_code == 200, r_get.text
+    record = r_get.json()
+    if record_kind == "diagnosis":
+        assert record["title"] == "Hipotiroidismo subclínico"
+        assert record["medicines"] == []
+        assert record.get("diagnosis") is None
+    else:
+        assert record.get("title") is None
+        assert len(record["medicines"]) == 2
+
+
+# --- Review coverage (PR #13, C3): payload híbrido rechazado por su nombre --------
+
+
+def test_review_c3_hybrid_payload_rejected_by_name(
+    client: TestClient, db: Session
+) -> None:
+    """medicines válidas + campos retirados: 422 que NOMBRA los campos legacy."""
+    headers = consented_user_headers(client, db)
+
+    hybrid = prescription_payload(dose="1 tableta en ayunas", valid_from="2026-10-01")
+    r_post = post_record(client, headers, hybrid)
+    assert r_post.status_code == 422, r_post.text
+    detail = r_post.json()["detail"]
+    assert isinstance(detail, str), detail
+    assert detail == (
+        "El registro ya no lleva dosis ni vigencia a nivel de receta "
+        "(campos retirados: dose, valid_from); captura cada medicina en "
+        "la lista medicines"
+    )
+    r_list = list_records(client, headers)
+    assert r_list.status_code == 200, r_list.text
+    assert r_list.json()["count"] == 0
+
+    # Same rejection on PATCH, and the stored medicines stay untouched.
+    r_create = post_record(client, headers, prescription_payload())
+    assert r_create.status_code == 201, r_create.text
+    record_id = r_create.json()["id"]
+    r_patch = patch_record(
+        client,
+        headers,
+        record_id,
+        {
+            "medicines": [{"name": "Ibuprofeno 400 mg"}],
+            "dose": "1 tableta",
+            "valid_to": "2026-12-30",
+        },
+    )
+    assert r_patch.status_code == 422, r_patch.text
+    assert r_patch.json()["detail"] == (
+        "El registro ya no lleva dosis ni vigencia a nivel de receta "
+        "(campos retirados: dose, valid_to); captura cada medicina en "
+        "la lista medicines"
+    )
+    r_get = get_record(client, headers, record_id)
+    assert r_get.status_code == 200, r_get.text
+    assert [m["name"] for m in r_get.json()["medicines"]] == [
+        "Levotiroxina 50 µg",
+        "Omeprazol 20 mg",
+    ]
+
+
+# --- Review coverage (PR #13, S3): null explícito en campos no anulables ----------
+
+
+def test_review_s3_patch_explicit_null_on_non_nullable_fields(
+    client: TestClient, db: Session
+) -> None:
+    """PATCH {"archived": null} o {"occurred_on": null}: 422 es-MX, nunca 500."""
+    headers = consented_user_headers(client, db)
+    r_create = post_record(client, headers, prescription_payload())
+    assert r_create.status_code == 201, r_create.text
+    record_id = r_create.json()["id"]
+
+    for field in ("archived", "occurred_on"):
+        r_null = patch_record(client, headers, record_id, {field: None})
+        assert r_null.status_code == 422, (field, r_null.text)
+        detail = r_null.json()["detail"]
+        assert detail == (
+            f"No se admite null en {field}; envía un valor o no incluyas el campo"
+        ), (field, detail)
+
+    # The record is untouched after the rejected nulls.
+    r_get = get_record(client, headers, record_id)
+    assert r_get.status_code == 200, r_get.text
+    assert r_get.json()["archived"] is False
+    assert r_get.json()["occurred_on"] == "2026-10-12"
+
+    # Documented leniency (Saúl's call): a RETIRED field with explicit null
+    # keeps being ignored instead of rejected.
+    r_legacy_null = patch_record(client, headers, record_id, {"dose": None})
+    assert r_legacy_null.status_code == 200, r_legacy_null.text
+
+
+# --- Review coverage (PR #13, S1): tope de medicinas por receta -------------------
+
+
+def test_review_s1_medicines_capped_at_20(client: TestClient, db: Session) -> None:
+    """21 medicinas: 422 es-MX en POST y PATCH; 20 exactas: 201."""
+    headers = consented_user_headers(client, db)
+    too_many = [{"name": f"Medicina {i}"} for i in range(21)]
+
+    r_over = post_record(client, headers, prescription_payload(medicines=too_many))
+    assert r_over.status_code == 422, r_over.text
+    assert r_over.json()["detail"] == "Una receta admite como máximo 20 medicinas"
+
+    r_cap = post_record(client, headers, prescription_payload(medicines=too_many[:20]))
+    assert r_cap.status_code == 201, r_cap.text
+    record_id = r_cap.json()["id"]
+    assert len(r_cap.json()["medicines"]) == 20
+
+    r_patch_over = patch_record(client, headers, record_id, {"medicines": too_many})
+    assert r_patch_over.status_code == 422, r_patch_over.text
+    assert r_patch_over.json()["detail"] == "Una receta admite como máximo 20 medicinas"
+    r_after = get_record(client, headers, record_id)
+    assert r_after.status_code == 200, r_after.text
+    assert len(r_after.json()["medicines"]) == 20

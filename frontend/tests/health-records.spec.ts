@@ -194,17 +194,27 @@ const PNG_1X1 = Buffer.from(
 // --- Helpers del delta del gate humano (2026-10-18) -------------------------
 
 /**
- * Simula el cambio de pestaña/pérdida de foco del navegador y deja pasar ~1 s
- * para que el refetch real de la lista (TanStack Query refetchOnWindowFocus)
- * ocurra de verdad antes de verificar que el modal sobrevivió.
+ * Simula el cambio de pestaña/pérdida de foco del navegador y ASEGURA que el
+ * refetch real de la lista ocurre (hallazgo C1/T1: la versión anterior
+ * despachaba visibilitychange en document — TanStack Query escucha en
+ * window — y no esperaba el clamp de staleTime, así que los tests pasaban
+ * aun con la regresión presente). Receta verificada:
+ *  (a) esperar >1000 ms ANTES de disparar (useSuspenseQuery fuerza
+ *      staleTime ≥ 1000 ms; si la query no está stale no hay refetch),
+ *  (b) despachar visibilitychange en WINDOW,
+ *  (c) asertar el refetch real esperando el GET de /api/v1/health-records.
  */
 async function simulateTabSwitch(page: Page) {
-  await page.evaluate(() => {
-    document.dispatchEvent(new Event("visibilitychange"))
-    window.dispatchEvent(new Event("blur"))
-    window.dispatchEvent(new Event("focus"))
-  })
   await page.waitForTimeout(1100)
+  const refetch = page.waitForResponse(
+    (response) =>
+      response.request().method() === "GET" &&
+      /\/api\/v1\/health-records\/?(\?|$)/.test(response.url()),
+  )
+  await page.evaluate(() => {
+    window.dispatchEvent(new Event("visibilitychange"))
+  })
+  await refetch
 }
 
 /**
@@ -379,6 +389,9 @@ test.describe("Expediente — receta a la mexicana", () => {
     await expect(page.getByRole("dialog")).not.toBeVisible()
 
     await clickRecordAction(page, "Levotiroxina 50 µg", "Editar registro")
+    // Editar desde el menú ⋯ pasa por la MISMA confirmación que el camino
+    // del detalle (hallazgo C7).
+    await page.getByRole("button", { name: "Sí, editar" }).click()
     const dialog = page.getByRole("dialog")
     await expect(dialog).toBeVisible()
 
@@ -547,9 +560,34 @@ test.describe("Expediente — receta a la mexicana", () => {
     await expect(page.getByText("reporte.exe")).not.toBeVisible()
   })
 
+  // Recuperado de main (hallazgo T5): el rewrite del spec lo había tirado.
+  test("eliminar un registro pide confirmación y lo quita de la lista", async ({
+    page,
+  }) => {
+    await addDiagnosis(page)
+    await expect(page.getByText("Diagnóstico registrado.")).toBeVisible()
+    await expect(page.getByRole("dialog")).not.toBeVisible()
+
+    await clickRecordAction(
+      page,
+      "Hipotiroidismo subclínico",
+      "Eliminar registro",
+    )
+
+    await expect(
+      page.getByText(
+        "¿Seguro que quieres eliminar este registro? Se eliminarán también sus adjuntos.",
+      ),
+    ).toBeVisible()
+    await page.getByRole("button", { name: "Eliminar", exact: true }).click()
+
+    await expect(page.getByText("Registro eliminado.")).toBeVisible()
+    await expect(page.getByText("Hipotiroidismo subclínico")).not.toBeVisible()
+  })
+
   // --- Delta del gate humano (2026-10-18): protección del trabajo y los datos
 
-  test("AC8: el modal de captura sobrevive al cambio de pestaña/foco sin perder lo escrito", async ({
+  test("D1: el modal sobrevive al cambio de pestaña — captura", async ({
     page,
   }) => {
     // Lista ya cargada: una receta existente provoca el refetch al foco.
@@ -586,7 +624,7 @@ test.describe("Expediente — receta a la mexicana", () => {
     ).toHaveValue("Ibuprofeno 400 mg")
   })
 
-  test("AC8: el modal de edición sobrevive al cambio de pestaña/foco sin perder lo escrito", async ({
+  test("D1: el modal sobrevive al cambio de pestaña — edición", async ({
     page,
   }) => {
     await addPrescription(page, {
@@ -616,7 +654,7 @@ test.describe("Expediente — receta a la mexicana", () => {
     )
   })
 
-  test("AC9: Enter en notas inserta salto de línea (no envía) y las líneas se conservan en receta y diagnóstico", async ({
+  test("D2: notas multilínea con Enter", async ({
     page,
   }) => {
     // --- Receta -------------------------------------------------------------
@@ -682,7 +720,7 @@ test.describe("Expediente — receta a la mexicana", () => {
     )
   })
 
-  test("AC10: abrir una receta muestra el detalle en solo lectura; editar exige confirmación", async ({
+  test("D3: detalle solo lectura + Editar con confirmación", async ({
     page,
   }) => {
     await addPrescription(page, {
@@ -716,10 +754,14 @@ test.describe("Expediente — receta a la mexicana", () => {
     await expect(detail.getByText("cada 24 h")).toBeVisible()
     await expect(detail.getByText(/Hipotiroidismo subclínico/)).toBeVisible()
 
-    // No es el formulario editable y no pidió subir archivo.
+    // No es el formulario editable y no pidió subir archivo. La aserción del
+    // filechooser deja pasar un margen determinista para que un chooser
+    // tardío (la regresión original) la haga fallar (hallazgo C2, parte test).
+    await expect(detail.getByText("Consulta de solo lectura.")).toBeVisible()
     await expect(
       detail.getByRole("button", { name: "Guardar receta" }),
     ).not.toBeVisible()
+    await page.waitForTimeout(500)
     expect(fileChooserOpened).toBe(false)
 
     // Editar es deliberado: botón "Editar" + confirmación previa.
@@ -741,7 +783,7 @@ test.describe("Expediente — receta a la mexicana", () => {
     )
   })
 
-  test("AC11: el formulario de creación ofrece adjuntar imagen/PDF opcional", async ({
+  test("D4: crear receta con adjunto opcional", async ({
     page,
   }) => {
     // Con adjunto: el control vive DENTRO del formulario de creación.
