@@ -21,7 +21,7 @@ O4 IA cita o calla · O5 el profesional devuelve sin transcripción · O6 detecc
 | FR-003 | paciente | eliminar la cuenta con borrado efectivo de todos sus datos | M | — |
 | FR-004 | paciente | consultar la bitácora de accesos: qué enlace, cuándo y qué se consultó | M | O3 |
 | FR-005 | paciente | registrar un diagnóstico con fecha, profesional y notas | M | O1 |
-| FR-006 | paciente | registrar una receta/medicación con dosis y vigencia | M | O1 |
+| FR-006 | paciente | registrar una receta con sus medicinas (1..N; dosis, frecuencia y vía opcionales por medicina), diagnóstico opcional y archivado manual — sin vigencia (dominio 2026-10-18, PR #13) | M | O1 |
 | FR-007 | paciente | adjuntar un documento (imagen o PDF: resultado, estudio, reporte) a un registro | M | O1 |
 | FR-008 | paciente | registrar historial familiar (parentesco + condición) | M | O6 |
 | FR-009 | paciente | buscar y recorrer el expediente por fecha, tipo o profesional | M | O1 |

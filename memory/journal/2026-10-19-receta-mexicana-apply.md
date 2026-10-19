@@ -24,3 +24,7 @@ exhibición; señalado por el fixer). Diferidos del review en closed.md (duplica
 baseline).
 
 **Siguiente:** CI del PR #13 en verde → merge de Saúl → /epe-6-archive.
+
+**Cierre (archive, 2026-10-19):** Saúl Pérez mergeó el PR #13 (395d211) y pidió /epe-6-archive; cambio archivado
+como `openspec/changes/archive/2026-10-19-receta-mexicana` (delta fusionado a openspec/specs), CHANGELOG al día,
+FR-006 del PRD corregido (ya no dice "dosis y vigencia"), fila del inbox cerrada. Sin sorpresas.
