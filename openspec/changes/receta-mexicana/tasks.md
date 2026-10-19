@@ -34,3 +34,13 @@ files is `test→impl`; smaller groups are `single`. `make tdd-check` requires o
       `validation.md` no técnico para Saúl (un bloque por AC del prototipo, con "What it does NOT do yet":
       OCR/IA, dictado, confirmación por médico).
 - [ ] 3.2 Journal + PR con template; cuerpo fiel al alcance.
+
+## 4. Frontend: hallazgos del gate humano (delta 2026-10-18) · test→impl
+
+- [ ] 4.1 Test (red): e2e AC8–AC11 del delta (modal sobrevive pestaña, notas multilínea, detalle solo lectura con
+      Editar+confirmación, adjunto opcional al crear) + renombre "Registrar receta" y placeholders Dictar/Escanear
+      deshabilitados visibles. Commit `test:`.
+- [ ] 4.2 Impl: fix del cierre del modal, textarea de notas, vista detalle solo-lectura, botón de adjunto en el
+      form, renombre + placeholders; claves es-MX nuevas. Verde sin tocar tests.
+- [ ] 4.3 Orquestador: rojo/verde re-corridos, tdd-check, commits; pruebas exploratorias con Claude in Chrome
+      (incluye intentos de romperla) antes de devolver el gate.

@@ -128,3 +128,38 @@ según product/roles-permisos.md: el paciente no se autoconfirma).
 - **GIVEN** la paciente A registra un diagnóstico suelto
 - **WHEN** lo consulta en la lista y por id
 - **THEN** el diagnóstico muestra estado "sin confirmar" y la API no ofrece operación alguna para cambiarlo
+
+### Requirement: La captura y la consulta protegen el trabajo y los datos del paciente
+
+El formulario de captura NO SHALL perder lo ya escrito por cambios de foco o de pestaña del navegador; las notas
+(de receta y de diagnóstico) SHALL aceptar varias líneas (Enter inserta salto de línea, no envía); la consulta de
+una receta SHALL abrir en solo lectura y editar SHALL ser un acto deliberado (botón Editar + confirmación), nunca
+el gesto por defecto; el formulario de creación SHALL ofrecer adjuntar la imagen/PDF de la receta como paso
+opcional.
+
+#### Scenario: Cambiar de pestaña no cierra el modal ni pierde datos
+
+- **GIVEN** la paciente capturando una receta con una medicina ya escrita
+- **WHEN** cambia a otra pestaña del navegador y regresa
+- **THEN** el modal sigue abierto con todo lo escrito intacto
+
+#### Scenario: Notas con varias líneas
+
+- **GIVEN** la paciente capturando un diagnóstico
+- **WHEN** escribe en notas "No tomar alcohol", presiona Enter y escribe "Correr 1 hora 3 veces a la semana"
+- **THEN** Enter insertó un salto de línea (no envió el formulario) y al guardar las dos líneas se conservan y se
+  muestran como líneas separadas al consultar
+
+#### Scenario: Consultar una receta es solo lectura; editar es deliberado
+
+- **GIVEN** una receta en la lista
+- **WHEN** la paciente la abre
+- **THEN** ve sus datos completos (medicinas, médico, fecha, diagnóstico, notas, adjuntos) en solo lectura, con
+  un botón "Editar" que pide confirmación antes de permitir cambios; al abrirla no se le pide subir archivo
+
+#### Scenario: Adjuntar la foto desde el formulario de creación (opcional)
+
+- **GIVEN** la paciente creando una receta a mano
+- **WHEN** usa el control opcional de adjuntar y elige una imagen o PDF
+- **THEN** al guardar, la receta queda creada con su adjunto listado; si no adjunta nada, la receta se guarda
+  igual

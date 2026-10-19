@@ -1,7 +1,7 @@
 # Design
 
-Status: APPROVED
-Approved by: Saúl Pérez (author) on 2026-10-18 — "procede", en respuesta directa a la petición de aprobación del plan
+Status: DRAFT
+Approved by: (grupos 1-3: Saúl Pérez, 2026-10-18, "procede"; el Delta del gate humano espera nueva aprobación)
 
 ## Context
 
@@ -101,6 +101,28 @@ EncryptedString nullable, +`archived` bool NOT NULL default false (plano), +`con
   conocida: los hooks auto-arreglan el árbol).
 - [Reemplazo completo de medicines pierde ediciones concurrentes] → aceptado: una sola usuaria por cuenta en v1.
 - [e2e frágiles por menús por fila] → reutilizar helpers endurecidos de US-04 (`getByRole` scoped).
+
+## Delta 2026-10-18 — hallazgos del gate humano (Saúl Pérez probó la app)
+
+Nuevo requirement en el spec delta ("La captura y la consulta protegen el trabajo y los datos del paciente") con
+4 escenarios. Solo frontend; el backend no cambia. Grupo 4 `test→impl` en tasks.md:
+
+1. **Bug (pérdida de datos):** el modal se cierra al cambiar de pestaña → investigar (hipótesis: re-render por
+   `refetchOnWindowFocus` de TanStack Query desmontando el Dialog); el modal debe sobrevivir foco/pestaña.
+2. **"A mano" → "Registrar receta"**, y dentro del modal dos botones arriba — "Dictar" y "Escanear" —
+   deshabilitados con texto "Próximamente" (placeholders de la escalera de captura, se construyen después).
+3. **Notas multilínea** (textarea) en receta y diagnóstico; Enter = salto de línea; render multilínea al consultar.
+4. **Vista de detalle solo-lectura** al abrir una receta (mismo layout del modal, con adjuntos), botón "Editar"
+   con confirmación previa ("editar así como si nada es peligroso" — Saúl); hoy el clic pide subir archivo.
+5. **Adjuntar imagen/PDF opcional desde el formulario de creación** (crea la receta y sube el adjunto después del
+   201, misma API).
+
+| Spec · scenario (delta) | Test |
+|---|---|
+| Cambiar de pestaña no cierra el modal | e2e "AC8: el modal sobrevive al cambio de pestaña" (page.evaluate blur/visibilitychange) |
+| Notas con varias líneas | e2e "AC9: notas multilínea con Enter" |
+| Consultar es solo lectura; editar deliberado | e2e "AC10: detalle solo lectura + Editar con confirmación" |
+| Adjuntar desde el formulario de creación | e2e "AC11: crear receta con adjunto opcional" |
 
 ## Gate that closes the work
 
