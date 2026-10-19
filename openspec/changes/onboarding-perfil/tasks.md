@@ -38,6 +38,17 @@
       quedar mintiendo) y PR con gh pr create sobre rama feat/onboarding-perfil. Verificación: gates del push
       verdes y PR abierto.
 
+## 4. Feedback de Saúl Pérez tras probar el PR #16 (2026-10-19) · test→impl
+
+- [x] 4.1 Tester: extender `frontend/tests/profile.spec.ts` — (a) el paso Resumen NO muestra el botón global
+      "Ahora no…" (solo pasos 1 y 2: con todo registrado, "omitir todo" confunde); (b) una cuenta que omitió todo
+      puede AGREGAR antecedentes familiares desde la sección en /perfil (hoy esa sección no tiene opción — hueco
+      del requisito "Nada del onboarding es obligatorio"). Verificación: rojo por comportamiento ausente.
+- [x] 4.2 Implementer: quitar "Ahora no…" del paso Resumen y dar a la sección Antecedentes familiares de /perfil
+      su edición (mismo editor de condiciones/parentescos del wizard). Verificación: e2e verdes sin tocarlos +
+      tsc + lint.
+- [x] 4.3 Orquestador: suite Playwright completa (ambos proyectos) + evidence/validation actualizados + push.
+
 ## Workflow follow-up
 
 - /epe-4-review adversarial sobre el PR; merge humano (Saúl Pérez); /epe-6-archive al mergear.

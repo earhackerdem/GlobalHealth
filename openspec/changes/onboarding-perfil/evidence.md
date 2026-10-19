@@ -51,6 +51,20 @@ Los números de abajo son corridas re-ejecutadas por el orquestador (no reportes
 - `bunx tsc --noEmit` limpio · `bun run lint` limpio (reformateo puro commiteado aparte, 6952022).
 - `make tdd-check` → ✓.
 
+## Grupo 4 — feedback de Saúl Pérez tras probar el PR (2026-10-19)
+
+Dos puntos: el botón global "Ahora no…" aparecía también en el Resumen (con todo capturado, confunde), y la
+sección Antecedentes familiares de /perfil no ofrecía edición — hueco contra el requisito "Nada del onboarding
+es obligatorio… completarse y corregirse después".
+
+- Rojo (commit 40ff7f8): Escenario 10 extendido (Resumen sin "Ahora no"; pasos 1-2 con él) + Escenario 13 nuevo
+  (agregar AHF desde /perfil tras omitir todo) → `--project=chromium`: **2 failed, 3 passed** por comportamiento
+  ausente.
+- Verde (commit 7dc5ad1): editor extraído a FamilyHistoryFields y reutilizado en el diálogo "Editar antecedentes"
+  (diff → POST/PUT/DELETE contra el API existente; sin cambios de backend). Re-corrido por el orquestador:
+  `profile.spec.ts` **9 passed** (ambos viewports) · suite completa **105 passed, 0 failed, 0 skipped** ·
+  tsc y lint limpios · `make tdd-check` ✓.
+
 ## Exploración real con Claude in Chrome (tarea 3.1, 2026-10-19)
 
 Recorrido como usuario real sobre :5173 (cuenta nueva de prueba local + la cuenta admin de desarrollo):

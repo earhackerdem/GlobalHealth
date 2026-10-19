@@ -33,6 +33,10 @@ ofrece una vez por cuenta; si usas una vieja, la verás una única vez al entrar
    - [ ] Se guarda y se muestra con tu edad calculada.
 2. Registra un peso nuevo otro día (o cambia el valor hoy).
    - [ ] El perfil muestra el más reciente con su fecha; el anterior no se pierde (quedó como historial).
+3. En la sección "Antecedentes familiares" → "Editar antecedentes" (tu feedback del 2026-10-19).
+   - [ ] Puedes agregar o quitar condiciones y parentescos aunque hayas omitido todo el onboarding.
+4. En el wizard, llega hasta el Resumen.
+   - [ ] Ya NO hay botón de omitir ahí: solo guardar o volver (tu feedback del 2026-10-19).
 
 ## Qué NO hace todavía
 
