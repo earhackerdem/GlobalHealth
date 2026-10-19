@@ -35,3 +35,6 @@ task: if the person you work with doesn't mention it, it is not started.
   "gratis" vía Google AI Studio DESCARTADA para datos reales (términos permiten entrenamiento + revisores humanos;
   memory/research.md 2026-10-18). Diseñar con lista blanca de proveedores/modos compatibles con NFR-005 y análisis
   LFPDPPP. Entra al tech-brief del proveedor junto con el spike on-device (D17).
+- [2026-10-18] `scripts/generate-client.sh` y `bun run lint` (biome `--write --unsafe`) reformatean también
+  `frontend/tests/`: el implementer del grupo 2 de receta-mexicana tuvo que restaurar el spec del tester con git.
+  Candidato: excluir `tests/` del barrido de biome en el script (se suma a la fila existente del blast radius).
