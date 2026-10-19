@@ -3,7 +3,8 @@
   "page": {
     "pageTitle": "Expediente",
     "subtitle": "Registra tus diagnósticos, recetas y resultados",
-    "empty": "Aún no tienes registros."
+    "empty": "Aún no tienes registros.",
+    "archivedHeading": "Archivadas"
   },
   "types": {
     "diagnosis": "Diagnóstico",
@@ -18,11 +19,7 @@
     "diagnosis": "Diagnóstico",
     "date": "Fecha",
     "professional": "Profesional",
-    "notes": "Notas",
-    "medication": "Medicamento",
-    "dose": "Dosis",
-    "validFrom": "Inicio de vigencia",
-    "validTo": "Fin de vigencia"
+    "notes": "Notas"
   },
   "actions": {
     "save": "Guardar",
@@ -35,11 +32,35 @@
     "successToast": "Diagnóstico registrado."
   },
   "addPrescription": {
-    "button": "Agregar receta",
-    "dialogTitle": "Nueva receta",
+    "button": "A mano",
+    "dialogTitle": "Captura tu receta",
     "dialogDescription": "Captura los datos y guarda para sumarla a tu expediente.",
-    "successToast": "Receta registrada."
+    "successToast": "Receta guardada."
   },
+  "prescriptionForm": {
+    "doctor": "Médico que la expide",
+    "date": "Fecha de la receta",
+    "medicines": "Medicinas",
+    "medicineName": "Medicina",
+    "medicineDose": "Dosis e indicación",
+    "medicineFrequency": "Frecuencia (opcional)",
+    "addMedicine": "+ Agregar otra medicina",
+    "removeMedicine": "Quitar medicina",
+    "diagnosis": "Diagnóstico (opcional)",
+    "notes": "Notas (opcional)",
+    "submit": "Guardar receta"
+  },
+  "archive": {
+    "archive": "Archivar (tratamiento terminado)",
+    "unarchive": "Desarchivar",
+    "archivedChip": "Archivada",
+    "archivedToast": "Receta archivada.",
+    "unarchivedToast": "Receta desarchivada."
+  },
+  "confirmation": {
+    "unconfirmed": "sin confirmar"
+  },
+  "diagnosisChip": "Dx: {{diagnosis}}",
   "editRecord": {
     "menuItem": "Editar registro",
     "dialogTitle": "Editar registro",
@@ -67,8 +88,6 @@
   "validation": {
     "titleRequired": "Este campo es obligatorio",
     "dateRequired": "La fecha es obligatoria",
-    "doseRequired": "La dosis es obligatoria",
-    "validFromRequired": "El inicio de vigencia es obligatorio",
-    "validToRequired": "El fin de vigencia es obligatorio"
+    "medicinesRequired": "Agrega al menos una medicina."
   }
 }

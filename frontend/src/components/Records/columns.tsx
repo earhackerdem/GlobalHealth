@@ -4,8 +4,34 @@ import type { HealthRecordPublic } from "@/client"
 import type { DataTableFeatures } from "@/components/Common/DataTable"
 import { Badge } from "@/components/ui/badge"
 import i18n from "@/i18n"
+import { ArchiveRecordButton } from "./ArchiveRecordButton"
 import { RecordActionsMenu } from "./RecordActionsMenu"
 import { RecordTitle } from "./RecordAttachments"
+
+/** Flow chips of a record: diagnosis chip and archived state (prescription),
+ * confirmation status (loose diagnosis). */
+function RecordChips({ record }: { record: HealthRecordPublic }) {
+  const isPrescription = record.record_type === "prescription"
+  return (
+    <div className="flex flex-wrap gap-1">
+      {isPrescription && record.archived && (
+        <Badge variant="secondary">
+          {i18n.t("records:archive.archivedChip")}
+        </Badge>
+      )}
+      {isPrescription && record.diagnosis && (
+        <Badge variant="secondary">
+          {i18n.t("records:diagnosisChip", { diagnosis: record.diagnosis })}
+        </Badge>
+      )}
+      {!isPrescription && record.confirmation_status === "unconfirmed" && (
+        <Badge variant="secondary">
+          {i18n.t("records:confirmation.unconfirmed")}
+        </Badge>
+      )}
+    </div>
+  )
+}
 
 export const columns: ColumnDef<DataTableFeatures, HealthRecordPublic>[] = [
   {
@@ -20,7 +46,12 @@ export const columns: ColumnDef<DataTableFeatures, HealthRecordPublic>[] = [
   {
     accessorKey: "title",
     header: () => i18n.t("records:table.titleHeader"),
-    cell: ({ row }) => <RecordTitle record={row.original} />,
+    cell: ({ row }) => (
+      <div className="flex flex-col gap-1">
+        <RecordTitle record={row.original} />
+        <RecordChips record={row.original} />
+      </div>
+    ),
   },
   {
     accessorKey: "occurred_on",
@@ -42,7 +73,10 @@ export const columns: ColumnDef<DataTableFeatures, HealthRecordPublic>[] = [
       <span className="sr-only">{i18n.t("common:table.actions")}</span>
     ),
     cell: ({ row }) => (
-      <div className="flex justify-end">
+      <div className="flex items-center justify-end gap-1">
+        {row.original.record_type === "prescription" && (
+          <ArchiveRecordButton record={row.original} />
+        )}
         <RecordActionsMenu record={row.original} />
       </div>
     ),

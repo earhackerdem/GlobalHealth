@@ -50,7 +50,22 @@ function RecordsTableContent() {
     )
   }
 
-  return <DataTable columns={columns} data={records.data} />
+  // The API returns archived records too; the UI separates them (AC-8):
+  // actives first, archived under their own heading at the end.
+  const active = records.data.filter((record) => !record.archived)
+  const archived = records.data.filter((record) => record.archived)
+
+  return (
+    <div className="flex flex-col gap-6">
+      <DataTable columns={columns} data={active} />
+      {archived.length > 0 && (
+        <section className="flex flex-col gap-2">
+          <h2 className="text-lg font-semibold">{t("page.archivedHeading")}</h2>
+          <DataTable columns={columns} data={archived} />
+        </section>
+      )}
+    </div>
+  )
 }
 
 function RecordsTable() {

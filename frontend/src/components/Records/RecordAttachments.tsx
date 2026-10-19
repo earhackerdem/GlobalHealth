@@ -174,11 +174,17 @@ interface RecordTitleProps {
 }
 
 /**
- * The record title opens its attachments panel (dialog) when clicked.
+ * The record title opens its attachments panel (dialog) when clicked. For a
+ * prescription (title is null in the new model) the clickable summary is the
+ * prescribing doctor plus the medicines list ("name — dose · frequency").
  */
 export function RecordTitle({ record }: RecordTitleProps) {
   const { t } = useTranslation("records")
   const [isOpen, setIsOpen] = useState(false)
+  const isPrescription = record.record_type === "prescription"
+  const displayTitle = isPrescription
+    ? (record.professional ?? t("types.prescription"))
+    : (record.title ?? "")
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
@@ -186,9 +192,24 @@ export function RecordTitle({ record }: RecordTitleProps) {
         <button
           type="button"
           className="text-left font-medium underline-offset-4 hover:underline"
-          aria-label={t("attachments.openPanel", { title: record.title })}
+          aria-label={t("attachments.openPanel", { title: displayTitle })}
         >
-          {record.title}
+          {isPrescription ? (
+            <span className="flex flex-col gap-1">
+              <span>{displayTitle}</span>
+              <ul className="list-disc pl-5 font-normal">
+                {record.medicines.map((medicine) => (
+                  <li key={medicine.id}>
+                    <strong>{medicine.name}</strong>
+                    {medicine.dose ? ` — ${medicine.dose}` : ""}
+                    {medicine.frequency ? ` · ${medicine.frequency}` : ""}
+                  </li>
+                ))}
+              </ul>
+            </span>
+          ) : (
+            record.title
+          )}
         </button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-md">
