@@ -142,13 +142,11 @@ titularidad del paciente sobre su información (sustento del compartir por enlac
 verificar si aplica cuando exista el portal del profesional (E4).
 
 ## Open questions (max 4) — el gate del discovery
-1. **Vigencia/eliminación:** sin vigencia impresa, ¿cómo deja de estar "activa" una receta para los futuros
-   recordatorios? A (recomendada): el paciente la archiva manualmente / B: vigencia opcional derivada de la
-   duración del tratamiento si la IA la infiere, editable. *Evidencia fotos: la duración por medicina casi siempre
-   está escrita → B es viable como derivado, A sigue siendo el default simple.*
-2. **Frecuencia de toma:** ¿se captura desde ya por medicina (campo opcional) para que FR-025 no exija otra
-   migración, o se pospone? A (recomendada): campo opcional ahora. *Evidencia fotos: la frecuencia viene escrita en
-   casi todas las recetas — capturarla no añade fricción.*
+1. ~~**Vigencia/eliminación**~~ **RESPONDIDA (Saúl Pérez, 2026-10-18): opción A** — el paciente archiva
+   manualmente. **B queda como pendiente explícito** (vigencia derivada de la duración si la IA la infiere,
+   editable) para cuando se resuelva el proveedor de IA (Q4); fila en memory/inbox.md.
+2. ~~**Frecuencia de toma**~~ **RESPONDIDA (Saúl Pérez, 2026-10-18): opción A** — campo opcional por medicina
+   desde ya (así está en el prototipo v4).
 3. ~~**El tipo "diagnóstico" de la v1**~~ **RESPONDIDA (Saúl Pérez, 2026-10-18): opción A** — el diagnóstico
    suelto se conserva como entrada del expediente, sin receta ni resultado que lo respalde ("idealmente una
    persona debería ser capaz de guardar diagnósticos aunque no estén ligados a una receta o un resultado").
@@ -159,3 +157,10 @@ verificar si aplica cuando exista el portal del profesional (E4).
    primera story sin IA? A (recomendada): sí, dos stories. *Evidencia fotos: ~mitad del corpus es manuscrito, con
    giros y retomas → el pipeline de lectura es un proyecto en sí (visión-IA/HTR + clasificador + dedupe), no un
    añadido; separa stories con más razón.*
+   Insumos para el tech-brief (Saúl Pérez, 2026-10-18 + verificación en memory/research.md): **Gemini API gratuito
+   (AI Studio) queda descartado para datos de salud** — sus términos permiten a Google usar prompts/respuestas
+   para mejorar productos con revisores humanos y piden no enviar información sensible [VERIFIED 2026-10-18];
+   candidatos vivos: Gemini **de pago** (no entrena, pero loguea por abuso), API de Anthropic (no entrena por
+   default), **Gemini Nano on-device** (spike D17, cero retención por construcción), y la idea de Saúl de **BYOK**
+   (el usuario trae su propia API key) — con la salvedad de que la app deberá rechazar proveedores/modos cuyos
+   términos entrenen con los datos.

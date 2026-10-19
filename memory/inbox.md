@@ -28,3 +28,10 @@ task: if the person you work with doesn't mention it, it is not started.
   (¿cuántas recetas impresas/manuscritas extrae bien? ¿límite de tokens de salida alcanza?), NO la app Android
   completa. Entra vía tech-brief cuando se cierre el gate del discovery. Recomendación del harness registrada:
   web primero mientras el modelo de dominio se asienta.
+- [2026-10-18] Q1-B diferida (decisión de Saúl Pérez al cerrar Q1 con A): vigencia derivada de la duración del
+  tratamiento (inferida por IA, editable) como complemento del archivado manual — retomar cuando el proveedor de
+  IA (Q4/tech-brief) esté resuelto.
+- [2026-10-18] BYOK para la capa IA (idea de Saúl Pérez): el usuario elige proveedor/API key propia; opción
+  "gratis" vía Google AI Studio DESCARTADA para datos reales (términos permiten entrenamiento + revisores humanos;
+  memory/research.md 2026-10-18). Diseñar con lista blanca de proveedores/modos compatibles con NFR-005 y análisis
+  LFPDPPP. Entra al tech-brief del proveedor junto con el spike on-device (D17).

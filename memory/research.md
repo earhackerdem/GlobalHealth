@@ -230,3 +230,37 @@ como causalidad ni como diagnóstico.
 - **Source:** análisis propio sobre la fuente anterior · 2026-10-18
 - **Confidence:** [OPINION] hasta que el spike lo mida con el corpus real de 74 fotos.
 - **Re-check if:** al abrir la story de IA (Q4) / el spike Android.
+
+## Políticas de datos de proveedores de IA (verificado 2026-10-18)
+
+- **Fact:** Términos de la **Gemini API** (effective 2026-03-23, updated 2026-04-28): en los **servicios NO
+  pagados** (cuota gratuita de Google AI Studio) Google **usa los prompts y respuestas para proveer, mejorar y
+  desarrollar productos y tecnologías de ML**, con **revisores humanos** que pueden leer/anotar la entrada y
+  salida (desvinculada de la cuenta), y los términos piden literalmente "Do not submit sensitive, confidential,
+  or personal information to the Unpaid Services". En los **servicios pagados** (proyecto Cloud con billing)
+  Google NO usa los datos para mejorar productos, pero **loguea prompts/respuestas por un periodo limitado** para
+  detección de abuso (sin plazo publicado, almacenamiento posible en cualquier país). La excepción EEA/UK/Suiza
+  (términos de pago aun en el gratis) NO cubre a México.
+- **Source:** https://ai.google.dev/gemini-api/terms · consulted 2026-10-18
+- **Confidence:** [VERIFIED]
+- **Implicación:** la cuota gratuita de AI Studio es **incompatible con NFR-005 y con recetas (dato sensible,
+  LFPDPPP art. 3-VI)** — descartada para producción; a lo sumo para pruebas con datos sintéticos. El tier de pago
+  tampoco es "cero retención" estricta (log de abuso): evaluar contra NFR-005 tal como está redactado.
+- **Re-check if:** Google cambie términos; al redactar el tech-brief del proveedor.
+
+- **Fact:** La **API de Anthropic** NO usa entradas/salidas de productos comerciales para entrenar por default
+  (solo con opt-in/feedback; el feedback se conserva hasta 5 años desvinculado de IDs). El plazo general de
+  retención de la API y la opción de zero data retention viven en los Commercial Terms / Trust Center (no
+  verificados en esta pasada).
+- **Source:** https://privacy.claude.com/en/articles/7996868-is-my-data-used-for-model-training · consulted
+  2026-10-18
+- **Confidence:** [VERIFIED] lo del no-entrenamiento por default; retención exacta y ZDR: NOT VERIFIED aún.
+- **Re-check if:** al evaluar Anthropic como proveedor en el tech-brief (leer Commercial Terms y Trust Center).
+
+- **Fact (dicho de Saúl, no verificado):** Claude Code daría ~200 USD de crédito API a usuarios Max 20x, que él
+  usaría para desarrollo/pruebas. BYOK (el usuario selecciona su propio proveedor/API key) es idea suya de
+  producto para la capa IA.
+- **Source:** Saúl Pérez en sesión, 2026-10-18
+- **Confidence:** NOT VERIFIED (el crédito); la idea BYOK es decisión de producto pendiente de diseño.
+- **Re-check if:** al armar el tech-brief — verificar el crédito en la cuenta real; BYOK implica además análisis
+  LFPDPPP (el responsable sigue siendo GlobalHealth aunque la key sea del usuario) y UX para no-técnicos.
