@@ -1,6 +1,6 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query"
-import { Keyboard, Mic, ScanLine } from "lucide-react"
-import { useState } from "react"
+import { Keyboard, Mic, Paperclip, ScanLine } from "lucide-react"
+import { useRef, useState } from "react"
 import { useTranslation } from "react-i18next"
 
 import { type HealthRecordCreate, HealthRecordsService } from "@/client"
@@ -18,7 +18,6 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog"
-import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import useCustomToast from "@/hooks/useCustomToast"
 import { handleError } from "@/utils"
@@ -30,6 +29,7 @@ const AddPrescription = () => {
   const { t } = useTranslation("records")
   const [isOpen, setIsOpen] = useState(false)
   const [file, setFile] = useState<File | null>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
   const queryClient = useQueryClient()
   const { showSuccessToast, showErrorToast } = useCustomToast()
 
@@ -109,14 +109,16 @@ const AddPrescription = () => {
             {t("addPrescription.dialogDescription")}
           </DialogDescription>
           {/* Capture-ladder placeholders (delta): disabled, announced as
-              "Próximamente"; they implement nothing yet. */}
-          <div className="flex gap-2">
+              "Próximamente" with VISIBLE text — a title on a disabled button
+              reaches no one: no hover (pointer-events: none), no keyboard,
+              no touch (finding K3). aria-describedby links it for AT. */}
+          <div className="flex flex-wrap items-center gap-2">
             <Button
               type="button"
               variant="outline"
               size="sm"
               disabled
-              title={t("addPrescription.comingSoon")}
+              aria-describedby="capture-coming-soon"
             >
               <Mic className="mr-2" />
               {t("addPrescription.dictate")}
@@ -126,11 +128,17 @@ const AddPrescription = () => {
               variant="outline"
               size="sm"
               disabled
-              title={t("addPrescription.comingSoon")}
+              aria-describedby="capture-coming-soon"
             >
               <ScanLine className="mr-2" />
               {t("addPrescription.scan")}
             </Button>
+            <span
+              id="capture-coming-soon"
+              className="text-xs text-muted-foreground"
+            >
+              {t("addPrescription.comingSoon")}
+            </span>
           </div>
         </DialogHeader>
         <PrescriptionForm
@@ -144,16 +152,33 @@ const AddPrescription = () => {
           pending={mutation.isPending}
           onSubmit={onSubmit}
           attachmentSlot={
+            // Hidden native input + es-MX button: the native control renders
+            // its "Choose File" text in the browser's language (finding K4).
             <div className="grid gap-2">
               <Label htmlFor="prescription-attachment">
                 {t("addPrescription.attachmentLabel")}
               </Label>
-              <Input
+              <input
+                ref={fileInputRef}
                 id="prescription-attachment"
                 type="file"
                 accept="application/pdf,image/jpeg,image/png"
+                className="hidden"
                 onChange={(event) => setFile(event.target.files?.[0] ?? null)}
               />
+              <div className="flex min-w-0 items-center gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => fileInputRef.current?.click()}
+                >
+                  <Paperclip className="mr-2" />
+                  {t("addPrescription.attachmentButton")}
+                </Button>
+                <span className="truncate text-sm text-muted-foreground">
+                  {file ? file.name : t("addPrescription.attachmentEmpty")}
+                </span>
+              </div>
             </div>
           }
         />

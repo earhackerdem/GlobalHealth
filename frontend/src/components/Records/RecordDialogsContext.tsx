@@ -12,6 +12,9 @@ import { createContext, useContext } from "react"
  */
 export interface RecordDialogsApi {
   openDetail: (recordId: string) => void
+  /** Opens the "¿Modificar este registro?" confirmation; "Sí, editar" leads
+   * to the edit form. Every edit entry point goes through it (finding C7). */
+  openConfirm: (recordId: string) => void
   openEdit: (recordId: string) => void
 }
 

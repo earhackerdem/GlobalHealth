@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { Download, Trash2, Upload } from "lucide-react"
-import { useRef } from "react"
+import { useRef, useState } from "react"
 import { useTranslation } from "react-i18next"
 
 import {
@@ -10,6 +10,16 @@ import {
 } from "@/client"
 import { useRecordDialogs } from "@/components/Records/RecordDialogsContext"
 import { Button } from "@/components/ui/button"
+import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
+import { LoadingButton } from "@/components/ui/loading-button"
 import useCustomToast from "@/hooks/useCustomToast"
 import i18n from "@/i18n"
 import { handleError } from "@/utils"
@@ -27,6 +37,10 @@ export function AttachmentsPanel({ recordId }: AttachmentsPanelProps) {
   const queryClient = useQueryClient()
   const { showSuccessToast, showErrorToast } = useCustomToast()
   const fileInputRef = useRef<HTMLInputElement>(null)
+  // Deleting an attachment is destructive: it needs its own confirmation
+  // dialog, like deleting a record (finding C2).
+  const [pendingDelete, setPendingDelete] =
+    useState<HealthRecordAttachmentPublic | null>(null)
 
   const { data: attachments } = useQuery({
     queryKey: getAttachmentsQueryKey(recordId),
@@ -63,6 +77,7 @@ export function AttachmentsPanel({ recordId }: AttachmentsPanelProps) {
         queryKey: getAttachmentsQueryKey(recordId),
       })
       showSuccessToast(t("attachments.deletedToast"))
+      setPendingDelete(null)
     },
     onError: handleError.bind(showErrorToast),
   })
@@ -126,7 +141,7 @@ export function AttachmentsPanel({ recordId }: AttachmentsPanelProps) {
                   variant="ghost"
                   size="sm"
                   disabled={deleteMutation.isPending}
-                  onClick={() => deleteMutation.mutate(attachment.id)}
+                  onClick={() => setPendingDelete(attachment)}
                 >
                   <Trash2 />
                   {t("attachments.delete")}
@@ -158,6 +173,42 @@ export function AttachmentsPanel({ recordId }: AttachmentsPanelProps) {
           {t("attachments.upload")}
         </Button>
       </div>
+
+      {pendingDelete && (
+        <Dialog
+          open
+          onOpenChange={(open) => {
+            if (!open) {
+              setPendingDelete(null)
+            }
+          }}
+        >
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>{t("attachments.deleteDialogTitle")}</DialogTitle>
+              <DialogDescription>
+                {t("attachments.deleteDialogDescription", {
+                  filename: pendingDelete.filename,
+                })}
+              </DialogDescription>
+            </DialogHeader>
+            <DialogFooter>
+              <DialogClose asChild>
+                <Button variant="outline" disabled={deleteMutation.isPending}>
+                  {t("common:actions.cancel")}
+                </Button>
+              </DialogClose>
+              <LoadingButton
+                variant="destructive"
+                loading={deleteMutation.isPending}
+                onClick={() => deleteMutation.mutate(pendingDelete.id)}
+              >
+                {t("attachments.deleteConfirmButton")}
+              </LoadingButton>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      )}
     </div>
   )
 }
@@ -181,26 +232,35 @@ export function RecordTitle({ record }: RecordTitleProps) {
   const displayTitle = isPrescription
     ? (record.professional ?? t("types.prescription"))
     : (record.title ?? "")
+  // dd/mm/aaaa by string parts (same rationale as finding C4). The date makes
+  // the accessible name distinguishable between rows (finding K2).
+  const [year, month, day] = record.occurred_on.split("-")
+  const displayDate = `${day}/${month}/${year}`
 
   return (
     <button
       type="button"
       className="text-left font-medium underline-offset-4 hover:underline"
-      aria-label={t("detail.open", { title: displayTitle })}
+      aria-label={t("detail.open", { title: displayTitle, date: displayDate })}
+      // Focus fallback for the page-level dialogs (finding K6).
+      data-record-trigger={record.id}
       onClick={() => openDetail(record.id)}
     >
       {isPrescription ? (
+        // Only phrasing content inside a <button>: a <ul> here is invalid
+        // HTML (finding K2), so the medicines render as stacked spans.
         <span className="flex flex-col gap-1">
           <span>{displayTitle}</span>
-          <ul className="list-disc pl-5 font-normal">
+          <span className="flex flex-col pl-5 font-normal">
             {record.medicines.map((medicine) => (
-              <li key={medicine.id}>
+              <span key={medicine.id}>
+                {"• "}
                 <strong>{medicine.name}</strong>
                 {medicine.dose ? ` — ${medicine.dose}` : ""}
                 {medicine.frequency ? ` · ${medicine.frequency}` : ""}
-              </li>
+              </span>
             ))}
-          </ul>
+          </span>
         </span>
       ) : (
         record.title

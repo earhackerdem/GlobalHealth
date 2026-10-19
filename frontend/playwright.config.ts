@@ -45,6 +45,21 @@ export default defineConfig({
       dependencies: ['setup'],
     },
 
+    /* Cobertura móvil (hallazgo K9): viewport CSS real del Samsung S26 Ultra
+       de Saúl (pantalla 1440×3120, DPR 3.75 → 384×832). */
+    {
+      name: 's26-ultra',
+      use: {
+        ...devices['Desktop Chrome'],
+        storageState: 'playwright/.auth/user.json',
+        viewport: { width: 384, height: 832 },
+        deviceScaleFactor: 3.75,
+        isMobile: true,
+        hasTouch: true,
+      },
+      dependencies: ['setup'],
+    },
+
     // {
     //   name: 'firefox',
     //   use: {

@@ -1,10 +1,11 @@
-import { type ReactNode, useMemo, useState } from "react"
+import { type ReactNode, useMemo, useRef, useState } from "react"
 import { useTranslation } from "react-i18next"
 
 import type { HealthRecordPublic } from "@/client"
 import { EditRecordDialog } from "@/components/Records/EditRecord"
 import { AttachmentsPanel } from "@/components/Records/RecordAttachments"
 import { RecordDialogsContext } from "@/components/Records/RecordDialogsContext"
+import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -36,6 +37,13 @@ function RecordDetailBody({ record }: { record: HealthRecordPublic }) {
             {t("fields.diagnosis")}:{" "}
           </span>
           {record.title}
+        </p>
+      )}
+      {/* The detail shows the confirmation state like the list does
+          (finding C9). */}
+      {!isPrescription && record.confirmation_status === "unconfirmed" && (
+        <p>
+          <Badge variant="secondary">{t("confirmation.unconfirmed")}</Badge>
         </p>
       )}
       {record.professional && (
@@ -109,14 +117,48 @@ export function RecordDialogsProvider({
   const [detailId, setDetailId] = useState<string | null>(null)
   const [confirmId, setConfirmId] = useState<string | null>(null)
   const [editId, setEditId] = useState<string | null>(null)
+  // The element that opened the flow: closing a page-level dialog must send
+  // focus back to it (or to the record's title button), never to <body>
+  // (finding K6).
+  const triggerRef = useRef<HTMLElement | null>(null)
 
-  const api = useMemo(
-    () => ({
-      openDetail: (recordId: string) => setDetailId(recordId),
-      openEdit: (recordId: string) => setEditId(recordId),
-    }),
-    [],
-  )
+  const api = useMemo(() => {
+    const rememberTrigger = () => {
+      triggerRef.current =
+        document.activeElement instanceof HTMLElement
+          ? document.activeElement
+          : null
+    }
+    return {
+      openDetail: (recordId: string) => {
+        rememberTrigger()
+        setDetailId(recordId)
+      },
+      openConfirm: (recordId: string) => {
+        rememberTrigger()
+        setConfirmId(recordId)
+      },
+      openEdit: (recordId: string) => {
+        rememberTrigger()
+        setEditId(recordId)
+      },
+    }
+  }, [])
+
+  /** Radix onCloseAutoFocus handler: the saved trigger if it is still in the
+   * DOM (menu items unmount with their dropdown), else the record's title
+   * button, else the Radix default (finding K6). */
+  const restoreFocus = (recordId: string) => (event: Event) => {
+    const trigger = triggerRef.current
+    const fallback = document.querySelector<HTMLElement>(
+      `[data-record-trigger="${recordId}"]`,
+    )
+    const target = trigger?.isConnected ? trigger : fallback
+    if (target) {
+      event.preventDefault()
+      target.focus()
+    }
+  }
 
   // Fresh record from the (possibly refetched) list: dialogs follow the id.
   const detailRecord = records.find((record) => record.id === detailId)
@@ -136,7 +178,10 @@ export function RecordDialogsProvider({
             }
           }}
         >
-          <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
+          <DialogContent
+            className="max-h-[90vh] overflow-y-auto sm:max-w-lg"
+            onCloseAutoFocus={restoreFocus(detailRecord.id)}
+          >
             <DialogHeader>
               <DialogTitle>
                 {detailRecord.record_type === "prescription"
@@ -179,7 +224,10 @@ export function RecordDialogsProvider({
             }
           }}
         >
-          <DialogContent className="sm:max-w-md">
+          <DialogContent
+            className="sm:max-w-md"
+            onCloseAutoFocus={restoreFocus(confirmRecord.id)}
+          >
             <DialogHeader>
               <DialogTitle>{t("detail.confirmTitle")}</DialogTitle>
               <DialogDescription>
@@ -208,6 +256,7 @@ export function RecordDialogsProvider({
           key={editRecord.id}
           record={editRecord}
           onClose={() => setEditId(null)}
+          onCloseAutoFocus={restoreFocus(editRecord.id)}
         />
       )}
     </RecordDialogsContext.Provider>

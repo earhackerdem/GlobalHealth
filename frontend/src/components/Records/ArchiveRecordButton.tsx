@@ -38,6 +38,9 @@ export function ArchiveRecordButton({ record }: ArchiveRecordButtonProps) {
     <Button
       variant="ghost"
       size="sm"
+      // The long label may wrap on narrow viewports (K9: at 384px CSS the
+      // nowrap button forced the actions column behind horizontal scroll).
+      className="h-auto min-h-8 shrink whitespace-normal py-1 text-left"
       disabled={mutation.isPending}
       onClick={() => mutation.mutate(!record.archived)}
     >

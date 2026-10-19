@@ -73,7 +73,7 @@ export const columns: ColumnDef<DataTableFeatures, HealthRecordPublic>[] = [
       <span className="sr-only">{i18n.t("common:table.actions")}</span>
     ),
     cell: ({ row }) => (
-      <div className="flex items-center justify-end gap-1">
+      <div className="flex flex-wrap items-center justify-end gap-1">
         {row.original.record_type === "prescription" && (
           <ArchiveRecordButton record={row.original} />
         )}

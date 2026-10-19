@@ -25,6 +25,7 @@ const medicineSchema = z.object({
   name: z.string(),
   dose: z.string(),
   frequency: z.string(),
+  route: z.string(),
 })
 
 export const prescriptionFormSchema = z.object({
@@ -32,20 +33,42 @@ export const prescriptionFormSchema = z.object({
   occurred_on: z
     .string()
     .min(1, { message: i18n.t("records:validation.dateRequired") }),
-  medicines: z.array(medicineSchema).refine(
-    // At least one medicine with a name: empty rows do not count (AC-1).
-    (medicines) => medicines.some((m) => m.name.trim().length > 0),
-    { message: i18n.t("records:validation.medicinesRequired") },
-  ),
+  medicines: z
+    .array(medicineSchema)
+    .superRefine((medicines, ctx) => {
+      // A row with data but no name must NOT be dropped silently (finding
+      // C5): it errors on that row's name field instead.
+      medicines.forEach((m, index) => {
+        const hasData =
+          m.dose.trim().length > 0 ||
+          m.frequency.trim().length > 0 ||
+          m.route.trim().length > 0
+        if (m.name.trim().length === 0 && hasData) {
+          ctx.addIssue({
+            code: "custom",
+            path: [index, "name"],
+            message: i18n.t("records:validation.medicineNameRequired"),
+          })
+        }
+      })
+    })
+    .refine(
+      // At least one medicine with a name: empty rows do not count (AC-1).
+      (medicines) => medicines.some((m) => m.name.trim().length > 0),
+      { message: i18n.t("records:validation.medicinesRequired") },
+    ),
   diagnosis: z.string(),
   notes: z.string(),
 })
 
 export type PrescriptionFormData = z.infer<typeof prescriptionFormSchema>
 
-export const emptyMedicineRow = { name: "", dose: "", frequency: "" }
+export const emptyMedicineRow = { name: "", dose: "", frequency: "", route: "" }
 
-/** Rows with a name become the API payload; blanks map to null, never "". */
+/** Rows with a name become the API payload; blanks map to null, never "".
+ * Named-but-incomplete is the only silent-drop case left: a FULLY empty row
+ * (the "minimum one row" placeholder) — rows with data and no name are a
+ * validation error (finding C5). `route` round-trips too (finding S5). */
 export function medicinesPayload(
   data: PrescriptionFormData,
 ): HealthRecordMedicineCreate[] {
@@ -55,6 +78,7 @@ export function medicinesPayload(
       name: m.name.trim(),
       dose: m.dose.trim() || null,
       frequency: m.frequency.trim() || null,
+      route: m.route.trim() || null,
     }))
 }
 
@@ -134,8 +158,17 @@ const PrescriptionForm = ({
               {t("prescriptionForm.medicines")}
             </p>
             {fields.map((row, index) => (
-              <div key={row.id} className="flex items-end gap-2">
-                <div className="grid flex-1 gap-2 sm:grid-cols-3">
+              // role="group": each medicine row is announced as one unit
+              // (finding K5).
+              <div
+                key={row.id}
+                role="group"
+                aria-label={t("prescriptionForm.medicineRowGroup", {
+                  number: index + 1,
+                })}
+                className="flex items-end gap-2"
+              >
+                <div className="grid flex-1 gap-2 sm:grid-cols-2">
                   <FormField
                     control={form.control}
                     name={`medicines.${index}.name`}
@@ -181,19 +214,31 @@ const PrescriptionForm = ({
                       </FormItem>
                     )}
                   />
+                  <FormField
+                    control={form.control}
+                    name={`medicines.${index}.route`}
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>
+                          {t("prescriptionForm.medicineRoute")}
+                        </FormLabel>
+                        <FormControl>
+                          <Input type="text" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
                 </div>
                 <Button
                   type="button"
                   variant="ghost"
                   size="icon"
                   aria-label={t("prescriptionForm.removeMedicine")}
-                  // Minimum one row, like the prototype: removing the last
-                  // row is a no-op.
-                  onClick={() => {
-                    if (fields.length > 1) {
-                      remove(index)
-                    }
-                  }}
+                  // Minimum one row, like the prototype: with one row left
+                  // the button is disabled instead of a silent no-op (K5).
+                  disabled={fields.length <= 1}
+                  onClick={() => remove(index)}
                 >
                   <X />
                 </Button>

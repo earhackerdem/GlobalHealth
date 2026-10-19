@@ -40,6 +40,8 @@
     "scan": "Escanear",
     "comingSoon": "Próximamente",
     "attachmentLabel": "Foto o PDF de la receta (opcional)",
+    "attachmentButton": "Adjuntar imagen o PDF",
+    "attachmentEmpty": "Ningún archivo seleccionado",
     "attachmentFailedToast": "La receta se guardó, pero el archivo no se pudo subir. Inténtalo de nuevo desde su detalle."
   },
   "prescriptionForm": {
@@ -49,6 +51,8 @@
     "medicineName": "Medicina",
     "medicineDose": "Dosis e indicación",
     "medicineFrequency": "Frecuencia (opcional)",
+    "medicineRoute": "Vía (opcional)",
+    "medicineRowGroup": "Medicina {{number}}",
     "addMedicine": "+ Agregar otra medicina",
     "removeMedicine": "Quitar medicina",
     "diagnosis": "Diagnóstico (opcional)",
@@ -70,7 +74,7 @@
     "prescriptionTitle": "Detalle de la receta",
     "diagnosisTitle": "Detalle del diagnóstico",
     "description": "Consulta de solo lectura.",
-    "open": "Ver detalle de {{title}}",
+    "open": "Ver detalle de {{title}} ({{date}})",
     "doctor": "Médico",
     "date": "Fecha",
     "professional": "Profesional",
@@ -103,12 +107,16 @@
     "upload": "Subir archivo",
     "download": "Descargar",
     "delete": "Eliminar adjunto",
+    "deleteDialogTitle": "Eliminar adjunto",
+    "deleteDialogDescription": "¿Seguro que quieres eliminar {{filename}}? Esta acción no se puede deshacer.",
+    "deleteConfirmButton": "Eliminar",
     "addedToast": "Adjunto agregado.",
     "deletedToast": "Adjunto eliminado."
   },
   "validation": {
     "titleRequired": "Este campo es obligatorio",
     "dateRequired": "La fecha es obligatoria",
-    "medicinesRequired": "Agrega al menos una medicina."
+    "medicinesRequired": "Agrega al menos una medicina.",
+    "medicineNameRequired": "Agrega el nombre de la medicina."
   }
 }

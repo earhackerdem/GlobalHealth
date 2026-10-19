@@ -61,16 +61,20 @@ interface EditRecordProps {
 
 /**
  * "Editar registro" menu item. It only ASKS the page-level provider to open
- * the edit dialog by id: the dialog itself must not live inside the dropdown
+ * the edit flow by id: the dialog itself must not live inside the dropdown
  * content, which Radix unmounts when the menu closes (e.g. on focus loss) —
  * that unmount was the reported data-loss bug (delta 2026-10-18, AC8).
+ *
+ * It opens the CONFIRMATION first ("Sí, editar"), the same deliberate step
+ * as the detail path (finding C7): every edit — prescription or diagnosis —
+ * is confirmed before the form appears.
  */
 const EditRecord = ({ record }: EditRecordProps) => {
   const { t } = useTranslation("records")
-  const { openEdit } = useRecordDialogs()
+  const { openConfirm } = useRecordDialogs()
 
   return (
-    <DropdownMenuItem onSelect={() => openEdit(record.id)}>
+    <DropdownMenuItem onSelect={() => openConfirm(record.id)}>
       <Pencil />
       {t("editRecord.menuItem")}
     </DropdownMenuItem>
@@ -80,6 +84,9 @@ const EditRecord = ({ record }: EditRecordProps) => {
 interface EditRecordDialogProps {
   record: HealthRecordPublic
   onClose: () => void
+  /** Radix close-autofocus hook: the provider restores focus to the element
+   * that opened the flow instead of letting it fall to <body> (finding K6). */
+  onCloseAutoFocus?: (event: Event) => void
 }
 
 /**
@@ -90,6 +97,7 @@ interface EditRecordDialogProps {
 export const EditRecordDialog = ({
   record,
   onClose,
+  onCloseAutoFocus,
 }: EditRecordDialogProps) => {
   const { t } = useTranslation("records")
   const queryClient = useQueryClient()
@@ -153,7 +161,10 @@ export const EditRecordDialog = ({
         }
       }}
     >
-      <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
+      <DialogContent
+        className="max-h-[90vh] overflow-y-auto sm:max-w-lg"
+        onCloseAutoFocus={onCloseAutoFocus}
+      >
         <DialogHeader>
           <DialogTitle>{t("editRecord.dialogTitle")}</DialogTitle>
           <DialogDescription>
@@ -249,6 +260,9 @@ export const EditRecordDialog = ({
                     name: m.name,
                     dose: m.dose ?? "",
                     frequency: m.frequency ?? "",
+                    // Full round-trip: without `route` in the form, the PATCH
+                    // (full list replacement) silently erased it (finding S5).
+                    route: m.route ?? "",
                   }))
                 : [{ ...emptyMedicineRow }],
               diagnosis: record.diagnosis ?? "",
