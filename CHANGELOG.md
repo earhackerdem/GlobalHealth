@@ -1,5 +1,13 @@
 # CHANGELOG
 
+- 2026-10-19 · receta-mexicana · PR #13 · La receta es a la mexicana: varias medicinas por receta (dosis,
+  frecuencia y vía opcionales por medicina), sin vigencia obligatoria, diagnóstico opcional y diagnóstico suelto
+  con estado "sin confirmar"; archivar/desarchivar cuando el tratamiento termina; detalle en solo lectura con
+  edición deliberada (confirmación en ambos caminos) y adjunto opcional desde la creación; notas multilínea; el
+  modal sobrevive al cambio de pestaña. Migración que pliega los datos existentes sin destruir nada (y aborta
+  ante llave de cifrado equivocada — crítico del review adversarial, aplicado al 100% junto con el resto de
+  hallazgos aprobados). E2e corriendo también en el viewport del dispositivo real de pruebas (384×832).
+
 - 2026-10-18 · expediente-registros · PR #6 · El paciente registra su expediente real: diagnósticos (fecha,
   profesional, notas) y recetas (medicamento, dosis, vigencia), corrige y elimina lo propio (ARCO), y adjunta
   imágenes o PDF que se descargan íntegros; todo el texto clínico y los archivos quedan cifrados en reposo y
