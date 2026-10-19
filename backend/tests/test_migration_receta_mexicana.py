@@ -172,7 +172,7 @@ def test_migration_folds_old_prescriptions_with_app_key(
     _upgrade(ephemeral_db_url, PREVIOUS_REVISION)
     _seed_old_format(ephemeral_db_url, _app_encrypt)
 
-    _upgrade(ephemeral_db_url, "head")
+    _upgrade(ephemeral_db_url, TARGET_REVISION)
 
     engine = sa.create_engine(ephemeral_db_url, poolclass=sa.pool.NullPool)
     try:
@@ -266,7 +266,7 @@ def test_migration_wrong_key_aborts_and_rolls_back(ephemeral_db_url: str) -> Non
             }
 
         with pytest.raises(InvalidToken):
-            _upgrade(ephemeral_db_url, "head")
+            _upgrade(ephemeral_db_url, TARGET_REVISION)
 
         with engine.connect() as conn:
             version = conn.execute(
