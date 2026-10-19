@@ -165,3 +165,90 @@ verificar si aplica cuando exista el portal del profesional (E4).
    default), **Gemini Nano on-device** (spike D17, cero retención por construcción), y la idea de Saúl de **BYOK**
    (el usuario trae su propia API key) — con la salvedad de que la app deberá rechazar proveedores/modos cuyos
    términos entrenen con los datos.
+
+---
+
+# Dominio — GlobalHealth · rebanada "perfil del paciente y antecedentes familiares (onboarding)"
+
+Date: 2026-10-19 · Interviewed: Saúl Pérez (pedido del 2026-10-18 al cerrar receta-mexicana, fila SIGUIENTE TAREA
+en memory/inbox.md: "fecha de nacimiento, peso actual, estatura, y antecedentes médicos familiares — lo que
+preguntan mucho los médicos: diabetes o cáncer en la familia — justo después de aceptar el consentimiento") ·
+Evidencia: el mismo corpus de 74 fotos (2026-10-18) · Status: **draft — gate ABIERTO: prototipo + 4 preguntas**
+Prototipo: **`product/prototipos/onboarding-perfil.html`** (fuente de verdad; incluye historia borrador y AC-1…AC-8
+con el toggle "Ver criterios").
+Alcance: perfil básico del paciente + antecedentes heredo-familiares (AHF), capturados en un onboarding omitible
+justo después de aceptar el consentimiento. NO entra: APP/APNP completos (tabaquismo, cirugías…), signos vitales
+como serie clínica, exploración física, nada del compartir (E3/E4).
+
+## Catálogos (en las palabras de Saúl)
+
+### Perfil del paciente
+| Attribute | In their words | Sensitive? | Notes / [ASSUMPTION] |
+|---|---|---|---|
+| fecha de nacimiento | "fecha de nacimiento" | sí | los formatos de farmacia del corpus la imprimen (junto con la edad) [VERIFIED 2026-10-18 fotos]; de ella se deriva la edad mostrada; se corrige, no "cambia" |
+| peso actual | "peso actual" | sí | NOM-004 6.1.2 lo pide en la exploración física ("peso y talla") [VERIFIED 2026-10-19]; **cambia con el tiempo** → [ASSUMPTION] se guarda como medición con fecha y el perfil muestra la última (Q1) |
+| estatura | "estatura" | sí | ídem 6.1.2; estable en adultos pero no inmutable → misma mecánica que peso (Q1) |
+| sexo | — no lo pidió | sí | parte de la ficha de identificación (NOM-004 6.1.1) y de rangos clínicos; **propuesta del harness** con "prefiero no decir" (Q4) |
+| alergias a medicamentos | — no lo pidió | sí | APP según NOM-004 6.1.1, pero es LA pregunta de toda consulta y de toda receta segura; **propuesta del harness** como campo simple (Q4) |
+
+### Antecedente familiar (AHF)
+| Attribute | In their words | Sensitive? | Notes / [ASSUMPTION] |
+|---|---|---|---|
+| condición | "diabetes o cáncer en la familia…" | sí | lista corta de condiciones frecuentes + "otra" libre (Q2); la nota IMSS del corpus trae sección AHF explícita [VERIFIED 2026-10-18 fotos] |
+| parentesco(s) | FR-008 ya lo fija: "parentesco + condición" | sí | madre/padre/abuela-o/hermana-o/otro; una condición puede tener varios parentescos |
+| nota | — | sí | [ASSUMPTION] libre y opcional (tipo de cáncer, edad del familiar al diagnóstico) — validar en prototipo |
+
+- **Relations:** paciente → perfil (1→1) · perfil → medición de peso/estatura (1→0..N, con fecha; Q1) ·
+  paciente → antecedente familiar (1→0..N, condición + parentescos[])
+- **States / lifecycle:** onboarding `ofrecido → completado | omitido` (se ofrece **una sola vez**; omitido no se
+  vuelve a forzar, el perfil queda editable desde su pantalla); perfil `vacío → parcial → completo` — parcial es
+  un estado legítimo, no un error.
+- **What they explicitly do NOT want:** (del encuadre) nada antes del consentimiento; nada que bloquee el primer
+  uso — [ASSUMPTION a confirmar en Q3: todo omitible].
+
+## Glosario
+| Their word | Meaning here | Never call it |
+|---|---|---|
+| antecedentes familiares | condiciones de salud en la familia directa (AHF) | "heredo-familiares" en la UI (tecnicismo), historia clínica |
+| perfil | los datos básicos del paciente (nacimiento, sexo, peso, estatura, alergias) | ficha de identificación, demographics |
+| onboarding | la única vez que la app pregunta el perfil al entrar | wizard, setup |
+
+## Procesos (who / when / with whom → future FRs)
+| Who (role) | Does what | When / trigger | With whom | Exceptional paths |
+|---|---|---|---|---|
+| paciente | acepta el consentimiento (ya existe, PR #1) | al crear la cuenta | — | — |
+| sistema | ofrece el onboarding de perfil, una sola vez | inmediatamente después del consentimiento | — | "Ahora no" → directo al expediente, sin castigo ni re-pregunta |
+| paciente | llena u omite cada paso (datos básicos → AHF) y confirma en un resumen | durante el onboarding | — | fecha futura rechazada; valores fuera de rango plausible avisados |
+| paciente | completa/corrige el perfil después | cuando quiera, desde "Mi perfil" | — | — |
+| sistema (futuro, E5) | usa AHF para avisos proactivos con fuente | FR-021 ("AHF de diabetes sin tamizaje registrado") | — | fuera de esta rebanada |
+
+## Encaje regulatorio y sensibilidad
+- **NOM-004-SSA3-2012, 6.1.1** (interrogatorio mínimo de la historia clínica): ficha de identificación,
+  antecedentes **heredo-familiares**, personales patológicos y no patológicos; **6.1.2** (exploración física):
+  signos vitales, **peso y talla** [VERIFIED 2026-10-19, texto oficial DOF — memory/research.md]. GlobalHealth no
+  es el expediente del prestador, pero capturar exactamente lo que el médico va a preguntar es el valor de O6.
+- **LFPDPPP art. 3-VI**: todo esto es dato sensible; los AHF además son **datos de salud de terceros (familiares)
+  aportados por el titular** — mismo cifrado en reposo y consentimiento ya resueltos (D13/D16, NFR-001/NFR-004);
+  minimización: por eso todo es opcional y omitible.
+
+## Encaje en el PRD (aterriza al cerrar el gate)
+- **FR-008 ya existe** ("registrar historial familiar: parentesco + condición", M, O6) y US-05 es su story: esta
+  rebanada la implementa, no la duplica.
+- **FR nuevo (borrador FR-027):** "completar u omitir, justo después de aceptar el consentimiento, un perfil
+  básico (fecha de nacimiento, sexo, peso, estatura, alergias) editable después" — épica E2 (o E1 por el disparador
+  post-consentimiento; decide el PRD al cerrar el gate). La story con prototipo cubre FR-027 + FR-008.
+
+## Open questions (max 4) — el gate del discovery
+1. **Peso/estatura: ¿valor único que se sobreescribe, o medición con fecha?** Recomendación del harness: medición
+   con fecha mostrando la última — un peso de hace 3 años presentado como "actual" desinforma al médico, el corpus
+   muestra signos vitales fechados por documento, y el costo hoy es mínimo (una columna de fecha). El historial
+   graficable queda para después.
+2. **AHF: ¿cómo se captura?** Recomendación: lista corta de condiciones frecuentes (diabetes, cáncer, hipertensión,
+   enfermedad del corazón) + "otra" en libre, cada una con parentescos múltiples — así está en el prototipo. La
+   alternativa (texto libre) es más rápida de construir pero inservible para FR-021 (avisos proactivos necesitan
+   la condición estructurada).
+3. **¿Todo omitible?** Recomendación: sí — "Ahora no" por paso y global, perfil editable después, sin re-preguntar
+   (minimización LFPDPPP; no bloquear el primer uso). ¿O algo debe ser obligatorio (p. ej. fecha de nacimiento)?
+4. **¿Entran sexo y alergias a medicamentos?** No los pediste; el harness los propone porque son la ficha de
+   identificación (NOM-004 6.1.1) y la primera pregunta de cualquier consulta, y el costo marginal dentro del
+   mismo onboarding es bajo. Puedes recortar cualquiera de los dos en el prototipo.

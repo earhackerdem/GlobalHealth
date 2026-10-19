@@ -286,3 +286,16 @@ como causalidad ni como diagnóstico.
   créditos Max (200 USD/mes) cubren el desarrollo con la API de Anthropic. El tech-brief verifica términos
   primarios solo de quien llegue a la short-list.
 - **Re-check if:** tech-brief del proveedor; cualquier proveedor que entre a la lista blanca BYOK.
+
+- **Fact:** NOM-004-SSA3-2012, numeral **6.1.1** (historia clínica → interrogatorio, contenido mínimo): "ficha
+  de identificación, en su caso, grupo étnico, antecedentes heredo-familiares, antecedentes personales
+  patológicos (incluido uso y dependencia del tabaco, del alcohol y de otras sustancias psicoactivas…) y no
+  patológicos, padecimiento actual… e interrogatorio por aparatos y sistemas". Numeral **6.1.2** (exploración
+  física, mínimo): "habitus exterior, signos vitales (temperatura, tensión arterial, frecuencia cardiaca y
+  respiratoria), peso y talla".
+- **Source:** texto oficial DOF 2012-10-15, https://www.gob.mx/cms/uploads/attachment/file/512094/NOM-004-SSA3-2012.pdf
+  · consulted 2026-10-19 (extraído del PDF oficial)
+- **Confidence:** [VERIFIED]
+- **Re-check if:** —. Uso: ancla del catálogo perfil/antecedentes (product/dominio.md, rebanada onboarding):
+  los campos que pidió Saúl Pérez (nacimiento, peso, estatura, AHF) son exactamente el mínimo que la norma exige
+  al médico preguntar/medir; sexo (ficha de identificación) y alergias (APP) son las propuestas del harness.
