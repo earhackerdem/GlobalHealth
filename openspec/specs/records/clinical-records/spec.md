@@ -185,4 +185,3 @@ opcional.
 - **WHEN** usa el control opcional de adjuntar y elige una imagen o PDF
 - **THEN** al guardar, la receta queda creada con su adjunto listado; si no adjunta nada, la receta se guarda
   igual
-
