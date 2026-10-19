@@ -158,15 +158,15 @@ const PrescriptionForm = ({
               {t("prescriptionForm.medicines")}
             </p>
             {fields.map((row, index) => (
-              // role="group": each medicine row is announced as one unit
-              // (finding K5).
-              <div
+              // fieldset: each medicine row is announced as one unit
+              // (finding K5); min-w-0 resets its min-content default so the
+              // flex row keeps working.
+              <fieldset
                 key={row.id}
-                role="group"
                 aria-label={t("prescriptionForm.medicineRowGroup", {
                   number: index + 1,
                 })}
-                className="flex items-end gap-2"
+                className="m-0 flex min-w-0 items-end gap-2 border-0 p-0"
               >
                 <div className="grid flex-1 gap-2 sm:grid-cols-2">
                   <FormField
@@ -242,7 +242,7 @@ const PrescriptionForm = ({
                 >
                   <X />
                 </Button>
-              </div>
+              </fieldset>
             ))}
             {medicinesError && (
               <p className="text-sm font-medium text-destructive">
