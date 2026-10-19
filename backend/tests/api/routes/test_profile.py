@@ -78,7 +78,9 @@ def get_profile(client: TestClient, headers: dict[str, str]) -> Any:
     return client.get(PROFILE_URL, headers=headers)
 
 
-def put_profile(client: TestClient, headers: dict[str, str], body: dict[str, Any]) -> Any:
+def put_profile(
+    client: TestClient, headers: dict[str, str], body: dict[str, Any]
+) -> Any:
     return client.put(PROFILE_URL, headers=headers, json=body)
 
 
@@ -280,7 +282,9 @@ def test_ac5_implausible_measurement_values_rejected(
 
     db.expire_all()
     row_count = db.execute(
-        text("SELECT COUNT(*) FROM body_measurement WHERE user_id = CAST(:uid AS uuid)"),
+        text(
+            "SELECT COUNT(*) FROM body_measurement WHERE user_id = CAST(:uid AS uuid)"
+        ),
         {"uid": user_id},
     ).scalar_one()
     assert row_count == 0
