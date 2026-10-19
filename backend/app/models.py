@@ -490,9 +490,7 @@ class BodyMeasurementsPublic(SQLModel):
 
 
 class FamilyHistoryCreate(SQLModel):
-    condition: Literal[
-        "diabetes", "cancer", "hypertension", "heart_disease", "other"
-    ]
+    condition: Literal["diabetes", "cancer", "hypertension", "heart_disease", "other"]
     other_text: str | None = Field(default=None, max_length=2000)
     relatives: list[
         Literal[
