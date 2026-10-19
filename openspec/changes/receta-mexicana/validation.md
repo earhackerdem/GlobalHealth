@@ -45,3 +45,13 @@ Cómo probarlo: `make up`, entra a http://localhost:5173 (o el puerto de tu `mak
 - **Nadie puede confirmar un diagnóstico aún**: el estado existe, el flujo del médico llega con los enlaces
   (E3/E4).
 - No modela laboratorios, vacunas ni notas clínicas (catálogos futuros del discovery).
+
+## Delta validado contigo (2026-10-18)
+- [ ] El botón ahora dice **Registrar receta**; dentro, **Dictar** y **Escanear** aparecen deshabilitados como
+  "Próximamente".
+- [ ] Escribe en un formulario, cambia de pestaña y regresa: el modal sigue abierto con todo lo escrito (también
+  al editar).
+- [ ] En Notas, Enter mete un salto de línea (tus bullets "No tomar alcohol / Correr 1 hora…" se guardan como dos
+  líneas).
+- [ ] Clic en una receta: detalle en solo lectura con sus adjuntos; **Editar** pide confirmación ("Sí, editar").
+- [ ] Al crear una receta puedes adjuntar la imagen/PDF ahí mismo (opcional).

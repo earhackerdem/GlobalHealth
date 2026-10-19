@@ -54,3 +54,18 @@ edición con reemplazo, archivar/desarchivar con sección "Archivadas", diagnós
 - `scripts/generate-client.sh` y `bun run lint` (biome `--write --unsafe`) reformatean también `frontend/tests/`;
   el implementer restauró el spec al commit del tester (`git checkout --`), cero cambio semántico. Deuda anotada
   en memory/inbox.md.
+
+## Grupo 4 — delta del gate humano (2026-10-18, tarde)
+
+- **Red:** e2e → 16 tests · 12 failed (6 nuevos AC8–AC11+renombre, 6 existentes rojos por el renombre esperado).
+  Commit `test:` 8634b3c.
+- **Verde (re-corrido por el orquestador):** e2e **16/16** (14.7 s) · `tsc --noEmit` limpio · `make tdd-check` ✓.
+- **Causa raíz del cierre del modal (bug reportado por Saúl):** el estado `open` de los diálogos de editar y
+  adjuntos vivía dentro de `DropdownMenuContent`/celda de la tabla; Radix desmonta ese contenido al perder el foco
+  de la ventana y se llevaba el diálogo con lo escrito. Arreglo: `RecordDialogsProvider` a nivel de página (por id);
+  `refetchOnWindowFocus` sigue activo y los formularios no se remontan (los e2e AC8 esperan el refetch real).
+- **Pruebas exploratorias con Claude in Chrome (2026-10-18):** happy path de captura verificado en el navegador
+  real; bug de Enter-en-notas reproducido antes del fix; el modal de CREAR ya sobrevivía el cambio de pestaña con
+  lista vacía (el caso real era el de editar/menú).
+- Deuda nueva: `DeleteRecord.tsx` conserva su Dialog dentro del menú (misma familia del bug AC8, sin test); clave
+  `records:attachments.openPanel` sin uso.
