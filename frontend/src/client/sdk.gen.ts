@@ -731,7 +731,13 @@ export class ProfileService {
      * Create Family History
      *
      * Persist one family antecedent; relatives travel as a JSON array
-     * serialized INSIDE the encrypted column (design.md trade-off).
+     * serialized INSIDE the encrypted column (design.md trade-off), bounded and
+     * deduped (review G11/M5).
+     *
+     * condition is encrypted at rest (review G2), so per-user uniqueness cannot
+     * be a partial index (Fernet is non-deterministic): dedupe happens HERE by
+     * comparing the decrypted conditions the ORM already returns (review G3).
+     * "other" admits several entries, told apart by other_text.
      */
     public static createFamilyHistory<ThrowOnError extends boolean = true>(options: Options<profileCreateFamilyHistoryData, ThrowOnError>) {
         return (options.client ?? client).post<profileCreateFamilyHistoryResponses, profileCreateFamilyHistoryErrors, ThrowOnError>({
@@ -764,7 +770,8 @@ export class ProfileService {
     /**
      * Update Family History
      *
-     * Full update of an owned antecedent (same fields as the create).
+     * Full update of an owned antecedent (same fields as the create);
+     * relatives bounded and deduped like on create (review G11/M5).
      */
     public static updateFamilyHistory<ThrowOnError extends boolean = true>(options: Options<profileUpdateFamilyHistoryData, ThrowOnError>) {
         return (options.client ?? client).put<profileUpdateFamilyHistoryResponses, profileUpdateFamilyHistoryErrors, ThrowOnError>({

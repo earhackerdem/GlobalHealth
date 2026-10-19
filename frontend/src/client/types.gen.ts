@@ -1862,7 +1862,7 @@ export type profileReadMeasurementsData = {
         /**
          * Type
          */
-        type: string;
+        type: 'weight' | 'height';
         /**
          * Skip
          */
