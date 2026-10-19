@@ -1,7 +1,11 @@
-import { createFileRoute } from "@tanstack/react-router"
+import { useQuery } from "@tanstack/react-query"
+import { createFileRoute, useNavigate } from "@tanstack/react-router"
+import { useEffect } from "react"
 import { useTranslation } from "react-i18next"
 
+import { ConsentService, ProfileService } from "@/client"
 import ConsentGate from "@/components/Consent/ConsentGate"
+import OnboardingWizard from "@/components/Profile/OnboardingWizard"
 import useAuth from "@/hooks/useAuth"
 import i18n from "@/i18n"
 
@@ -19,6 +23,29 @@ export const Route = createFileRoute("/_layout/")({
 function Dashboard() {
   const { t } = useTranslation("layout")
   const { user: currentUser } = useAuth()
+  const navigate = useNavigate()
+
+  const { data: consent, isLoading: consentLoading } = useQuery({
+    queryKey: ["consent"],
+    queryFn: async () =>
+      (await ConsentService.readConsent({ throwOnError: false })).data ?? null,
+    retry: false,
+  })
+
+  // GET /profile sits behind require_consent: only ask once consent exists.
+  const { data: profile } = useQuery({
+    queryKey: ["profile"],
+    queryFn: async () => (await ProfileService.readProfile()).data,
+    enabled: !consentLoading && !!consent,
+  })
+
+  // Home sequence (design decision 5): no consent → ConsentGate; consent and
+  // onboarding pending → wizard; onboarding closed → straight to expediente.
+  useEffect(() => {
+    if (profile && profile.onboarding !== "pending") {
+      navigate({ to: "/expediente" })
+    }
+  }, [profile, navigate])
 
   return (
     <div>
@@ -31,6 +58,7 @@ function Dashboard() {
         <p className="text-muted-foreground">{t("dashboard.welcomeBack")}</p>
       </div>
       <ConsentGate />
+      {consent && profile?.onboarding === "pending" && <OnboardingWizard />}
     </div>
   )
 }

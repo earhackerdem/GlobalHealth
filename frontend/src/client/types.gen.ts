@@ -5,6 +5,70 @@ export type ClientOptions = {
 };
 
 /**
+ * BodyMeasurementCreate
+ */
+export type BodyMeasurementCreate = {
+    /**
+     * Type
+     */
+    type: 'weight' | 'height';
+    /**
+     * Value
+     */
+    value: number;
+};
+
+/**
+ * BodyMeasurementLatest
+ */
+export type BodyMeasurementLatest = {
+    /**
+     * Value
+     */
+    value: number;
+    /**
+     * Measured On
+     */
+    measured_on: string;
+};
+
+/**
+ * BodyMeasurementPublic
+ */
+export type BodyMeasurementPublic = {
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Type
+     */
+    type: string;
+    /**
+     * Value
+     */
+    value: number;
+    /**
+     * Measured On
+     */
+    measured_on: string;
+};
+
+/**
+ * BodyMeasurementsPublic
+ */
+export type BodyMeasurementsPublic = {
+    /**
+     * Data
+     */
+    data: Array<BodyMeasurementPublic>;
+    /**
+     * Count
+     */
+    count: number;
+};
+
+/**
  * Body_health-records-create_health_record_attachment
  */
 export type Body_health_records_create_health_record_attachment = {
@@ -84,6 +148,68 @@ export type ConsentStatusPublic = {
      * Granted At
      */
     granted_at: string;
+};
+
+/**
+ * FamilyHistoriesPublic
+ */
+export type FamilyHistoriesPublic = {
+    /**
+     * Data
+     */
+    data: Array<FamilyHistoryPublic>;
+    /**
+     * Count
+     */
+    count: number;
+};
+
+/**
+ * FamilyHistoryCreate
+ */
+export type FamilyHistoryCreate = {
+    /**
+     * Condition
+     */
+    condition: 'diabetes' | 'cancer' | 'hypertension' | 'heart_disease' | 'other';
+    /**
+     * Other Text
+     */
+    other_text?: string | null;
+    /**
+     * Relatives
+     */
+    relatives: Array<'mother' | 'father' | 'maternal_grandmother' | 'maternal_grandfather' | 'paternal_grandmother' | 'paternal_grandfather' | 'sibling' | 'other'>;
+    /**
+     * Note
+     */
+    note?: string | null;
+};
+
+/**
+ * FamilyHistoryPublic
+ */
+export type FamilyHistoryPublic = {
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Condition
+     */
+    condition: string;
+    /**
+     * Other Text
+     */
+    other_text: string | null;
+    /**
+     * Relatives
+     */
+    relatives: Array<string>;
+    /**
+     * Note
+     */
+    note: string | null;
 };
 
 /**
@@ -442,6 +568,58 @@ export type NewPassword = {
      * New Password
      */
     new_password: string;
+};
+
+/**
+ * OnboardingClose
+ */
+export type OnboardingClose = {
+    /**
+     * Outcome
+     */
+    outcome: 'completed' | 'skipped';
+};
+
+/**
+ * PatientProfilePublic
+ */
+export type PatientProfilePublic = {
+    /**
+     * Birth Date
+     */
+    birth_date: string | null;
+    /**
+     * Sex
+     */
+    sex: string | null;
+    /**
+     * Allergies
+     */
+    allergies: string | null;
+    /**
+     * Onboarding
+     */
+    onboarding: string;
+    latest_weight: BodyMeasurementLatest | null;
+    latest_height: BodyMeasurementLatest | null;
+};
+
+/**
+ * PatientProfileUpdate
+ */
+export type PatientProfileUpdate = {
+    /**
+     * Birth Date
+     */
+    birth_date?: string | null;
+    /**
+     * Sex
+     */
+    sex?: 'female' | 'male' | 'unspecified' | null;
+    /**
+     * Allergies
+     */
+    allergies?: string | null;
 };
 
 /**
@@ -1610,6 +1788,254 @@ export type healthRecordsDownloadHealthRecordAttachmentResponses = {
      */
     200: unknown;
 };
+
+export type profileReadProfileData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/profile';
+};
+
+export type profileReadProfileResponses = {
+    /**
+     * Successful Response
+     */
+    200: PatientProfilePublic;
+};
+
+export type profileReadProfileResponse = profileReadProfileResponses[keyof profileReadProfileResponses];
+
+export type profileUpdateProfileData = {
+    body: PatientProfileUpdate;
+    path?: never;
+    query?: never;
+    url: '/api/v1/profile';
+};
+
+export type profileUpdateProfileErrors = {
+    /**
+     * Validation Error
+     */
+    422: HTTPValidationError;
+};
+
+export type profileUpdateProfileError = profileUpdateProfileErrors[keyof profileUpdateProfileErrors];
+
+export type profileUpdateProfileResponses = {
+    /**
+     * Successful Response
+     */
+    200: PatientProfilePublic;
+};
+
+export type profileUpdateProfileResponse = profileUpdateProfileResponses[keyof profileUpdateProfileResponses];
+
+export type profileCloseOnboardingData = {
+    body: OnboardingClose;
+    path?: never;
+    query?: never;
+    url: '/api/v1/profile/onboarding';
+};
+
+export type profileCloseOnboardingErrors = {
+    /**
+     * Validation Error
+     */
+    422: HTTPValidationError;
+};
+
+export type profileCloseOnboardingError = profileCloseOnboardingErrors[keyof profileCloseOnboardingErrors];
+
+export type profileCloseOnboardingResponses = {
+    /**
+     * Successful Response
+     */
+    200: PatientProfilePublic;
+};
+
+export type profileCloseOnboardingResponse = profileCloseOnboardingResponses[keyof profileCloseOnboardingResponses];
+
+export type profileReadMeasurementsData = {
+    body?: never;
+    path?: never;
+    query: {
+        /**
+         * Type
+         */
+        type: string;
+        /**
+         * Skip
+         */
+        skip?: number;
+        /**
+         * Limit
+         */
+        limit?: number;
+    };
+    url: '/api/v1/profile/measurements';
+};
+
+export type profileReadMeasurementsErrors = {
+    /**
+     * Validation Error
+     */
+    422: HTTPValidationError;
+};
+
+export type profileReadMeasurementsError = profileReadMeasurementsErrors[keyof profileReadMeasurementsErrors];
+
+export type profileReadMeasurementsResponses = {
+    /**
+     * Successful Response
+     */
+    200: BodyMeasurementsPublic;
+};
+
+export type profileReadMeasurementsResponse = profileReadMeasurementsResponses[keyof profileReadMeasurementsResponses];
+
+export type profileCreateMeasurementData = {
+    body: BodyMeasurementCreate;
+    path?: never;
+    query?: never;
+    url: '/api/v1/profile/measurements';
+};
+
+export type profileCreateMeasurementErrors = {
+    /**
+     * Validation Error
+     */
+    422: HTTPValidationError;
+};
+
+export type profileCreateMeasurementError = profileCreateMeasurementErrors[keyof profileCreateMeasurementErrors];
+
+export type profileCreateMeasurementResponses = {
+    /**
+     * Successful Response
+     */
+    201: BodyMeasurementPublic;
+};
+
+export type profileCreateMeasurementResponse = profileCreateMeasurementResponses[keyof profileCreateMeasurementResponses];
+
+export type profileReadFamilyHistoryData = {
+    body?: never;
+    path?: never;
+    query?: {
+        /**
+         * Skip
+         */
+        skip?: number;
+        /**
+         * Limit
+         */
+        limit?: number;
+    };
+    url: '/api/v1/profile/family-history';
+};
+
+export type profileReadFamilyHistoryErrors = {
+    /**
+     * Validation Error
+     */
+    422: HTTPValidationError;
+};
+
+export type profileReadFamilyHistoryError = profileReadFamilyHistoryErrors[keyof profileReadFamilyHistoryErrors];
+
+export type profileReadFamilyHistoryResponses = {
+    /**
+     * Successful Response
+     */
+    200: FamilyHistoriesPublic;
+};
+
+export type profileReadFamilyHistoryResponse = profileReadFamilyHistoryResponses[keyof profileReadFamilyHistoryResponses];
+
+export type profileCreateFamilyHistoryData = {
+    body: FamilyHistoryCreate;
+    path?: never;
+    query?: never;
+    url: '/api/v1/profile/family-history';
+};
+
+export type profileCreateFamilyHistoryErrors = {
+    /**
+     * Validation Error
+     */
+    422: HTTPValidationError;
+};
+
+export type profileCreateFamilyHistoryError = profileCreateFamilyHistoryErrors[keyof profileCreateFamilyHistoryErrors];
+
+export type profileCreateFamilyHistoryResponses = {
+    /**
+     * Successful Response
+     */
+    201: FamilyHistoryPublic;
+};
+
+export type profileCreateFamilyHistoryResponse = profileCreateFamilyHistoryResponses[keyof profileCreateFamilyHistoryResponses];
+
+export type profileDeleteFamilyHistoryData = {
+    body?: never;
+    path: {
+        /**
+         * Id
+         */
+        id: string;
+    };
+    query?: never;
+    url: '/api/v1/profile/family-history/{id}';
+};
+
+export type profileDeleteFamilyHistoryErrors = {
+    /**
+     * Validation Error
+     */
+    422: HTTPValidationError;
+};
+
+export type profileDeleteFamilyHistoryError = profileDeleteFamilyHistoryErrors[keyof profileDeleteFamilyHistoryErrors];
+
+export type profileDeleteFamilyHistoryResponses = {
+    /**
+     * Successful Response
+     */
+    200: Message;
+};
+
+export type profileDeleteFamilyHistoryResponse = profileDeleteFamilyHistoryResponses[keyof profileDeleteFamilyHistoryResponses];
+
+export type profileUpdateFamilyHistoryData = {
+    body: FamilyHistoryCreate;
+    path: {
+        /**
+         * Id
+         */
+        id: string;
+    };
+    query?: never;
+    url: '/api/v1/profile/family-history/{id}';
+};
+
+export type profileUpdateFamilyHistoryErrors = {
+    /**
+     * Validation Error
+     */
+    422: HTTPValidationError;
+};
+
+export type profileUpdateFamilyHistoryError = profileUpdateFamilyHistoryErrors[keyof profileUpdateFamilyHistoryErrors];
+
+export type profileUpdateFamilyHistoryResponses = {
+    /**
+     * Successful Response
+     */
+    200: FamilyHistoryPublic;
+};
+
+export type profileUpdateFamilyHistoryResponse = profileUpdateFamilyHistoryResponses[keyof profileUpdateFamilyHistoryResponses];
 
 export type privateCreateUserData = {
     body: PrivateUserCreate;

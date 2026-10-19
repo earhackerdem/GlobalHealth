@@ -1,4 +1,4 @@
-import { Briefcase, FileText, Home, Users } from "lucide-react"
+import { Briefcase, ClipboardList, FileText, Home, Users } from "lucide-react"
 
 import { SidebarAppearance } from "@/components/Common/Appearance"
 import { Logo } from "@/components/Common/Logo"
@@ -20,6 +20,11 @@ const baseItems: Item[] = [
     icon: FileText,
     title: i18n.t("layout:sidebar.expediente"),
     path: "/expediente",
+  },
+  {
+    icon: ClipboardList,
+    title: i18n.t("layout:sidebar.profile"),
+    path: "/perfil",
   },
 ]
 
