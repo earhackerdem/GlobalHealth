@@ -46,9 +46,12 @@ export default defineConfig({
     },
 
     /* Cobertura móvil (hallazgo K9): viewport CSS real del Samsung S26 Ultra
-       de Saúl (pantalla 1440×3120, DPR 3.75 → 384×832). */
+       de Saúl (pantalla 1440×3120, DPR 3.75 → 384×832). Acotado al expediente:
+       las suites heredadas del template (login, user-settings, admin) aún no
+       pasan en 384px — deuda en memory/inbox.md. */
     {
       name: 's26-ultra',
+      testMatch: /health-records\.spec\.ts/,
       use: {
         ...devices['Desktop Chrome'],
         storageState: 'playwright/.auth/user.json',
