@@ -9,6 +9,8 @@ confidencial = "confidencial"
 # es-MX structural strings in tests/backend (NFR-012): pure-ASCII Spanish
 # words typos mistakes for English typos
 caracteres = "caracteres"
+componente = "componente"
+informativo = "informativo"
 ser = "ser"
 profesional = "profesional"
 excede = "excede"
