@@ -46,8 +46,24 @@ corrige el modelo que la v1 del expediente asumió mal.
 | Who (role) | Does what | When / trigger | With whom | Exceptional paths mentioned |
 |---|---|---|---|---|
 | paciente | sube foto de la receta (cámara o imagen existente) | al salir de la consulta | — | foto borrosa/ilegible; el OCR se equivoca → el paciente corrige antes de guardar |
+| paciente | dicta la receta con el micrófono (por campo o libre) | cuando la receta es manuscrita o no está a la mano | reconocimiento de voz (ideal: en el dispositivo) | nombre de medicina mal reconocido → corrige en la revisión |
 | sistema (OCR+IA) | lee la foto y prellena medicinas, fecha, médico | tras subir la foto | proveedor IA (NFR-005: cero retención) | lectura parcial → campos vacíos editables, nunca inventados |
 | paciente | confirma/corrige y guarda; puede capturar a mano sin foto | tras la lectura | — | — |
+
+## Escalera de captura (Saúl Pérez, 2026-10-18 — tras ver la evidencia de las fotos)
+
+Tres entradas + la manual, ordenadas por costo, todas desembocando en **la misma pantalla de revisar/corregir antes
+de guardar** (nunca se inserta sin confirmación del paciente): [VERIFIED 2026-10-18, en sus palabras]
+
+| # | Entrada | Cuándo conviene | Costo/dependencia | Nota |
+|---|---|---|---|---|
+| 0 | teclado (manual) | siempre disponible, fallback universal | cero | ya en la rebanada |
+| 1 | **dictado** ("botón de micrófono para dictar su receta") | recetas manuscritas o cuando no hay papel a la mano | reconocimiento de voz, puede ser **en el dispositivo** (mejor para NFR-005) | esquiva la caligrafía: el paciente la lee en voz alta. Variante barata: dictado por campo (cero parseo); dictado libre requiere un paso de estructuración |
+| 2 | **foto + OCR** con revisión del usuario | recetas **impresas** (cadena/laboratorio: buena calidad OCR) | OCR clásico, barato | ⚠️ el OCR lee caracteres pero no separa campos: hace falta plantilla por formato o un paso ligero de estructuración; la revisión del usuario absorbe los errores |
+| 3 | **foto + LLM/visión** | manuscritas, giradas, reversos, multi-documento | el más caro; proveedor pendiente (Q4 / NFR-005) | último recurso, no el camino default |
+
+Regla transversal: lo que no se lee queda vacío y editable, nunca inventado; el corpus real de 74 fotos sirve de
+banco de pruebas para medir (tech-brief) hasta dónde llega cada peldaño antes de pagar el siguiente.
 
 ## Evidencia empírica — 74 fotos reales (Saúl Pérez, 2026-10-18)
 
