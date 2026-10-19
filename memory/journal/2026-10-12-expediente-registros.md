@@ -31,3 +31,8 @@
 - Saúl Pérez aprobó "todos": fixer 16/16 sin rebotes + tester 10 casos y helpers endurecidos (verdes a la
   primera). Post-apply: backend 136/0/0 (94%), Playwright 71/0/0, tdd-check ✓. E → 5 filas ⏸️ en closed.md.
 - Convergencia: una sola ronda, reportada honestamente como no-seca.
+
+## Archivado (2026-10-18)
+- Saúl Pérez fusionó los PR #5-#8. `openspec archive` fusionó el delta en `openspec/specs/records/clinical-records/`
+  y movió la carpeta a archive/. CHANGELOG actualizado. La fila "receta a la mexicana" del inbox queda abierta a
+  propósito: es la siguiente historia (reshape), no la deuda de este cambio.
