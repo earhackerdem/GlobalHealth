@@ -32,6 +32,18 @@ test.use({ storageState: { cookies: [], origins: [] } })
 //     botón "Editar datos básicos", campo con label "Fecha de nacimiento"
 //     (input de fecha rellenable con ISO aaaa-mm-dd), guardar con botón
 //     "Guardar"; fecha mostrada en es-MX dd/mm/aaaa y edad derivada "N años".
+//   Sexo (wizard paso 1 y "Editar datos básicos", hallazgo G9): Select de
+//     Radix (role combobox con label "Sexo"), opciones "Mujer", "Hombre",
+//     "Prefiero no decir"; se elige con clic al trigger + clic a la opción.
+//   Registrar medición en /perfil (hallazgo G1): botón
+//     data-testid="add-measurement" abre el diálogo
+//     data-testid="measurement-dialog" "Registrar medición" (label
+//     "Tipo de medición", opciones "Peso (kg)" / "Estatura (cm)"; el campo de
+//     valor lleva el label de la unidad), guardar "Guardar", toast
+//     "Medición registrada"; valor fuera de rango → error inline
+//     "El peso debe estar entre 0.1 y 400 kg" y NO guarda.
+//   Resumen del wizard: con fecha capturada muestra "dd/mm/aaaa (N años)"
+//     con la edad derivada a la fecha actual (hallazgos M31c + M29).
 //   Editar antecedentes desde /perfil (feedback): en la sección de
 //     antecedentes, botón "Editar antecedentes" que abre el MISMO editor de
 //     condiciones/parentescos del wizard (checkboxes "Diabetes", "Madre", …);
@@ -60,6 +72,14 @@ function ageOn(birth: Date, on: Date): number {
     (on.getMonth() === birth.getMonth() && on.getDate() < birth.getDate())
   if (beforeBirthday) age -= 1
   return age
+}
+
+/** Hoy en dd/mm/aaaa (es-MX), con la fecha LOCAL (no UTC). */
+function todayMx(): string {
+  const now = new Date()
+  const day = String(now.getDate()).padStart(2, "0")
+  const month = String(now.getMonth() + 1).padStart(2, "0")
+  return `${day}/${month}/${now.getFullYear()}`
 }
 
 /**
@@ -158,10 +178,10 @@ test.describe("Perfil médico — onboarding y /perfil", () => {
     await expect(page.getByTestId("consent-accept-button")).not.toBeVisible()
   })
 
-  test("Escenario 10: omitir datos básicos, guardar solo Diabetes/Madre y completar la fecha de nacimiento desde /perfil", async ({
+  test("Escenario 10: omitir datos básicos, guardar solo Diabetes/Madre y completar la fecha y el sexo desde /perfil", async ({
     page,
   }) => {
-    await freshUserWithConsent(page)
+    const { email, password } = await freshUserWithConsent(page)
 
     const wizard = page.getByTestId("onboarding-wizard")
     await expect(wizard).toBeVisible()
@@ -205,20 +225,44 @@ test.describe("Perfil médico — onboarding y /perfil", () => {
     const basics = page.getByTestId("profile-basic-data")
     await expect(basics.getByText("Sin registrar").first()).toBeVisible()
 
-    // Desde /perfil se completa la fecha de nacimiento (15/03/1990).
+    // Desde /perfil se completan la fecha de nacimiento (15/03/1990) y el
+    // sexo. El sexo es un Select de Radix (hallazgo G9): clic al combobox
+    // "Sexo" y clic a la opción "Mujer".
     await basics.getByRole("button", { name: "Editar datos básicos" }).click()
     await page.getByLabel("Fecha de nacimiento").fill("1990-03-15")
+    await page.getByRole("combobox", { name: "Sexo" }).click()
+    await page.getByRole("option", { name: "Mujer" }).click()
     await page.getByRole("button", { name: "Guardar", exact: true }).click()
 
-    // La fecha se muestra en es-MX con la edad derivada a la fecha actual.
+    // La fecha se muestra en es-MX con la edad derivada a la fecha actual, y
+    // el sexo con el texto del spec ("Mujer", no "Femenino").
     await expect(basics.getByText("15/03/1990")).toBeVisible()
     const expectedAge = ageOn(new Date(1990, 2, 15), new Date())
     await expect(basics.getByText(`${expectedAge} años`)).toBeVisible()
+    await expect(basics.getByText("Mujer")).toBeVisible()
+
+    // (M31a) Con el onboarding COMPLETADO: cerrar sesión y volver a entrar no
+    // re-ofrece el wizard y los datos capturados siguen en /perfil.
+    await logOutRobust(page)
+    await logInExpectingExpediente(page, email, password)
+    await expect(page.getByTestId("onboarding-wizard")).not.toBeVisible()
+    await page.goto("/perfil")
+    const basicsAfter = page.getByTestId("profile-basic-data")
+    await expect(basicsAfter.getByText("15/03/1990")).toBeVisible()
+    await expect(basicsAfter.getByText("Mujer")).toBeVisible()
+    const ahfAfter = page.getByTestId("profile-family-history")
+    await expect(ahfAfter.getByText("Diabetes")).toBeVisible()
+    await expect(ahfAfter.getByText("Madre")).toBeVisible()
   })
 
   test("Escenario 11: /perfil lista las 6 secciones adicionales vacías y ninguna ofrece formulario de captura", async ({
     page,
   }) => {
+    // Nota (M29): el GIVEN del escenario 11 del spec pide "un antecedente
+    // registrado"; aquí la cuenta omite el onboarding porque lo que se asierta
+    // (las 6 secciones pendientes, sin captura) no depende de él. La
+    // visibilidad de /perfil CON antecedentes registrados la cubren los
+    // escenarios 10, 13 y el de dos antecedentes (G3/M30).
     // Cuenta con el onboarding ya cerrado (omitido).
     await freshUserWithConsent(page)
     await skipOnboardingToExpediente(page)
@@ -248,25 +292,12 @@ test.describe("Perfil médico — onboarding y /perfil", () => {
       0,
     )
 
-    // Si existe un botón "Añadir"/"Agregar" meramente informativo, hacer clic
-    // NO debe abrir captura (ningún formulario con campos aparece).
-    const addButtons = sections.getByRole("button", {
-      name: /Añadir|Agregar/,
-    })
-    const addCount = await addButtons.count()
-    for (let i = 0; i < addCount; i++) {
-      await addButtons.nth(i).click()
-      const dialog = page.getByRole("dialog")
-      if (await dialog.isVisible().catch(() => false)) {
-        await expect(dialog.locator("input, textarea, select")).toHaveCount(0)
-        await expect(
-          dialog.getByRole("button", { name: /Guardar/ }),
-        ).toHaveCount(0)
-        await page.keyboard.press("Escape")
-        await expect(dialog).not.toBeVisible()
-      }
-      await expect(sections.locator("input, textarea, select")).toHaveCount(0)
-    }
+    // (M27) Tampoco hay botones "Añadir"/"Agregar": el contrato es de solo
+    // lectura, así que la aserción es directa (el bucle condicional anterior
+    // no ejecutaba ninguna aserción al no existir botones).
+    await expect(
+      sections.getByRole("button", { name: /Añadir|Agregar/ }),
+    ).toHaveCount(0)
   })
 
   test("Escenario 13 (feedback): agregar antecedentes desde /perfil tras omitir todo el onboarding", async ({
@@ -298,5 +329,144 @@ test.describe("Perfil médico — onboarding y /perfil", () => {
     ).not.toBeVisible()
     await expect(ahf.getByText("Diabetes")).toBeVisible()
     await expect(ahf.getByText("Madre")).toBeVisible()
+  })
+
+  test("Hallazgos G1 + M31b: lo marcado y luego omitido en el paso 2 no se guarda, y 'Registrar medición' captura un peso desde /perfil", async ({
+    page,
+  }) => {
+    await freshUserWithConsent(page)
+
+    const wizard = page.getByTestId("onboarding-wizard")
+    await expect(wizard).toBeVisible()
+
+    // Paso 1: se omite entero.
+    await expect(wizard.getByText("Datos básicos")).toBeVisible()
+    await wizard.getByRole("button", { name: "Omitir este paso" }).click()
+
+    // Paso 2 (M31b): se marca Diabetes/Madre y DESPUÉS se pulsa "Omitir este
+    // paso": lo marcado se descarta y no debe guardarse.
+    await expect(wizard.getByText("Antecedentes familiares")).toBeVisible()
+    await wizard.getByRole("checkbox", { name: "Diabetes" }).check()
+    await wizard.getByRole("checkbox", { name: "Madre", exact: true }).check()
+    await wizard.getByRole("button", { name: "Omitir este paso" }).click()
+
+    // Resumen: nada capturado (ni básicos ni antecedentes).
+    await expect(wizard.getByText("Resumen")).toBeVisible()
+    await expect(wizard.getByText("Sin datos capturados")).toBeVisible()
+    await expect(wizard.getByText("Sin antecedentes capturados")).toBeVisible()
+    await wizard.getByRole("button", { name: "Guardar perfil" }).click()
+    await expect(wizard).not.toBeVisible()
+
+    // /perfil: la sección de antecedentes quedó vacía (M31b).
+    await page.goto("/perfil")
+    const ahf = page.getByTestId("profile-family-history")
+    await expect(ahf.getByText("Sin registros")).toBeVisible()
+    await expect(ahf.getByText("Diabetes")).toHaveCount(0)
+
+    // (G1) "Registrar medición": primero un valor fuera de rango (500) muestra
+    // el error inline y NO guarda; el diálogo sigue abierto.
+    const basics = page.getByTestId("profile-basic-data")
+    await basics.getByTestId("add-measurement").click()
+    const dialog = page.getByTestId("measurement-dialog")
+    await expect(dialog).toBeVisible()
+    await expect(dialog.getByText("Registrar medición")).toBeVisible()
+    await expect(dialog.getByText("Tipo de medición")).toBeVisible()
+    const valor = dialog.getByRole("spinbutton", { name: /Peso \(kg\)/ })
+    await valor.fill("500")
+    await dialog.getByRole("button", { name: "Guardar", exact: true }).click()
+    await expect(
+      dialog.getByText("El peso debe estar entre 0.1 y 400 kg"),
+    ).toBeVisible()
+    await expect(dialog).toBeVisible()
+    await expect(page.getByText("Medición registrada")).not.toBeVisible()
+
+    // Con un valor válido (71) guarda: toast y el perfil muestra "71 kg" con
+    // la fecha de hoy en dd/mm/aaaa.
+    await valor.fill("71")
+    await dialog.getByRole("button", { name: "Guardar", exact: true }).click()
+    await expect(page.getByText("Medición registrada")).toBeVisible()
+    await expect(dialog).not.toBeVisible()
+    await expect(basics.getByText(`71 kg · ${todayMx()}`)).toBeVisible()
+  })
+
+  test("Hallazgos G3/M30 + M31c + G9: wizard con fecha, sexo y dos antecedentes; desde /perfil se edita uno y se desmarca el otro", async ({
+    page,
+  }) => {
+    await freshUserWithConsent(page)
+
+    const wizard = page.getByTestId("onboarding-wizard")
+    await expect(wizard).toBeVisible()
+
+    // Paso 1: fecha de nacimiento y sexo (Select de Radix, hallazgo G9).
+    await expect(wizard.getByText("Datos básicos")).toBeVisible()
+    await wizard.getByLabel("Fecha de nacimiento").fill("1988-07-30")
+    await wizard.getByRole("combobox", { name: "Sexo" }).click()
+    await page.getByRole("option", { name: "Mujer" }).click()
+    await wizard.getByRole("button", { name: "Continuar" }).click()
+
+    // Paso 2: DOS condiciones, cada parentesco dentro de su fieldset (role
+    // group con el nombre de la condición).
+    await expect(wizard.getByText("Antecedentes familiares")).toBeVisible()
+    const diabetesWizard = wizard.getByRole("group", { name: "Diabetes" })
+    await diabetesWizard.getByRole("checkbox", { name: "Diabetes" }).check()
+    await diabetesWizard
+      .getByRole("checkbox", { name: "Madre", exact: true })
+      .check()
+    const cancerWizard = wizard.getByRole("group", { name: "Cáncer" })
+    await cancerWizard.getByRole("checkbox", { name: "Cáncer" }).check()
+    await cancerWizard.getByRole("checkbox", { name: "Abuela materna" }).check()
+    await wizard.getByRole("button", { name: "Continuar" }).click()
+
+    // Resumen (M31c): la fecha aparece con la edad derivada a la fecha actual
+    // "(N años)", el sexo con el texto del spec y los dos antecedentes.
+    await expect(wizard.getByText("Resumen")).toBeVisible()
+    const expectedAge = ageOn(new Date(1988, 6, 30), new Date())
+    await expect(
+      wizard.getByText(`30/07/1988 (${expectedAge} años)`),
+    ).toBeVisible()
+    await expect(wizard.getByText("Mujer")).toBeVisible()
+    await expect(wizard.getByText("Diabetes")).toBeVisible()
+    await expect(wizard.getByText("Madre", { exact: true })).toBeVisible()
+    await expect(wizard.getByText("Cáncer")).toBeVisible()
+    await expect(wizard.getByText("Abuela materna")).toBeVisible()
+    await wizard.getByRole("button", { name: "Guardar perfil" }).click()
+    await expect(wizard).not.toBeVisible()
+
+    // /perfil refleja lo guardado.
+    await page.goto("/perfil")
+    const basics = page.getByTestId("profile-basic-data")
+    await expect(basics.getByText("30/07/1988")).toBeVisible()
+    await expect(basics.getByText(`${expectedAge} años`)).toBeVisible()
+    await expect(basics.getByText("Mujer")).toBeVisible()
+    const ahf = page.getByTestId("profile-family-history")
+    await expect(ahf.getByText("Diabetes")).toBeVisible()
+    await expect(ahf.getByText("Madre", { exact: true })).toBeVisible()
+    await expect(ahf.getByText("Cáncer")).toBeVisible()
+    await expect(ahf.getByText("Abuela materna")).toBeVisible()
+
+    // (G3/M30) "Editar antecedentes": EDITAR Diabetes (añadir Padre → PUT) y
+    // DESMARCAR Cáncer (→ DELETE) en la misma pasada.
+    await ahf.getByRole("button", { name: "Editar antecedentes" }).click()
+    const dialog = page.getByRole("dialog")
+    const diabetesEdit = dialog.getByRole("group", { name: "Diabetes" })
+    await expect(
+      diabetesEdit.getByRole("checkbox", { name: "Madre", exact: true }),
+    ).toBeChecked()
+    await diabetesEdit
+      .getByRole("checkbox", { name: "Padre", exact: true })
+      .check()
+    const cancerEdit = dialog.getByRole("group", { name: "Cáncer" })
+    await cancerEdit.getByRole("checkbox", { name: "Cáncer" }).uncheck()
+    await dialog.getByRole("button", { name: "Guardar", exact: true }).click()
+    await expect(page.getByText("Antecedentes guardados")).toBeVisible()
+    await expect(dialog).not.toBeVisible()
+
+    // La sección refleja AMBOS cambios: Cáncer desaparece y Diabetes queda
+    // con sus dos parentescos.
+    await expect(ahf.getByText("Cáncer")).toHaveCount(0)
+    await expect(ahf.getByText("Abuela materna")).toHaveCount(0)
+    await expect(ahf.getByText("Diabetes")).toBeVisible()
+    await expect(ahf.getByText("Madre", { exact: true })).toBeVisible()
+    await expect(ahf.getByText("Padre", { exact: true })).toBeVisible()
   })
 })
