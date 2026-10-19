@@ -11,7 +11,8 @@ Data migration (Decision 4, no user data destroyed):
 - each existing prescription gets ONE medicine row (name = decrypted title,
   re-encrypted; dose = record-level dose, re-encrypted), its validity window
   is appended to ``notes`` as "Vigencia migrada: <valid_from> a <valid_to>"
-  when either bound exists, and its ``title`` is set to NULL;
+  ("desde <valid_from>" / "hasta <valid_to>" when only one bound exists),
+  and its ``title`` is set to NULL;
 - each existing diagnosis gets ``confirmation_status = 'unconfirmed'``.
 
 Downgrade recreates the dropped columns and, ONLY to satisfy the original
@@ -30,7 +31,7 @@ import uuid
 from alembic import op
 import sqlalchemy as sa
 
-from app.core.encrypted import EncryptedString, decrypt_str
+from app.core.encrypted import EncryptedString
 
 
 # revision identifiers, used by Alembic.
@@ -43,6 +44,17 @@ depends_on = None
 def _encrypt(bind, value):
     """Fernet token for a plaintext value (same MultiFernet as the ORM)."""
     return EncryptedString().process_bind_param(value, bind.dialect)
+
+
+def _decrypt(bind, value):
+    """Plaintext for a stored token, with the SAME MultiFernet as the ORM.
+
+    InvalidToken propagates ON PURPOSE (review S2): with a wrong
+    ENCRYPTION_KEY the upgrade must abort — the whole migration runs in one
+    transaction, so Alembic rolls everything back — instead of silently
+    writing None over every title/dose/note and destroying the data.
+    """
+    return EncryptedString().process_result_value(value, bind.dialect)
 
 
 def upgrade():
@@ -95,8 +107,8 @@ def upgrade():
             continue
         # Prescription: fold title+dose into ONE medicine (re-encrypted) and
         # preserve the validity window inside notes.
-        name_plain = decrypt_str(str(title)) if title is not None else None
-        dose_plain = decrypt_str(str(dose)) if dose is not None else None
+        name_plain = _decrypt(bind, title)
+        dose_plain = _decrypt(bind, dose)
         bind.execute(
             sa.text(
                 'INSERT INTO healthrecordmedicine '
@@ -112,8 +124,14 @@ def upgrade():
         )
         new_notes = None
         if valid_from is not None or valid_to is not None:
-            legacy_note = f'Vigencia migrada: {valid_from} a {valid_to}'
-            notes_plain = decrypt_str(str(notes)) if notes is not None else None
+            # Review K1: never print a bound that does not exist ("… a None").
+            if valid_from is not None and valid_to is not None:
+                legacy_note = f'Vigencia migrada: {valid_from} a {valid_to}'
+            elif valid_from is not None:
+                legacy_note = f'Vigencia migrada: desde {valid_from}'
+            else:
+                legacy_note = f'Vigencia migrada: hasta {valid_to}'
+            notes_plain = _decrypt(bind, notes)
             folded = f'{notes_plain}\n{legacy_note}' if notes_plain else legacy_note
             new_notes = _encrypt(bind, folded)
         bind.execute(

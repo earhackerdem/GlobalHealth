@@ -33,6 +33,7 @@ from app.models import (
     Message,
     get_datetime_utc,
     reject_legacy_health_record_fields,
+    reject_null_update_fields,
     validate_health_record_fields_by_type,
 )
 
@@ -184,6 +185,9 @@ def update_health_record(
         )
         for legacy_field in ("dose", "valid_from", "valid_to"):
             update_dict.pop(legacy_field, None)
+        # Explicit null on a NOT NULL column would be a 500 at flush time
+        # (finding S3): reject it here as the same es-MX 422.
+        reject_null_update_fields(update_dict)
         resultant_names = (
             [medicine["name"] for medicine in replacement]
             if replacement is not None

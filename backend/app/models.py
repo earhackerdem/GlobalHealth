@@ -1,6 +1,6 @@
 import uuid
 from datetime import UTC, date, datetime
-from typing import Literal
+from typing import Any, Literal
 
 from pydantic import EmailStr
 from sqlalchemy import Column
@@ -187,6 +187,35 @@ def reject_legacy_health_record_fields(
         )
 
 
+# Columns that are NOT NULL in the database but optional in the update
+# schema (absent = "do not touch"). An EXPLICIT null must be rejected here
+# with a 422: it would otherwise reach the database and surface as a 500
+# (NotNullViolation) — review finding S3. The RETIRED fields with null stay
+# as they are (documented leniency, Saúl's call on the same review).
+NON_NULLABLE_UPDATE_FIELDS = ("occurred_on", "archived")
+
+
+def reject_null_update_fields(update_dict: dict[str, Any]) -> None:
+    """Raise es-MX ValueError when a non-nullable field arrives as explicit null."""
+    present = [
+        field
+        for field in NON_NULLABLE_UPDATE_FIELDS
+        if field in update_dict and update_dict[field] is None
+    ]
+    if present:
+        raise ValueError(
+            "No se admite null en " + ", ".join(present) + "; envía un "
+            "valor o no incluyas el campo"
+        )
+
+
+# Upper bound of medicines per prescription (review finding S1: without a
+# cap, a 20,000-medicine payload got a 201). Enforced in the shared
+# validator, not with pydantic max_length, so the 422 detail stays a STRING
+# in es-MX like every other message here.
+MAX_MEDICINES_PER_PRESCRIPTION = 20
+
+
 # Discriminated validation shared by the Create handler and the PATCH
 # handler (which validates the RESULTANT state after a partial update):
 # a diagnosis requires a title and admits neither medicines nor the
@@ -213,6 +242,11 @@ def validate_health_record_fields_by_type(
             raise ValueError("Una receta no admite título; captura sus medicinas")
         if not medicine_names:
             raise ValueError("Una receta requiere al menos una medicina")
+        if len(medicine_names) > MAX_MEDICINES_PER_PRESCRIPTION:
+            raise ValueError(
+                "Una receta admite como máximo "
+                f"{MAX_MEDICINES_PER_PRESCRIPTION} medicinas"
+            )
         if any(not name.strip() for name in medicine_names):
             raise ValueError("Cada medicina requiere un nombre")
 
