@@ -204,7 +204,9 @@ como causalidad ni como diagnóstico.
 - **Fact:** El dispositivo de pruebas de Saúl Pérez es un **Samsung Galaxy S26 Ultra 1 TB** — la única
   configuración con **16 GB de RAM** (las de 256/512 GB llevan 12 GB). Chipset Snapdragon 8 Elite Gen 5 for
   Galaxy (3 nm), NPU +39% vs generación anterior según Samsung/Qualcomm. Anunciado 2026-02-25 (Unpacked),
-  lanzamiento 2026-03-06.
+  lanzamiento 2026-03-06. Pantalla: 6.9" Dynamic AMOLED 2X LTPO, **1440×3120 px físicos** (~500 ppi, 120 Hz).
+  En el navegador eso es un **viewport CSS de ~384×832** (DPR 3.75); el ajuste FHD+ de Samsung no lo cambia
+  (baja el DPR, no los px CSS). Dato para la cobertura móvil de Playwright (hallazgo K9 de receta-mexicana).
 - **Source:** https://www.gsmarena.com/samsung_galaxy_s26_ultra_5g-14320.php y ficha samsung.com/mx ·
   consulted 2026-10-18 (especificaciones de prensa/catálogo; RAM por configuración coincide en 2 fuentes)
 - **Confidence:** [VERIFIED] (gama alta 2026 con NPU: candidato ideal para IA en dispositivo)
