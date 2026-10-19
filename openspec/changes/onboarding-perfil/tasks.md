@@ -34,7 +34,7 @@
 - [x] 3.2 evidence.md completo (criterio → test → ancla → estado, rojo-antes-del-verde por grupo) y validation.md
       no técnico para Saúl Pérez con el guion de los 3 caminos (completar, omitir, editar después) y "Qué NO hace
       todavía" (secciones sin captura: FR-028).
-- [ ] 3.3 Journal del cambio, inventario de citers (prd.md FR-027/FR-008, dominio.md, prototipo — ninguno debe
+- [x] 3.3 Journal del cambio, inventario de citers (prd.md FR-027/FR-008, dominio.md, prototipo — ninguno debe
       quedar mintiendo) y PR con gh pr create sobre rama feat/onboarding-perfil. Verificación: gates del push
       verdes y PR abierto.
 
