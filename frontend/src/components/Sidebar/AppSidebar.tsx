@@ -23,7 +23,7 @@ const baseItems: Item[] = [
   },
   {
     icon: ClipboardList,
-    title: i18n.t("layout:sidebar.profile"),
+    title: i18n.t("layout:sidebar.perfil"),
     path: "/perfil",
   },
 ]

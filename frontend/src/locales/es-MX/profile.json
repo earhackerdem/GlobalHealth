@@ -1,7 +1,9 @@
 {
-  "pageTitle": "Mi perfil médico - FastAPI Template",
-  "title": "Mi perfil médico",
-  "subtitle": "Tus datos básicos, mediciones y antecedentes, siempre a la mano.",
+  "page": {
+    "pageTitle": "Mi perfil médico",
+    "title": "Mi perfil médico",
+    "subtitle": "Tus datos básicos, mediciones y antecedentes, siempre a la mano."
+  },
   "notRecorded": "Sin registrar",
   "noEntries": "Sin registros",
   "age": "{{age}} años",
@@ -15,8 +17,8 @@
   },
   "sexOptions": {
     "placeholder": "Selecciona una opción",
-    "female": "Femenino",
-    "male": "Masculino",
+    "female": "Mujer",
+    "male": "Hombre",
     "unspecified": "Prefiero no decir"
   },
   "conditions": {
@@ -55,18 +57,21 @@
     "heading": "Datos básicos",
     "edit": "Editar datos básicos",
     "editDescription": "Actualiza tu fecha de nacimiento, sexo y alergias a medicamentos.",
-    "save": "Guardar",
     "savedToast": "Datos básicos guardados"
   },
   "measurements": {
     "weight": "Peso",
-    "height": "Estatura"
+    "height": "Estatura",
+    "add": "Registrar medición",
+    "dialogTitle": "Registrar medición",
+    "dialogDescription": "Captura un peso o estatura nuevos; la fecha la registra el sistema.",
+    "typeLabel": "Tipo de medición",
+    "savedToast": "Medición registrada"
   },
   "family": {
     "heading": "Antecedentes familiares",
     "edit": "Editar antecedentes",
     "editDescription": "Marca las condiciones de tu familia y elige los parentescos.",
-    "save": "Guardar",
     "savedToast": "Antecedentes guardados"
   },
   "pending": {
@@ -80,5 +85,12 @@
       "transfusions": "Transfusiones y grupo sanguíneo",
       "habits": "Hábitos"
     }
+  },
+  "validation": {
+    "birthDateFuture": "La fecha de nacimiento no puede ser futura",
+    "birthDateTooOld": "La fecha de nacimiento no puede ser anterior a 1900",
+    "measurementValueRequired": "Captura el valor de la medición",
+    "weightRange": "El peso debe estar entre 0.1 y 400 kg",
+    "heightRange": "La estatura debe estar entre 30 y 250 cm"
   }
 }

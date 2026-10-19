@@ -1,12 +1,11 @@
+import { zodResolver } from "@hookform/resolvers/zod"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { useState } from "react"
+import { useForm } from "react-hook-form"
 import { useTranslation } from "react-i18next"
+import { z } from "zod"
 
-import {
-  type PatientProfilePublic,
-  type PatientProfileUpdate,
-  ProfileService,
-} from "@/client"
+import { type PatientProfilePublic, ProfileService } from "@/client"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -18,17 +17,48 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog"
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
 import { LoadingButton } from "@/components/ui/loading-button"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
 import useCustomToast from "@/hooks/useCustomToast"
+import i18n from "@/i18n"
 import { handleError } from "@/utils"
+import { localTodayIso } from "./format"
 
-type Sex = NonNullable<PatientProfileUpdate["sex"]>
+const SEXES = ["female", "male", "unspecified"] as const
 
-const SELECT_CLASS =
-  "border-input h-9 w-full rounded-md border bg-transparent px-3 text-sm shadow-xs outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 dark:bg-input/30"
+const formSchema = z.object({
+  // Empty is a valid state (the profile may be partial); a captured date must
+  // fall in [1900-01-01, today], mirrored from the API so the 422 never has
+  // to fire for a well-behaved client — the message shows inline, es-MX.
+  birth_date: z
+    .string()
+    .refine((value) => !value || value <= localTodayIso(), {
+      message: i18n.t("profile:validation.birthDateFuture"),
+    })
+    .refine((value) => !value || value >= "1900-01-01", {
+      message: i18n.t("profile:validation.birthDateTooOld"),
+    }),
+  sex: z.enum(SEXES).or(z.literal("")),
+  allergies: z.string(),
+})
+
+type FormData = z.infer<typeof formSchema>
 
 /**
  * "Editar datos básicos" dialog on /perfil: a full PUT /profile of the three
@@ -38,19 +68,27 @@ const SELECT_CLASS =
 function EditBasicData({ profile }: { profile: PatientProfilePublic }) {
   const { t } = useTranslation("profile")
   const [isOpen, setIsOpen] = useState(false)
-  const [birthDate, setBirthDate] = useState("")
-  const [sex, setSex] = useState("")
-  const [allergies, setAllergies] = useState("")
   const queryClient = useQueryClient()
   const { showSuccessToast, showErrorToast } = useCustomToast()
 
+  const form = useForm<FormData>({
+    resolver: zodResolver(formSchema),
+    mode: "onBlur",
+    criteriaMode: "all",
+    defaultValues: {
+      birth_date: "",
+      sex: "",
+      allergies: "",
+    },
+  })
+
   const mutation = useMutation({
-    mutationFn: () =>
+    mutationFn: (data: FormData) =>
       ProfileService.updateProfile({
         body: {
-          birth_date: birthDate || null,
-          sex: (sex || null) as Sex | null,
-          allergies: allergies.trim() || null,
+          birth_date: data.birth_date || null,
+          sex: data.sex || null,
+          allergies: data.allergies.trim() || null,
         },
       }),
     onSuccess: async () => {
@@ -64,9 +102,11 @@ function EditBasicData({ profile }: { profile: PatientProfilePublic }) {
   const handleOpenChange = (open: boolean) => {
     if (open) {
       // Seed the form from the current profile on every open.
-      setBirthDate(profile.birth_date ?? "")
-      setSex(profile.sex ?? "")
-      setAllergies(profile.allergies ?? "")
+      form.reset({
+        birth_date: profile.birth_date ?? "",
+        sex: (profile.sex ?? "") as FormData["sex"],
+        allergies: profile.allergies ?? "",
+      })
     }
     setIsOpen(open)
   }
@@ -81,52 +121,79 @@ function EditBasicData({ profile }: { profile: PatientProfilePublic }) {
           <DialogTitle>{t("basic.edit")}</DialogTitle>
           <DialogDescription>{t("basic.editDescription")}</DialogDescription>
         </DialogHeader>
-        <div className="grid gap-4 py-2">
-          <div className="grid gap-2">
-            <Label htmlFor="edit-birth-date">{t("fields.birthDate")}</Label>
-            <Input
-              id="edit-birth-date"
-              type="date"
-              value={birthDate}
-              onChange={(e) => setBirthDate(e.target.value)}
-            />
-          </div>
-          <div className="grid gap-2">
-            <Label htmlFor="edit-sex">{t("fields.sex")}</Label>
-            <select
-              id="edit-sex"
-              className={SELECT_CLASS}
-              value={sex}
-              onChange={(e) => setSex(e.target.value)}
-            >
-              <option value="">{t("sexOptions.placeholder")}</option>
-              <option value="female">{t("sexOptions.female")}</option>
-              <option value="male">{t("sexOptions.male")}</option>
-              <option value="unspecified">{t("sexOptions.unspecified")}</option>
-            </select>
-          </div>
-          <div className="grid gap-2">
-            <Label htmlFor="edit-allergies">{t("fields.allergies")}</Label>
-            <Textarea
-              id="edit-allergies"
-              value={allergies}
-              onChange={(e) => setAllergies(e.target.value)}
-            />
-          </div>
-        </div>
-        <DialogFooter>
-          <DialogClose asChild>
-            <Button variant="outline" disabled={mutation.isPending}>
-              {t("common:actions.cancel")}
-            </Button>
-          </DialogClose>
-          <LoadingButton
-            loading={mutation.isPending}
-            onClick={() => mutation.mutate()}
+        <Form {...form}>
+          <form
+            onSubmit={form.handleSubmit((data) => mutation.mutate(data))}
+            noValidate
           >
-            {t("basic.save")}
-          </LoadingButton>
-        </DialogFooter>
+            <div className="grid gap-4 py-2">
+              <FormField
+                control={form.control}
+                name="birth_date"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{t("fields.birthDate")}</FormLabel>
+                    <FormControl>
+                      <Input type="date" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="sex"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{t("fields.sex")}</FormLabel>
+                    <Select value={field.value} onValueChange={field.onChange}>
+                      <FormControl>
+                        <SelectTrigger className="w-full">
+                          <SelectValue
+                            placeholder={t("sexOptions.placeholder")}
+                          />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {SEXES.map((sex) => (
+                          <SelectItem key={sex} value={sex}>
+                            {t(`sexOptions.${sex}`)}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="allergies"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{t("fields.allergies")}</FormLabel>
+                    <FormControl>
+                      <Textarea {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+            <DialogFooter>
+              <DialogClose asChild>
+                <Button variant="outline" disabled={mutation.isPending}>
+                  {t("common:actions.cancel")}
+                </Button>
+              </DialogClose>
+              <LoadingButton type="submit" loading={mutation.isPending}>
+                {t("common:actions.save")}
+              </LoadingButton>
+            </DialogFooter>
+          </form>
+        </Form>
       </DialogContent>
     </Dialog>
   )

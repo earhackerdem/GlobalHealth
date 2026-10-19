@@ -1,6 +1,6 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { useNavigate } from "@tanstack/react-router"
-import { useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { useTranslation } from "react-i18next"
 
 import {
@@ -16,24 +16,27 @@ import {
   CardDescription,
   CardFooter,
   CardHeader,
-  CardTitle,
 } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { LoadingButton } from "@/components/ui/loading-button"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
 import useCustomToast from "@/hooks/useCustomToast"
-import { handleError } from "@/utils"
+import { handleError, isConflictError } from "@/utils"
 import FamilyHistoryFields, {
   CONDITIONS,
   type HistoryMap,
 } from "./FamilyHistoryFields"
-import { ageFrom, formatDateMx } from "./format"
+import { ageFrom, formatDateMx, localTodayIso } from "./format"
 
 type Sex = NonNullable<PatientProfileUpdate["sex"]>
-
-const SELECT_CLASS =
-  "border-input h-9 w-full rounded-md border bg-transparent px-3 text-sm shadow-xs outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 dark:bg-input/30"
 
 /**
  * Onboarding wizard (FR-027): three skippable steps mounted on the dashboard
@@ -55,6 +58,20 @@ function OnboardingWizard() {
   const [allergies, setAllergies] = useState("")
   const [history, setHistory] = useState<HistoryMap>({})
 
+  // a11y (finding G15): each step change moves focus to the step's heading so
+  // screen readers announce where the wizard landed. Not on first mount — the
+  // wizard shares the dashboard with the greeting.
+  const titleRef = useRef<HTMLHeadingElement>(null)
+  // Comparing against the previous step (not a first-render flag, which
+  // StrictMode's double effect run would burn) keeps the mount unfocused.
+  const prevStep = useRef(step)
+  useEffect(() => {
+    if (prevStep.current !== step) {
+      titleRef.current?.focus()
+    }
+    prevStep.current = step
+  }, [step])
+
   const closeAndLeave = async () => {
     await queryClient.invalidateQueries({ queryKey: ["profile"] })
     await queryClient.invalidateQueries({ queryKey: ["family-history"] })
@@ -69,6 +86,10 @@ function OnboardingWizard() {
   })
 
   const saveMutation = useMutation({
+    // Retry-safe (finding G3): a network cut can land some of these POSTs and
+    // lose the response. On every run (first or retry) the server state is
+    // re-read and only what is missing gets created; a 409 ("already there")
+    // counts as done. Re-running the PUT is idempotent by nature.
     mutationFn: async () => {
       const update: PatientProfileUpdate = {}
       if (birthDate) update.birth_date = birthDate
@@ -77,31 +98,62 @@ function OnboardingWizard() {
       if (Object.keys(update).length > 0) {
         await ProfileService.updateProfile({ body: update })
       }
-      if (weight) {
-        await ProfileService.createMeasurement({
-          body: { type: "weight", value: Number(weight) },
-        })
-      }
-      if (height) {
-        await ProfileService.createMeasurement({
-          body: { type: "height", value: Number(height) },
-        })
-      }
-      for (const condition of CONDITIONS) {
-        const draft = history[condition]
-        if (!draft) continue
-        const body: FamilyHistoryCreate = {
-          condition,
-          relatives: draft.relatives,
+      if (weight || height) {
+        const current = (await ProfileService.readProfile()).data
+        const today = localTodayIso()
+        const alreadyMeasured = (
+          latest: typeof current.latest_weight,
+          value: string,
+        ) =>
+          !!latest &&
+          latest.measured_on === today &&
+          latest.value === Number(value)
+        if (weight && !alreadyMeasured(current.latest_weight, weight)) {
+          await ProfileService.createMeasurement({
+            body: { type: "weight", value: Number(weight) },
+          })
         }
-        const detail = draft.detail.trim()
-        if (detail) {
-          if (condition === "other") body.other_text = detail
-          else body.note = detail
+        if (height && !alreadyMeasured(current.latest_height, height)) {
+          await ProfileService.createMeasurement({
+            body: { type: "height", value: Number(height) },
+          })
         }
-        await ProfileService.createFamilyHistory({ body })
       }
-      await ProfileService.closeOnboarding({ body: { outcome: "completed" } })
+      const drafted = CONDITIONS.filter((condition) => history[condition])
+      if (drafted.length > 0) {
+        const existing = (await ProfileService.readFamilyHistory()).data.data
+        for (const condition of drafted) {
+          const draft = history[condition]
+          if (!draft) continue
+          const body: FamilyHistoryCreate = {
+            condition,
+            relatives: draft.relatives,
+          }
+          const detail = draft.detail.trim()
+          if (detail) {
+            if (condition === "other") body.other_text = detail
+            else body.note = detail
+          }
+          const alreadyCreated = existing.some(
+            (entry) =>
+              entry.condition === condition &&
+              (condition !== "other" ||
+                (entry.other_text ?? "") === (body.other_text ?? "")),
+          )
+          if (alreadyCreated) continue
+          try {
+            await ProfileService.createFamilyHistory({ body })
+          } catch (err) {
+            if (!isConflictError(err)) throw err
+          }
+        }
+      }
+      try {
+        await ProfileService.closeOnboarding({ body: { outcome: "completed" } })
+      } catch (err) {
+        // 409: a previous attempt already closed it — the goal is reached.
+        if (!isConflictError(err)) throw err
+      }
     },
     onSuccess: async () => {
       showSuccessToast(t("wizard.savedToast"))
@@ -132,6 +184,16 @@ function OnboardingWizard() {
         ? t("wizard.steps.family")
         : t("wizard.steps.summary")
 
+  // Inline es-MX validation of the date (finding G16): the same bounds the
+  // API enforces, shown next to the field instead of as a 422 toast.
+  const birthDateError = !birthDate
+    ? null
+    : birthDate > localTodayIso()
+      ? t("validation.birthDateFuture")
+      : birthDate < "1900-01-01"
+        ? t("validation.birthDateTooOld")
+        : null
+
   const checkedConditions = CONDITIONS.filter((condition) => history[condition])
 
   const basicSummary = [
@@ -148,7 +210,17 @@ function OnboardingWizard() {
   return (
     <Card className="mt-6 max-w-2xl" data-testid="onboarding-wizard">
       <CardHeader>
-        <CardTitle>{stepTitle}</CardTitle>
+        {/* A real heading (finding M17), focusable so the step change can
+            land the focus on it; focus: (not focus-visible:) because the
+            focus arrives programmatically and must stay visible. */}
+        <h2
+          ref={titleRef}
+          tabIndex={-1}
+          data-slot="card-title"
+          className="rounded-sm leading-none font-semibold outline-none focus:ring-[3px] focus:ring-ring/50"
+        >
+          {stepTitle}
+        </h2>
         <CardDescription>
           {t("wizard.stepCounter", { current: step + 1 })}
         </CardDescription>
@@ -163,30 +235,39 @@ function OnboardingWizard() {
               <Input
                 id="onboarding-birth-date"
                 type="date"
+                aria-invalid={!!birthDateError}
                 value={birthDate}
                 onChange={(e) => setBirthDate(e.target.value)}
               />
-              {birthDate && (
-                <p className="text-sm text-muted-foreground">
-                  {t("age", { age: ageFrom(birthDate) })}
-                </p>
+              {birthDateError ? (
+                <p className="text-destructive text-sm">{birthDateError}</p>
+              ) : (
+                birthDate && (
+                  <p className="text-sm text-muted-foreground">
+                    {t("age", { age: ageFrom(birthDate) })}
+                  </p>
+                )
               )}
             </div>
             <div className="grid gap-2">
               <Label htmlFor="onboarding-sex">{t("fields.sex")}</Label>
-              <select
-                id="onboarding-sex"
-                className={SELECT_CLASS}
+              <Select
                 value={sex}
-                onChange={(e) => setSex(e.target.value as "" | Sex)}
+                onValueChange={(value) => setSex(value as Sex)}
               >
-                <option value="">{t("sexOptions.placeholder")}</option>
-                <option value="female">{t("sexOptions.female")}</option>
-                <option value="male">{t("sexOptions.male")}</option>
-                <option value="unspecified">
-                  {t("sexOptions.unspecified")}
-                </option>
-              </select>
+                <SelectTrigger id="onboarding-sex" className="w-full">
+                  <SelectValue placeholder={t("sexOptions.placeholder")} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="female">
+                    {t("sexOptions.female")}
+                  </SelectItem>
+                  <SelectItem value="male">{t("sexOptions.male")}</SelectItem>
+                  <SelectItem value="unspecified">
+                    {t("sexOptions.unspecified")}
+                  </SelectItem>
+                </SelectContent>
+              </Select>
             </div>
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="grid gap-2">
@@ -301,7 +382,10 @@ function OnboardingWizard() {
               >
                 {t("wizard.skipStep")}
               </Button>
-              <Button disabled={isPending} onClick={() => setStep(step + 1)}>
+              <Button
+                disabled={isPending || (step === 0 && !!birthDateError)}
+                onClick={() => setStep(step + 1)}
+              >
                 {t("wizard.continue")}
               </Button>
             </div>

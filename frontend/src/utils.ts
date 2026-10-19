@@ -24,6 +24,10 @@ export const handleError = function (this: (msg: string) => void, err: Error) {
   this(errorMessage)
 }
 
+/** 409 from the API: the resource is already in the requested state. */
+export const isConflictError = (err: unknown): boolean =>
+  err instanceof AxiosError && err.response?.status === 409
+
 export const getInitials = (name: string): string => {
   return name
     .split(" ")

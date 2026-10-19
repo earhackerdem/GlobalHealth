@@ -3,9 +3,10 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router"
 import { useEffect } from "react"
 import { useTranslation } from "react-i18next"
 
-import { ConsentService, ProfileService } from "@/client"
+import { ConsentService } from "@/client"
 import ConsentGate from "@/components/Consent/ConsentGate"
 import OnboardingWizard from "@/components/Profile/OnboardingWizard"
+import { getProfileQueryOptions } from "@/components/Profile/queries"
 import useAuth from "@/hooks/useAuth"
 import i18n from "@/i18n"
 
@@ -34,8 +35,7 @@ function Dashboard() {
 
   // GET /profile sits behind require_consent: only ask once consent exists.
   const { data: profile } = useQuery({
-    queryKey: ["profile"],
-    queryFn: async () => (await ProfileService.readProfile()).data,
+    ...getProfileQueryOptions(),
     enabled: !consentLoading && !!consent,
   })
 

@@ -5,9 +5,11 @@ import { useTranslation } from "react-i18next"
 
 import { ProfileService } from "@/client"
 import PendingItems from "@/components/Pending/PendingItems"
+import AddMeasurement from "@/components/Profile/AddMeasurement"
 import EditBasicData from "@/components/Profile/EditBasicData"
 import EditFamilyHistory from "@/components/Profile/EditFamilyHistory"
 import { ageFrom, formatDateMx } from "@/components/Profile/format"
+import { getProfileQueryOptions } from "@/components/Profile/queries"
 import { Badge } from "@/components/ui/badge"
 import i18n from "@/i18n"
 
@@ -25,7 +27,7 @@ export const Route = createFileRoute("/_layout/perfil")({
   head: () => ({
     meta: [
       {
-        title: i18n.t("profile:pageTitle"),
+        title: i18n.t("profile:page.pageTitle"),
       },
     ],
   }),
@@ -43,10 +45,7 @@ function Row({ label, value }: { label: string; value: string }) {
 function ProfileContent() {
   const { t } = useTranslation("profile")
 
-  const { data: profile } = useSuspenseQuery({
-    queryKey: ["profile"],
-    queryFn: async () => (await ProfileService.readProfile()).data,
-  })
+  const { data: profile } = useSuspenseQuery(getProfileQueryOptions())
   const { data: familyHistory } = useSuspenseQuery({
     queryKey: ["family-history"],
     queryFn: async () => (await ProfileService.readFamilyHistory()).data,
@@ -66,7 +65,10 @@ function ProfileContent() {
       >
         <div className="flex flex-wrap items-center justify-between gap-2">
           <h2 className="text-lg font-semibold">{t("basic.heading")}</h2>
-          <EditBasicData profile={profile} />
+          <div className="flex flex-wrap gap-2">
+            <AddMeasurement />
+            <EditBasicData profile={profile} />
+          </div>
         </div>
         <div className="grid gap-4 sm:grid-cols-2">
           <Row label={t("fields.birthDate")} value={birthDateValue} />
@@ -166,8 +168,8 @@ function ProfilePage() {
   return (
     <div className="flex flex-col gap-6">
       <div>
-        <h1 className="text-2xl font-bold tracking-tight">{t("title")}</h1>
-        <p className="text-muted-foreground">{t("subtitle")}</p>
+        <h1 className="text-2xl font-bold tracking-tight">{t("page.title")}</h1>
+        <p className="text-muted-foreground">{t("page.subtitle")}</p>
       </div>
       <Suspense fallback={<PendingItems />}>
         <ProfileContent />

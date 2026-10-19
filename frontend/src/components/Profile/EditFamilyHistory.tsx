@@ -20,7 +20,7 @@ import {
 } from "@/components/ui/dialog"
 import { LoadingButton } from "@/components/ui/loading-button"
 import useCustomToast from "@/hooks/useCustomToast"
-import { handleError } from "@/utils"
+import { handleError, isConflictError } from "@/utils"
 import FamilyHistoryFields, {
   CONDITIONS,
   type Condition,
@@ -86,7 +86,14 @@ function EditFamilyHistory({ entries }: { entries: FamilyHistoryPublic[] }) {
             body,
           })
         } else {
-          await ProfileService.createFamilyHistory({ body })
+          try {
+            await ProfileService.createFamilyHistory({ body })
+          } catch (err) {
+            // 409: the condition already exists server-side (e.g. a retry
+            // after a network cut landed the POST but lost the response) —
+            // "already there" is not a failure; the invalidate refreshes it.
+            if (!isConflictError(err)) throw err
+          }
         }
       }
     },
@@ -95,7 +102,13 @@ function EditFamilyHistory({ entries }: { entries: FamilyHistoryPublic[] }) {
       showSuccessToast(t("family.savedToast"))
       setIsOpen(false)
     },
-    onError: handleError.bind(showErrorToast),
+    onError: async (err: Error) => {
+      // The batch may have landed partially before failing: refetch so the
+      // page (and the next open of this dialog) shows the real server state
+      // instead of the pre-save snapshot (finding G3).
+      await queryClient.invalidateQueries({ queryKey: ["family-history"] })
+      handleError.call(showErrorToast, err)
+    },
   })
 
   const handleOpenChange = (open: boolean) => {
@@ -133,7 +146,7 @@ function EditFamilyHistory({ entries }: { entries: FamilyHistoryPublic[] }) {
             loading={mutation.isPending}
             onClick={() => mutation.mutate()}
           >
-            {t("family.save")}
+            {t("common:actions.save")}
           </LoadingButton>
         </DialogFooter>
       </DialogContent>

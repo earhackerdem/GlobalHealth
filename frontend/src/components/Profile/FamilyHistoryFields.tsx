@@ -53,8 +53,12 @@ function FamilyHistoryFields({
       {CONDITIONS.map((condition) => {
         const draft = value[condition]
         return (
+          // aria-label: the whole condition group is announced under the
+          // condition's name, like the medicine rows in PrescriptionForm
+          // (pattern K5).
           <fieldset
             key={condition}
+            aria-label={t(`conditions.${condition}`)}
             className="m-0 grid min-w-0 gap-2 border-0 p-0"
           >
             <div className="flex items-center gap-2">
