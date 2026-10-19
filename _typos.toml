@@ -21,6 +21,9 @@ alls = "alls"
 [files]
 extend-exclude = [
     "harness.json",
+    # capa agéntica VENDIDA (harness): ejemplos es-MX y fragmentos de regex; no se edita en el proyecto
+    ".agents/",
+    "scripts/",
     # comentarios es-MX de los comandos del proyecto
     "project.mk",
     # prosa/UI es-MX

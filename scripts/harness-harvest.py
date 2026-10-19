@@ -4,6 +4,7 @@
 Compares the project's memory/meta-improvements.md entries (table rows and '- [date]' bullets) against this
 template's, and prints the ones the template does not have yet. It changes nothing: the human decides what goes
 upstream and how (inspired by harness2's persistent improvement harness, 2026-10)."""
+
 import pathlib
 import re
 import sys
@@ -16,7 +17,11 @@ def entries(path: pathlib.Path) -> list[str]:
     out: list[str] = []
     for line in txt.splitlines():
         s = line.strip()
-        if s.startswith("|") and not set(s) <= {"|", "-", " ", ":"} and not s.lower().startswith("| date"):
+        if (
+            s.startswith("|")
+            and not set(s) <= {"|", "-", " ", ":"}
+            and not s.lower().startswith("| date")
+        ):
             out.append(s)
     bullet = None
     for line in txt.splitlines():
@@ -48,17 +53,25 @@ def main() -> int:
     if not proj.exists():
         print(f"✗ {proj} not found", file=sys.stderr)
         return 1
-    template = pathlib.Path(__file__).resolve().parent.parent / "memory" / "meta-improvements.md"
+    template = (
+        pathlib.Path(__file__).resolve().parent.parent
+        / "memory"
+        / "meta-improvements.md"
+    )
     have = {key(e) for e in entries(template)}
     candidates = [e for e in entries(proj) if key(e) not in have]
     if not candidates:
-        print(f"✓ nothing to harvest: every entry in {proj} is already in the template's meta-improvements.")
+        print(
+            f"✓ nothing to harvest: every entry in {proj} is already in the template's meta-improvements."
+        )
         return 0
     print(f"{len(candidates)} candidate lesson(s) in {proj} not in the template yet:\n")
     for e in candidates:
         print(f"  · {e[:240]}")
-    print("\nHarvest is read-only: bring the ones that generalize into the template via its own change"
-          " (memory/meta-improvements.md + the skill/hook/doc they fix), and mark the project row as upstreamed.")
+    print(
+        "\nHarvest is read-only: bring the ones that generalize into the template via its own change"
+        " (memory/meta-improvements.md + the skill/hook/doc they fix), and mark the project row as upstreamed."
+    )
     return 0
 
 

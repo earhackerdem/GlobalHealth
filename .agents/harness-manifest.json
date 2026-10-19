@@ -373,7 +373,7 @@
       "src": "scripts/epe-new.sh"
     },
     "scripts/harness-harvest.py": {
-      "sha256": "90a7663ed07a2c098a69d01224b592185aee9e392dee8a22a19f503f67a6bf94",
+      "sha256": "e2e111b127c206c5e0ca37f61570a09aca93ff70bbb7adeb80e203ca723acfaf",
       "src": "scripts/harness-harvest.py"
     },
     "scripts/harness-sync.py": {
