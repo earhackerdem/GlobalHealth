@@ -6,6 +6,7 @@ from app.api.routes import (
     items,
     login,
     private,
+    profile,
     users,
     utils,
 )
@@ -18,6 +19,7 @@ api_router.include_router(utils.router)
 api_router.include_router(items.router)
 api_router.include_router(consent.router)
 api_router.include_router(health_records.router)
+api_router.include_router(profile.router)
 
 
 if settings.FASTAPI_ENV == "development":

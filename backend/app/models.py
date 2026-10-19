@@ -353,6 +353,175 @@ class HealthRecordAttachmentsPublic(SQLModel):
     count: int
 
 
+# --- Patient profile & onboarding (onboarding-perfil design.md) -------------
+#
+# Decision 2: three tables. Sensitive values encrypted at rest with the same
+# EncryptedString as health records (D13/D16); the onboarding state and the
+# measurement/condition discriminators stay in the clear (ordering/filtering
+# need them, same trade-off as HealthRecord.record_type).
+
+PROFILE_MIN_BIRTH_DATE = date(1900, 1, 1)
+
+
+# Range validations run BEFORE encrypting (Decision 4) and live outside
+# pydantic validators so the 422 detail stays a STRING in es-MX, like
+# health_records.
+def validate_birth_date(birth_date: date) -> None:
+    """es-MX ValueError when birth_date falls outside [1900-01-01, today]."""
+    if birth_date > date.today():
+        raise ValueError("La fecha de nacimiento no puede estar en el futuro")
+    if birth_date < PROFILE_MIN_BIRTH_DATE:
+        raise ValueError(
+            "La fecha de nacimiento no puede ser anterior al 1 de enero de 1900"
+        )
+
+
+def validate_measurement_value(type_: str, value: float) -> None:
+    """es-MX ValueError when a measurement is implausible (Decision 4):
+    weight in (0, 400] kg, height in [30, 250] cm."""
+    if type_ == "weight" and not (0 < value <= 400):
+        raise ValueError("El peso debe ser mayor que 0 y de hasta 400 kg")
+    if type_ == "height" and not (30 <= value <= 250):
+        raise ValueError("La estatura debe estar entre 30 y 250 cm")
+
+
+# 1:1 with user; birth_date/sex/allergies are Fernet tokens at rest. The
+# onboarding state lives HERE, on the server (Decision 1): pending ->
+# completed|skipped exactly once (a second close is a 409 in the route).
+class PatientProfile(SQLModel, table=True):
+    __tablename__ = "patient_profile"
+
+    id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
+    user_id: uuid.UUID = Field(
+        foreign_key="user.id", nullable=False, unique=True, ondelete="CASCADE"
+    )
+    # ISO date string before encryption; the API parses it back to a date.
+    birth_date: str | None = Field(
+        default=None, sa_column=Column(EncryptedString(), nullable=True)
+    )
+    sex: str | None = Field(
+        default=None, sa_column=Column(EncryptedString(), nullable=True)
+    )
+    allergies: str | None = Field(
+        default=None, sa_column=Column(EncryptedString(), nullable=True)
+    )
+    onboarding_outcome: str = Field(default="pending", max_length=16)
+    onboarding_closed_at: datetime | None = Field(default=None)
+
+
+# One row per capture, never UPDATE of the value (Decision 2: history is
+# kept); value encrypted at rest, type/measured_on in the clear (the DESC
+# listing orders by them).
+class BodyMeasurement(SQLModel, table=True):
+    __tablename__ = "body_measurement"
+
+    id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
+    user_id: uuid.UUID = Field(
+        foreign_key="user.id", nullable=False, ondelete="CASCADE"
+    )
+    type: str = Field(max_length=16)  # "weight" | "height"
+    value: str = Field(sa_column=Column(EncryptedString(), nullable=False))
+    measured_on: date
+    # Tie-breaker for same-day measurements: the latest capture wins.
+    created_at: datetime = Field(default_factory=get_datetime_utc)
+
+
+# One row per condition; relatives is a JSON array serialized INSIDE the
+# encrypted field (accepted trade-off: not SQL-filterable, read by owner only).
+class FamilyHistory(SQLModel, table=True):
+    __tablename__ = "family_history"
+
+    id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
+    user_id: uuid.UUID = Field(
+        foreign_key="user.id", nullable=False, ondelete="CASCADE"
+    )
+    condition: str = Field(max_length=32)
+    other_text: str | None = Field(
+        default=None, sa_column=Column(EncryptedString(), nullable=True)
+    )
+    relatives: str = Field(sa_column=Column(EncryptedString(), nullable=False))
+    note: str | None = Field(
+        default=None, sa_column=Column(EncryptedString(), nullable=True)
+    )
+    created_at: datetime = Field(default_factory=get_datetime_utc)
+
+
+# Partial update: absent = "do not touch", explicit null clears the field.
+class PatientProfileUpdate(SQLModel):
+    birth_date: date | None = None
+    sex: Literal["female", "male", "unspecified"] | None = None
+    allergies: str | None = Field(default=None, max_length=2000)
+
+
+class BodyMeasurementLatest(SQLModel):
+    value: float
+    measured_on: date
+
+
+# The profile as the API returns it (Interface contract, GET /profile).
+class PatientProfilePublic(SQLModel):
+    birth_date: date | None
+    sex: str | None
+    allergies: str | None
+    onboarding: str
+    latest_weight: BodyMeasurementLatest | None
+    latest_height: BodyMeasurementLatest | None
+
+
+class OnboardingClose(SQLModel):
+    outcome: Literal["completed", "skipped"]
+
+
+class BodyMeasurementCreate(SQLModel):
+    type: Literal["weight", "height"]
+    value: float
+
+
+class BodyMeasurementPublic(SQLModel):
+    id: uuid.UUID
+    type: str
+    value: float
+    measured_on: date
+
+
+class BodyMeasurementsPublic(SQLModel):
+    data: list[BodyMeasurementPublic]
+    count: int
+
+
+class FamilyHistoryCreate(SQLModel):
+    condition: Literal[
+        "diabetes", "cancer", "hypertension", "heart_disease", "other"
+    ]
+    other_text: str | None = Field(default=None, max_length=2000)
+    relatives: list[
+        Literal[
+            "mother",
+            "father",
+            "maternal_grandmother",
+            "maternal_grandfather",
+            "paternal_grandmother",
+            "paternal_grandfather",
+            "sibling",
+            "other",
+        ]
+    ]
+    note: str | None = Field(default=None, max_length=2000)
+
+
+class FamilyHistoryPublic(SQLModel):
+    id: uuid.UUID
+    condition: str
+    other_text: str | None
+    relatives: list[str]
+    note: str | None
+
+
+class FamilyHistoriesPublic(SQLModel):
+    data: list[FamilyHistoryPublic]
+    count: int
+
+
 # Properties to return via API, id is always required
 class UserPublic(UserBase):
     id: uuid.UUID

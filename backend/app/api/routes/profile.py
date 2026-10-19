@@ -1,0 +1,313 @@
+"""Patient profile, body measurements, family history and onboarding state.
+
+Contract in openspec/changes/onboarding-perfil/design.md §Interface contract:
+everything behind ``ConsentedUser``; the profile is created pending on first
+read/write (Decision 1: the onboarding state lives on the server); range
+validations run BEFORE encrypting and surface as a 422 with a STRING detail
+in es-MX (Decision 4); per-owner isolation with the SAME 404 for a
+nonexistent family-history id and a foreign one; sensitive values encrypted
+at rest by the models (EncryptedString, NFR-001); lists use the template
+envelope ``{"data": [...], "count": N}``.
+"""
+
+import json
+import uuid
+from datetime import date
+from typing import Any
+
+from fastapi import APIRouter, HTTPException
+from sqlmodel import col, func, select
+
+from app.api.deps import ConsentedUser, SessionDep
+from app.models import (
+    BodyMeasurement,
+    BodyMeasurementCreate,
+    BodyMeasurementLatest,
+    BodyMeasurementPublic,
+    BodyMeasurementsPublic,
+    FamilyHistoriesPublic,
+    FamilyHistory,
+    FamilyHistoryCreate,
+    FamilyHistoryPublic,
+    Message,
+    OnboardingClose,
+    PatientProfile,
+    PatientProfilePublic,
+    PatientProfileUpdate,
+    get_datetime_utc,
+    validate_birth_date,
+    validate_measurement_value,
+)
+
+router = APIRouter(prefix="/profile", tags=["profile"])
+
+
+def _get_or_create_profile(
+    session: SessionDep, current_user: ConsentedUser
+) -> PatientProfile:
+    """The 1:1 profile row, created ``pending`` on first access (design.md
+    Migration Plan: existing accounts see the onboarding on their next visit)."""
+    profile = session.exec(
+        select(PatientProfile).where(PatientProfile.user_id == current_user.id)
+    ).first()
+    if profile is None:
+        profile = PatientProfile(user_id=current_user.id)
+        session.add(profile)
+        session.commit()
+        session.refresh(profile)
+    return profile
+
+
+def _latest_measurement(
+    session: SessionDep, user_id: uuid.UUID, type_: str
+) -> BodyMeasurementLatest | None:
+    row = session.exec(
+        select(BodyMeasurement)
+        .where(BodyMeasurement.user_id == user_id)
+        .where(BodyMeasurement.type == type_)
+        .order_by(
+            col(BodyMeasurement.measured_on).desc(),
+            col(BodyMeasurement.created_at).desc(),
+        )
+        .limit(1)
+    ).first()
+    if row is None:
+        return None
+    return BodyMeasurementLatest(value=float(row.value), measured_on=row.measured_on)
+
+
+def _profile_public(
+    session: SessionDep, current_user: ConsentedUser, profile: PatientProfile
+) -> PatientProfilePublic:
+    return PatientProfilePublic(
+        birth_date=(
+            date.fromisoformat(profile.birth_date) if profile.birth_date else None
+        ),
+        sex=profile.sex,
+        allergies=profile.allergies,
+        onboarding=profile.onboarding_outcome,
+        latest_weight=_latest_measurement(session, current_user.id, "weight"),
+        latest_height=_latest_measurement(session, current_user.id, "height"),
+    )
+
+
+def _measurement_public(measurement: BodyMeasurement) -> BodyMeasurementPublic:
+    return BodyMeasurementPublic(
+        id=measurement.id,
+        type=measurement.type,
+        value=float(measurement.value),
+        measured_on=measurement.measured_on,
+    )
+
+
+def _family_history_public(entry: FamilyHistory) -> FamilyHistoryPublic:
+    return FamilyHistoryPublic(
+        id=entry.id,
+        condition=entry.condition,
+        other_text=entry.other_text,
+        relatives=json.loads(entry.relatives),
+        note=entry.note,
+    )
+
+
+def _get_owned_family_history(
+    session: SessionDep, current_user: ConsentedUser, id: uuid.UUID
+) -> FamilyHistory:
+    """Fetch an entry only if owned by the session user.
+
+    A missing entry and a foreign entry raise the SAME 404 (status and body)
+    so the endpoint never reveals whether someone else's entry exists.
+    """
+    entry = session.get(FamilyHistory, id)
+    if not entry or entry.user_id != current_user.id:
+        raise HTTPException(status_code=404, detail="Antecedente no encontrado")
+    return entry
+
+
+@router.get("", response_model=PatientProfilePublic)
+def read_profile(session: SessionDep, current_user: ConsentedUser) -> Any:
+    """The session user's profile, with the latest weight/height captures."""
+    profile = _get_or_create_profile(session, current_user)
+    return _profile_public(session, current_user, profile)
+
+
+@router.put("", response_model=PatientProfilePublic)
+def update_profile(
+    *,
+    session: SessionDep,
+    current_user: ConsentedUser,
+    profile_in: PatientProfileUpdate,
+) -> Any:
+    """Partial update: absent = untouched, explicit null clears the field.
+
+    birth_date must fall in [1900-01-01, today]; the check runs HERE (not a
+    pydantic validator) so the 422 carries a string es-MX detail, and BEFORE
+    anything gets encrypted or persisted.
+    """
+    update_dict = profile_in.model_dump(exclude_unset=True)
+    birth_date = update_dict.get("birth_date")
+    if birth_date is not None:
+        try:
+            validate_birth_date(birth_date)
+        except ValueError as e:
+            raise HTTPException(status_code=422, detail=str(e)) from e
+        update_dict["birth_date"] = birth_date.isoformat()
+    profile = _get_or_create_profile(session, current_user)
+    profile.sqlmodel_update(update_dict)
+    session.add(profile)
+    session.commit()
+    session.refresh(profile)
+    return _profile_public(session, current_user, profile)
+
+
+@router.post("/onboarding", response_model=PatientProfilePublic)
+def close_onboarding(
+    *,
+    session: SessionDep,
+    current_user: ConsentedUser,
+    close_in: OnboardingClose,
+) -> Any:
+    """Close the onboarding exactly once (completed|skipped); a second close
+    is a 409 and the recorded outcome does not change (Decision 5)."""
+    profile = _get_or_create_profile(session, current_user)
+    if profile.onboarding_outcome != "pending":
+        raise HTTPException(status_code=409, detail="El onboarding ya fue cerrado")
+    profile.onboarding_outcome = close_in.outcome
+    profile.onboarding_closed_at = get_datetime_utc()
+    session.add(profile)
+    session.commit()
+    session.refresh(profile)
+    return _profile_public(session, current_user, profile)
+
+
+@router.post("/measurements", response_model=BodyMeasurementPublic, status_code=201)
+def create_measurement(
+    *,
+    session: SessionDep,
+    current_user: ConsentedUser,
+    measurement_in: BodyMeasurementCreate,
+) -> Any:
+    """Persist a new capture (never an UPDATE of a previous one); measured_on
+    is set by the SERVER to today. Implausible values get an es-MX 422."""
+    try:
+        validate_measurement_value(measurement_in.type, measurement_in.value)
+    except ValueError as e:
+        raise HTTPException(status_code=422, detail=str(e)) from e
+    measurement = BodyMeasurement(
+        user_id=current_user.id,
+        type=measurement_in.type,
+        value=str(measurement_in.value),
+        measured_on=date.today(),
+    )
+    session.add(measurement)
+    session.commit()
+    session.refresh(measurement)
+    return _measurement_public(measurement)
+
+
+@router.get("/measurements", response_model=BodyMeasurementsPublic)
+def read_measurements(
+    session: SessionDep,
+    current_user: ConsentedUser,
+    type: str,
+    skip: int = 0,
+    limit: int = 100,
+) -> Any:
+    """ONLY the session user's captures of one type, newest first (same-day
+    ties broken by capture time)."""
+    count = session.exec(
+        select(func.count())
+        .select_from(BodyMeasurement)
+        .where(BodyMeasurement.user_id == current_user.id)
+        .where(BodyMeasurement.type == type)
+    ).one()
+    rows = session.exec(
+        select(BodyMeasurement)
+        .where(BodyMeasurement.user_id == current_user.id)
+        .where(BodyMeasurement.type == type)
+        .order_by(
+            col(BodyMeasurement.measured_on).desc(),
+            col(BodyMeasurement.created_at).desc(),
+        )
+        .offset(skip)
+        .limit(limit)
+    ).all()
+    return BodyMeasurementsPublic(
+        data=[_measurement_public(row) for row in rows], count=count
+    )
+
+
+@router.post("/family-history", response_model=FamilyHistoryPublic, status_code=201)
+def create_family_history(
+    *,
+    session: SessionDep,
+    current_user: ConsentedUser,
+    entry_in: FamilyHistoryCreate,
+) -> Any:
+    """Persist one family antecedent; relatives travel as a JSON array
+    serialized INSIDE the encrypted column (design.md trade-off)."""
+    entry = FamilyHistory(
+        user_id=current_user.id,
+        condition=entry_in.condition,
+        other_text=entry_in.other_text,
+        relatives=json.dumps(entry_in.relatives),
+        note=entry_in.note,
+    )
+    session.add(entry)
+    session.commit()
+    session.refresh(entry)
+    return _family_history_public(entry)
+
+
+@router.get("/family-history", response_model=FamilyHistoriesPublic)
+def read_family_history(
+    session: SessionDep, current_user: ConsentedUser, skip: int = 0, limit: int = 100
+) -> Any:
+    """ONLY the session user's antecedents, in capture order."""
+    count = session.exec(
+        select(func.count())
+        .select_from(FamilyHistory)
+        .where(FamilyHistory.user_id == current_user.id)
+    ).one()
+    rows = session.exec(
+        select(FamilyHistory)
+        .where(FamilyHistory.user_id == current_user.id)
+        .order_by(col(FamilyHistory.created_at).asc())
+        .offset(skip)
+        .limit(limit)
+    ).all()
+    return FamilyHistoriesPublic(
+        data=[_family_history_public(row) for row in rows], count=count
+    )
+
+
+@router.put("/family-history/{id}", response_model=FamilyHistoryPublic)
+def update_family_history(
+    *,
+    session: SessionDep,
+    current_user: ConsentedUser,
+    id: uuid.UUID,
+    entry_in: FamilyHistoryCreate,
+) -> Any:
+    """Full update of an owned antecedent (same fields as the create)."""
+    entry = _get_owned_family_history(session, current_user, id)
+    entry.condition = entry_in.condition
+    entry.other_text = entry_in.other_text
+    entry.relatives = json.dumps(entry_in.relatives)
+    entry.note = entry_in.note
+    session.add(entry)
+    session.commit()
+    session.refresh(entry)
+    return _family_history_public(entry)
+
+
+@router.delete("/family-history/{id}")
+def delete_family_history(
+    session: SessionDep, current_user: ConsentedUser, id: uuid.UUID
+) -> Message:
+    """Delete an owned antecedent (removing a condition removes its
+    relatives line with it: they live in the same row)."""
+    entry = _get_owned_family_history(session, current_user, id)
+    session.delete(entry)
+    session.commit()
+    return Message(message="Antecedente eliminado")
