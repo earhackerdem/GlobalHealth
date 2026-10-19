@@ -1,5 +1,7 @@
 # CHANGELOG
 
+- 2026-10-19 · onboarding-perfil · PR #16 · Onboarding de perfil médico post-consentimiento: fecha de nacimiento, sexo, peso/estatura con historial, y antecedentes familiares (diabetes, cáncer, etc.) con parentesco distinguido (paterno/materno) y nota por condición. Wizard de 3 pasos con opción de omitir (lleva directo al expediente, no se repite). Perfil completo editable tras el onboarding con 6 secciones adicionales visibles sin captura (crónicas, hepatitis/pasadas, cirugías, fracturas, transfusiones, hábitos). Todo cifrado en reposo, aislado por cuenta, con validaciones es-MX (fechas futuras rechazadas, peso/estatura implausibles con mensaje). Tests: backend 94% cobertura (10 tests de API + 1 de migración), frontend suite completa en escritorio y móvil (384×832 viewport real). Hallazgo lateral: sr-only del SidebarTrigger usa estado de escritorio (anotado en inbox para quirk posterior).
+
 - 2026-10-19 · receta-mexicana · PR #13 · La receta es a la mexicana: varias medicinas por receta (dosis,
   frecuencia y vía opcionales por medicina), sin vigencia obligatoria, diagnóstico opcional y diagnóstico suelto
   con estado "sin confirmar"; archivar/desarchivar cuando el tratamiento termina; detalle en solo lectura con
