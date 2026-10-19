@@ -2,8 +2,9 @@
 
 Date: 2026-10-18 · Interviewed: Saúl Pérez (author, haciendo de paciente-interesado; mensaje del 2026-10-12 tras
 probar el expediente v1) · Evidencia: 74 fotos reales de documentos propios aportadas por Saúl el 2026-10-18
-(§ Evidencia empírica; las fotos NO entran al repo, aquí solo su estructura) · Status: **draft — gate pendiente:
-validar el prototipo y las 4 preguntas abiertas**
+(§ Evidencia empírica; las fotos NO entran al repo, aquí solo su estructura) · Status: **agreed — gate cerrado el
+2026-10-18: Saúl Pérez validó el prototipo y respondió las 4 preguntas (Q1-A con B diferida a inbox, Q2-A, Q3-A,
+Q4-A dos stories)**
 Prototipo: **`product/prototipos/receta-primero.html`** (fuente de verdad, se abre en cualquier navegador; la
 publicación en claude.ai es solo conveniencia y está ligada a una cuenta). Incluye la historia de usuario borrador
 y los AC-1…AC-9 con el toggle "Ver criterios".
@@ -152,9 +153,9 @@ verificar si aplica cuando exista el portal del profesional (E4).
    persona debería ser capaz de guardar diagnósticos aunque no estén ligados a una receta o un resultado").
    Razón: facilidad de uso; no todo el mundo guarda sus papeles (su papá archiva todo en físico; "no es una
    práctica general"). Deriva un concepto nuevo → § Diagnóstico suelto y su confirmación.
-4. **Proveedor OCR/IA:** la captura foto-primero depende de decidir NFR-005 (cero retención). ¿Se decide en el
-   tech-brief antes de la story de OCR, dejando receta-mexicana (modelo + captura manual + foto adjunta) como
-   primera story sin IA? A (recomendada): sí, dos stories. *Evidencia fotos: ~mitad del corpus es manuscrito, con
+4. ~~**Proveedor OCR/IA**~~ **RESPONDIDA (Saúl Pérez, 2026-10-18): opción A — dos stories.** La primera entrega
+   modelo + captura manual/dictado + foto adjunta, sin IA; la segunda (lectura con IA) espera al tech-brief del
+   proveedor. Contexto original de la pregunta: *Evidencia fotos: ~mitad del corpus es manuscrito, con
    giros y retomas → el pipeline de lectura es un proyecto en sí (visión-IA/HTR + clasificador + dedupe), no un
    añadido; separa stories con más razón.*
    Insumos para el tech-brief (Saúl Pérez, 2026-10-18 + verificación en memory/research.md): **Gemini API gratuito

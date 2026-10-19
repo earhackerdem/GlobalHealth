@@ -1,6 +1,7 @@
 # Roles y permisos — GlobalHealth
 
-Date: 2026-10-18 · Interviewed: Saúl Pérez (author) · Status: **draft — gate pendiente junto con dominio.md**
+Date: 2026-10-18 · Interviewed: Saúl Pérez (author) · Status: **agreed — gate cerrado el 2026-10-18 junto con
+dominio.md** (las celdas "—" siguen sin entrevistar: llegan con E3/E4)
 Every change inherits this matrix like it inherits the NFR budget: a story that contradicts a cell fixes the story
 or this file **in the same PR** — never silently.
 Fuente: product/prd.md (épicas E1–E6) + entrevista 2026-10-12/18. Las celdas "—" no se han entrevistado: preguntar

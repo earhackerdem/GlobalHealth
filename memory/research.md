@@ -257,10 +257,30 @@ como causalidad ni como diagnóstico.
 - **Confidence:** [VERIFIED] lo del no-entrenamiento por default; retención exacta y ZDR: NOT VERIFIED aún.
 - **Re-check if:** al evaluar Anthropic como proveedor en el tech-brief (leer Commercial Terms y Trust Center).
 
-- **Fact (dicho de Saúl, no verificado):** Claude Code daría ~200 USD de crédito API a usuarios Max 20x, que él
-  usaría para desarrollo/pruebas. BYOK (el usuario selecciona su propio proveedor/API key) es idea suya de
-  producto para la capa IA.
-- **Source:** Saúl Pérez en sesión, 2026-10-18
-- **Confidence:** NOT VERIFIED (el crédito); la idea BYOK es decisión de producto pendiente de diseño.
+- **Fact:** Los planes Max incluyen crédito API mensual: **Max 5x = 100 USD, Max 20x = 200 USD** (Team: 20/100
+  USD por asiento, tope 500). Sirve para Messages API, Batches, Console Playground, Managed Agents y Agent SDK;
+  NO para Claude Code interactivo ni Bedrock/Vertex/Foundry. **No acumulable: expira cada ciclo**; se reclama en
+  UNA organización de Console vinculada, con plan activo 7 días antes.
+- **Source:** https://support.claude.com/en/articles/17154008-monthly-api-credits-for-max-and-team-plans ·
+  consulted 2026-10-18 (enlace aportado por Saúl Pérez)
+- **Confidence:** [VERIFIED]. BYOK (el usuario selecciona su propio proveedor/API key) sigue siendo idea de
+  producto pendiente de diseño.
 - **Re-check if:** al armar el tech-brief — verificar el crédito en la cuenta real; BYOK implica además análisis
   LFPDPPP (el responsable sigue siendo GlobalHealth aunque la key sea del usuario) y UX para no-técnicos.
+
+- **Fact (panorama de capas gratuitas que "no entrenan", solo fuentes secundarias):** un análisis de oct-2026
+  contra los términos de 18 proveedores concluye que **los tiers gratuitos son donde más se entrena con los
+  datos** y que "no entrenar" no responde la pregunta aparte de la retención. Por proveedor: **Groq** no
+  entrenaría con entradas/salidas (services agreement) pero con logs de hasta 30 días por abuso; **Mistral** en
+  su tier gratuito usa los datos para entrenar salvo opt-out (toggle), su API de pago no entrena y el tier
+  gratuito retiene 30 días; **Cerebras** habría eliminado su tier gratuito permanente en jul-2026. Fuentes entre
+  sí contradictorias.
+- **Source:** https://www.developersdigest.tech/blog/which-ai-apis-train-on-your-data (oct-2026),
+  https://openrouter.ai/blog/tutorials/free-llm-apis-compared/ , https://merginit.com/blog/16062026-free-ai-api-inference-comparison
+  · consulted 2026-10-18
+- **Confidence:** NOT VERIFIED por proveedor (secundarias en conflicto). Conclusión operativa [OPINION]: **no
+  existe hoy una capa gratuita cloud que garantice no-entrenamiento + cero retención** al nivel que exige una
+  receta (dato sensible); para datos reales el camino gratuito es **on-device** (Gemini Nano, spike D17), y los
+  créditos Max (200 USD/mes) cubren el desarrollo con la API de Anthropic. El tech-brief verifica términos
+  primarios solo de quien llegue a la short-list.
+- **Re-check if:** tech-brief del proveedor; cualquier proveedor que entre a la lista blanca BYOK.
