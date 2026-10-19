@@ -106,11 +106,37 @@ Resultado de laboratorio (estudio → analitos), orden de estudios, comprobante 
 vacunación, nota clínica, titular ≠ paciente (expediente familiar), referencias/derivaciones entre médicos. Se
 registran aquí para que las próximas rebanadas no partan de cero.
 
+## Diagnóstico suelto y su confirmación (Saúl Pérez, 2026-10-18 — responde Q3 y abre concepto nuevo)
+
+El diagnóstico suelto es una entrada del expediente **capturada por el paciente** (lo que le dijeron de palabra),
+sin documento que lo respalde. Para darle peso clínico sin quitarle facilidad, Saúl propone que un **médico pueda
+confirmarlo** vía el enlace/QR que el paciente comparte (E3/E4): porque lo atendió antes, o porque tiene su propio
+registro del paciente. [VERIFIED 2026-10-18, en sus palabras]
+
+- **Estados del diagnóstico suelto:** registrado (solo palabra del paciente) → confirmado por «médico» el «fecha»
+  (vía enlace activo). La confirmación no lo vuelve editable por el médico: sigue siendo del paciente; el médico
+  solo atestigua. [ASSUMPTION: la confirmación es un sello, no una edición — validar en el siguiente prototipo]
+- **Para qué sirve:** el paciente y sus médicos tienen contexto de salud "aunque no tengan toda la info a la
+  mano"; un diagnóstico confirmado vale más para la IA (E5) y para otro médico que uno solo dicho.
+- **Encaje regulatorio** (memory/research.md 2026-10-18): el paciente compartiendo es ejercicio de su titularidad
+  (NOM-004 5.4/5.5.1); el médico que confirma queda identificado como en toda nota clínica (NOM-004 5.10: nombre,
+  fecha, firma) → la confirmación debe registrar quién/cuándo/vía qué enlace, y caer en la bitácora de accesos
+  (US-03).
+- **Alcance:** el modelo (entrada suelta + campo `confirmación`) entra en la rebanada receta-mexicana solo como
+  dato; el FLUJO de confirmación vive en E3/E4 (requiere enlaces), no en la primera story.
+
 ## Datos sensibles y retención
 | Data | Who may see it | Kept for | Who can erase it | Regulation |
 |---|---|---|---|---|
 | foto de la receta + campos | el paciente; profesional solo vía enlace activo (E3/E4) | mientras viva la cuenta | el paciente (ARCO) | LFPDPPP; cifrado en reposo ya probado (D13/D16) |
 | contenido enviado al OCR/IA | el proveedor NO lo retiene ni entrena | n/a | n/a | NFR-005, proveedor pendiente (Q4) |
+
+Regulación verificada en texto vigente (memory/research.md, 2026-10-18): **nueva LFPDPPP** (DOF 2025-03-20, ref.
+2025-11-14) — salud es dato sensible (art. 3-VI), consentimiento expreso y por escrito vía mecanismo de
+autenticación (art. 8), notificación inmediata de vulneraciones (art. 19), cancelación con bloqueo (art. 24),
+multas duplicadas en sensibles (art. 59); autoridad: Secretaría Anticorrupción y Buen Gobierno. NOM-004 5.4:
+titularidad del paciente sobre su información (sustento del compartir por enlace). NOM-024 (SIRES): pendiente de
+verificar si aplica cuando exista el portal del profesional (E4).
 
 ## Open questions (max 4) — el gate del discovery
 1. **Vigencia/eliminación:** sin vigencia impresa, ¿cómo deja de estar "activa" una receta para los futuros
@@ -120,10 +146,11 @@ registran aquí para que las próximas rebanadas no partan de cero.
 2. **Frecuencia de toma:** ¿se captura desde ya por medicina (campo opcional) para que FR-025 no exija otra
    migración, o se pospone? A (recomendada): campo opcional ahora. *Evidencia fotos: la frecuencia viene escrita en
    casi todas las recetas — capturarla no añade fricción.*
-3. **El tipo "diagnóstico" de la v1:** ¿desaparece como tipo de registro (y FR-005 pasa a "nota/diagnóstico opcional
-   en la receta"), o se conserva además como entrada suelta del expediente? A: se conserva como entrada opcional
-   suelta (hay diagnósticos sin receta) / B: solo campo de la receta. *Evidencia fotos: existen notas clínicas y
-   diagnósticos fuera de recetas → refuerza A.*
+3. ~~**El tipo "diagnóstico" de la v1**~~ **RESPONDIDA (Saúl Pérez, 2026-10-18): opción A** — el diagnóstico
+   suelto se conserva como entrada del expediente, sin receta ni resultado que lo respalde ("idealmente una
+   persona debería ser capaz de guardar diagnósticos aunque no estén ligados a una receta o un resultado").
+   Razón: facilidad de uso; no todo el mundo guarda sus papeles (su papá archiva todo en físico; "no es una
+   práctica general"). Deriva un concepto nuevo → § Diagnóstico suelto y su confirmación.
 4. **Proveedor OCR/IA:** la captura foto-primero depende de decidir NFR-005 (cero retención). ¿Se decide en el
    tech-brief antes de la story de OCR, dejando receta-mexicana (modelo + captura manual + foto adjunta) como
    primera story sin IA? A (recomendada): sí, dos stories. *Evidencia fotos: ~mitad del corpus es manuscrito, con
