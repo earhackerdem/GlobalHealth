@@ -11,3 +11,9 @@ Includes rejections: a retro that repeats the previous one's menu manufactures f
 - [2026-10-12 · Proposed] El harness no tiene gate entre "commit verde local" y "push": tres fallos de pre-commit en CI
   (PR #2 de GlobalHealth) fueron pushes sin pasada prek local. Propuesta: make install-hooks que instale un pre-push
   corriendo prek sobre el diff vs la rama base (hoy instalado ad-hoc en .git/hooks/pre-push de este repo).
+
+- [2026-10-12 · Proposed] El gate humano de /opsx:propose–/epe-2-plan es textual (specs/design) y los no programadores
+  no lo leen: la expectativa rota de expediente-registros (receta ≠ modelo mexicano real) se detectó DESPUÉS de un
+  ciclo completo. Propuesta upstream: paso opcional de prototipo mock navegable junto a las specs (artifact clickeable
+  con datos de ejemplo, o prompt generado para Claude Design/v0/Stitch), y el gate pide validar el prototipo además
+  de aprobar el plan. Demostrado ad hoc en GlobalHealth: https://claude.ai/artifact/PJUNDJ5d2c8R8YHq6qPXtZ
