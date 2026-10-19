@@ -41,7 +41,7 @@ story's `Triage:` line. Lower rung wins; over-process is a defect too.
 |---|---|
 | typo, broken link, memory entry | nothing: edit and verify |
 | one change | a story with acceptance criteria (`make epe-new SLUG=…`) |
-| several stories with a product behind them | `product/brief.md` (`/product-brief`) |
+| several stories with a product behind them | `/product-discovery` first if structured data is behind it, then `product/brief.md` (`/product-brief`) |
 | several people must agree, or several epics must not diverge | `product/prd.md` (`/product-prd`), then `product/technical-brief.md` (`/product-tech-brief`) |
 | existing codebase | `/codebase-context` (verified block in this file), then one bounded change |
 
@@ -57,8 +57,13 @@ tests (`guard-tests.py` enforces it over `harness.json → tests`, `make tdd-che
 a written contract and disjoint files.
 
 ## The optional product layer: where stories come from
-Above `changes/` there can be a `product/` folder (`make product-init`), never gated by hooks, with three optional
-artefacts in order: **`brief.md`** (one page: problem, audience, measurable outcomes, constraints, out of scope);
+Above `changes/` there can be a `product/` folder (`make product-init`), never gated by hooks, with optional
+artefacts in order: **`dominio.md` + `roles-permisos.md`** (`/product-discovery`, for any product with structured
+data behind it): the elicitation interview — data catalogs, attributes, relations, **states**, processes
+(who/when/with whom) and the roles×operations matrix — that **never accepts the stakeholder's first
+simplification**, closed by a **navigable mock prototype** the stakeholder validates by clicking (its glossary is
+the source of names everywhere else; the matrix is inherited by every change like the NFR budget);
+**`brief.md`** (one page: problem, audience, measurable outcomes, constraints, out of scope);
 **`prd.md`** only when *more than one person must agree on what the product is, or more than one epic must not diverge*
 (technology-agnostic, `FR-###`/`NFR-###`, epics with their stories); **`technical-brief.md`**, which decides *with what*
 and *how well*: it asks **first** whether a team exists and what stack it already uses (an existing stack wins), proposes
@@ -123,7 +128,7 @@ result. A rule that gets skipped isn't fixed by writing it again: it's fixed wit
 ```
 harness.json          configuration: harness_version, flavor, engine (epe | openspec), plan_file, code (gated paths), tests (barrier paths), protected branches, blocked commands, skill hints
 AGENTS.md             these rules (single source) · CLAUDE.md, .cursor/, .github/, .agents/rules/: per-IDE bridges (docs/ides.md)
-Makefile              recipes: doctor · profile · epe-new · epe-status · tdd-check · inbox · memory-check · retro · check-prs · worktrees · new · adopt · engine-openspec · harness-status · harness-update · board
+Makefile              recipes: doctor · profile · epe-new · epe-status · tdd-check · inbox · memory-check · retro · check-prs · worktrees · new · adopt · engine-openspec · harness-status · harness-update · harness-harvest · install-hooks · board
 .agents/skills/       ALL the skills (agentskills.io standard): triage · epe-0…6 · epe-memory · session-retro · produce-content · product-* · codebase-context
 .claude/skills/       only symlinks to .agents/skills/* (make skills-link)
 .claude/hooks/        profile · session-guard · inbox · gate-plan · guard-tests · guard-commands · guard-git-add · guard-review-brief · lint · check-journal · memory-compaction · skill-nudge
@@ -139,7 +144,7 @@ scripts/              what the Makefile runs
 | Work | Skill |
 |---|---|
 | a new request, before anything: which rung does it need? | `triage` (one message, no files) |
-| defining the product before the first story | `product-brief` → `product-prd` (only if needed) → `product-tech-brief` |
+| defining the product before the first story | `product-discovery` (data products: catalogs, roles, mock prototype) → `product-brief` → `product-prd` (only if needed) → `product-tech-brief` |
 | an existing codebase (brownfield, monorepo, multirepo) | `codebase-context`, then `epe-0-new` for one bounded change |
 | any new story or brief | `epe-0-new` → `epe-1-explore` → `epe-2-plan` → `epe-3-execute` |
 | writing content for an audience (content flavor) | `produce-content` (inside explore and execute) |

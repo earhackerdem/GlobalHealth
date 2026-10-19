@@ -40,6 +40,18 @@ argument-hint: [change path; defaults to .epe/active] · "plan approved" to open
 - **Risks and regressions**; **phases** as committable vertical increments.
 - **Gate that closes the work**: if the gate does not exist, it is written **before** executing.
 
+## Prototype gate (changes that add or alter user-facing screens)
+The person approving often will not read the plan's prose, and never the delta specs (measured in origin:
+GlobalHealth 2026-10-12, a whole cycle built on a wrong model that a mock exposed in minutes). So, when the change
+touches screens, the plan ships with a **navigable mock**: mock data drawn from `product/dominio.md`'s glossary
+when it exists, every actionable element labeled with the id of the acceptance criterion it satisfies (toggleable
+`AC-n` badges). The textual approval then means "I navigated the prototype and this is what I want" — ask for
+exactly that. The AC ids travel the whole chain: prototype badge → scenario → test name → validation.md. The specs
+do not disappear: they remain the contract the tests are written from, and they alone cover errors, limits and
+regulations (the mock only shows happy paths). If the person prefers an external tool, emit a ready prompt for
+Claude Design / v0 / Stitch instead of the page; when the interaction is genuinely uncertain, two cheap variants
+beat one debate. Changes with no visible surface skip this section, and say so.
+
 ## With `engine: openspec`
 The plan is `design.md` + `tasks.md` from the `harness-epe` schema (template with `Status:`, Interface contract, test
 plan one row per scenario, Execution per group). "plan approved" turns `design.md`'s `Status:` line to APPROVED (the

@@ -11,12 +11,12 @@ the need. Here it exists for one reason: when several people or several epics mu
 "next step" says no PRD, do not write one.**
 
 ## Procedure
-1. Read `product/brief.md` (or send to `/product-brief`), `memory/decisions.md`, `memory/research.md`.
+1. Read `product/brief.md` (or send to `/product-brief`), and `product/dominio.md` + `product/roles-permisos.md` when discovery ran (`/product-discovery`): with them, the FRs are **derived**, not drafted — every roles×operation cell of the matrix is an FR candidate with its actor, and every process row carries its trigger. Also `memory/decisions.md`, `memory/research.md`.
 2. **Stay technology-agnostic.** The PRD says what the system must do and how well, never with what. If a requirement
    smuggles a technology ("with WebSockets", "in Postgres"), rewrite it as the behaviour it wants and leave a note for
    `/product-tech-brief`.
 3. Write `product/prd.md` from `template.md`:
-   - **FR-###**: one observable behaviour each, with the user and the trigger. No "and".
+   - **FR-###**: one observable behaviour each, with the user and the trigger. No "and". With discovery, each FR cites the `dominio.md` entities it touches (the glossary names things); the roles matrix is the authorization spec **every change inherits** — a story that contradicts a cell fixes the story or the matrix in the same PR, never silently.
    - **NFR-###**: by quality attribute (ISO 25010: performance efficiency, reliability, security, maintainability,
      portability, usability, compatibility, functional suitability) plus operational (hosting, compliance and privacy,
      data residency, language, accessibility, licensing). Each **measurable**: stimulus → response → measure. Unknown

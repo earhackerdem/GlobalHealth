@@ -117,11 +117,11 @@
       "src": ".agents/skills/epe-1-explore/SKILL.md"
     },
     ".agents/skills/epe-2-plan/SKILL.md": {
-      "sha256": "336cbb37fe6f6b3686621a69b04a53f891898e4cba726be73a3e03ee5eab21b8",
+      "sha256": "ca0249059c91dcf339c11df78629c6111d0670999cf75a7b9105402f46a93400",
       "src": ".agents/skills/epe-2-plan/SKILL.md"
     },
     ".agents/skills/epe-3-execute/SKILL.md": {
-      "sha256": "e0c19d6d1ea519d69592c4dcc0e136f4a4aa4ef6fe52501880d4f00a2acf3264",
+      "sha256": "752861aaf02c24f513516fa3184af0c912740deea0ffe1950cc14f2b0d6bcdff",
       "src": ".agents/skills/epe-3-execute/SKILL.md"
     },
     ".agents/skills/epe-4-review/SKILL.md": {
@@ -156,8 +156,20 @@
       "sha256": "3cbf235bd5641ec6dc3fd7e576159bd89504b68aeab2f355ffd28965f84fc9b1",
       "src": ".agents/skills/product-brief/template.md"
     },
+    ".agents/skills/product-discovery/SKILL.md": {
+      "sha256": "21cf3d0e24e4e3dff61f71b27b7fecc4c4be3d7ce8bc504e1efccdeb3b8fe059",
+      "src": ".agents/skills/product-discovery/SKILL.md"
+    },
+    ".agents/skills/product-discovery/template-dominio.md": {
+      "sha256": "a78d48c4725699b06a015d79106aa973c5331656fa566954d7292fefddf0714c",
+      "src": ".agents/skills/product-discovery/template-dominio.md"
+    },
+    ".agents/skills/product-discovery/template-roles-permisos.md": {
+      "sha256": "153ae2b96088f03a5a77f8df33c2a25d766070fa983ac97b86302ed70f4f6a65",
+      "src": ".agents/skills/product-discovery/template-roles-permisos.md"
+    },
     ".agents/skills/product-prd/SKILL.md": {
-      "sha256": "4e2d865909da99eee934f6bba9a53d5e9b1a76159884e25bec20b7140329e352",
+      "sha256": "201cb6442a5134b68e483e501c5343dddac79ff47f583b3da57cbebfbf620c43",
       "src": ".agents/skills/product-prd/SKILL.md"
     },
     ".agents/skills/product-prd/template.md": {
@@ -165,11 +177,11 @@
       "src": ".agents/skills/product-prd/template.md"
     },
     ".agents/skills/product-tech-brief/SKILL.md": {
-      "sha256": "dfbc09e96f5cd5e1ab05568491a935d7842971453f3c480afd119ff49dae69f3",
+      "sha256": "11aad8ac30e5a4a361dd347dde0f7eabc0ca491f6d09ff4825af147bf12fb34b",
       "src": ".agents/skills/product-tech-brief/SKILL.md"
     },
     ".agents/skills/product-tech-brief/template.md": {
-      "sha256": "d77befcc4ce4ac1090f0916d4718bf6bb65655f5bdb736e7bdc988074d8389b5",
+      "sha256": "dd831e284b804f9140099d3e0a5cd842339cc1a9ac84007d9247dd8336d58db4",
       "src": ".agents/skills/product-tech-brief/template.md"
     },
     ".agents/skills/session-retro/SKILL.md": {
@@ -293,7 +305,7 @@
       "src": ".vscode/settings.json"
     },
     "AGENTS.md": {
-      "sha256": "d8f5cde568d7c18cbb5c8b207f958f2b5fded6c4d810d232c7133396001f3dfe",
+      "sha256": "c3fad2db8caccc22285dfeca634b288071c68c43784ad322be64b18aa891201d",
       "src": "AGENTS.md"
     },
     "CLAUDE.md": {
@@ -301,7 +313,7 @@
       "src": "CLAUDE.md"
     },
     "Makefile": {
-      "sha256": "b62e1b7a976b1b9f39dab9dffd92d79ac62869eb6c021106e1cea2fb8d5c72bc",
+      "sha256": "7dc03212f8bcdcffc9457e84f4f5583cd66c199ca4fbfceb83beaf81ee99c374",
       "src": "Makefile"
     },
     "docs/board.md": {
@@ -317,7 +329,7 @@
       "src": "docs/engines.md"
     },
     "docs/epe-cycle.md": {
-      "sha256": "7389a7a0c6916e9c49d509a1f383e95a2f85ea67283c222c54222700d211021d",
+      "sha256": "cdf63e233acf175571f99e59e79091ad701c9b2834531fdd790517a2f031132a",
       "src": "docs/epe-cycle.md"
     },
     "docs/flavors.md": {
@@ -360,6 +372,10 @@
       "sha256": "621fe7d6d052379f1efdb07d97eef99822cbce4ee12744d065f5430143ab3684",
       "src": "scripts/epe-new.sh"
     },
+    "scripts/harness-harvest.py": {
+      "sha256": "e2e111b127c206c5e0ca37f61570a09aca93ff70bbb7adeb80e203ca723acfaf",
+      "src": "scripts/harness-harvest.py"
+    },
     "scripts/harness-sync.py": {
       "sha256": "18467eb827b602ee8f9a5de6b2ddb2afbb9ae92e3fc2a54d023a8feaf4f34104",
       "src": "scripts/harness-sync.py"
@@ -368,8 +384,12 @@
       "sha256": "07806d91bdbb15001aed508eb925f188e8944496bc229a9fba5319efff6ec8b2",
       "src": "scripts/inbox.py"
     },
+    "scripts/install-hooks.sh": {
+      "sha256": "f752d49aa0e0ce02e6906468ee04d156d94f7f8f531b2ba52574e27a053d4b93",
+      "src": "scripts/install-hooks.sh"
+    },
     "scripts/new-project.sh": {
-      "sha256": "64cbe0119af76d84c1d53b131808e2655a3b1b3174a9884774e9c2a8a3f8ba0e",
+      "sha256": "78e34fe8749cf0fe97010db3e3000b0092c990d4eb5c0da7d2f2b2f4514d6287",
       "src": "scripts/new-project.sh"
     },
     "scripts/openspec-engine.sh": {
@@ -401,7 +421,8 @@
       "src": "scripts/worktrees.py"
     }
   },
-  "harness_version": "0.1.0",
+  "harness_version": "0.2.0",
   "installed": "2026-10-11",
-  "mode": "new"
+  "mode": "new",
+  "updated": "2026-10-18"
 }
