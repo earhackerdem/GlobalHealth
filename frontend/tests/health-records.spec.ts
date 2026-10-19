@@ -654,9 +654,7 @@ test.describe("Expediente — receta a la mexicana", () => {
     )
   })
 
-  test("D2: notas multilínea con Enter", async ({
-    page,
-  }) => {
+  test("D2: notas multilínea con Enter", async ({ page }) => {
     // --- Receta -------------------------------------------------------------
     await page.getByRole("button", { name: "Registrar receta" }).click()
     const dialog = page.getByRole("dialog")
@@ -783,9 +781,7 @@ test.describe("Expediente — receta a la mexicana", () => {
     )
   })
 
-  test("D4: crear receta con adjunto opcional", async ({
-    page,
-  }) => {
+  test("D4: crear receta con adjunto opcional", async ({ page }) => {
     // Con adjunto: el control vive DENTRO del formulario de creación.
     await page.getByRole("button", { name: "Registrar receta" }).click()
     const dialog = page.getByRole("dialog")
