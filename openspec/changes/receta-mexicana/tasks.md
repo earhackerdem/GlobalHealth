@@ -8,15 +8,15 @@ files is `test→impl`; smaller groups are `single`. `make tdd-check` requires o
 
 ## 1. Backend: modelo receta+medicinas, migración y API · test→impl
 
-- [ ] 1.1 Test (red): escenarios de registro (varias medicinas, opcionales dx/frecuencia, rechazo sin medicinas,
+- [x] 1.1 Test (red): escenarios de registro (varias medicinas, opcionales dx/frecuencia, rechazo sin medicinas,
       diagnóstico suelto, cifrado en reposo incl. medicinas, consentimiento), dueño (404 indistinguible incl.
       archivar ajeno, PATCH reemplaza medicinas y valida resultado, DELETE arrastra medicinas+adjuntos), archivar/
       desarchivar y `confirmation_status` — en `backend/tests/api/routes/test_health_records.py` según el
       Interface contract. Commit `test:`.
-- [ ] 1.2 Impl: `HealthRecordMedicine` + cambios de `HealthRecord` y schemas (`models.py`), helper de validación
+- [x] 1.2 Impl: `HealthRecordMedicine` + cambios de `HealthRecord` y schemas (`models.py`), helper de validación
       por tipo actualizado, rutas (`health_records.py`: create/patch/list con medicines, archived), migración
       Alembic con fold de datos (Decisión 4). Verde sin tocar tests; `make tdd-check`.
-- [ ] 1.3 Orquestador: re-correr rojo y verde, commits, `git status` tras cada gate (hooks auto-arreglan).
+- [x] 1.3 Orquestador: re-correr rojo y verde, commits, `git status` tras cada gate (hooks auto-arreglan).
 
 ## 2. Frontend: captura manual según el prototipo, archivar y es-MX · test→impl
 
