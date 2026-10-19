@@ -229,9 +229,9 @@ test.describe("Perfil médico — onboarding y /perfil", () => {
 
     // Sin captura: ni inputs ni botón de guardar dentro de las secciones.
     await expect(sections.locator("input, textarea, select")).toHaveCount(0)
-    await expect(
-      sections.getByRole("button", { name: /Guardar/ }),
-    ).toHaveCount(0)
+    await expect(sections.getByRole("button", { name: /Guardar/ })).toHaveCount(
+      0,
+    )
 
     // Si existe un botón "Añadir"/"Agregar" meramente informativo, hacer clic
     // NO debe abrir captura (ningún formulario con campos aparece).
