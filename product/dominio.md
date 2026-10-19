@@ -173,8 +173,9 @@ verificar si aplica cuando exista el portal del profesional (E4).
 Date: 2026-10-19 · Interviewed: Saúl Pérez (pedido del 2026-10-18 al cerrar receta-mexicana, fila SIGUIENTE TAREA
 en memory/inbox.md: "fecha de nacimiento, peso actual, estatura, y antecedentes médicos familiares — lo que
 preguntan mucho los médicos: diabetes o cáncer en la familia — justo después de aceptar el consentimiento") ·
-Evidencia: el mismo corpus de 74 fotos (2026-10-18) · Status: **draft — gate ABIERTO, segunda ronda: Q3
-respondida (todo omitible), especificidad de AHF pedida, reencuadre a "perfil médico por secciones"**
+Evidencia: el mismo corpus de 74 fotos (2026-10-18) · Status: **agreed — gate cerrado el 2026-10-19: Saúl Pérez
+respondió las 4 preguntas en dos rondas (Q2 especificidad de línea, Q3 todo omitible, y "sigo tu recomendación
+para ambas" sobre Q1 medición con fecha y Q4 alcance de la primera story) con el prototipo v2 a la vista**
 Prototipo: **`product/prototipos/onboarding-perfil.html`** (fuente de verdad; incluye historia borrador y los AC
 con el toggle "Ver criterios"; v2 con línea materna/paterna y secciones del perfil médico).
 Alcance: el feature es el **perfil médico por secciones** (la anamnesis estándar, § El perfil médico por
@@ -270,27 +271,25 @@ las guías de semiología detallan [VERIFIED 2026-10-19, memory/research.md § a
   aportados por el titular** — mismo cifrado en reposo y consentimiento ya resueltos (D13/D16, NFR-001/NFR-004);
   minimización: por eso todo es opcional y omitible.
 
-## Encaje en el PRD (aterriza al cerrar el gate)
-- **FR-008 ya existe** ("registrar historial familiar: parentesco + condición", M, O6) y US-05 es su story: esta
-  rebanada la implementa, no la duplica.
-- **FR nuevo (borrador FR-027):** "completar u omitir, justo después de aceptar el consentimiento, un perfil
-  básico (fecha de nacimiento, sexo, peso, estatura, alergias) editable después" — épica E2 (o E1 por el disparador
-  post-consentimiento; decide el PRD al cerrar el gate). La story con prototipo cubre FR-027 + FR-008.
+## Encaje en el PRD (cerrado el 2026-10-19)
+- **FR-008 ya existía** ("registrar historial familiar: parentesco + condición", M, O6) y US-05 es su story: esta
+  rebanada la implementa con la especificidad de línea, no la duplica.
+- **FR-027** (épica E2, US-17): onboarding de perfil básico post-consentimiento, omitible, editable después, con
+  la pantalla de secciones visible. **FR-028** (épica E2, US-18): llenado progresivo de las secciones APP/APNP —
+  story siguiente. La primera story con prototipo cubre FR-027 + FR-008.
 
 ## Open questions (max 4) — el gate del discovery
-1. **Peso/estatura: ¿valor único que se sobreescribe, o medición con fecha?** Recomendación del harness: medición
-   con fecha mostrando la última — un peso de hace 3 años presentado como "actual" desinforma al médico, el corpus
-   muestra signos vitales fechados por documento, y el costo hoy es mínimo (una columna de fecha). El historial
-   graficable queda para después.
+1. ~~**Peso/estatura: ¿valor único que se sobreescribe, o medición con fecha?**~~ **RESPONDIDA (Saúl Pérez,
+   2026-10-19): medición con fecha** mostrando la última — un peso de hace 3 años presentado como "actual"
+   desinforma al médico; el historial graficable queda para después.
 2. ~~**AHF: ¿cómo se captura?**~~ **RESPONDIDA en dirección (Saúl Pérez, 2026-10-19):** estructurada y con MÁS
    especificidad que la propuesta inicial — la línea importa ("si el cáncer fue en abuelo paterno o materno").
    Prototipo v2: condición + parentescos con línea materna/paterna + nota opcional (edad al diagnóstico). Queda
    validar el v2 clickeando.
 3. ~~**¿Todo omitible?**~~ **RESPONDIDA (Saúl Pérez, 2026-10-19): sí, todo omitible** — "Ahora no" por paso y
    global, perfil editable después, sin re-preguntar.
-4. **¿Qué entrega la primera story?** Recomendación del harness (recoge tu propia intuición de "que terminando el
-   perfil se le sugiera añadir más"): onboarding mínimo (perfil básico + AHF + alergias) **+ la pantalla "Mi perfil
-   médico" con todas las secciones visibles pero vacías**; el llenado de APP/APNP (crónicas, hepatitis, fracturas,
-   cirugías, transfusiones, hábitos) es la story siguiente, y las preguntas por especialidad llegan vía E4/FR-022.
-   La alternativa (todo en una story) infla el cambio y retrasa el valor del onboarding. Sexo y alergias (la Q4
-   anterior) siguen siendo recortables en el prototipo.
+4. ~~**¿Qué entrega la primera story?**~~ **RESPONDIDA (Saúl Pérez, 2026-10-19): la recomendación** — onboarding
+   mínimo (perfil básico + AHF + alergias) **+ la pantalla "Mi perfil médico" con todas las secciones visibles
+   pero vacías** (FR-027); el llenado de APP/APNP (crónicas, hepatitis, fracturas, cirugías, transfusiones,
+   hábitos) es la story siguiente (FR-028), y las preguntas por especialidad llegan vía E4/FR-022. Sexo y alergias
+   quedaron dentro (no los recortó al validar el prototipo).

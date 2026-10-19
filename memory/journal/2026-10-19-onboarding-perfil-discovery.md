@@ -42,3 +42,8 @@ secciones" (tabla sección → onboarding sí/no) y la Q4 nueva (alcance de la p
 con línea, detalle opcional por condición, y pantalla "Mi perfil médico" con las secciones vacías sugeridas al
 terminar u omitir. Verificado headless (Playwright: flujo completo, cero errores de consola) y visual en Chrome.
 Cuestionarios por especialidad (urólogo, proctólogo, ORL…): diferidos a E4/FR-022, registrado en dominio.
+
+**Gate cerrado (2026-10-19):** Saúl Pérez — "Sigo tu recomendación para ambas": Q1 peso/estatura como medición con
+fecha; Q4 primera story = onboarding mínimo + pantalla de secciones vacías (FR-027 + FR-008), llenado APP/APNP como
+story siguiente (FR-028). dominio.md a **agreed**; PRD: FR-027/FR-028, US-17/US-18 en E2, trazabilidad O1/O6.
+Cambio abierto con make epe-new SLUG=onboarding-perfil; siguiente: /opsx:propose sobre la rebanada agreed.
