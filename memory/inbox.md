@@ -57,3 +57,13 @@ task: if the person you work with doesn't mention it, it is not started.
   testMatch). El proyecto quedó acotado a health-records.spec.ts; extender la cobertura móvil al resto de la UI
   (y arreglar esas pantallas en 384px) es trabajo propio, probablemente junto con la primera pasada responsive
   general.
+- [2026-10-19] El contenedor backend NO corre migraciones Alembic al (re)arrancar: tras crear d5f2a8c41e07 la BD
+  dev dio 500 ("relation patient_profile does not exist") hasta un `docker compose exec backend alembic upgrade
+  head` manual (visto por el implementer del grupo 2 de onboarding-perfil). Decidir: prestart que migre, o
+  documentar el paso en make up.
+- [2026-10-19] sr-only del SidebarTrigger dice "Contraer barra lateral" aunque el sheet móvil esté cerrado: deriva
+  del estado `open` de escritorio, no de `openMobile` (frontend/src/components/ui/sidebar.tsx:274-277; hallazgo del
+  tester móvil de onboarding-perfil). Quirk de accesibilidad del componente del template.
+- [2026-10-19] `formatDateMx` (frontend/src/components/Profile/format.ts) duplica lógica y comentario-razón de
+  `Records/RecordDialogs.tsx formatDate` (G20 del review de onboarding-perfil; extraer a un helper compartido
+  excedía el scope del apply porque toca Records). Tercera copia en camino si no se extrae.

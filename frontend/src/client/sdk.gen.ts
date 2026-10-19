@@ -2,7 +2,7 @@
 
 import { type Client, formDataBodySerializer, type Options as Options2, type TDataShape, urlSearchParamsBodySerializer } from './client';
 import { client } from './client.gen';
-import type { consentGrantConsentData, consentGrantConsentErrors, consentGrantConsentResponses, consentReadConsentData, consentReadConsentResponses, consentReadConsentTextData, consentReadConsentTextResponses, healthRecordsCreateHealthRecordAttachmentData, healthRecordsCreateHealthRecordAttachmentErrors, healthRecordsCreateHealthRecordAttachmentResponses, healthRecordsCreateHealthRecordData, healthRecordsCreateHealthRecordErrors, healthRecordsCreateHealthRecordResponses, healthRecordsDeleteHealthRecordAttachmentData, healthRecordsDeleteHealthRecordAttachmentErrors, healthRecordsDeleteHealthRecordAttachmentResponses, healthRecordsDeleteHealthRecordData, healthRecordsDeleteHealthRecordErrors, healthRecordsDeleteHealthRecordResponses, healthRecordsDownloadHealthRecordAttachmentData, healthRecordsDownloadHealthRecordAttachmentErrors, healthRecordsDownloadHealthRecordAttachmentResponses, healthRecordsReadHealthRecordAttachmentsData, healthRecordsReadHealthRecordAttachmentsErrors, healthRecordsReadHealthRecordAttachmentsResponses, healthRecordsReadHealthRecordData, healthRecordsReadHealthRecordErrors, healthRecordsReadHealthRecordResponses, healthRecordsReadHealthRecordsData, healthRecordsReadHealthRecordsErrors, healthRecordsReadHealthRecordsResponses, healthRecordsUpdateHealthRecordData, healthRecordsUpdateHealthRecordErrors, healthRecordsUpdateHealthRecordResponses, itemsCreateItemData, itemsCreateItemErrors, itemsCreateItemResponses, itemsDeleteItemData, itemsDeleteItemErrors, itemsDeleteItemResponses, itemsReadItemData, itemsReadItemErrors, itemsReadItemResponses, itemsReadItemsData, itemsReadItemsErrors, itemsReadItemsResponses, itemsUpdateItemData, itemsUpdateItemErrors, itemsUpdateItemResponses, loginLoginAccessTokenData, loginLoginAccessTokenErrors, loginLoginAccessTokenResponses, loginLoginGoogleCallbackData, loginLoginGoogleCallbackErrors, loginLoginGoogleCallbackResponses, loginLoginGoogleData, loginLoginGoogleResponses, loginRecoverPasswordData, loginRecoverPasswordErrors, loginRecoverPasswordHtmlContentData, loginRecoverPasswordHtmlContentErrors, loginRecoverPasswordHtmlContentResponses, loginRecoverPasswordResponses, loginResetPasswordData, loginResetPasswordErrors, loginResetPasswordResponses, loginTestTokenData, loginTestTokenResponses, privateCreateUserData, privateCreateUserErrors, privateCreateUserResponses, usersCreateUserData, usersCreateUserErrors, usersCreateUserResponses, usersDeleteUserData, usersDeleteUserErrors, usersDeleteUserMeData, usersDeleteUserMeResponses, usersDeleteUserResponses, usersReadUserByIdData, usersReadUserByIdErrors, usersReadUserByIdResponses, usersReadUserMeData, usersReadUserMeResponses, usersReadUsersData, usersReadUsersErrors, usersReadUsersResponses, usersRegisterUserData, usersRegisterUserErrors, usersRegisterUserResponses, usersUpdatePasswordMeData, usersUpdatePasswordMeErrors, usersUpdatePasswordMeResponses, usersUpdateUserData, usersUpdateUserErrors, usersUpdateUserMeData, usersUpdateUserMeErrors, usersUpdateUserMeResponses, usersUpdateUserResponses, utilsHealthCheckData, utilsHealthCheckResponses, utilsTestEmailData, utilsTestEmailErrors, utilsTestEmailResponses } from './types.gen';
+import type { consentGrantConsentData, consentGrantConsentErrors, consentGrantConsentResponses, consentReadConsentData, consentReadConsentResponses, consentReadConsentTextData, consentReadConsentTextResponses, healthRecordsCreateHealthRecordAttachmentData, healthRecordsCreateHealthRecordAttachmentErrors, healthRecordsCreateHealthRecordAttachmentResponses, healthRecordsCreateHealthRecordData, healthRecordsCreateHealthRecordErrors, healthRecordsCreateHealthRecordResponses, healthRecordsDeleteHealthRecordAttachmentData, healthRecordsDeleteHealthRecordAttachmentErrors, healthRecordsDeleteHealthRecordAttachmentResponses, healthRecordsDeleteHealthRecordData, healthRecordsDeleteHealthRecordErrors, healthRecordsDeleteHealthRecordResponses, healthRecordsDownloadHealthRecordAttachmentData, healthRecordsDownloadHealthRecordAttachmentErrors, healthRecordsDownloadHealthRecordAttachmentResponses, healthRecordsReadHealthRecordAttachmentsData, healthRecordsReadHealthRecordAttachmentsErrors, healthRecordsReadHealthRecordAttachmentsResponses, healthRecordsReadHealthRecordData, healthRecordsReadHealthRecordErrors, healthRecordsReadHealthRecordResponses, healthRecordsReadHealthRecordsData, healthRecordsReadHealthRecordsErrors, healthRecordsReadHealthRecordsResponses, healthRecordsUpdateHealthRecordData, healthRecordsUpdateHealthRecordErrors, healthRecordsUpdateHealthRecordResponses, itemsCreateItemData, itemsCreateItemErrors, itemsCreateItemResponses, itemsDeleteItemData, itemsDeleteItemErrors, itemsDeleteItemResponses, itemsReadItemData, itemsReadItemErrors, itemsReadItemResponses, itemsReadItemsData, itemsReadItemsErrors, itemsReadItemsResponses, itemsUpdateItemData, itemsUpdateItemErrors, itemsUpdateItemResponses, loginLoginAccessTokenData, loginLoginAccessTokenErrors, loginLoginAccessTokenResponses, loginLoginGoogleCallbackData, loginLoginGoogleCallbackErrors, loginLoginGoogleCallbackResponses, loginLoginGoogleData, loginLoginGoogleResponses, loginRecoverPasswordData, loginRecoverPasswordErrors, loginRecoverPasswordHtmlContentData, loginRecoverPasswordHtmlContentErrors, loginRecoverPasswordHtmlContentResponses, loginRecoverPasswordResponses, loginResetPasswordData, loginResetPasswordErrors, loginResetPasswordResponses, loginTestTokenData, loginTestTokenResponses, privateCreateUserData, privateCreateUserErrors, privateCreateUserResponses, profileCloseOnboardingData, profileCloseOnboardingErrors, profileCloseOnboardingResponses, profileCreateFamilyHistoryData, profileCreateFamilyHistoryErrors, profileCreateFamilyHistoryResponses, profileCreateMeasurementData, profileCreateMeasurementErrors, profileCreateMeasurementResponses, profileDeleteFamilyHistoryData, profileDeleteFamilyHistoryErrors, profileDeleteFamilyHistoryResponses, profileReadFamilyHistoryData, profileReadFamilyHistoryErrors, profileReadFamilyHistoryResponses, profileReadMeasurementsData, profileReadMeasurementsErrors, profileReadMeasurementsResponses, profileReadProfileData, profileReadProfileResponses, profileUpdateFamilyHistoryData, profileUpdateFamilyHistoryErrors, profileUpdateFamilyHistoryResponses, profileUpdateProfileData, profileUpdateProfileErrors, profileUpdateProfileResponses, usersCreateUserData, usersCreateUserErrors, usersCreateUserResponses, usersDeleteUserData, usersDeleteUserErrors, usersDeleteUserMeData, usersDeleteUserMeResponses, usersDeleteUserResponses, usersReadUserByIdData, usersReadUserByIdErrors, usersReadUserByIdResponses, usersReadUserMeData, usersReadUserMeResponses, usersReadUsersData, usersReadUsersErrors, usersReadUsersResponses, usersRegisterUserData, usersRegisterUserErrors, usersRegisterUserResponses, usersUpdatePasswordMeData, usersUpdatePasswordMeErrors, usersUpdatePasswordMeResponses, usersUpdateUserData, usersUpdateUserErrors, usersUpdateUserMeData, usersUpdateUserMeErrors, usersUpdateUserMeResponses, usersUpdateUserResponses, utilsHealthCheckData, utilsHealthCheckResponses, utilsTestEmailData, utilsTestEmailErrors, utilsTestEmailResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
     /**
@@ -619,6 +619,170 @@ export class HealthRecordsService {
             security: [{ scheme: 'bearer', type: 'http' }],
             url: '/api/v1/health-records/{id}/attachments/{attachment_id}',
             ...options
+        });
+    }
+}
+
+export class ProfileService {
+    /**
+     * Read Profile
+     *
+     * The session user's profile, with the latest weight/height captures.
+     */
+    public static readProfile<ThrowOnError extends boolean = true>(options?: Options<profileReadProfileData, ThrowOnError>) {
+        return (options?.client ?? client).get<profileReadProfileResponses, unknown, ThrowOnError>({
+            responseType: 'json',
+            security: [{ scheme: 'bearer', type: 'http' }],
+            url: '/api/v1/profile',
+            ...options
+        });
+    }
+    
+    /**
+     * Update Profile
+     *
+     * Partial update: absent = untouched, explicit null clears the field.
+     *
+     * birth_date must fall in [1900-01-01, today]; the check runs HERE (not a
+     * pydantic validator) so the 422 carries a string es-MX detail, and BEFORE
+     * anything gets encrypted or persisted.
+     */
+    public static updateProfile<ThrowOnError extends boolean = true>(options: Options<profileUpdateProfileData, ThrowOnError>) {
+        return (options.client ?? client).put<profileUpdateProfileResponses, profileUpdateProfileErrors, ThrowOnError>({
+            responseType: 'json',
+            security: [{ scheme: 'bearer', type: 'http' }],
+            url: '/api/v1/profile',
+            ...options,
+            headers: {
+                'Content-Type': 'application/json',
+                ...options.headers
+            }
+        });
+    }
+    
+    /**
+     * Close Onboarding
+     *
+     * Close the onboarding exactly once (completed|skipped); a second close
+     * is a 409 and the recorded outcome does not change (Decision 5).
+     */
+    public static closeOnboarding<ThrowOnError extends boolean = true>(options: Options<profileCloseOnboardingData, ThrowOnError>) {
+        return (options.client ?? client).post<profileCloseOnboardingResponses, profileCloseOnboardingErrors, ThrowOnError>({
+            responseType: 'json',
+            security: [{ scheme: 'bearer', type: 'http' }],
+            url: '/api/v1/profile/onboarding',
+            ...options,
+            headers: {
+                'Content-Type': 'application/json',
+                ...options.headers
+            }
+        });
+    }
+    
+    /**
+     * Read Measurements
+     *
+     * ONLY the session user's captures of one type, newest first (same-day
+     * ties broken by capture time).
+     */
+    public static readMeasurements<ThrowOnError extends boolean = true>(options: Options<profileReadMeasurementsData, ThrowOnError>) {
+        return (options.client ?? client).get<profileReadMeasurementsResponses, profileReadMeasurementsErrors, ThrowOnError>({
+            responseType: 'json',
+            security: [{ scheme: 'bearer', type: 'http' }],
+            url: '/api/v1/profile/measurements',
+            ...options
+        });
+    }
+    
+    /**
+     * Create Measurement
+     *
+     * Persist a new capture (never an UPDATE of a previous one); measured_on
+     * is set by the SERVER to today. Implausible values get an es-MX 422.
+     */
+    public static createMeasurement<ThrowOnError extends boolean = true>(options: Options<profileCreateMeasurementData, ThrowOnError>) {
+        return (options.client ?? client).post<profileCreateMeasurementResponses, profileCreateMeasurementErrors, ThrowOnError>({
+            responseType: 'json',
+            security: [{ scheme: 'bearer', type: 'http' }],
+            url: '/api/v1/profile/measurements',
+            ...options,
+            headers: {
+                'Content-Type': 'application/json',
+                ...options.headers
+            }
+        });
+    }
+    
+    /**
+     * Read Family History
+     *
+     * ONLY the session user's antecedents, in capture order.
+     */
+    public static readFamilyHistory<ThrowOnError extends boolean = true>(options?: Options<profileReadFamilyHistoryData, ThrowOnError>) {
+        return (options?.client ?? client).get<profileReadFamilyHistoryResponses, profileReadFamilyHistoryErrors, ThrowOnError>({
+            responseType: 'json',
+            security: [{ scheme: 'bearer', type: 'http' }],
+            url: '/api/v1/profile/family-history',
+            ...options
+        });
+    }
+    
+    /**
+     * Create Family History
+     *
+     * Persist one family antecedent; relatives travel as a JSON array
+     * serialized INSIDE the encrypted column (design.md trade-off), bounded and
+     * deduped (review G11/M5).
+     *
+     * condition is encrypted at rest (review G2), so per-user uniqueness cannot
+     * be a partial index (Fernet is non-deterministic): dedupe happens HERE by
+     * comparing the decrypted conditions the ORM already returns (review G3).
+     * "other" admits several entries, told apart by other_text.
+     */
+    public static createFamilyHistory<ThrowOnError extends boolean = true>(options: Options<profileCreateFamilyHistoryData, ThrowOnError>) {
+        return (options.client ?? client).post<profileCreateFamilyHistoryResponses, profileCreateFamilyHistoryErrors, ThrowOnError>({
+            responseType: 'json',
+            security: [{ scheme: 'bearer', type: 'http' }],
+            url: '/api/v1/profile/family-history',
+            ...options,
+            headers: {
+                'Content-Type': 'application/json',
+                ...options.headers
+            }
+        });
+    }
+    
+    /**
+     * Delete Family History
+     *
+     * Delete an owned antecedent (removing a condition removes its
+     * relatives line with it: they live in the same row).
+     */
+    public static deleteFamilyHistory<ThrowOnError extends boolean = true>(options: Options<profileDeleteFamilyHistoryData, ThrowOnError>) {
+        return (options.client ?? client).delete<profileDeleteFamilyHistoryResponses, profileDeleteFamilyHistoryErrors, ThrowOnError>({
+            responseType: 'json',
+            security: [{ scheme: 'bearer', type: 'http' }],
+            url: '/api/v1/profile/family-history/{id}',
+            ...options
+        });
+    }
+    
+    /**
+     * Update Family History
+     *
+     * Full update of an owned antecedent (same fields as the create);
+     * relatives bounded and deduped like on create (review G11/M5).
+     */
+    public static updateFamilyHistory<ThrowOnError extends boolean = true>(options: Options<profileUpdateFamilyHistoryData, ThrowOnError>) {
+        return (options.client ?? client).put<profileUpdateFamilyHistoryResponses, profileUpdateFamilyHistoryErrors, ThrowOnError>({
+            responseType: 'json',
+            security: [{ scheme: 'bearer', type: 'http' }],
+            url: '/api/v1/profile/family-history/{id}',
+            ...options,
+            headers: {
+                'Content-Type': 'application/json',
+                ...options.headers
+            }
         });
     }
 }

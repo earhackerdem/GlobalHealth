@@ -1,0 +1,96 @@
+{
+  "page": {
+    "pageTitle": "Mi perfil médico",
+    "title": "Mi perfil médico",
+    "subtitle": "Tus datos básicos, mediciones y antecedentes, siempre a la mano."
+  },
+  "notRecorded": "Sin registrar",
+  "noEntries": "Sin registros",
+  "age": "{{age}} años",
+  "fields": {
+    "birthDate": "Fecha de nacimiento",
+    "sex": "Sexo",
+    "weight": "Peso (kg)",
+    "height": "Estatura (cm)",
+    "allergies": "Alergias a medicamentos",
+    "detail": "Detalle (opcional)"
+  },
+  "sexOptions": {
+    "placeholder": "Selecciona una opción",
+    "female": "Mujer",
+    "male": "Hombre",
+    "unspecified": "Prefiero no decir"
+  },
+  "conditions": {
+    "diabetes": "Diabetes",
+    "cancer": "Cáncer",
+    "hypertension": "Hipertensión",
+    "heart_disease": "Enfermedad del corazón",
+    "other": "Otra condición"
+  },
+  "relatives": {
+    "mother": "Madre",
+    "father": "Padre",
+    "maternal_grandmother": "Abuela materna",
+    "maternal_grandfather": "Abuelo materno",
+    "paternal_grandmother": "Abuela paterna",
+    "paternal_grandfather": "Abuelo paterno",
+    "sibling": "Hermana/o",
+    "other": "Otro"
+  },
+  "wizard": {
+    "stepCounter": "Paso {{current}} de 3",
+    "steps": {
+      "basic": "Datos básicos",
+      "family": "Antecedentes familiares",
+      "summary": "Resumen"
+    },
+    "skipStep": "Omitir este paso",
+    "continue": "Continuar",
+    "save": "Guardar perfil",
+    "notNow": "Ahora no, llévame a mi expediente",
+    "emptyBasic": "Sin datos capturados",
+    "emptyFamily": "Sin antecedentes capturados",
+    "savedToast": "Perfil guardado"
+  },
+  "basic": {
+    "heading": "Datos básicos",
+    "edit": "Editar datos básicos",
+    "editDescription": "Actualiza tu fecha de nacimiento, sexo y alergias a medicamentos.",
+    "savedToast": "Datos básicos guardados"
+  },
+  "measurements": {
+    "weight": "Peso",
+    "height": "Estatura",
+    "add": "Registrar medición",
+    "dialogTitle": "Registrar medición",
+    "dialogDescription": "Captura un peso o estatura nuevos; la fecha la registra el sistema.",
+    "typeLabel": "Tipo de medición",
+    "savedToast": "Medición registrada"
+  },
+  "family": {
+    "heading": "Antecedentes familiares",
+    "edit": "Editar antecedentes",
+    "editDescription": "Marca las condiciones de tu familia y elige los parentescos.",
+    "savedToast": "Antecedentes guardados"
+  },
+  "pending": {
+    "heading": "Más secciones de tu historial",
+    "description": "Estas secciones se podrán capturar próximamente.",
+    "sections": {
+      "chronic": "Enfermedades crónicas",
+      "past": "Enfermedades pasadas e infecciosas",
+      "surgeries": "Cirugías y hospitalizaciones",
+      "fractures": "Fracturas y lesiones",
+      "transfusions": "Transfusiones y grupo sanguíneo",
+      "habits": "Hábitos"
+    }
+  },
+  "validation": {
+    "birthDateFuture": "La fecha de nacimiento no puede ser futura",
+    "birthDateTooOld": "La fecha de nacimiento no puede ser anterior a 1900",
+    "measurementValueRequired": "Captura el valor de la medición",
+    "weightRange": "El peso debe estar entre 0.1 y 400 kg",
+    "heightRange": "La estatura debe estar entre 30 y 250 cm"
+  }
+}

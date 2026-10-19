@@ -10,6 +10,7 @@ import common from "./locales/es-MX/common.json"
 import consent from "./locales/es-MX/consent.json"
 import items from "./locales/es-MX/items.json"
 import layout from "./locales/es-MX/layout.json"
+import profile from "./locales/es-MX/profile.json"
 import records from "./locales/es-MX/records.json"
 import settings from "./locales/es-MX/settings.json"
 
@@ -18,7 +19,17 @@ i18n.use(initReactI18next).init({
   fallbackLng: "es-MX",
   defaultNS: "common",
   resources: {
-    "es-MX": { common, auth, layout, items, admin, settings, consent, records },
+    "es-MX": {
+      common,
+      auth,
+      layout,
+      items,
+      admin,
+      settings,
+      consent,
+      records,
+      profile,
+    },
   },
   interpolation: {
     // React already escapes rendered values.
