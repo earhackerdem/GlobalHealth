@@ -18,8 +18,10 @@ test.use({ storageState: { cookies: [], origins: [] } })
 // Textos es-MX asertados como contrato:
 //   Wizard: encabezados "Datos básicos", "Antecedentes familiares", "Resumen";
 //     botón por paso "Omitir este paso"; botón global
-//     "Ahora no, llévame a mi expediente"; avanzar "Continuar";
-//     cierre "Guardar perfil".
+//     "Ahora no, llévame a mi expediente" visible en los pasos 1 y 2 pero NO
+//     en el Resumen (feedback de Saúl Pérez, 2026-10-19: con todo capturado,
+//     un botón de omitir confunde); avanzar "Continuar"; cierre
+//     "Guardar perfil".
 //   Paso 2: checkboxes de condición "Diabetes", "Cáncer", "Hipertensión",
 //     "Enfermedad del corazón", "Otra condición"; al marcar una condición
 //     aparecen sus parentescos como checkboxes "Madre", "Padre",
@@ -30,6 +32,11 @@ test.use({ storageState: { cookies: [], origins: [] } })
 //     botón "Editar datos básicos", campo con label "Fecha de nacimiento"
 //     (input de fecha rellenable con ISO aaaa-mm-dd), guardar con botón
 //     "Guardar"; fecha mostrada en es-MX dd/mm/aaaa y edad derivada "N años".
+//   Editar antecedentes desde /perfil (feedback): en la sección de
+//     antecedentes, botón "Editar antecedentes" que abre el MISMO editor de
+//     condiciones/parentescos del wizard (checkboxes "Diabetes", "Madre", …);
+//     guardar con botón "Guardar" (exact) cierra el editor y deja el
+//     antecedente visible en la sección.
 //   Secciones sin captura (6, con estado vacío "Sin registros" cada una):
 //     "Enfermedades crónicas", "Enfermedades pasadas e infecciosas",
 //     "Cirugías y hospitalizaciones", "Fracturas y lesiones",
@@ -158,22 +165,30 @@ test.describe("Perfil médico — onboarding y /perfil", () => {
 
     const wizard = page.getByTestId("onboarding-wizard")
     await expect(wizard).toBeVisible()
+    const ahoraNo = page.getByRole("button", {
+      name: "Ahora no, llévame a mi expediente",
+    })
 
-    // Paso 1 (datos básicos): se omite entero.
+    // Paso 1 (datos básicos): conserva el "Ahora no" global; se omite entero.
     await expect(wizard.getByText("Datos básicos")).toBeVisible()
+    await expect(ahoraNo).toBeVisible()
     await wizard.getByRole("button", { name: "Omitir este paso" }).click()
 
-    // Paso 2 (antecedentes familiares): marcar Diabetes muestra los
-    // parentescos; se elige Madre.
+    // Paso 2 (antecedentes familiares): conserva el "Ahora no" global; marcar
+    // Diabetes muestra los parentescos; se elige Madre.
     await expect(wizard.getByText("Antecedentes familiares")).toBeVisible()
+    await expect(ahoraNo).toBeVisible()
     const madre = wizard.getByRole("checkbox", { name: "Madre", exact: true })
     await expect(madre).not.toBeVisible()
     await wizard.getByRole("checkbox", { name: "Diabetes" }).check()
     await madre.check()
 
-    // Paso 3 (resumen): refleja lo capturado y guarda.
+    // Paso 3 (resumen): refleja lo capturado y guarda. El "Ahora no" global
+    // NO está en el Resumen (feedback de Saúl Pérez: con todo ya capturado,
+    // un botón de omitir confunde).
     await wizard.getByRole("button", { name: "Continuar" }).click()
     await expect(wizard.getByText("Resumen")).toBeVisible()
+    await expect(ahoraNo).not.toBeVisible()
     await expect(wizard.getByText("Diabetes")).toBeVisible()
     await expect(wizard.getByText("Madre")).toBeVisible()
     await wizard.getByRole("button", { name: "Guardar perfil" }).click()
@@ -252,5 +267,36 @@ test.describe("Perfil médico — onboarding y /perfil", () => {
       }
       await expect(sections.locator("input, textarea, select")).toHaveCount(0)
     }
+  })
+
+  test("Escenario 13 (feedback): agregar antecedentes desde /perfil tras omitir todo el onboarding", async ({
+    page,
+  }) => {
+    // Cuenta que omitió TODO el onboarding ("Ahora no").
+    await freshUserWithConsent(page)
+    await skipOnboardingToExpediente(page)
+
+    await page.goto("/perfil")
+    await expect(
+      page.getByRole("heading", { name: "Mi perfil médico" }),
+    ).toBeVisible()
+
+    // La sección de antecedentes ofrece "Editar antecedentes": el mismo
+    // editor de condiciones/parentescos del wizard.
+    const ahf = page.getByTestId("profile-family-history")
+    await ahf.getByRole("button", { name: "Editar antecedentes" }).click()
+
+    const diabetes = page.getByRole("checkbox", { name: "Diabetes" })
+    await expect(diabetes).toBeVisible()
+    await diabetes.check()
+    await page.getByRole("checkbox", { name: "Madre", exact: true }).check()
+    await page.getByRole("button", { name: "Guardar", exact: true }).click()
+
+    // Guardar cierra el editor y el antecedente queda visible en la sección.
+    await expect(
+      page.getByRole("checkbox", { name: "Diabetes" }),
+    ).not.toBeVisible()
+    await expect(ahf.getByText("Diabetes")).toBeVisible()
+    await expect(ahf.getByText("Madre")).toBeVisible()
   })
 })
