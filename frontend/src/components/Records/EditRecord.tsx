@@ -87,7 +87,10 @@ interface EditRecordDialogProps {
  * It stays mounted across list refetches (same record id → same element), so
  * the form keeps whatever the user already typed (AC8).
  */
-export const EditRecordDialog = ({ record, onClose }: EditRecordDialogProps) => {
+export const EditRecordDialog = ({
+  record,
+  onClose,
+}: EditRecordDialogProps) => {
   const { t } = useTranslation("records")
   const queryClient = useQueryClient()
   const { showSuccessToast, showErrorToast } = useCustomToast()

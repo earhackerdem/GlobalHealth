@@ -152,9 +152,7 @@ const AddPrescription = () => {
                 id="prescription-attachment"
                 type="file"
                 accept="application/pdf,image/jpeg,image/png"
-                onChange={(event) =>
-                  setFile(event.target.files?.[0] ?? null)
-                }
+                onChange={(event) => setFile(event.target.files?.[0] ?? null)}
               />
             </div>
           }

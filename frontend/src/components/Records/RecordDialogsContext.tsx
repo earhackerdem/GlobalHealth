@@ -15,9 +15,7 @@ export interface RecordDialogsApi {
   openEdit: (recordId: string) => void
 }
 
-export const RecordDialogsContext = createContext<RecordDialogsApi | null>(
-  null,
-)
+export const RecordDialogsContext = createContext<RecordDialogsApi | null>(null)
 
 export function useRecordDialogs(): RecordDialogsApi {
   const api = useContext(RecordDialogsContext)
