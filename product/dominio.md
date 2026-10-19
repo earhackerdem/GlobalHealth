@@ -165,3 +165,131 @@ verificar si aplica cuando exista el portal del profesional (E4).
    default), **Gemini Nano on-device** (spike D17, cero retención por construcción), y la idea de Saúl de **BYOK**
    (el usuario trae su propia API key) — con la salvedad de que la app deberá rechazar proveedores/modos cuyos
    términos entrenen con los datos.
+
+---
+
+# Dominio — GlobalHealth · rebanada "perfil del paciente y antecedentes familiares (onboarding)"
+
+Date: 2026-10-19 · Interviewed: Saúl Pérez (pedido del 2026-10-18 al cerrar receta-mexicana, fila SIGUIENTE TAREA
+en memory/inbox.md: "fecha de nacimiento, peso actual, estatura, y antecedentes médicos familiares — lo que
+preguntan mucho los médicos: diabetes o cáncer en la familia — justo después de aceptar el consentimiento") ·
+Evidencia: el mismo corpus de 74 fotos (2026-10-18) · Status: **agreed — gate cerrado el 2026-10-19: Saúl Pérez
+respondió las 4 preguntas en dos rondas (Q2 especificidad de línea, Q3 todo omitible, y "sigo tu recomendación
+para ambas" sobre Q1 medición con fecha y Q4 alcance de la primera story) con el prototipo v2 a la vista**
+Prototipo: **`product/prototipos/onboarding-perfil.html`** (fuente de verdad; incluye historia borrador y los AC
+con el toggle "Ver criterios"; v2 con línea materna/paterna y secciones del perfil médico).
+Alcance: el feature es el **perfil médico por secciones** (la anamnesis estándar, § El perfil médico por
+secciones); el **onboarding** post-consentimiento captura solo el mínimo (perfil básico + AHF) y al terminar
+sugiere completar el resto. NO entra en la primera story: el llenado de las secciones APP/APNP (solo su
+estructura visible), signos vitales como serie clínica, exploración física, cuestionarios por especialidad,
+nada del compartir (E3/E4).
+
+## Catálogos (en las palabras de Saúl)
+
+### Perfil del paciente
+| Attribute | In their words | Sensitive? | Notes / [ASSUMPTION] |
+|---|---|---|---|
+| fecha de nacimiento | "fecha de nacimiento" | sí | los formatos de farmacia del corpus la imprimen (junto con la edad) [VERIFIED 2026-10-18 fotos]; de ella se deriva la edad mostrada; se corrige, no "cambia" |
+| peso actual | "peso actual" | sí | NOM-004 6.1.2 lo pide en la exploración física ("peso y talla") [VERIFIED 2026-10-19]; **cambia con el tiempo** → [ASSUMPTION] se guarda como medición con fecha y el perfil muestra la última (Q1) |
+| estatura | "estatura" | sí | ídem 6.1.2; estable en adultos pero no inmutable → misma mecánica que peso (Q1) |
+| sexo | — no lo pidió | sí | parte de la ficha de identificación (NOM-004 6.1.1) y de rangos clínicos; **propuesta del harness** con "prefiero no decir" (Q4) |
+| alergias a medicamentos | — no lo pidió | sí | APP según NOM-004 6.1.1, pero es LA pregunta de toda consulta y de toda receta segura; **propuesta del harness** como campo simple (Q4) |
+
+### Antecedente familiar (AHF)
+| Attribute | In their words | Sensitive? | Notes / [ASSUMPTION] |
+|---|---|---|---|
+| condición | "diabetes o cáncer en la familia…" | sí | lista corta de condiciones frecuentes + "otra" libre (Q2); la nota IMSS del corpus trae sección AHF explícita [VERIFIED 2026-10-18 fotos] |
+| parentesco(s) con línea | "los médicos suelen ser más específicos… si el cáncer fue en abuelo paterno o materno" (2026-10-19) | sí | madre/padre/abuela-o **materna o paterna**/hermana-o/otro; una condición puede tener varios parentescos. La práctica clínica registra 3 generaciones separando línea materna y paterna [VERIFIED 2026-10-19, memory/research.md § anamnesis] |
+| edad al diagnóstico del familiar | — | sí | opcional; los cuestionarios oncológicos la piden junto con la línea [VERIFIED 2026-10-19 research.md] — en prototipo v2 como nota por condición |
+
+- **Relations:** paciente → perfil (1→1) · perfil → medición de peso/estatura (1→0..N, con fecha; Q1) ·
+  paciente → antecedente familiar (1→0..N, condición + parentescos[])
+- **States / lifecycle:** onboarding `ofrecido → completado | omitido` (se ofrece **una sola vez**; omitido no se
+  vuelve a forzar, el perfil queda editable desde su pantalla); perfil `vacío → parcial → completo` — parcial es
+  un estado legítimo, no un error.
+- **What they explicitly do NOT want:** (del encuadre) nada antes del consentimiento; nada que bloquee el primer
+  uso — [ASSUMPTION a confirmar en Q3: todo omitible].
+
+## Glosario
+| Their word | Meaning here | Never call it |
+|---|---|---|
+| antecedentes familiares | condiciones de salud en la familia directa (AHF) | "heredo-familiares" en la UI (tecnicismo), historia clínica |
+| perfil | los datos básicos del paciente (nacimiento, sexo, peso, estatura, alergias) | ficha de identificación, demographics |
+| onboarding | la única vez que la app pregunta el perfil al entrar | wizard, setup |
+
+## Procesos (who / when / with whom → future FRs)
+| Who (role) | Does what | When / trigger | With whom | Exceptional paths |
+|---|---|---|---|---|
+| paciente | acepta el consentimiento (ya existe, PR #1) | al crear la cuenta | — | — |
+| sistema | ofrece el onboarding de perfil, una sola vez | inmediatamente después del consentimiento | — | "Ahora no" → directo al expediente, sin castigo ni re-pregunta |
+| paciente | llena u omite cada paso (datos básicos → AHF) y confirma en un resumen | durante el onboarding | — | fecha futura rechazada; valores fuera de rango plausible avisados |
+| paciente | completa/corrige el perfil después | cuando quiera, desde "Mi perfil" | — | — |
+| sistema (futuro, E5) | usa AHF para avisos proactivos con fuente | FR-021 ("AHF de diabetes sin tamizaje registrado") | — | fuera de esta rebanada |
+
+## El perfil médico por secciones (Saúl Pérez, 2026-10-19 — segunda ronda del gate)
+
+Saúl amplió el pedido con más datos valiosos de su experiencia real: **fracturas** ("en mi caso también luego me
+preguntan si he tenido fracturas"), **enfermedades pasadas como hepatitis**, **enfermedad crónica que el paciente
+reconoce directamente**, y pidió **más especificidad en AHF** ("si el cáncer fue en abuelo paterno o materno, lo
+mismo con la diabetes"). Él mismo planteó la duda correcta: ¿es mucho para el onboarding? ¿mejor que al terminar
+el perfil se le sugiera añadir datos adicionales? Y pidió investigar primero qué datos son relevantes para los
+médicos, no solo los generales (urólogo, proctólogo, otorrino…). Conclusión: el feature es un **"perfil médico"
+con secciones**, y el onboarding es solo su puerta de entrada mínima.
+
+La estructura no hay que inventarla: es la **anamnesis estándar** que la NOM-004 (6.1.1) exige al médico y que
+las guías de semiología detallan [VERIFIED 2026-10-19, memory/research.md § anamnesis]:
+
+| Sección del perfil médico | Qué guarda (en términos del paciente) | ¿En el onboarding? |
+|---|---|---|
+| Perfil básico (ficha de identificación) | nacimiento, sexo, peso, estatura | **sí** |
+| Antecedentes familiares (AHF) | condición + parentesco con línea materna/paterna, edad al diagnóstico opcional | **sí** |
+| Alergias | a medicamentos, alimentos u otras sustancias | **sí** (propuesta Q4: es lo primero que preguntan) |
+| Enfermedades crónicas (APP) | las que el paciente reconoce directamente (diabetes, hipertensión…) | no — sugerida al terminar |
+| Enfermedades pasadas e infecciosas (APP) | hepatitis, varicela, COVID grave… con año aproximado | no — sugerida |
+| Cirugías y hospitalizaciones (APP) | qué, cuándo, complicaciones | no — sugerida |
+| Fracturas y lesiones (APP traumáticos) | qué hueso/lesión, cuándo, secuelas | no — sugerida |
+| Transfusiones y grupo sanguíneo (APP) | fecha, motivo, reacción; tipo de sangre | no — sugerida |
+| Hábitos (APNP) | tabaco, alcohol, ejercicio, vacunación | no — sugerida |
+
+- **Mecánica propuesta:** el onboarding termina (o se omite) → "Mi perfil médico" muestra TODAS las secciones con
+  su estado (vacía/parcial) y una invitación no intrusiva a completarlas. El llenado es progresivo y siempre
+  opcional (Q3 respondida: **todo omitible** — Saúl Pérez, 2026-10-19). A futuro, **FR-022 ya existe en el PRD**
+  ("recibir preguntas de la IA para completar registros incompletos"): la IA es el mecanismo natural para sugerir
+  la siguiente sección útil.
+- **Especialidades (urólogo, proctólogo, otorrino…):** el tronco anterior es común a todas; lo específico por
+  especialidad es el **"interrogatorio por aparatos y sistemas"** (también en NOM-004 6.1.1) — preguntas dirigidas
+  por sistema (urinario, digestivo, ORL…). Los cuestionarios validados por especialidad son una capa futura: llegan
+  mejor vía el médico por el enlace (E4, FR-017) o vía la IA (FR-022), no cargando el perfil inicial. Se registra
+  como catálogo futuro, no se modela ahora.
+
+## Encaje regulatorio y sensibilidad
+- **NOM-004-SSA3-2012, 6.1.1** (interrogatorio mínimo de la historia clínica): ficha de identificación,
+  antecedentes **heredo-familiares**, personales patológicos y no patológicos; **6.1.2** (exploración física):
+  signos vitales, **peso y talla** [VERIFIED 2026-10-19, texto oficial DOF — memory/research.md]. GlobalHealth no
+  es el expediente del prestador, pero capturar exactamente lo que el médico va a preguntar es el valor de O6.
+- **LFPDPPP art. 3-VI**: todo esto es dato sensible; los AHF además son **datos de salud de terceros (familiares)
+  aportados por el titular** — mismo cifrado en reposo y consentimiento ya resueltos (D13/D16, NFR-001/NFR-004);
+  minimización: por eso todo es opcional y omitible.
+
+## Encaje en el PRD (cerrado el 2026-10-19)
+- **FR-008 ya existía** ("registrar historial familiar: parentesco + condición", M, O6) y US-05 es su story: esta
+  rebanada la implementa con la especificidad de línea, no la duplica.
+- **FR-027** (épica E2, US-17): onboarding de perfil básico post-consentimiento, omitible, editable después, con
+  la pantalla de secciones visible. **FR-028** (épica E2, US-18): llenado progresivo de las secciones APP/APNP —
+  story siguiente. La primera story con prototipo cubre FR-027 + FR-008.
+
+## Open questions (max 4) — el gate del discovery
+1. ~~**Peso/estatura: ¿valor único que se sobreescribe, o medición con fecha?**~~ **RESPONDIDA (Saúl Pérez,
+   2026-10-19): medición con fecha** mostrando la última — un peso de hace 3 años presentado como "actual"
+   desinforma al médico; el historial graficable queda para después.
+2. ~~**AHF: ¿cómo se captura?**~~ **RESPONDIDA en dirección (Saúl Pérez, 2026-10-19):** estructurada y con MÁS
+   especificidad que la propuesta inicial — la línea importa ("si el cáncer fue en abuelo paterno o materno").
+   Prototipo v2: condición + parentescos con línea materna/paterna + nota opcional (edad al diagnóstico). Queda
+   validar el v2 clickeando.
+3. ~~**¿Todo omitible?**~~ **RESPONDIDA (Saúl Pérez, 2026-10-19): sí, todo omitible** — "Ahora no" por paso y
+   global, perfil editable después, sin re-preguntar.
+4. ~~**¿Qué entrega la primera story?**~~ **RESPONDIDA (Saúl Pérez, 2026-10-19): la recomendación** — onboarding
+   mínimo (perfil básico + AHF + alergias) **+ la pantalla "Mi perfil médico" con todas las secciones visibles
+   pero vacías** (FR-027); el llenado de APP/APNP (crónicas, hepatitis, fracturas, cirugías, transfusiones,
+   hábitos) es la story siguiente (FR-028), y las preguntas por especialidad llegan vía E4/FR-022. Sexo y alergias
+   quedaron dentro (no los recortó al validar el prototipo).

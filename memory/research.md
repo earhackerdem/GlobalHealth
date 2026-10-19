@@ -286,3 +286,40 @@ como causalidad ni como diagnóstico.
   créditos Max (200 USD/mes) cubren el desarrollo con la API de Anthropic. El tech-brief verifica términos
   primarios solo de quien llegue a la short-list.
 - **Re-check if:** tech-brief del proveedor; cualquier proveedor que entre a la lista blanca BYOK.
+
+- **Fact:** NOM-004-SSA3-2012, numeral **6.1.1** (historia clínica → interrogatorio, contenido mínimo): "ficha
+  de identificación, en su caso, grupo étnico, antecedentes heredo-familiares, antecedentes personales
+  patológicos (incluido uso y dependencia del tabaco, del alcohol y de otras sustancias psicoactivas…) y no
+  patológicos, padecimiento actual… e interrogatorio por aparatos y sistemas". Numeral **6.1.2** (exploración
+  física, mínimo): "habitus exterior, signos vitales (temperatura, tensión arterial, frecuencia cardiaca y
+  respiratoria), peso y talla".
+- **Source:** texto oficial DOF 2012-10-15, https://www.gob.mx/cms/uploads/attachment/file/512094/NOM-004-SSA3-2012.pdf
+  · consulted 2026-10-19 (extraído del PDF oficial)
+- **Confidence:** [VERIFIED]
+- **Re-check if:** —. Uso: ancla del catálogo perfil/antecedentes (product/dominio.md, rebanada onboarding):
+  los campos que pidió Saúl Pérez (nacimiento, peso, estatura, AHF) son exactamente el mínimo que la norma exige
+  al médico preguntar/medir; sexo (ficha de identificación) y alergias (APP) son las propuestas del harness.
+
+- **Fact (anamnesis — estructura estándar de los antecedentes que piden los médicos):** las guías docentes de
+  historia clínica coinciden en subdividir los **APP** en: enfermedades crónico-degenerativas, infecciosas
+  (hepatitis…), **quirúrgicos** (tipo de operación, fecha, complicaciones), **traumáticos** (fracturas, esguinces,
+  luxaciones), **transfusionales** (fecha, componente, reacción; a veces grupo sanguíneo) y **alérgicos**
+  (medicamentos, alimentos, otras sustancias), cada uno con momento de aparición/tratamiento/secuelas; los **APNP**
+  cubren hábitos (alimentación, sueño, ejercicio, higiene) e inmunizaciones (tabaco/alcohol/sustancias quedan
+  dentro de APP por la propia NOM-004 6.1.1). Para **AHF**, la práctica recomendada es registrar **3 generaciones
+  separando línea materna y paterna**, con parentesco y **edad al diagnóstico** (los cuestionarios oncológicos lo
+  piden explícitamente); un formato mexicano (IPN) lo captura como tabla padecimiento × familiar.
+- **Source:** lista de cotejo Historia Clínica, Fac. Medicina Universidad Veracruzana (uv.mx, 2020)
+  https://www.uv.mx/medicina/files/2020/01/Concentrado-Lista-de-Cotejo-Historia-Clinica_ENE20.docx · guía de
+  Historia Clínica Semiológica (UTP) https://academia.utp.edu.co/basicoclinica/files/2018/08/Historia-Cl%C3%ADnica-Semiol%C3%B3gica-GU%C3%8DA.pdf
+  · WA DOH "Historial de salud familiar" (3 generaciones, ambos lados) https://doh.wa.gov/sites/default/files/2025-11/141-197-FamilyHealthHistory-Spanish.pdf
+  · cuestionario AHF oncológico con familia materna/paterna y edad al diagnóstico (Texas Oncology)
+  https://www.texasoncology.com/getmedia/36d92ae2-8461-4031-9f5f-95b338f2c4d9/texas-oncology-great-family-history-questionnaire-spanish.pdf
+  · formato historia clínica IPN https://www.ipn.mx/assets/files/cecyt10/docs/estudiantes/servicios/2024/historia-clinica.pdf
+  · consulted 2026-10-19
+- **Confidence:** [VERIFIED] como práctica docente/clínica convergente (fuentes secundarias múltiples y
+  coincidentes); el esqueleto normativo (AHF/APP/APNP + interrogatorio por aparatos y sistemas) es primario:
+  NOM-004 6.1.1 (entrada anterior). Lo de cuestionarios POR especialidad (urología, proctología, ORL) NO se
+  investigó a fondo: se difirió como capa futura (E4/FR-022).
+- **Re-check if:** al diseñar la story de llenado de secciones APP/APNP (ahí se decide el detalle por sección) y
+  al abordar cuestionarios por especialidad.

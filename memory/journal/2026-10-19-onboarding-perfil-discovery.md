@@ -1,0 +1,49 @@
+# 2026-10-19 · onboarding-perfil (discovery)
+
+**Quién:** Saúl Pérez (author) pidió arrancar la SIGUIENTE TAREA que dejó encargada al cerrar receta-mexicana
+("procede con el onboarding"); el harness ejecutó la rebanada de discovery.
+
+**Intención:** onboarding de perfil del paciente justo después de aceptar el consentimiento — fecha de nacimiento,
+peso actual, estatura y antecedentes médicos familiares ("lo que preguntan mucho los médicos: diabetes o cáncer en
+la familia"). Encaje acordado: rebanada de discovery → FR nuevo en el PRD → story con prototipo.
+
+**Qué se hizo:**
+- Verificado en el texto oficial (PDF DOF) que NOM-004-SSA3-2012 **6.1.1** exige en el interrogatorio la ficha de
+  identificación y los antecedentes heredo-familiares/APP/APNP, y **6.1.2** peso y talla en la exploración física
+  → memory/research.md (los campos pedidos son el mínimo que la norma obliga al médico a preguntar).
+- Nueva rebanada en `product/dominio.md`: catálogos Perfil del paciente y Antecedente familiar (AHF), glosario,
+  procesos, estados del onboarding (ofrecido → completado | omitido, una sola vez), encaje LFPDPPP art. 3-VI
+  (AHF = datos de salud de terceros aportados por el titular), encaje en el PRD (FR-008/US-05 ya existen; FR-027
+  borrador para el perfil post-consentimiento) y **4 preguntas abiertas** como gate.
+- Prototipo navegable `product/prototipos/onboarding-perfil.html` (patrón de receta-primero.html): wizard de 3
+  pasos omitible, edad calculada, peso/estatura con fecha de medición, AHF por condición + parentescos, propuestas
+  del harness visibles (sexo con "prefiero no decir", alergias a medicamentos), historia borrador y AC-1…AC-8 con
+  el toggle "Ver criterios".
+- Propuestas del harness más allá del pedido literal (regla del discovery: no aceptar la primera simplificación):
+  peso/estatura como **medición con fecha** (no valor que se sobreescribe), AHF estructurado (checklist +
+  parentescos, no texto libre — FR-021 lo necesita), sexo y alergias como candidatos a recortar.
+
+**Verificación:** prototipo abierto localmente (flujo completo: llenar, omitir, guardar, editar); dominio.md y
+research.md citan fuente y fecha; PR de discovery creado (precedente de rama: docs/discovery-* como PRs #11/#12).
+
+**Gate abierto:** Saúl valida el prototipo clickeando y responde las 4 preguntas (peso como medición, forma de
+capturar AHF, todo omitible, ¿entran sexo y alergias?). Con el gate cerrado: FR-027 al PRD y
+`make epe-new SLUG=onboarding-perfil`.
+
+**Deuda:** ninguna nueva; la captura foto/OCR y el resto del inbox siguen donde estaban.
+
+**Segunda ronda del gate (2026-10-19, mismo día):** Saúl Pérez respondió Q3 (**todo omitible**), pidió más
+especificidad en AHF (línea materna/paterna, "si el cáncer fue en abuelo paterno o materno"), aportó más datos
+valiosos (fracturas, hepatitis, crónica reconocida) y reencuadró el feature como **"perfil médico" con secciones**,
+preguntando si tanto dato cabe en el onboarding o mejor sugerirlo al terminar. Se investigó la anamnesis estándar
+(APP: crónicas/infecciosas/quirúrgicos/traumáticos/transfusionales/alérgicos; APNP; AHF a 3 generaciones por
+línea con edad al diagnóstico) con fuentes en research.md; dominio.md ganó la sección "El perfil médico por
+secciones" (tabla sección → onboarding sí/no) y la Q4 nueva (alcance de la primera story); prototipo v2: parentescos
+con línea, detalle opcional por condición, y pantalla "Mi perfil médico" con las secciones vacías sugeridas al
+terminar u omitir. Verificado headless (Playwright: flujo completo, cero errores de consola) y visual en Chrome.
+Cuestionarios por especialidad (urólogo, proctólogo, ORL…): diferidos a E4/FR-022, registrado en dominio.
+
+**Gate cerrado (2026-10-19):** Saúl Pérez — "Sigo tu recomendación para ambas": Q1 peso/estatura como medición con
+fecha; Q4 primera story = onboarding mínimo + pantalla de secciones vacías (FR-027 + FR-008), llenado APP/APNP como
+story siguiente (FR-028). dominio.md a **agreed**; PRD: FR-027/FR-028, US-17/US-18 en E2, trazabilidad O1/O6.
+Cambio abierto con make epe-new SLUG=onboarding-perfil; siguiente: /opsx:propose sobre la rebanada agreed.

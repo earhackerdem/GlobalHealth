@@ -1,0 +1,330 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Onboarding de perfil</title>
+<style>
+/* Layout: una columna móvil-primero (mismos tokens que receta-primero.html) */
+:root{
+  --bg:#f7f5f2; --surface:#ffffff; --fg:#2b2a27; --muted:#6f6a61;
+  --accent:#0f766e; --accent-fg:#ffffff; --line:#e4e0d8; --warn-bg:#fdf3e2; --warn-fg:#7a5410;
+  --chip:#eef4f3;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#171a19; --surface:#202423; --fg:#e8e6e1; --muted:#a39d92;
+  --accent:#2dd4bf; --accent-fg:#0c2b27; --line:#343a38; --warn-bg:#3a2f14; --warn-fg:#e8c27a;
+  --chip:#263230; color-scheme:dark
+}}
+:root[data-theme="dark"]{
+  --bg:#171a19; --surface:#202423; --fg:#e8e6e1; --muted:#a39d92;
+  --accent:#2dd4bf; --accent-fg:#0c2b27; --line:#343a38; --warn-bg:#3a2f14; --warn-fg:#e8c27a;
+  --chip:#263230; color-scheme:dark
+}
+body{background:var(--bg); color:var(--fg); font:16px/1.5 "Atkinson Hyperlegible",system-ui,sans-serif;
+  padding-inline:16px; padding-block:8px 48px; max-width:560px; margin:0 auto}
+h1{font-size:1.35rem; margin:.4rem 0 0}
+h2{font-size:1.05rem; margin:0}
+h3{font-size:.95rem; margin:.6rem 0 .2rem}
+p{margin:.35rem 0}
+.sub{color:var(--muted); font-size:.9rem}
+.banner{background:var(--warn-bg); color:var(--warn-fg); border-radius:8px; padding:8px 12px; font-size:.85rem; margin:12px 0}
+button{font:inherit; border:1px solid var(--line); background:var(--surface); color:var(--fg);
+  border-radius:10px; padding:10px 14px; cursor:pointer}
+button.primary{background:var(--accent); color:var(--accent-fg); border-color:transparent; font-weight:700}
+button.link{border:none; background:none; color:var(--accent); padding:4px; font-weight:600}
+button:focus-visible,input:focus-visible{outline:2px solid var(--accent); outline-offset:2px}
+.actions{display:flex; flex-wrap:wrap; gap:8px; margin:14px 0; align-items:center}
+[hidden]{display:none !important}
+.card{background:var(--surface); border:1px solid var(--line); border-radius:12px; padding:14px; min-width:0; margin-top:10px}
+.ok{color:var(--accent); font-weight:700}
+label{font-size:.85rem; font-weight:700; display:block; margin-bottom:3px}
+label .opt{font-weight:400; color:var(--muted)}
+input{font:inherit; width:100%; box-sizing:border-box; border:1px solid var(--line);
+  border-radius:8px; padding:8px 10px; background:var(--bg); color:var(--fg)}
+.fila{display:flex; gap:8px; flex-wrap:wrap; margin:10px 0}
+.fila>div{flex:1 1 120px; min-width:0}
+.hint{font-size:.8rem; color:var(--muted); margin-top:2px}
+.chips{display:flex; flex-wrap:wrap; gap:6px; margin:4px 0}
+.chips button{border-radius:999px; padding:5px 12px; font-size:.85rem}
+.chips button[aria-pressed="true"]{background:var(--accent); color:var(--accent-fg); border-color:transparent}
+.cond{border:1px solid var(--line); border-radius:10px; padding:10px 12px; margin:8px 0}
+.cond .paren{display:none; margin-top:8px}
+.cond.activa .paren{display:block}
+.chip{display:inline-block; background:var(--chip); color:var(--fg); border-radius:999px; padding:1px 10px; font-size:.78rem; margin:2px 2px 0 0}
+.paso{display:none}
+.paso.activo{display:block}
+.migas{color:var(--muted); font-size:.8rem; margin:2px 0 8px}
+#toast{position:fixed; left:50%; transform:translateX(-50%); bottom:calc(14px + env(safe-area-inset-bottom,0px));
+  background:var(--fg); color:var(--bg); border-radius:999px; padding:8px 18px; font-size:.9rem; transition:opacity .3s}
+#toast[hidden]{display:block; opacity:0; pointer-events:none}
+.ac{display:none; font-size:.7rem; font-weight:700; letter-spacing:.03em; background:var(--accent); color:var(--bg);
+  border-radius:6px; padding:1px 6px; vertical-align:middle; margin-left:6px}
+.show-ac .ac{display:inline-block}
+#leyenda{display:none; background:var(--surface); border:1px solid var(--line); border-radius:10px;
+  padding:10px 14px; margin:0 0 10px; font-size:.85rem}
+.show-ac #leyenda{display:block}
+#leyenda ol{padding-left:1.2rem; margin:.3rem 0}
+#leyenda li{margin:.2rem 0}
+dl{margin:.4rem 0; display:grid; grid-template-columns:auto 1fr; gap:2px 12px}
+dt{color:var(--muted); font-size:.85rem}
+dd{margin:0}
+</style>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&display=swap">
+
+<h1>Bienvenido a tu expediente</h1>
+<p class="sub"><span class="ok">✓ Consentimiento aceptado.</span> Antes de empezar, 2 minutos para lo que todo médico pregunta primero. Nada es obligatorio.</p>
+<div class="banner">Prototipo con datos de ejemplo — nada se guarda ni sale de esta página. Simula lo que ves justo después de aceptar el consentimiento, una sola vez.</div>
+
+<div class="actions">
+  <button class="link" id="verAc" aria-pressed="false">Ver criterios</button>
+</div>
+
+<div id="leyenda">
+  <p style="margin:.2rem 0 .6rem"><strong>Historia de usuario (borrador, gate pendiente):</strong><br>
+  <em>Como paciente, quiero completar mi perfil básico (fecha de nacimiento, peso, estatura) y mis antecedentes
+  familiares justo después de aceptar el consentimiento —pudiendo omitir cualquier parte— para que mis médicos y
+  la IA tengan mi contexto mínimo desde el primer día.</em><br>
+  <span class="sub">Origin: product/dominio.md (rebanada perfil y antecedentes) · cubre FR-008 + FR nuevo de perfil · se formaliza en story.md al abrir el cambio.</span></p>
+  <strong>Criterios de aceptación candidatos</strong> (cada etiqueta marca lo que lo cumple; «Q» = pregunta abierta del discovery):
+  <ol>
+    <li><strong>AC-1</strong> Tras aceptar el consentimiento se ofrece el onboarding una sola vez; «Ahora no» te lleva directo al expediente.</li>
+    <li><strong>AC-2</strong> Fecha de nacimiento válida (nunca futura); la edad se calcula y se muestra.</li>
+    <li><strong>AC-3</strong> Peso (kg) y estatura (cm) opcionales; cada valor queda con la fecha en que lo anotaste (Q1: medición, no valor que se pierde al sobreescribir).</li>
+    <li><strong>AC-4</strong> Antecedentes familiares por condición + parentesco(s) <em>con línea materna/paterna</em> y detalle opcional (edad al diagnóstico) — pedido de Saúl 2026-10-19.</li>
+    <li><strong>AC-5</strong> Todo es omitible por paso (Q3) y se completa o corrige después desde «Mi perfil».</li>
+    <li><strong>AC-6</strong> Sexo de la ficha de identificación, con «Prefiero no decir» (propuesta Q4).</li>
+    <li><strong>AC-7</strong> Alergias a medicamentos como campo simple (propuesta Q4: es lo primero que preguntan).</li>
+    <li><strong>AC-8</strong> Todo el perfil es dato sensible: cifrado en reposo igual que el resto del expediente (criterio técnico, no clickeable).</li>
+    <li><strong>AC-9</strong> Al terminar (u omitir) el onboarding, «Mi perfil médico» muestra las demás secciones (crónicas, hepatitis, cirugías, fracturas, transfusiones, hábitos) vacías y sugiere completarlas sin estorbar; su llenado es la siguiente historia.</li>
+  </ol>
+</div>
+
+<div class="card" id="onboarding">
+  <div class="migas" id="migas">Paso 1 de 3 — Tus datos</div>
+
+  <section class="paso activo" id="p1">
+    <h2>Tus datos básicos<span class="ac">AC-2 · AC-3 · AC-6</span></h2>
+    <div class="fila">
+      <div>
+        <label for="nac">Fecha de nacimiento</label>
+        <input id="nac" type="date" max="2026-10-19">
+        <div class="hint" id="edad">La usamos para mostrar tu edad a tus médicos.</div>
+      </div>
+      <div>
+        <label>Sexo <span class="opt">(ficha de identificación)</span></label>
+        <div class="chips" id="sexo">
+          <button type="button" aria-pressed="false">Mujer</button>
+          <button type="button" aria-pressed="false">Hombre</button>
+          <button type="button" aria-pressed="false">Prefiero no decir</button>
+        </div>
+      </div>
+    </div>
+    <div class="fila">
+      <div>
+        <label for="peso">Peso actual <span class="opt">(kg, opcional)</span></label>
+        <input id="peso" type="number" inputmode="decimal" min="1" max="400" placeholder="72">
+        <div class="hint">Queda registrado con la fecha de hoy; podrás actualizarlo cuando cambie.</div>
+      </div>
+      <div>
+        <label for="talla">Estatura <span class="opt">(cm, opcional)</span></label>
+        <input id="talla" type="number" inputmode="numeric" min="30" max="250" placeholder="170">
+      </div>
+    </div>
+    <div class="actions" style="margin-bottom:0">
+      <button class="primary" data-ir="2">Continuar</button>
+      <button class="link" data-omitir="2">Omitir este paso<span class="ac">AC-5</span></button>
+    </div>
+  </section>
+
+  <section class="paso" id="p2">
+    <h2>¿Alguien de tu familia ha tenido…?<span class="ac">AC-4</span></h2>
+    <p class="sub">Lo que los médicos preguntan siempre. Marca la condición y de quién.</p>
+    <div id="condiciones"></div>
+    <h3>Tus alergias a medicamentos <span class="opt">(opcional)</span><span class="ac">AC-7</span></h3>
+    <input id="alergias" placeholder="p. ej. penicilina — o déjalo vacío">
+    <div class="actions" style="margin-bottom:0">
+      <button class="primary" data-ir="3">Continuar</button>
+      <button class="link" data-omitir="3">Omitir este paso<span class="ac">AC-5</span></button>
+    </div>
+  </section>
+
+  <section class="paso" id="p3">
+    <h2>Revisa y guarda</h2>
+    <div id="resumen"></div>
+    <div class="actions" style="margin-bottom:0">
+      <button class="primary" id="guardar">Guardar mi perfil</button>
+      <button data-ir="1">Volver</button>
+    </div>
+  </section>
+</div>
+
+<div class="actions">
+  <button class="link" id="ahoraNo">Ahora no, llévame a mi expediente<span class="ac">AC-1</span></button>
+</div>
+
+<div class="card" id="perfil" hidden>
+  <header style="display:flex; justify-content:space-between; align-items:baseline; gap:8px; flex-wrap:wrap">
+    <h2>Mi perfil</h2>
+    <button class="link" id="editar">Editar<span class="ac">AC-5</span></button>
+  </header>
+  <div id="perfilDatos"></div>
+  <p class="sub" id="perfilPista"></p>
+</div>
+
+<div class="card" id="secciones" hidden>
+  <h2>Mi perfil médico<span class="ac">AC-9</span></h2>
+  <p class="sub">Lo que un médico suele preguntar, por secciones. Complétalas cuando quieras — nada es obligatorio.</p>
+  <div id="listaSecciones"></div>
+</div>
+
+<div id="toast" hidden>…</div>
+
+<script>
+"use strict";
+const $ = (s) => document.querySelector(s);
+const $$ = (s) => [...document.querySelectorAll(s)];
+const CONDICIONES = ["Diabetes", "Cáncer", "Hipertensión", "Enfermedad del corazón", "Otra condición"];
+const PARIENTES = ["Madre", "Padre", "Abuela materna", "Abuelo materno", "Abuela paterna", "Abuelo paterno", "Hermana/o", "Otro"];
+const SECCIONES = [
+  ["Enfermedades crónicas", "las que tú ya sabes que tienes (diabetes, hipertensión…)"],
+  ["Enfermedades pasadas e infecciosas", "hepatitis, varicela… y cuándo fueron"],
+  ["Cirugías y hospitalizaciones", "qué, cuándo y si hubo complicaciones"],
+  ["Fracturas y lesiones", "qué hueso o lesión, cuándo, secuelas"],
+  ["Transfusiones y grupo sanguíneo", "fecha, motivo y tu tipo de sangre"],
+  ["Hábitos", "tabaco, alcohol, ejercicio, vacunas"],
+];
+const perfil = { nac:"", sexo:"", peso:"", talla:"", alergias:"", ahf:{}, ahfNota:{} };
+
+function pintarCondiciones(){
+  const z = $("#condiciones"); z.textContent = "";
+  for(const c of CONDICIONES){
+    const d = document.createElement("div"); d.className = "cond";
+    d.innerHTML = `<label style="display:flex; gap:8px; align-items:center; margin:0; cursor:pointer">
+        <input type="checkbox" style="width:auto"> ${c}</label>
+      <div class="paren"><span class="hint">¿De quién? (la línea materna o paterna le importa a tu médico)</span>
+        <div class="chips">${PARIENTES.map(p => `<button type="button" aria-pressed="false">${p}</button>`).join("")}
+        <input class="ahf-nota" placeholder="Detalle opcional: tipo, edad al diagnóstico…" style="margin-top:6px">
+      </div>`;
+    const chk = d.querySelector("input[type=checkbox]");
+    chk.onchange = () => { d.classList.toggle("activa", chk.checked);
+      if(chk.checked){ perfil.ahf[c] = perfil.ahf[c] || []; }
+      if(!chk.checked){ delete perfil.ahf[c];
+      delete perfil.ahfNota[c]; d.querySelector(".ahf-nota").value = "";
+      d.querySelectorAll(".chips button").forEach(b => b.setAttribute("aria-pressed","false")); } };
+    d.querySelector(".ahf-nota").oninput = (ev) => { perfil.ahfNota[c] = ev.target.value.trim(); };
+    d.querySelectorAll(".chips button").forEach(b => b.onclick = () => {
+      const on = b.getAttribute("aria-pressed") !== "true";
+      b.setAttribute("aria-pressed", String(on));
+      const set = new Set(perfil.ahf[c] || []);
+      on ? set.add(b.textContent) : set.delete(b.textContent);
+      perfil.ahf[c] = [...set];
+    });
+    z.append(d);
+  }
+}
+function edadDe(iso){
+  if(!iso) return null;
+  const n = new Date(iso + "T00:00"), hoy = new Date("2026-10-19T00:00");
+  if(n > hoy) return -1;
+  let e = hoy.getFullYear() - n.getFullYear();
+  if(hoy < new Date(hoy.getFullYear(), n.getMonth(), n.getDate())) e--;
+  return e;
+}
+$("#nac").onchange = () => {
+  const e = edadDe($("#nac").value);
+  if(e === -1){ $("#nac").value = ""; $("#edad").textContent = "Esa fecha está en el futuro: corrígela."; return; }
+  $("#edad").textContent = e === null ? "La usamos para mostrar tu edad a tus médicos." : `Tienes ${e} años.`;
+};
+$$("#sexo button").forEach(b => b.onclick = () => {
+  $$("#sexo button").forEach(x => x.setAttribute("aria-pressed","false"));
+  b.setAttribute("aria-pressed","true"); perfil.sexo = b.textContent;
+});
+
+function recoger(){
+  perfil.nac = $("#nac").value; perfil.peso = $("#peso").value.trim();
+  perfil.talla = $("#talla").value.trim(); perfil.alergias = $("#alergias").value.trim();
+}
+function irA(n){
+  recoger();
+  $$(".paso").forEach(p => p.classList.remove("activo"));
+  $("#p"+n).classList.add("activo");
+  $("#migas").textContent = `Paso ${n} de 3 — ` + ["Tus datos","Antecedentes familiares","Revisa y guarda"][n-1];
+  if(n === 3) pintarResumen();
+}
+$$("[data-ir]").forEach(b => b.onclick = () => irA(+b.dataset.ir));
+$$("[data-omitir]").forEach(b => b.onclick = () => { toast("Sin problema: lo puedes llenar después desde tu perfil."); irA(+b.dataset.omitir); });
+
+function pintarResumen(){
+  const e = edadDe(perfil.nac);
+  const ahf = Object.entries(perfil.ahf);
+  const filas = [
+    ["Nacimiento", perfil.nac ? `${fmt(perfil.nac)}${e !== null ? ` (${e} años)` : ""}` : "— sin llenar"],
+    ["Sexo", perfil.sexo || "— sin llenar"],
+    ["Peso", perfil.peso ? `${perfil.peso} kg (medido hoy, 19/10/2026)` : "— sin llenar"],
+    ["Estatura", perfil.talla ? `${perfil.talla} cm (medido hoy)` : "— sin llenar"],
+    ["Alergias", perfil.alergias || "— sin llenar"],
+  ];
+  $("#resumen").innerHTML = `<dl>${filas.map(([k,v]) => `<dt>${k}</dt><dd>${esc(v)}</dd>`).join("")}</dl>
+    <h3>Antecedentes familiares</h3>
+    ${ahf.length ? ahf.map(([c,qs]) => `<div><strong>${esc(c)}</strong>: ${qs.length ? qs.map(esc).map(q => `<span class="chip">${q}</span>`).join(" ") : '<span class="sub">sin parentesco indicado</span>'}${perfil.ahfNota[c] ? ` <span class="sub">· ${esc(perfil.ahfNota[c])}</span>` : ""}</div>`).join("")
+      : `<p class="sub">Ninguno marcado — también es un dato útil.</p>`}
+    <p class="hint">Nada de esto sale de tu expediente; se guarda cifrado como todo lo demás.<span class="ac">AC-8</span></p>`;
+}
+function esc(t){ const d = document.createElement("span"); d.textContent = t ?? ""; return d.innerHTML; }
+function fmt(iso){ if(!iso) return ""; const [a,m,d] = iso.split("-"); return `${d}/${m}/${a}`; }
+
+function cerrarOnboarding(guardado){
+  recoger();
+  $("#onboarding").hidden = true; $("#ahoraNo").parentElement.hidden = true;
+  $("#perfil").hidden = false; pintarPerfil();
+  toast(guardado ? "Perfil guardado. Esto solo se pregunta una vez." :
+    "Te llevamos al expediente. Tu perfil queda vacío y editable cuando quieras.");
+}
+function pintarPerfil(){
+  const e = edadDe(perfil.nac);
+  const ahf = Object.entries(perfil.ahf);
+  const algo = perfil.nac || perfil.sexo || perfil.peso || perfil.talla || perfil.alergias || ahf.length;
+  $("#perfilDatos").innerHTML = !algo ? `<p class="sub">Tu perfil está vacío. Complétalo cuando quieras con «Editar».</p>` :
+    `<dl>
+      ${perfil.nac ? `<dt>Nacimiento</dt><dd>${fmt(perfil.nac)}${e !== null ? ` · ${e} años` : ""}</dd>` : ""}
+      ${perfil.sexo ? `<dt>Sexo</dt><dd>${esc(perfil.sexo)}</dd>` : ""}
+      ${perfil.peso ? `<dt>Peso</dt><dd>${esc(perfil.peso)} kg <span class="sub">(19/10/2026)</span></dd>` : ""}
+      ${perfil.talla ? `<dt>Estatura</dt><dd>${esc(perfil.talla)} cm</dd>` : ""}
+      ${perfil.alergias ? `<dt>Alergias</dt><dd>${esc(perfil.alergias)}</dd>` : ""}
+    </dl>
+    ${ahf.length ? `<h3>Antecedentes familiares</h3>` + ahf.map(([c,qs]) =>
+      `<div><strong>${esc(c)}</strong>: ${qs.length ? qs.map(esc).map(q => `<span class="chip">${q}</span>`).join(" ") : '<span class="sub">parentesco sin indicar</span>'}${perfil.ahfNota[c] ? ` <span class="sub">· ${esc(perfil.ahfNota[c])}</span>` : ""}</div>`).join("") : ""}`;
+  pintarSecciones();
+  $("#secciones").hidden = false;
+  $("#perfilPista").textContent = ahf.some(([c]) => c === "Diabetes") ?
+    "Con antecedente familiar de diabetes, la IA podrá avisarte si no hay un tamizaje registrado (aviso proactivo con fuente)." :
+    "Tus médicos y la IA usarán este contexto; compartes solo lo que cada enlace permita.";
+}
+function pintarSecciones(){
+  const z = $("#listaSecciones"); z.textContent = "";
+  const nAhf = Object.keys(perfil.ahf).length;
+  const todas = [["Antecedentes familiares", "diabetes, cáncer… y de quién", nAhf], ...SECCIONES.map(([t,d]) => [t,d,0])];
+  for(const [t,d,n] of todas){
+    const fila = document.createElement("div"); fila.className = "cond";
+    fila.innerHTML = `<div style="display:flex; justify-content:space-between; gap:8px; align-items:center; flex-wrap:wrap">
+      <div style="min-width:0"><strong>${esc(t)}</strong><div class="hint">${esc(d)}</div></div>
+      ${n ? `<span class="chip">✓ ${n} registrado${n>1?"s":""}</span>` : `<button type="button" class="link">+ Añadir</button>`}</div>`;
+    const b = fila.querySelector("button");
+    if(b) b.onclick = () => toast(t === "Antecedentes familiares" ? "Edita tus antecedentes con «Editar», arriba." :
+      "Esta sección se llena en la siguiente historia; por ahora valida que tenga sentido que exista.");
+    z.append(fila);
+  }
+}
+$("#guardar").onclick = () => cerrarOnboarding(true);
+$("#ahoraNo").onclick = () => cerrarOnboarding(false);
+$("#editar").onclick = () => { $("#perfil").hidden = true; $("#onboarding").hidden = false;
+  $("#ahoraNo").parentElement.hidden = false; irA(1); };
+
+$("#verAc").onclick = () => {
+  const on = document.body.classList.toggle("show-ac");
+  $("#verAc").setAttribute("aria-pressed", String(on));
+  $("#verAc").textContent = on ? "Ocultar criterios" : "Ver criterios";
+};
+let tTimer;
+function toast(msg){ const t = $("#toast"); t.textContent = msg; t.hidden = false;
+  clearTimeout(tTimer); tTimer = setTimeout(() => t.hidden = true, 3200); }
+pintarCondiciones();
+</script>
