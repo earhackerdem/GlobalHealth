@@ -26,6 +26,8 @@ Keys:
   blocked_commands   [{"pattern": regex, "reason": text}] added by guard-commands to the base rules
   skill_hints        [{"skill": name, "pattern": regex, "only_without_active"?: bool}] for the skill-nudge hook
   lint               true/false: PostToolUse lint.py (py_compile, json, xml, bash -n)
+  browser_hosts      extra hosts the browser tools may navigate to (guard-browser.py), besides localhost,
+                     127.0.0.1, [::1], *.localhost and *.test; "host" exact or ".domain" with its subdomains
 """
 import fnmatch
 import json
@@ -46,6 +48,7 @@ DEFAULTS = {
     "exempt": ["memory/", "docs/", "product/", ".claude/", ".agents/", ".github/", ".cursor/", ".vscode/"],
     "protected_branches": ["main", "master", "release", "production", "prod"],
     "blocked_commands": [],
+    "browser_hosts": [],
     "skill_hints": [],
     "phase_skills": {},
     "lint": True,

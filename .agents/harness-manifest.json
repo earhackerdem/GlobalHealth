@@ -209,7 +209,7 @@
       "src": ".claude/agents/tester.md"
     },
     ".claude/hooks/_config.py": {
-      "sha256": "ad4262cef3c2ab360240e27a0e06686743ae33932e1ac4b5cc18b970e9fb40ce",
+      "sha256": "5bbd2d64dff33c06fd952b3909a4a1ffcceb3c0438898cb82f2c548bb615de4a",
       "src": ".claude/hooks/_config.py"
     },
     ".claude/hooks/_harness.py": {
@@ -227,6 +227,10 @@
     ".claude/hooks/gate-plan.py": {
       "sha256": "85e91bf1b7c06bd0c2db733dd32536c61a805378539fc33819d700f537665dc9",
       "src": ".claude/hooks/gate-plan.py"
+    },
+    ".claude/hooks/guard-browser.py": {
+      "sha256": "7aa95ea1580db5f83a0a53db1797f4359f780b3a2a55a4059ced5487daf80439",
+      "src": ".claude/hooks/guard-browser.py"
     },
     ".claude/hooks/guard-commands.py": {
       "sha256": "6ed17922c1811bcc07f3abc362d2a598f804459a18cc237e2a0eede35f9d3b9a",
@@ -273,7 +277,7 @@
       "src": ".claude/profile.env.example"
     },
     ".claude/settings.json": {
-      "sha256": "d2d09e3fea9c359668f61e2326024b9047b2767e8c41a0af6d478e602486a1d6",
+      "sha256": "9c6f85a0299470ba57777592273490f7ae6ac00a120ac7229b916bf2ea39ee10",
       "src": ".claude/settings.json"
     },
     ".cursor/hooks.json": {
@@ -309,7 +313,7 @@
       "src": "AGENTS.md"
     },
     "CLAUDE.md": {
-      "sha256": "2db504fe13abce143dc3cc8f40a64567d84161dfa333a8d23f34cec4230f68c4",
+      "sha256": "9b0a98e405551cadc6ae0f0d689867b79f1316af7421f61ae5ddf2df8e30f984",
       "src": "CLAUDE.md"
     },
     "Makefile": {

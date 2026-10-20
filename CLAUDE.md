@@ -23,6 +23,7 @@ substantive, name the assumption, verify it and offer an alternative. It's the r
 | PreToolUse Edit/Write | `gate-plan.py` | editing `code` requires `.epe/active` + `plan.md` with `Status: APPROVED` |
 | PreToolUse Edit/Write | `guard-tests.py` | inside a `tester` subagent, only `tests` paths; inside an `implementer`, never `tests` (role = `agent_type`, or `HARNESS_ROLE`) |
 | PreToolUse Agent | `guard-review-brief.py` | an adversarial-review subagent must carry `memory/closed.md` in its prompt |
+| PreToolUse Chrome | `guard-browser.py` | the browser tools are allowed without a prompt (exploratory pass), and navigation is fenced to localhost, `*.localhost`, `*.test` and `harness.json → browser_hosts`; blocks in both profiles |
 | PostToolUse Edit/Write | `lint.py` | py_compile · json · xml · bash -n over `code` and the agentic layer |
 | Stop | `check-journal.py` | if you wrote work but no journal entry, blocks the close once |
 | PreCompact | `memory-compaction.py mark` | leaves the breadcrumb to sweep later |
