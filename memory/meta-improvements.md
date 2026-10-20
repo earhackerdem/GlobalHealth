@@ -35,4 +35,3 @@ Includes rejections: a retro that repeats the previous one's menu manufactures f
   queda solo como respaldo. Evidencia de aquí: #14 y #17 fueron PRs solo de archivo; #17 necesitó cherry-pick y
   rebase. Template: PR earhackerdem/harness#1. `openspec/config.yaml` (del proyecto) se corrigió a mano porque
   `harness-update` no lo toca.
-
