@@ -1,10 +1,12 @@
-import { useMutation, useQueryClient } from "@tanstack/react-query"
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { Trash2 } from "lucide-react"
 import { useState } from "react"
 import { useForm } from "react-hook-form"
 import { useTranslation } from "react-i18next"
 
 import { HealthRecordsService } from "@/client"
+import { chronicTitle } from "@/components/Profile/history"
+import { getHistoryQueryOptions } from "@/components/Profile/queries"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -32,13 +34,30 @@ const DeleteRecord = ({ id, onSuccess }: DeleteRecordProps) => {
   const { showSuccessToast, showErrorToast } = useCustomToast()
   const { handleSubmit } = useForm()
 
+  // B-5: a diagnosis may back chronic entries (only a diagnosis can: the API
+  // rejects any other link), so the dialog names them, read from
+  // GET /profile/history while it is open.
+  const { data: history } = useQuery({
+    ...getHistoryQueryOptions(),
+    enabled: isOpen,
+  })
+  const backedNames = (history?.data ?? []).flatMap((entry) =>
+    entry.section === "chronic" && entry.diagnosis_id === id
+      ? [`«${chronicTitle(entry, t)}»`]
+      : [],
+  )
+
   const mutation = useMutation({
     mutationFn: (recordId: string) =>
       HealthRecordsService.recordsDeleteHealthRecord({
         path: { id: recordId },
       }),
     onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ["health-records"] })
+      // The API unlinks the chronic entries it backed (same transaction).
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["health-records"] }),
+        queryClient.invalidateQueries({ queryKey: ["history"] }),
+      ])
       showSuccessToast(t("deleteRecord.successToast"))
       setIsOpen(false)
       onSuccess()
@@ -66,6 +85,14 @@ const DeleteRecord = ({ id, onSuccess }: DeleteRecordProps) => {
             <DialogTitle>{t("deleteRecord.dialogTitle")}</DialogTitle>
             <DialogDescription>
               {t("deleteRecord.dialogDescription")}
+              {backedNames.length > 0 && (
+                <span className="mt-2 block">
+                  {t("deleteRecord.backsChronic", {
+                    count: backedNames.length,
+                    names: backedNames.join(", "),
+                  })}
+                </span>
+              )}
             </DialogDescription>
           </DialogHeader>
 

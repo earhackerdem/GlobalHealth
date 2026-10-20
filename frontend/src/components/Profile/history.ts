@@ -1,13 +1,18 @@
 import type { TFunction } from "i18next"
 
 import type {
+  ChronicHistoryEntry,
   HistoryEntriesPublic,
   PatientProfilePublic,
   WhenStage,
 } from "@/client"
 
-/** The four event sections of US-18 Story A (keys as in perfil.tsx). */
+/**
+ * The sections with their own screen (keys as in perfil.tsx): chronic (US-18
+ * Story B) and the four event sections of Story A.
+ */
 export const HISTORY_SECTIONS = [
+  "chronic",
   "past",
   "surgeries",
   "fractures",
@@ -16,7 +21,7 @@ export const HISTORY_SECTIONS = [
 
 export type HistorySection = (typeof HISTORY_SECTIONS)[number]
 
-/** Every card on "Mi perfil médico", in display order (B and C still read-only). */
+/** Every card on "Mi perfil médico", in display order (habits still read-only). */
 export const HISTORY_CARD_KEYS = [
   "chronic",
   "past",
@@ -30,6 +35,7 @@ export type HistoryCardKey = (typeof HISTORY_CARD_KEYS)[number]
 
 /** es-MX URL segment of each section: /perfil/<slug>. */
 export const SECTION_SLUGS: Record<HistorySection, string> = {
+  chronic: "cronicas",
   past: "pasadas",
   surgeries: "cirugias",
   fractures: "fracturas",
@@ -46,8 +52,50 @@ export function isHistorySection(key: string): key is HistorySection {
 }
 
 export type HistoryEntry = HistoryEntriesPublic["data"][number]
-export type When = NonNullable<HistoryEntry["when"]>
+export type ChronicEntry = Extract<HistoryEntry, { section: "chronic" }>
+/** One "cuándo" answer; the same union as Story A's `when` and B's since/until. */
+export type When = NonNullable<ChronicHistoryEntry["since"]>
 export type Stage = WhenStage["value"]
+
+/**
+ * Chronic conditions catalog (Story B), in display order; the sensitive ones
+ * go under their own subtitle "Salud mental y adicciones", then "Otra".
+ */
+export const CHRONIC_CONDITIONS = [
+  "type2_diabetes",
+  "hypertension",
+  "asthma",
+  "hypothyroidism",
+  "high_cholesterol",
+  "copd",
+  "arthritis",
+  "epilepsy",
+] as const satisfies readonly NonNullable<ChronicEntry["condition"]>[]
+
+export const CHRONIC_SENSITIVE_CONDITIONS = [
+  "depression",
+  "anxiety",
+  "bipolar_disorder",
+  "substance_use",
+] as const satisfies readonly NonNullable<ChronicEntry["condition"]>[]
+
+/**
+ * "Sensible" checked by default for the mental health and addictions
+ * conditions (Decision 2, same set as the API's CHRONIC_SENSITIVE_BY_DEFAULT).
+ */
+export function sensitiveByDefault(condition: string | null | undefined) {
+  return (CHRONIC_SENSITIVE_CONDITIONS as readonly string[]).includes(
+    condition ?? "",
+  )
+}
+
+/** A chronic entry's name: the catalog label, or the patient's own text for "Otra". */
+export function chronicTitle(entry: ChronicEntry, t: TFunction): string {
+  if (entry.condition === "other" && entry.other_text) return entry.other_text
+  return entry.condition
+    ? t(`profile:history.options.chronicCondition.${entry.condition}`)
+    : ""
+}
 
 export const STAGES: readonly Stage[] = [
   "before_primary",
@@ -115,21 +163,34 @@ export function formatYearRange([from, to]: readonly [number, number]): string {
   return from === to ? `${from}` : `${from}–${to}`
 }
 
-/** "a los 7 años (≈1997)" · "en la primaria (≈1996–2001)" · "en 2015" · "no recuerda cuándo". */
+/** i18n key family per wording: "a los…" (when), "desde los…" (since), "hasta los…" (until). */
+const WHEN_SUMMARY_KEYS = {
+  when: "profile:history.when.summary",
+  since: "profile:history.when.summarySince",
+  until: "profile:history.when.summaryUntil",
+} as const
+
+/**
+ * "a los 7 años (≈1997)" · "en la primaria (≈1996–2001)" · "en 2015" · "no
+ * recuerda cuándo"; with `wording` "since" / "until" the chronic forms "desde
+ * los 31 años (≈2021)" · "hasta la primaria (≈…)" · "desde 2015".
+ */
 export function whenSummary(
   when: When,
   birthDate: string | null | undefined,
   t: TFunction,
+  wording: keyof typeof WHEN_SUMMARY_KEYS = "when",
 ): string {
+  const base = WHEN_SUMMARY_KEYS[wording]
   let text: string
   if (when.kind === "age") {
-    text = t("profile:history.when.summary.age", { value: when.value })
+    text = t(`${base}.age`, { value: when.value })
   } else if (when.kind === "stage") {
-    text = t(`profile:history.when.summary.stages.${when.value}`)
+    text = t(`${base}.stages.${when.value}`)
   } else if (when.kind === "year") {
-    return t("profile:history.when.summary.year", { value: when.value })
+    return t(`${base}.year`, { value: when.value })
   } else {
-    return t("profile:history.when.summary.unknown")
+    return t(`${base}.unknown`)
   }
   const range = approxYears(when, birthDate)
   return range

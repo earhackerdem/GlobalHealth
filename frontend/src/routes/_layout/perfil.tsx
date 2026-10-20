@@ -147,9 +147,9 @@ function ProfileContent() {
             {t("pending.description")}
           </p>
         </div>
-        {/* The four event sections (FR-028, Story A) open their own screen;
-            chronic and habits (Stories B and C) stay listed without capture:
-            no link, no inputs, no "Agregar". */}
+        {/* Chronic (Story B) and the four event sections (FR-028, Story A)
+            open their own screen; habits (Story C) stays listed without
+            capture: no link, no inputs, no "Agregar". */}
         <div className="grid gap-4 sm:grid-cols-2">
           {HISTORY_CARD_KEYS.map((key) => {
             const title = (
@@ -179,7 +179,7 @@ function ProfileContent() {
                 data-testid={`history-card-${key}`}
                 className="flex flex-col gap-2 rounded-lg border p-4 transition-colors hover:bg-accent focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
               >
-                {/* The chevron marks, on touch too, the 4 cards that open a
+                {/* The chevron marks, on touch too, the cards that open a
                     screen (decorative: the link's name stays the text). */}
                 <div className="flex items-start justify-between gap-2">
                   {title}
