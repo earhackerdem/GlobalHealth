@@ -101,4 +101,3 @@ Pistas para el plan:
 - **Matriz §2 y supuestos §5:** sin objeciones. Pasa a `/epe-2-plan`, cuyo gate es el "plan approved" sobre el
   prototipo actualizado (B-1b y B-5).
 - **Fuera de foco:** compartir por secciones y por marca sensible (FR-014, E3/E4) queda en el inbox.
-
