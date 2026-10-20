@@ -101,3 +101,12 @@ existen, con la infraestructura de cifrado y consentimiento tal cual. Hints for 
   campo de salud) y 2026-10-19 (onboarding-perfil); `memory/inbox.md` filas 2026-10-12, 2026-10-18, 2026-10-19;
   `product/technical-brief.md` §4 (NFR-001, 004, 009, 012); `product/dominio.md` rebanada FR-028;
   `product/prototipos/perfil-secciones.html` v4.
+
+## 8. Respuestas del gate (Saúl Pérez, 2026-10-20)
+
+Matriz aceptada al responder las cuatro preguntas, todas con la opción recomendada:
+1. Una **tabla genérica** con el contenido cifrado y esquemas por sección.
+2. **Nada en claro**: la sección y el "ninguna" también se cifran; se agrupa en la app.
+3. **Una pantalla por sección** (`/perfil/<seccion>`), como el prototipo.
+4. Los tropiezos del inbox (Alembic al arrancar y el reformateo de `frontend/tests/`) se arreglan en un **PR
+   `fix/` aparte, antes** de ejecutar esta story.
