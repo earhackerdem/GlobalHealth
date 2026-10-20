@@ -5,14 +5,14 @@ Includes rejections: a retro that repeats the previous one's menu manufactures f
 
 | Date | Proposal | Verdict | Why | Where it lives (PR, file) |
 |---|---|---|---|---|
-| 2026-10-11 | El skill `product-tech-brief` debería incluir el **entorno de desarrollo local** (¿Docker para la BD? ¿gestor de venv/deps?) en su pregunta bloqueante y como sección del template, no solo hosting/CI | Proposed | Vacío detectado por Saúl Pérez antes de aprobar US-01: stack y hosting decididos, entorno local sin decidir; se resolvió ad hoc con ADR D12. Upstream al template del harness vía rama improve/ cuando se decida | memory/decisions.md § D12 |
-| 2026-10-11 | tdd-check/barrera test→impl no contempla el caso "la implementación vive en ruta de tests" (conftest.py): el verde entra como commit `test:` y el gate pasa vacuamente para ese grupo. Propuesta: regla explícita en epe-3-execute + tdd-check que distinga conftest/infra de tests de aserciones | Proposed | Visto en bd-pruebas-docker (2026-10-11): el verde del grupo 2 vivía en backend/tests/conftest.py, donde guard-tests bloquea al implementer; se commiteó como `test:` y tdd-check pasó sin verificar nada para ese grupo | openspec/changes/archive/2026-10-12-bd-pruebas-docker/evidence.md § Asimetría documentada del grupo 2 |
+| 2026-10-11 | El skill `product-tech-brief` debería incluir el **entorno de desarrollo local** (¿Docker para la BD? ¿gestor de venv/deps?) en su pregunta bloqueante y como sección del template, no solo hosting/CI | ✅ Applied 0.2.0 (verificado 2026-10-20: `.agents/skills/product-tech-brief/SKILL.md:25`, "Local development environment") | Vacío detectado por Saúl Pérez antes de aprobar US-01: stack y hosting decididos, entorno local sin decidir; se resolvió ad hoc con ADR D12. Upstream al template del harness vía rama improve/ cuando se decida | memory/decisions.md § D12 |
+| 2026-10-11 | tdd-check/barrera test→impl no contempla el caso "la implementación vive en ruta de tests" (conftest.py): el verde entra como commit `test:` y el gate pasa vacuamente para ese grupo. Propuesta: regla explícita en epe-3-execute + tdd-check que distinga conftest/infra de tests de aserciones | ✅ Applied 0.2.0 como regla declarada (verificado 2026-10-20: `.agents/skills/epe-3-execute/SKILL.md:57`, "Known asymmetry"); `tdd-check` sigue sin distinguir conftest | Visto en bd-pruebas-docker (2026-10-11): el verde del grupo 2 vivía en backend/tests/conftest.py, donde guard-tests bloquea al implementer; se commiteó como `test:` y tdd-check pasó sin verificar nada para ese grupo | openspec/changes/archive/2026-10-12-bd-pruebas-docker/evidence.md § Asimetría documentada del grupo 2 |
 
-- [2026-10-12 · Proposed] El harness no tiene gate entre "commit verde local" y "push": tres fallos de pre-commit en CI
+- [2026-10-12 · ✅ Applied 0.2.0: `make install-hooks`, verificado 2026-10-20 en el Makefile] El harness no tiene gate entre "commit verde local" y "push": tres fallos de pre-commit en CI
   (PR #2 de GlobalHealth) fueron pushes sin pasada prek local. Propuesta: make install-hooks que instale un pre-push
   corriendo prek sobre el diff vs la rama base (hoy instalado ad-hoc en .git/hooks/pre-push de este repo).
 
-- [2026-10-12 · Proposed] El gate humano de /opsx:propose–/epe-2-plan es textual (specs/design) y los no programadores
+- [2026-10-12 · ✅ Applied 0.2.0 y 0.3.1: gate de prototipo en epe-2-plan y product-discovery, HTML local en el repo] El gate humano de /opsx:propose–/epe-2-plan es textual (specs/design) y los no programadores
   no lo leen: la expectativa rota de expediente-registros (receta ≠ modelo mexicano real) se detectó DESPUÉS de un
   ciclo completo. Propuesta upstream: paso opcional de prototipo mock navegable junto a las specs (artifact clickeable
   con datos de ejemplo, o prompt generado para Claude Design/v0/Stitch), y el gate pide validar el prototipo además
@@ -35,3 +35,9 @@ Includes rejections: a retro that repeats the previous one's menu manufactures f
   queda solo como respaldo. Evidencia de aquí: #14 y #17 fueron PRs solo de archivo; #17 necesitó cherry-pick y
   rebase. Template: PR earhackerdem/harness#1. `openspec/config.yaml` (del proyecto) se corrigió a mano porque
   `harness-update` no lo toca.
+
+- [2026-10-20 · Proposed] El hook `lint.py` (PostToolUse) compila con el `python3` del sistema (3.9 en macOS) y marca
+  como error de sintaxis el `except A, B:` sin paréntesis (PEP 758), que `ruff format` produce con Python 3.14
+  (`backend/app/api/routes/profile.py`, `deps.py`). Es un falso positivo que se ignora en cada edición. Propuesta
+  upstream: que `lint.py` use el intérprete del proyecto cuando exista (`uv run python`, `.venv/bin/python`) o
+  `harness.json → python`. Visto en perfil-eventos; queda en el inbox del template.
