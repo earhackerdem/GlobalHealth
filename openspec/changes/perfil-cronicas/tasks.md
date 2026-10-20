@@ -48,14 +48,14 @@ are `single`. `make tdd-check` requires one `test:` commit per `test→impl` gro
 
 ## 2. Frontend: tarjeta, formulario de crónica, marca sensible, selector y aviso de borrado · test→impl
 
-- [ ] 2.1 **Tester.** Escribe `frontend/tests/profile-history.spec.ts` (crónicas) y
+- [x] 2.1 **Tester.** Escribe `frontend/tests/profile-history.spec.ts` (crónicas) y
   `frontend/tests/health-records.spec.ts` (B-5) a partir de dos fuentes: la parte Playwright del test plan (filas 1,
   2, 3, 4, 5, 6, 7, 9, 10, 11, 12, 14 y 17) y el Interface contract.
   - Reescribe los citadores `profile.spec.ts:317-319` y `profile-history.spec.ts:262` para que solo hábitos quede
     sin enlace.
 
   Verificación: la suite queda roja por comportamiento ausente. Commit `test:` solo.
-- [ ] 2.2 **Implementer.**
+- [x] 2.2 **Implementer.**
   - `history.ts` (sección, slug `cronicas`, resumen con "desde"/"hasta");
   - `HistoryEntryForm.tsx` (campos de crónica, casilla "Sensible" con su valor por defecto, dos `WhenField`, el
     selector de diagnóstico);
@@ -65,12 +65,12 @@ are `single`. `make tdd-check` requires one `test:` commit per `test→impl` gro
   - los textos es-MX.
 
   Verificación: los tests de 2.1 verdes sin tocarlos; tsc y biome limpios.
-- [ ] 2.3 **Orquestador.** Corre la suite Playwright completa como en CI (chromium + s26-ultra), escribe los
+- [x] 2.3 **Orquestador.** Corre la suite Playwright completa como en CI (chromium + s26-ultra), escribe los
   números en evidence.md y corre `make tdd-check`.
 
 ## 3. Verificación final, archivo y entrega · single
 
-- [ ] 3.1 **Exploración en Chrome por el agente** (`epe-3-execute`, paso 2): flujo completo de crónicas, la marca
+- [x] 3.1 **Exploración en Chrome por el agente** (`epe-3-execute`, paso 2): flujo completo de crónicas, la marca
   sensible, "desde"/"hasta", el respaldo y el borrado del diagnóstico. También intenta romperla (doble envío,
   emoji, datos largos, ancho de 500 px). Verificación: tabla en evidence.md; si hay defectos, se arreglan o se
   escalan.
