@@ -9,7 +9,7 @@ task: if the person you work with doesn't mention it, it is not started.
 | Date | What | Why it matters | Status |
 |---|---|---|---|
 | 2026-10-12 | Atomic Design + Storybook para el frontend (pedido de Saúl Pérez al decidir i18n). Objeción anotada del harness: el template ya trae su propia organización (shadcn/ui + components/ por dominio) y Storybook es mantenimiento no funcional continuo para un solo dev pre-producto; alternativa barata: posponer a cuando haya un segundo consumidor de componentes (diseñador, segundo dev, design system). Si Saúl reafirma, va como story propia con ADR | Reorganizar components/ toca TODO el frontend; mejor decidirlo con exploración y no de pasada | abierto |
-| 2026-10-12 | `scripts/generate-client.sh` reformatea TODO el árbol del frontend (`biome --write --unsafe`) como efecto colateral de regenerar el cliente; sorprendió al implementer del grupo 3 de expediente-registros | Un script de codegen no debería tocar archivos ajenos a `src/client/`; radio de daño inesperado en working trees sucios | abierto |
+| 2026-10-12 | `scripts/generate-client.sh` reformatea TODO el árbol del frontend (`biome --write --unsafe`) como efecto colateral de regenerar el cliente; sorprendió al implementer del grupo 3 de expediente-registros | Un script de codegen no debería tocar archivos ajenos a `src/client/`; radio de daño inesperado en working trees sucios | ✅ cerrado (fix/dev-migraciones-y-cliente, 2026-10-20): el script ya no corre `bun run lint`; el cliente está excluido de biome y el resto se formatea al commitear (hook local-biome-check) |
 
 | 2026-10-12 | **Receta a la mexicana** (feedback de Saúl Pérez tras probar el PR #6; no leyó las delta specs y el resultado no cumplió su expectativa): una receta real trae varias medicinas, fecha de expedición y nombre del paciente; NO trae vigencia inicio/fin y normalmente NO trae diagnóstico (se dice de palabra) → el modelo debería ser receta con medicinas[] y diagnóstico como campo opcional, no dos tipos con vigencia obligatoria. Intención de fondo: subir foto de la receta (o cámara) y que OCR+IA llene los campos. Prototipo clickeable para validar el flujo: https://claude.ai/artifact/PJUNDJ5d2c8R8YHq6qPXtZ | Toca el modelo recién fusionable (PR #6), el PRD (FR-005/FR-006; la captura por foto no tiene FR) y FR-025 (recordatorios usaban la vigencia); merece story propia (reshape) + story de captura foto/OCR tras decidir proveedor IA (NFR-005) | ✅ cerrado el reshape (PR #13 mergeado 2026-10-19: receta+medicinas[], sin vigencia, dx opcional/suelto, archivado; prototipo en product/prototipos/receta-primero.html); la captura foto/OCR sigue pendiente del proveedor IA (story 2) |
 | 2026-10-12 | **Prototipo mock como paso del ciclo**: pedido de Saúl Pérez — antes de (o junto con) las specs, generar un frontend solo-mock para que usuarios no programadores validen la idea sin leer delta specs; opciones: artifact clickeable generado por el harness (demostrado hoy), o emitir un prompt para Claude Design / v0 / Stitch | El gate humano del propose hoy exige leer specs; un prototipo navegable detecta expectativas rotas ANTES de ejecutar (hoy costó un ciclo completo) → meta-mejora al harness | abierto |
@@ -38,6 +38,8 @@ task: if the person you work with doesn't mention it, it is not started.
 - [2026-10-18] `scripts/generate-client.sh` y `bun run lint` (biome `--write --unsafe`) reformatean también
   `frontend/tests/`: el implementer del grupo 2 de receta-mexicana tuvo que restaurar el spec del tester con git.
   Candidato: excluir `tests/` del barrido de biome en el script (se suma a la fila existente del blast radius).
+  **✅ Cerrado (fix/dev-migraciones-y-cliente, 2026-10-20)** en lo que toca al script: ya no lintea. `bun run lint`
+  a mano sigue formateando todo `frontend/` por diseño; un implementer no lo corre a mitad de tarea.
 - [2026-10-18] Enlace diagnóstico↔receta + confirmación por correo (idea de Saúl Pérez tras validar receta-mexicana):
   cuando haya proveedor de IA resuelto, permitir enlazar un diagnóstico no confirmado a recetas y, si la receta trae
   los datos del médico, enviarle un correo para que confirme que esa receta corresponde a ese diagnóstico. Extiende
@@ -60,7 +62,8 @@ task: if the person you work with doesn't mention it, it is not started.
 - [2026-10-19] El contenedor backend NO corre migraciones Alembic al (re)arrancar: tras crear d5f2a8c41e07 la BD
   dev dio 500 ("relation patient_profile does not exist") hasta un `docker compose exec backend alembic upgrade
   head` manual (visto por el implementer del grupo 2 de onboarding-perfil). Decidir: prestart que migre, o
-  documentar el paso en make up.
+  documentar el paso en make up. **✅ Cerrado (fix/dev-migraciones-y-cliente, 2026-10-20):** `make up` migra al
+  final y `make migrate` lo hace a mano tras crear una migración (corre `scripts/prestart.sh`, idempotente).
 - [2026-10-19] sr-only del SidebarTrigger dice "Contraer barra lateral" aunque el sheet móvil esté cerrado: deriva
   del estado `open` de escritorio, no de `openMobile` (frontend/src/components/ui/sidebar.tsx:274-277; hallazgo del
   tester móvil de onboarding-perfil). Quirk de accesibilidad del componente del template.
