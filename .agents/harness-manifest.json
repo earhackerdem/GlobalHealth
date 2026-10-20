@@ -229,7 +229,7 @@
       "src": ".claude/hooks/gate-plan.py"
     },
     ".claude/hooks/guard-browser.py": {
-      "sha256": "7aa95ea1580db5f83a0a53db1797f4359f780b3a2a55a4059ced5487daf80439",
+      "sha256": "4088a849eaf515604dbb3ea83641bbce221a78a8d8c800df50fbbc7f7a849814",
       "src": ".claude/hooks/guard-browser.py"
     },
     ".claude/hooks/guard-commands.py": {
@@ -313,7 +313,7 @@
       "src": "AGENTS.md"
     },
     "CLAUDE.md": {
-      "sha256": "9b0a98e405551cadc6ae0f0d689867b79f1316af7421f61ae5ddf2df8e30f984",
+      "sha256": "93d57b5120f8515d9d17e1f05740c2037b8ddafb8b0c51ddd8f55dea87327123",
       "src": "CLAUDE.md"
     },
     "Makefile": {
