@@ -245,7 +245,7 @@ las guías de semiología detallan [VERIFIED 2026-10-19, memory/research.md § a
 | Antecedentes familiares (AHF) | condición + parentesco con línea materna/paterna, edad al diagnóstico opcional | **sí** |
 | Alergias | a medicamentos, alimentos u otras sustancias | **sí** (propuesta Q4: es lo primero que preguntan) |
 | Enfermedades crónicas (APP) | las que el paciente reconoce directamente (diabetes, hipertensión…) | no — sugerida al terminar |
-| Enfermedades pasadas e infecciosas (APP) | hepatitis, varicela, COVID grave… con año aproximado | no — sugerida |
+| Enfermedades pasadas e infecciosas (APP) | hepatitis, varicela, COVID grave… con la edad que tenía o el año (rebanada FR-028, ronda 8) | no — sugerida |
 | Cirugías y hospitalizaciones (APP) | qué, cuándo, complicaciones | no — sugerida |
 | Fracturas y lesiones (APP traumáticos) | qué hueso/lesión, cuándo, secuelas | no — sugerida |
 | Transfusiones y grupo sanguíneo (APP) | fecha, motivo, reacción; tipo de sangre | no — sugerida |
