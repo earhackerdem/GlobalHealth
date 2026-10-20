@@ -103,3 +103,33 @@ Hallazgos para el review (no se tocaron: fuera del plan):
   sección de un registro", "El año no puede ser anterior a 1900" (sin fecha de nacimiento) y edad negativa con
   el mensaje del rango 0–130. Los valores fuera de un enum devuelven el 422 estándar de pydantic, como `sex` hoy
   (veredicto de closed.md 2026-10-19).
+
+## Apply del review (2026-10-20)
+
+Aprobados por Saúl Pérez: los bloques 1–5 más E2, O1 y O2. Hay un rebote parcial (H1, ver abajo). Los números
+son las re-corridas del orquestador desde limpio:
+
+| Command | Result | Errors | Skipped | Verdict |
+|---|---|---|---|---|
+| `cd backend && FASTAPI_ENV=development uv run coverage run -m pytest tests/ -q` | **195 passed**, 0 failed · cobertura **96 %** · mypy limpio | 0 | 0 | ✅ |
+| Mutantes del review (C9: tres bordes de `when`; S5: sin filtro `user_id` en el listado y en "ninguna"; T2: "hoy" en otra zona) | **7/7 mueren** con tests escritos para ellos (antes sobrevivían) | — | — | ✅ |
+| `bunx playwright test tests/profile-history.spec.ts tests/profile.spec.ts` (chromium + s26-ultra) | **49 passed**, 0 failed, 0 flaky | 0 | 0 | ✅ |
+| T1: `TZ=Pacific/Kiritimati bunx playwright test tests/profile.spec.ts --project=chromium` (Node un día adelante de México) | **7 passed** (antes: falla en `profile.spec.ts:396`) | 0 | 0 | ✅ |
+| Estabilidad: ambos specs con `--repeat-each=3`, los dos proyectos (fixer) | 145 passed, 0 flaky | 0 | 0 | ✅ |
+| Suite Playwright COMPLETA como CI (imagen reconstruida, :8000), 2 corridas | 1 × 143 passed + 2 failed (`reset-password.spec.ts:90`, `user-settings.spec.ts:230`, suites heredadas); 1 × **145 passed**. Los dos heredados aislados con `--repeat-each=5`: **101/101** | — | 0 | 🟡 misma inestabilidad bajo carga de las suites del template (deuda ya declarada) |
+
+**Rebotado (parcial):** H1, el `aria-required` en el grupo de chips. ARIA 1.2 no lo admite en `role="group"` y
+biome lo marca como error (`lint/a11y/useAriaPropsSupportedByRole`). El resto de H1 sí se aplicó: asterisco
+`text-destructive` `aria-hidden` y nombre accesible limpio.
+
+**Notas de los fixers para Saúl:**
+- **S4:** una fila ilegible no aparece en el listado y tampoco cuenta en la regla de "ninguna". La sección de esa
+  fila podría marcarse "ninguna" aunque la fila exista. Hoy no se alcanza (exige cambiar un enum sin migrar, cosa
+  que el design ya prohíbe).
+- **C5:** todo 422 con "cuándo" enviado se pinta junto a "¿Cuándo?", porque el servidor no dice qué campo falló.
+  Hoy es la única validación del servidor que el formulario no repite.
+- **O2:** "A negativo" no contiene el texto visible "A-" (WCAG 2.5.3, *label in name*). Se trató como un símbolo
+  leído por su significado; es una interpretación.
+- El hook `lint.py` compila con el Python 3.9 del sistema y marca como error de sintaxis el
+  `except A, B:` (PEP 758) que exige `ruff format` con Python 3.14 (`profile.py:183`, igual que `deps.py:38`).
+  Candidato a `memory/meta-improvements.md`.

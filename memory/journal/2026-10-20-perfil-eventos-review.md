@@ -26,3 +26,15 @@ Para compensar que el autor revisara su propia obra:
   y 1 🔒 de falsos positivos.
 
 **Siguiente:** `/epe-5-apply`.
+
+**Apply (2026-10-20):**
+- **Fixers:** dos, con archivos disjuntos, con la orden de no descartar nada.
+  - **Backend:** 6/6 aplicados (S4, H6, H7, C9, S5, T2).
+  - **Frontend:** 18 aplicados (T1, C2, C3, C7, C8, A1, A2+C5, A3, B3, H1, H2, año futuro, F11, F6, E1, E2,
+    O1, O2), con 1 rebote parcial: `aria-required` en `role="group"` es inválido en ARIA 1.2.
+- **Orquestador:** aplicó C1 y C10a/b/c (evidence y validation).
+- **Re-corrido desde limpio:** backend 195 passed, cobertura 96 %; mutantes 7/7 muertos; e2e del cambio 49
+  passed en los dos proyectos; T1 verde con Node en Kiritimati. La suite completa como CI salió 145 passed en una
+  de dos corridas; en la otra cayeron 2 heredados del template, que solos pasan 101/101.
+- **Para Saúl:** las notas S4, C5 y O2 están en `evidence.md` § Apply. La meta-mejora del hook `lint.py` (Python
+  del sistema contra PEP 758) queda como candidata.
