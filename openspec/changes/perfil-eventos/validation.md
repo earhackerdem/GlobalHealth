@@ -17,64 +17,64 @@ cómo va, y "cuándo" se contesta con la edad que tenías.
 ## A-1 · Cada tarjeta dice cómo va
 
 1. Abre "Mi perfil médico" y baja a **"Tu historial"**.
-   - [ ] Las seis tarjetas dicen "Sin llenar", y el texto de arriba dice "Crónicas y hábitos llegan pronto".
+   - [x] Las seis tarjetas dicen "Sin llenar", y el texto de arriba dice "Crónicas y hábitos llegan pronto".
 2. Toca **"Cirugías y hospitalizaciones"**.
-   - [ ] Llegas a la pantalla de cirugías con el botón "Agregar". Crónicas y hábitos no se dejan tocar.
+   - [x] Llegas a la pantalla de cirugías con el botón "Agregar". Crónicas y hábitos no se dejan tocar.
 
 ## A-2 · "No he tenido ninguna"
 
 1. En cirugías, toca **"No he tenido ninguna"**.
-   - [ ] La sección y su tarjeta en "Mi perfil médico" dicen "Ninguna".
+   - [x] La sección y su tarjeta en "Mi perfil médico" dicen "Ninguna".
 2. Toca **"Deshacer"**.
-   - [ ] Vuelve a "Sin llenar".
+   - [x] Vuelve a "Sin llenar".
 3. En transfusiones, toca "Nunca me han transfundido" y luego agrega una transfusión.
-   - [ ] Aparece el aviso "Guardado. La sección ya no dice «ninguna»." y la tarjeta dice "1 registro".
+   - [x] Aparece el aviso "Guardado. La sección ya no dice «ninguna»." y la tarjeta dice "1 registro".
 
 ## A-3 · "Cuándo" como lo pregunta el médico
 
 1. Agrega una cirugía y en "¿Cuándo?" escribe tu edad de entonces (p. ej. 7).
-   - [ ] Debajo aparece "Año aproximado: …"; al guardar, la lista dice "a los 7 años (≈año)".
+   - [x] Debajo aparece "Año aproximado: …"; al guardar, la lista dice "a los 7 años (≈año)".
 2. Agrega una enfermedad pasada y toca **"En la primaria"** en vez de escribir.
-   - [ ] La lista dice "en la primaria (≈año–año)".
+   - [x] La lista dice "en la primaria (≈año–año)".
 3. En otra, toca **"o el año, si lo sabes"** y escribe un año.
-   - [ ] La lista dice "en <año>".
+   - [x] La lista dice "en <año>".
 4. Con tu fecha de nacimiento ya registrada en "Editar datos básicos", prueba una edad mayor que la tuya, o un año
    antes de que nacieras. (Sin fecha de nacimiento la app no sabe tu edad: solo rechaza edades fuera de 0–130 y
    años antes de 1900 o futuros.)
-   - [ ] No se guarda y te dice por qué, en español.
+   - [x] No se guarda y te dice por qué, en español.
 5. Cambia tu fecha de nacimiento en "Editar datos básicos" y vuelve a la sección.
-   - [ ] El año aproximado cambió solo; la edad que contestaste sigue igual.
+   - [x] El año aproximado cambió solo; la edad que contestaste sigue igual.
 
 ## A-4 · Enfermedades pasadas e infecciosas
 
 1. Agrega "Varicela" (o elige "Otra" y escribe una que no esté en la lista).
-   - [ ] Puedes decir si requirió hospitalización (Sí / No / No sé), secuelas y una nota; solo la condición es
+   - [x] Puedes decir si requirió hospitalización (Sí / No / No sé), secuelas y una nota; solo la condición es
          obligatoria.
 
 ## A-5 · Cirugías y hospitalizaciones
 
 1. Agrega una con todos sus datos: tipo, nombre, cuándo, motivo, hospital, médico, complicaciones, reacción a la
    anestesia (con detalle si fue "Sí") y material implantado.
-   - [ ] Al tocar "Editar" ves exactamente lo que escribiste.
+   - [x] Al tocar "Editar" ves exactamente lo que escribiste.
 
 ## A-6 · Fracturas y lesiones
 
 1. Agrega una fractura con lado "Izquierdo", "¿Requirió cirugía?" y material implantado.
-   - [ ] La lista muestra el lado y el implante.
+   - [x] La lista muestra el lado y el implante.
 
 ## A-7 · Transfusiones y grupo sanguíneo
 
 1. En transfusiones, toca tu grupo sanguíneo (o "No lo sé").
-   - [ ] Queda marcado; tocar otro lo corrige y tocar el mismo lo borra; sigue ahí al recargar.
+   - [x] Queda marcado; tocar otro lo corrige y tocar el mismo lo borra; sigue ahí al recargar.
 2. Agrega una transfusión con motivo, qué te transfundieron y si hubo reacción.
-   - [ ] La lista la muestra con su año y motivo.
+   - [x] La lista la muestra con su año y motivo.
 
 ## A-8 · Es tuyo y se borra con confirmación
 
 1. Toca "Eliminar" en un registro.
-   - [ ] Pide confirmar ahí mismo: "Cancelar" lo deja, "Sí, eliminar" lo quita.
+   - [x] Pide confirmar ahí mismo: "Cancelar" lo deja, "Sí, eliminar" lo quita.
 2. Toca "Agregar" y "Guardar" sin llenar nada.
-   - [ ] No se guarda: "Llena al menos un dato".
+   - [x] No se guarda: "Llena al menos un dato".
 
 ## A-9 · Cifrado (técnico, no se clickea)
 
