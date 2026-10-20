@@ -32,3 +32,14 @@ publicado en https://claude.ai/artifact/TRBywm3SEhDA5ey2duMV8n.
 
 **Gate pendiente:** Saúl navega el prototipo. Queda abierto qué pasa con la crónica al borrar el diagnóstico
 enlazado.
+
+**Ronda 6 (prototipo v1 → v2):** al clickear, Saúl Pérez vio que hábitos se quedaba corto. Señaló el alcohol de
+fin de semana, la exposición a humo ajeno en un lugar fijo dos veces por semana y varios ejercicios cada uno con
+su frecuencia, y pidió investigar cómo se maneja. La evidencia (research.md § hábitos) coincide con sus tres
+puntos: son justo los huecos documentados de la captura estructurada en los expedientes. Decidió:
+- alcohol con la forma del AUDIT-C y estado "lo dejé";
+- humo ajeno como hábito propio (dónde y días por semana);
+- ejercicio como lista de actividades con días y minutos;
+- hábitos como **Story C** propia.
+
+Objeción del harness, aceptada: la app no calcula puntajes ni riesgos (C-6, NFR-008).

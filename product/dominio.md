@@ -299,19 +299,20 @@ las guías de semiología detallan [VERIFIED 2026-10-19, memory/research.md § a
 # Dominio — GlobalHealth · rebanada "perfil médico por secciones (llenado, FR-028)"
 
 Date: 2026-10-19 · Interviewed: Saúl Pérez (author, con sombrero de stakeholder; pidió "procede con 028" tras
-archivar onboarding-perfil) · Método: borrador 0 desde memory/research.md § anamnesis, corregido en 5 rondas; la
-ronda 5 no añadió nada · Status: **draft — gate pendiente: Saúl Pérez navega el prototipo**
+archivar onboarding-perfil) · Método: borrador 0 desde memory/research.md § anamnesis, corregido en 5 rondas (la
+ronda 5 no añadió nada) + ronda 6 al clickear el prototipo v1: hábitos crece (research.md § hábitos) · Status: **draft — gate pendiente: Saúl Pérez navega el prototipo**
 Prototipo: **`product/prototipos/perfil-secciones.html`** (https://claude.ai/artifact/TRBywm3SEhDA5ey2duMV8n;
-toggle "Ver criterios" con AC A-n / B-n).
+toggle "Ver criterios" con AC A-n / B-n / C-n; v2 con hábitos ampliados).
 Alcance: llenar las 6 secciones que el PR #16 dejó visibles y vacías. NO entra: vacunación (catálogo propio,
 futuro), otras sustancias, alimentación/sueño, cuestionarios por especialidad (E4/FR-022), enlaces entre
 registros de secciones distintas, enlace tratamiento↔medicinas de receta.
 
-## Partición en stories (Saúl Pérez, ronda 3)
+## Partición en stories (Saúl Pérez, ronda 3; rehecha en la ronda 6)
 - **Story A — eventos:** enfermedades pasadas e infecciosas, cirugías y hospitalizaciones, fracturas y lesiones,
   transfusiones + grupo sanguíneo, y el mecanismo "ninguna" común a todas (4 de las 6 tarjetas cobran vida).
-- **Story B — crónicas + hábitos:** crónicas con enlace opcional al diagnóstico del expediente; hábitos como
-  cuestionario.
+- **Story B — crónicas:** con enlace opcional al diagnóstico del expediente.
+- **Story C — hábitos:** cuestionario con lista anidada (ejercicio). Se separó de B en la ronda 6 al crecer:
+  no comparte forma con crónicas.
 
 ## Catálogos (en las palabras de Saúl / del borrador que aceptó)
 
@@ -373,22 +374,32 @@ Mecánica común a las secciones de lista (todas salvo hábitos):
 | diagnóstico que la respalda | **enlace opcional** a un diagnóstico del expediente (ronda 1: "aparte, enlazable") |
 | nota | texto opcional |
 
-### Hábitos (APNP + tabaquismo) — Story B, cuestionario (no lista; sin "ninguna": cada hábito tiene "Nunca")
-| Hábito | Respuesta (ronda 1: "estado + cantidad") |
+### Hábitos (APNP + tabaquismo) — Story C, cuestionario (no lista; sin "ninguna": cada hábito tiene "Nunca")
+Ronda 6 (Saúl Pérez al clickear el prototipo v1: "hábitos puede o debe crecer más… consumo de alcohol puede ser
+fines de semana… me expongo a humo de cigarro dos veces por semana… varios ejercicios con su propia frecuencia",
+y pidió investigar cómo se maneja). La evidencia (research.md § hábitos) dice que justo frecuencia, cantidad,
+estado, fechas y humo ajeno son lo que los campos estructurados de los expedientes no capturan.
+
+| Hábito | Respuesta |
 |---|---|
+| alcohol | **nunca / lo dejé (desde qué año) / actual**. Si actual, las 3 preguntas del **AUDIT-C** con su escala: frecuencia (una vez al mes o menos · 2–4 al mes · 2–3 por semana · 4+ por semana), bebidas en un día típico (1–2 · 3–4 · 5–6 · 7–9 · 10+), frecuencia de 6 o más en una ocasión (nunca · menos de una vez al mes · cada mes · cada semana · diario o casi) + marca "sobre todo fines de semana". **Sin puntaje** (C-6) |
 | tabaco | nunca / antes / actual + cigarros al día + desde (año) + hasta (año, si "antes") |
-| vapeador | nunca / antes / actual (ronda 4) |
-| humo de leña o de otros fumadores | nunca / antes / actual + años aprox. (ronda 4). El riesgo está verificado (research.md § humo de leña); la forma de registrarlo es [ASSUMPTION]: no hay formato estándar |
-| alcohol | nunca / ocasional / semanal / diario + copas por ocasión |
-| ejercicio | nunca / 1–2 / 3–4 / 5+ días por semana + qué hace |
+| vapeador | nunca / antes / actual |
+| humo de tabaco ajeno | **hábito propio** (ronda 6): dónde (casa · trabajo o escuela · otro lugar, varios) + días por semana, o "no me expongo" |
+| humo de leña | nunca / antes / actual + años aprox.; riesgo [VERIFIED] (research.md § humo de leña), forma de captura [ASSUMPTION] |
+| ejercicio | **lista de actividades** (caminar, correr, bicicleta, nadar, pesas o gimnasio, fútbol u otro deporte, yoga o pilates, baile, otra), cada una con días por semana + minutos por vez (forma del Exercise Vital Sign, por actividad); se muestra el total semanal **sin veredicto** contra la OMS. El tipo permite distinguir aeróbico de fuerza (OMS 2020) sin preguntar intensidad |
+
+- **Regla C-6 (objeción del harness, aceptada por Saúl Pérez):** la app captura con la forma de los
+  instrumentos, pero NO calcula puntajes (AUDIT-C), riesgos ni "cumples / no cumples": los cortes varían por fuente
+  y es juicio clínico; cualquier interpretación futura es salida de la IA con fuente y leyenda (NFR-008).
 
 - **Relations:** paciente → registro de sección (1→0..N, con tipo de sección) · paciente → estado por sección
-  (ninguna sí/no) · paciente → grupo sanguíneo (1→0..1) · paciente → hábitos (1→0..1) · crónica → diagnóstico
+  (ninguna sí/no) · paciente → grupo sanguíneo (1→0..1) · paciente → hábitos (1→0..1) → actividad física (1→0..N) · crónica → diagnóstico
   del expediente (N→0..1, opcional; el diagnóstico NO depende de la crónica).
 - **States / lifecycle:** sección `sin llenar → ninguna → con registros` (ver arriba); crónica `activa → ya no la
   tengo` (reversible: el paciente corrige). Los registros de eventos no tienen estado: son pasado.
 - **What they explicitly do NOT want (esta rebanada):** vacunación, otras sustancias, alimentación/sueño
-  (ronda 1: "nada más por ahora"); enlaces entre registros de secciones distintas (ronda 3); tratamiento
+  (ronda 1: "nada más por ahora"; en la ronda 6 tampoco se pidió sedentarismo, que la OMS 2020 sí incluye); enlaces entre registros de secciones distintas (ronda 3); tratamiento
   enlazado a recetas (ronda 2).
 
 ## Glosario (se suma al de la rebanada onboarding)
@@ -406,7 +417,7 @@ Mecánica común a las secciones de lista (todas salvo hábitos):
 | paciente | marca "No he tenido ninguna" | sección sin registros | agregar un registro después la quita |
 | paciente | elige su grupo sanguíneo | en la sección de transfusiones | "No lo sé" es un valor válido |
 | paciente | enlaza una crónica a un diagnóstico del expediente | al registrar o editar la crónica | si el diagnóstico se borra, la crónica queda sin enlace (no se borra) [ASSUMPTION] |
-| sistema (futuro E5) | usa crónicas, hábitos (tabaco, leña) y "ninguna" para avisos con fuente | FR-021 | fuera de esta rebanada |
+| sistema (futuro E5) | usa crónicas, hábitos (tabaco, humo ajeno, leña, AUDIT-C) y "ninguna" para avisos con fuente | FR-021 | fuera de esta rebanada; cualquier puntaje o riesgo es salida de la IA con fuente (NFR-008) |
 
 ## Datos sensibles
 Todo es dato sensible (LFPDPPP art. 3-VI), mismo cifrado en reposo (D13) y detrás del consentimiento (D16).
@@ -414,7 +425,7 @@ Salud mental lleva además su categoría para FR-014. Médico y hospital son dat
 titular, como los AHF: opcionales por minimización.
 
 ## Open questions (max 4) — el gate del discovery
-1. **¿El prototipo refleja lo que respondiste?** Navegarlo es el gate (incluye Story B para validar todo de una
-   vez, aunque se construya después).
+1. **¿El prototipo v2 refleja lo que respondiste?** Navegarlo es el gate (incluye las stories B y C para validar
+   todo de una vez, aunque se construyan después). El v1 ya produjo la ronda 6 (hábitos).
 2. **Borrar un diagnóstico enlazado:** la crónica conserva su registro y pierde el enlace [ASSUMPTION] — ¿o debe
    avisar antes de borrar el diagnóstico?

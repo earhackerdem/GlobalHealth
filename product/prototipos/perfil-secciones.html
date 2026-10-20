@@ -67,6 +67,8 @@ input,select{font:inherit; width:100%; box-sizing:border-box; border:1px solid v
 .registro + .registro{border-top:1px solid var(--line); margin-top:12px; padding-top:12px}
 .meta{font-size:.85rem; color:var(--muted); overflow-wrap:anywhere}
 .lista{margin-top:10px}
+.fila-act{display:grid; grid-template-columns:minmax(0,2fr) minmax(0,1fr) minmax(0,1fr) auto; gap:6px; margin-top:8px; align-items:center}
+@media (max-width:480px){ .fila-act{grid-template-columns:1fr 1fr auto} .fila-act select{grid-column:1 / -1} }
 .habito{border-top:1px solid var(--line); padding-top:10px; margin-top:12px}
 .migas{color:var(--muted); font-size:.85rem; margin:8px 0}
 #toast{position:fixed; left:50%; transform:translateX(-50%); bottom:calc(14px + env(safe-area-inset-bottom,0px));
@@ -110,15 +112,23 @@ dd{margin:0; min-width:0; overflow-wrap:anywhere}
     <li><strong>A-8</strong> Solo tú agregas, corriges o eliminas; eliminar pide confirmación en la misma pantalla.</li>
     <li><strong>A-9</strong> Todo se guarda cifrado, como el resto del expediente (criterio técnico, no clickeable).</li>
   </ol>
-  <p><strong>Story B, crónicas y hábitos:</strong> <em>Como paciente, quiero registrar mis enfermedades crónicas y mis
-  hábitos, para que el médico y la IA conozcan mi condición actual.</em></p>
+  <p><strong>Story B, crónicas:</strong> <em>Como paciente, quiero registrar mis enfermedades crónicas, para que el
+  médico y la IA conozcan mi condición actual aunque no tenga el papel del diagnóstico.</em></p>
   <ol>
     <li><strong>B-1</strong> Enfermedades crónicas desde una lista frecuente + otra; las de salud mental quedan marcadas como sensibles (para FR-014).</li>
     <li><strong>B-2</strong> Estado <em>Activa</em> o <em>Ya no la tengo</em> (con hasta cuándo); desde cuándo como año aproximado.</li>
     <li><strong>B-3</strong> Tratamiento actual como texto libre opcional.</li>
     <li><strong>B-4</strong> Enlace opcional al diagnóstico del expediente que la respalda.</li>
-    <li><strong>B-5</strong> Tabaco (nunca/antes/actual, cigarros al día, desde y hasta), vapeador y humo de leña o de otros.</li>
-    <li><strong>B-6</strong> Alcohol (frecuencia + copas por ocasión) y ejercicio (días por semana + qué haces).</li>
+  </ol>
+  <p><strong>Story C, hábitos:</strong> <em>Como paciente, quiero contar mis hábitos con el detalle que el médico
+  pregunta (cuánto, cada cuándo, desde cuándo), para que no quede en un «sí fumo» o «tomo poco».</em></p>
+  <ol>
+    <li><strong>C-1</strong> Alcohol: nunca / lo dejé (desde qué año) / actual. Si es actual, las 3 preguntas del AUDIT-C (frecuencia, bebidas en un día típico, 6 o más en una ocasión) y «sobre todo fines de semana».</li>
+    <li><strong>C-2</strong> Tabaco (nunca/antes/actual, cigarros al día, desde y hasta) y vapeador.</li>
+    <li><strong>C-3</strong> Humo de tabaco ajeno: dónde (casa, trabajo o escuela, otro lugar) y cuántos días por semana.</li>
+    <li><strong>C-4</strong> Humo de leña: nunca/antes/actual y años aproximados.</li>
+    <li><strong>C-5</strong> Ejercicio como lista de actividades, cada una con días por semana y minutos por vez; se muestra el total semanal.</li>
+    <li><strong>C-6</strong> La app no calcula puntajes ni riesgos con estas respuestas: interpretarlas es del médico (NFR-008).</li>
   </ol>
   <p class="sub">Origin: product/dominio.md (rebanada perfil médico por secciones, 2026-10-19) · FR-028 / US-18.</p>
 </div>
@@ -189,7 +199,7 @@ const SECCIONES = [
       {k:"hospital", t:"texto", lbl:"Hospital o lugar"},
       {k:"reaccion", t:"sino", lbl:"¿Hubo reacción?", ac:"A-7", detalle:"¿Qué pasó?"}
     ]},
-  { id:"habitos", story:"B", titulo:"Hábitos", habitos:true }
+  { id:"habitos", story:"C", titulo:"Hábitos", habitos:true }
 ];
 
 /* Datos de ejemplo: una sección en cada estado posible */
@@ -230,7 +240,7 @@ function pintarPerfil(){
     ${SECCIONES.map(s => `
       <button class="card sec" data-sec="${s.id}">
         <h3>${esc(s.titulo)}</h3>
-        <span class="estado">${pillDe(s)} ${s.story === "B" ? `<span class="story" title="Llega con la Story B">Story B</span>` : ""}</span>
+        <span class="estado">${pillDe(s)} ${s.story !== "A" ? `<span class="story" title="Llega con la Story ${s.story}">Story ${s.story}</span>` : ""}</span>
       </button>`).join("")}
   </div>`;
 }
@@ -295,7 +305,7 @@ function pintarSeccion(){
   }
   return `
     <p class="migas"><button class="link" data-volver>‹ Mi perfil médico</button></p>
-    <h2>${esc(s.titulo)} ${s.story === "B" ? `<span class="story">Story B</span>` : ""}</h2>
+    <h2>${esc(s.titulo)} ${s.story !== "A" ? `<span class="story">Story ${s.story}</span>` : ""}</h2>
     ${grupo}
     ${cuerpo}
     <div class="actions"><button class="primary" data-agregar>Agregar${s.id === "transfusiones" ? " transfusión" : ""}</button></div>`;
@@ -346,33 +356,81 @@ function pintarForm(){
     </form>`;
 }
 
-const HABITOS = [
-  {k:"tabaco", lbl:"Tabaco", ac:"B-5", opts:["Nunca","Antes","Actual"]},
-  {k:"vape", lbl:"Vapeador o cigarro electrónico", ac:"B-5", opts:["Nunca","Antes","Actual"]},
-  {k:"lena", lbl:"Humo de leña o de otros fumadores", ac:"B-5", opts:["Nunca","Antes","Actual"],
-   hint:"Cocinar con leña o convivir con fumadores también cuenta para tus pulmones."},
-  {k:"alcohol", lbl:"Alcohol", ac:"B-6", opts:["Nunca","Ocasional","Semanal","Diario"]},
-  {k:"ejercicio", lbl:"Ejercicio", ac:"B-6", opts:["Nunca","1–2 días por semana","3–4 días por semana","5 o más días"]}
-];
+/* Hábitos (Story C): cuestionario, no lista; cada hábito tiene su «Nunca» */
+const ALC_FREC = ["Una vez al mes o menos","2 a 4 veces al mes","2 a 3 veces por semana","4 o más veces por semana"];
+const ALC_TIPICAS = ["1 o 2","3 o 4","5 o 6","7 a 9","10 o más"];
+const ALC_SEIS = ["Nunca","Menos de una vez al mes","Cada mes","Cada semana","Diario o casi diario"];
+const ACTIVIDADES = ["Caminar","Correr","Bicicleta","Nadar","Pesas o gimnasio","Fútbol u otro deporte","Yoga o pilates","Baile","Otra"];
+const AJENO_DONDE = ["Casa","Trabajo o escuela","Otro lugar"];
+
+function chipsDe(k, opts, v, lbl){
+  return `<div class="chips" role="group" aria-label="${esc(lbl)}">${opts.map(o =>
+    `<button data-chip="${k}" data-v="${esc(o)}" aria-pressed="${v[k] === o}">${esc(o)}</button>`).join("")}</div>`;
+}
+const numH = (k, ph, v) => `<input id="h-${k}" data-k="${k}" inputmode="numeric" placeholder="${ph}" value="${esc(v[k] || "")}" aria-label="${ph}">`;
+const subLbl = t => `<span class="lbl" style="margin-top:10px; font-weight:400">${esc(t)}</span>`;
+function totalSemanal(acts){
+  return acts.reduce((t, a) => t + (Number(a.dias) || 0) * (Number(a.min) || 0), 0);
+}
+
 function pintarHabitos(s){
-  const v = vista.borrador || (vista.borrador = {...(estado.habitos.datos || {})});
-  const extra = (k, html) => v[k] && v[k] !== "Nunca" ? html : "";
-  const num = (k, ph) => `<input id="h-${k}" data-k="${k}" inputmode="numeric" placeholder="${ph}" value="${esc(v[k] || "")}">`;
+  const v = vista.borrador || (vista.borrador = JSON.parse(JSON.stringify(estado.habitos.datos || {actividades:[], ajenoDonde:[]})));
+  const tot = totalSemanal(v.actividades);
   return `
     <p class="migas"><button class="link" data-volver>‹ Mi perfil médico</button></p>
-    <h2>${esc(s.titulo)} <span class="story">Story B</span></h2>
-    <p class="sub">Contesta solo lo que quieras. «Nunca» también es una respuesta útil para tu médico.</p>
+    <h2>${esc(s.titulo)} <span class="story">Story C</span></h2>
+    <p class="sub">Contesta solo lo que quieras. «Nunca» también le sirve a tu médico. La app no califica tus respuestas.${ac("C-6", true)}</p>
     <form class="card" id="form-habitos" style="margin-top:10px" novalidate>
-      ${HABITOS.map(h => `<div class="habito">
-        <span class="lbl">${esc(h.lbl)}${ac(h.ac, true)}</span>
-        <div class="chips" role="group" aria-label="${esc(h.lbl)}">${h.opts.map(o =>
-          `<button data-chip="${h.k}" data-v="${o}" aria-pressed="${v[h.k] === o}">${o}</button>`).join("")}</div>
-        ${h.hint ? `<p class="hint">${esc(h.hint)}</p>` : ""}
-        ${h.k === "tabaco" ? extra("tabaco", `<div class="cuando" style="margin-top:6px">${num("cigarros", "Cigarros al día")}${num("tabDesde", "Desde (año)")}${v.tabaco === "Antes" ? num("tabHasta", "Hasta (año)") : ""}</div>`) : ""}
-        ${h.k === "lena" ? extra("lena", `<div style="margin-top:6px">${num("lenaAnios", "¿Cuántos años, aprox.?")}</div>`) : ""}
-        ${h.k === "alcohol" ? extra("alcohol", `<div style="margin-top:6px">${num("copas", "Copas por ocasión")}</div>`) : ""}
-        ${h.k === "ejercicio" ? extra("ejercicio", `<div style="margin-top:6px"><input id="h-ejQue" data-k="ejQue" placeholder="¿Qué haces? Caminar, nadar, fútbol…" value="${esc(v.ejQue || "")}"></div>`) : ""}
-      </div>`).join("")}
+
+      <div class="habito" style="border:0; margin-top:0; padding-top:0">
+        <span class="lbl">Alcohol${ac("C-1", true)}</span>
+        ${chipsDe("alcohol", ["Nunca","Lo dejé","Actual"], v, "Alcohol")}
+        ${v.alcohol === "Lo dejé" ? `<div class="cuando" style="margin-top:6px">${numH("alcDesde", "¿Desde qué año?", v)}</div>` : ""}
+        ${v.alcohol === "Actual" ? `
+          ${subLbl("¿Con qué frecuencia tomas?")}${chipsDe("alcFrec", ALC_FREC, v, "Frecuencia")}
+          <div class="chips"><button data-chip="alcFinde" data-v="Sí" aria-pressed="${v.alcFinde === "Sí"}">Sobre todo fines de semana</button></div>
+          ${subLbl("En un día que tomas, ¿cuántas bebidas?")}${chipsDe("alcTipicas", ALC_TIPICAS, v, "Bebidas en un día típico")}
+          <p class="hint">Una bebida: una cerveza, una copa de vino o un trago de tequila, ron u otro destilado.</p>
+          ${subLbl("¿Cada cuándo tomas 6 o más bebidas en una sola ocasión?")}${chipsDe("alcSeis", ALC_SEIS, v, "6 o más bebidas")}` : ""}
+      </div>
+
+      <div class="habito">
+        <span class="lbl">Tabaco${ac("C-2", true)}</span>
+        ${chipsDe("tabaco", ["Nunca","Antes","Actual"], v, "Tabaco")}
+        ${v.tabaco && v.tabaco !== "Nunca" ? `<div class="cuando" style="margin-top:6px">${numH("cigarros", "Cigarros al día", v)}${numH("tabDesde", "Desde (año)", v)}${v.tabaco === "Antes" ? numH("tabHasta", "Hasta (año)", v) : ""}</div>` : ""}
+        ${subLbl("Vapeador o cigarro electrónico")}${chipsDe("vape", ["Nunca","Antes","Actual"], v, "Vapeador")}
+      </div>
+
+      <div class="habito">
+        <span class="lbl">Humo de tabaco de otras personas${ac("C-3", true)}</span>
+        <p class="hint">Estar cerca de quien fuma, aunque tú no fumes.</p>
+        <div class="chips" role="group" aria-label="Dónde">${AJENO_DONDE.map(o =>
+          `<button data-multi="ajenoDonde" data-v="${esc(o)}" aria-pressed="${v.ajenoDonde.includes(o)}">${esc(o)}</button>`).join("")}
+          <button data-chip="ajenoNunca" data-v="Sí" aria-pressed="${v.ajenoNunca === "Sí"}">No me expongo</button></div>
+        ${v.ajenoDonde.length ? `<div class="cuando" style="margin-top:6px">${numH("ajenoDias", "Días por semana", v)}</div>` : ""}
+      </div>
+
+      <div class="habito">
+        <span class="lbl">Humo de leña${ac("C-4", true)}</span>
+        <p class="hint">Cocinar o calentar la casa con leña o carbón.</p>
+        ${chipsDe("lena", ["Nunca","Antes","Actual"], v, "Humo de leña")}
+        ${v.lena && v.lena !== "Nunca" ? `<div class="cuando" style="margin-top:6px">${numH("lenaAnios", "¿Cuántos años, aprox.?", v)}</div>` : ""}
+      </div>
+
+      <div class="habito">
+        <span class="lbl">Ejercicio${ac("C-5", true)}</span>
+        ${v.actividades.map((a, i) => `
+          <div class="fila-act">
+            <select id="act-${i}-tipo" data-act="${i}" data-f="tipo" aria-label="Actividad ${i + 1}">
+              <option value="">Elige la actividad</option>${ACTIVIDADES.map(o => `<option ${a.tipo === o ? "selected" : ""}>${o}</option>`).join("")}</select>
+            <input id="act-${i}-dias" data-act="${i}" data-f="dias" inputmode="numeric" placeholder="Días por semana" value="${esc(a.dias || "")}" aria-label="Días por semana">
+            <input id="act-${i}-min" data-act="${i}" data-f="min" inputmode="numeric" placeholder="Minutos por vez" value="${esc(a.min || "")}" aria-label="Minutos por vez">
+            <button class="link danger" data-act-del="${i}" aria-label="Quitar actividad ${i + 1}">Quitar</button>
+          </div>`).join("")}
+        <div class="actions" style="margin:8px 0 0"><button data-act-add>+ Agregar actividad</button>
+          ${v.actividades.length ? `<span class="sub">Total: <strong>${tot}</strong> minutos por semana</span>` : `<span class="sub">Sin actividades = no hago ejercicio</span>`}</div>
+      </div>
+
       <div class="actions"><button class="primary" type="submit">Guardar</button><button type="button" data-volver>Cancelar</button></div>
     </form>`;
 }
@@ -388,6 +446,9 @@ function leerInputs(){
     // El año vacío no pisa «En la infancia» / «No recuerdo» elegido con chip
     if("cuando" in i.dataset && !v && !/^\d+$/.test(vista.borrador[i.dataset.k] || "")) return;
     vista.borrador[i.dataset.k] = v;
+  });
+  document.querySelectorAll("#vista [data-act]").forEach(i => {
+    vista.borrador.actividades[+i.dataset.act][i.dataset.f] = i.value.trim();
   });
 }
 
@@ -430,11 +491,20 @@ document.addEventListener("click", ev => {
   if("no" in d){ vista.borrar = null; return pintar(); }
   if(d.si){ e.regs.splice(+d.si, 1); vista.borrar = null; toast("Registro eliminado"); return pintar(); }
   if("cancelar" in d) return ir({nombre:"seccion", sec:vista.sec});
+  if(d.multi){
+    ev.preventDefault(); leerInputs();
+    const arr = vista.borrador[d.multi], i = arr.indexOf(d.v);
+    if(i < 0){ arr.push(d.v); vista.borrador.ajenoNunca = ""; } else arr.splice(i, 1);
+    return pintar();
+  }
+  if("actAdd" in d){ ev.preventDefault(); leerInputs(); vista.borrador.actividades.push({}); return pintar(); }
+  if(d.actDel){ ev.preventDefault(); leerInputs(); vista.borrador.actividades.splice(+d.actDel, 1); return pintar(); }
   if(d.chip){
     ev.preventDefault(); leerInputs();
     const v = vista.borrador;
     if(d.v === "__otra"){ vista.otra = vista.otra === d.chip ? null : d.chip; v[d.chip] = ""; }
     else { v[d.chip] = v[d.chip] === d.v ? "" : d.v; if(vista.otra === d.chip) vista.otra = null; }
+    if(d.chip === "ajenoNunca" && v.ajenoNunca) v.ajenoDonde = [];
     return pintar();
   }
 });
@@ -443,7 +513,8 @@ document.addEventListener("submit", ev => {
   ev.preventDefault(); leerInputs();
   const s = SECCIONES.find(x => x.id === vista.sec), v = vista.borrador;
   if(s.habitos){
-    if(!Object.values(v).some(Boolean)){ toast("No contestaste nada; no se guardó"); return; }
+    v.actividades = v.actividades.filter(a => a.tipo || a.dias || a.min);
+    if(!Object.values(v).some(x => Array.isArray(x) ? x.length : Boolean(x))){ toast("No contestaste nada; no se guardó"); return; }
     estado.habitos.datos = {...v}; toast("Hábitos guardados"); return ir({nombre:"perfil"});
   }
   const errs = validar(s, v);
