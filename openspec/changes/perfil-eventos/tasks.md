@@ -58,6 +58,6 @@ files is `test→impl`; smaller groups are `single`. `make tdd-check` requires o
       nacimiento, textos largos), cambio de pestaña, doble submit y 384 px; hallazgos a evidence.md.
 - [x] 3.2 evidence.md (escenario → test → ancla → estado, rojo antes del verde por grupo) y validation.md no técnico
       para Saúl Pérez: guion por sección y "Qué NO hace todavía" (crónicas y hábitos: Stories B y C).
-- [ ] 3.3 Inventario de citers del design (ninguno mintiendo), journal del cambio,
+- [x] 3.3 Inventario de citers del design (ninguno mintiendo), journal del cambio,
       `openspec validate perfil-eventos --strict` y PR con `gh pr create` sobre `feat/perfil-eventos`.
       Verificación: gates del push verdes y PR abierto.

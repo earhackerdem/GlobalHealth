@@ -1,6 +1,6 @@
 # Evidence — perfil-eventos
 
-Date: 2026-10-20 · Branch: `feat/perfil-eventos` · PR: (pendiente, tarea 3.3)
+Date: 2026-10-20 · Branch: `feat/perfil-eventos` · PR: https://github.com/earhackerdem/GlobalHealth/pull/20
 
 ## Automated tests
 
