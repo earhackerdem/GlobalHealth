@@ -303,7 +303,7 @@ archivar onboarding-perfil) · Método: borrador 0 desde memory/research.md § a
 ronda 5 no añadió nada) + ronda 6 al clickear el prototipo v1: hábitos crece (research.md § hábitos) + ronda 7: ocupación,
 movimiento del día y sueño (research.md § ocupación) · Status: **draft — gate pendiente: Saúl Pérez navega el prototipo**
 Prototipo: **`product/prototipos/perfil-secciones.html`** (https://claude.ai/artifact/TRBywm3SEhDA5ey2duMV8n;
-toggle "Ver criterios" con AC A-n / B-n / C-n; v2 con hábitos ampliados; v3 con trabajo, movimiento del día y sueño).
+toggle "Ver criterios" con AC A-n / B-n / C-n; v2 con hábitos ampliados; v3 con trabajo, movimiento del día y sueño; v4 con "cuándo" por edad o etapa).
 Alcance: llenar las 6 secciones que el PR #16 dejó visibles y vacías. NO entra: vacunación (catálogo propio,
 futuro), otras sustancias, alimentación, cuestionarios por especialidad (E4/FR-022), enlaces entre
 registros de secciones distintas, enlace tratamiento↔medicinas de receta.
@@ -321,9 +321,15 @@ Mecánica común a las secciones de lista (todas salvo hábitos):
 - **Estado de la sección** (ronda 2, "Sí, por sección"): `sin llenar → ninguna (negado) → con registros`. "Ninguna"
   solo se marca sin registros; agregar uno lo quita. Motivo: el médico y la IA deben distinguir "no ha pasado"
   de "no lo ha contado" (la historia clínica escribe "quirúrgicos: negados").
-- **"Cuándo"** (ronda 1): año aproximado opcional, o "En la infancia" / "No recuerdo"; nunca futuro. NO fecha
-  exacta (nadie recuerda el día de una cirugía de hace 20 años) — difiere a propósito de `occurred_on` de los
-  registros del expediente.
+- **"Cuándo"** (ronda 1, corregida en la ronda 8): se pregunta **como el médico** — "¿cuántos años tenías?" o
+  "¿ibas en la primaria o en la secundaria?" (Saúl Pérez: "el médico no pregunta en qué año crees que te dio…
+  para calcular el año"). El paciente contesta con **edad**, **etapa** (antes de la primaria · primaria ·
+  secundaria · prepa), **año** si lo sabe, o "No recuerdo". Se **guarda lo que dijo** (tipo + valor) y el año
+  aproximado se **calcula al mostrarlo** con la fecha de nacimiento del perfil: si el paciente la corrige, el año
+  se recalcula; si la omitió en el onboarding, solo se muestra la edad o la etapa. Las edades por etapa
+  (primaria 6–11, secundaria 12–14, prepa 15–17) son [ASSUMPTION] y solo sirven para estimar. Validación: edad no
+  mayor que la actual; año entre el nacimiento y hoy. NO fecha exacta — difiere a propósito de `occurred_on` de
+  los registros del expediente.
 - **Cruces entre secciones** (ronda 3, "Marca sí/no, sin enlace"): una fractura dice "¿requirió cirugía?" y una
   enfermedad pasada "¿requirió hospitalización?"; si el paciente quiere el detalle, lo registra en Cirugías. Sin
   modelo de enlaces entre registros.
@@ -369,8 +375,8 @@ Mecánica común a las secciones de lista (todas salvo hábitos):
 |---|---|
 | condición | lista frecuente (diabetes tipo 2, hipertensión, asma, hipotiroidismo, colesterol alto, EPOC, artritis, epilepsia) + **salud mental** (depresión, ansiedad, trastorno bipolar) + "otra"; **requerido** |
 | categoría sensible | ronda 4: las de salud mental se guardan **marcadas como "salud mental"** para que FR-014 (enlaces por categoría) las oculte sin migrar datos |
-| desde cuándo | mecánica "cuándo" |
-| estado | **Activa / Ya no la tengo** + hasta cuándo (ronda 2; "controlada" es juicio clínico, no se pide al paciente) |
+| desde cuándo | mecánica "cuándo" (edad, etapa o año) |
+| estado | **Activa / Ya no la tengo** + hasta cuándo, con la mecánica "cuándo" (ronda 2; "controlada" es juicio clínico, no se pide al paciente) |
 | tratamiento actual | texto libre opcional (ronda 2; el enlace a medicinas de receta, después) |
 | diagnóstico que la respalda | **enlace opcional** a un diagnóstico del expediente (ronda 1: "aparte, enlazable") |
 | nota | texto opcional |
@@ -383,8 +389,8 @@ estado, fechas y humo ajeno son lo que los campos estructurados de los expedient
 
 | Hábito | Respuesta |
 |---|---|
-| alcohol | **nunca / lo dejé (desde qué año) / actual**. Si actual, las 3 preguntas del **AUDIT-C** con su escala: frecuencia (una vez al mes o menos · 2–4 al mes · 2–3 por semana · 4+ por semana), bebidas en un día típico (1–2 · 3–4 · 5–6 · 7–9 · 10+), frecuencia de 6 o más en una ocasión (nunca · menos de una vez al mes · cada mes · cada semana · diario o casi) + marca "sobre todo fines de semana". **Sin puntaje** (C-6) |
-| tabaco | nunca / antes / actual + cigarros al día + desde (año) + hasta (año, si "antes") |
+| alcohol | **nunca / lo dejé (a qué edad; ronda 8) / actual**. Si actual, las 3 preguntas del **AUDIT-C** con su escala: frecuencia (una vez al mes o menos · 2–4 al mes · 2–3 por semana · 4+ por semana), bebidas en un día típico (1–2 · 3–4 · 5–6 · 7–9 · 10+), frecuencia de 6 o más en una ocasión (nunca · menos de una vez al mes · cada mes · cada semana · diario o casi) + marca "sobre todo fines de semana". **Sin puntaje** (C-6) |
+| tabaco | nunca / antes / actual + cigarros al día + a qué edad empezó + a qué edad lo dejó (si "antes") — ronda 8: edad, no año |
 | vapeador | nunca / antes / actual |
 | humo de tabaco ajeno | **hábito propio** (ronda 6): dónde (casa · trabajo o escuela · otro lugar, varios) + días por semana, o "no me expongo" |
 | humo de leña | nunca / antes / actual + años aprox.; riesgo [VERIFIED] (research.md § humo de leña), forma de captura [ASSUMPTION] |
@@ -430,7 +436,7 @@ más años (research.md § ocupación). Decisión: va en el **Perfil básico**, 
 ## Procesos (who / when / with whom → future FRs)
 | Who | Does what | When / trigger | Exceptional paths |
 |---|---|---|---|
-| paciente | abre una sección desde "Mi perfil médico" y agrega, corrige o elimina registros | cuando quiera | año futuro rechazado; "hasta" antes de "desde" rechazado; registro vacío no se guarda |
+| paciente | abre una sección desde "Mi perfil médico" y agrega, corrige o elimina registros | cuando quiera | edad mayor que la actual o año fuera de su vida rechazados; "hasta" antes de "desde" rechazado; registro vacío no se guarda |
 | paciente | marca "No he tenido ninguna" | sección sin registros | agregar un registro después la quita |
 | paciente | elige su grupo sanguíneo | en la sección de transfusiones | "No lo sé" es un valor válido |
 | paciente | enlaza una crónica a un diagnóstico del expediente | al registrar o editar la crónica | si el diagnóstico se borra, la crónica queda sin enlace (no se borra) [ASSUMPTION] |

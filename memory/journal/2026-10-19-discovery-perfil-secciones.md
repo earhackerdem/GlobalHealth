@@ -52,3 +52,9 @@ movimiento que implican algunos oficios. La investigación (research.md § ocupa
 - el sueño entra en versión mínima (antes estaba fuera).
 
 Los datos de salud personales que Saúl mencionó como ejemplo no se registran en el repo.
+
+**Ronda 8 (prototipo v3 → v4):** el único feedback de Saúl Pérez al v3 fue sobre "cuándo": recuerda mejor la
+edad que el año, y el médico no pregunta el año sino "¿cuántos años tenías?" o "¿ibas en la primaria o en la
+secundaria?" para calcularlo. Cambió en todo el perfil: crónicas (desde/hasta), tabaco y alcohol (a qué edad).
+Ahora se contesta con edad, etapa escolar o año. Se guarda lo dicho y el año se calcula al mostrarlo con la fecha
+de nacimiento; sin ella, solo se muestra la edad. Corrige la decisión de la ronda 1 ("año aproximado").

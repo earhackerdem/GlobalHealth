@@ -104,7 +104,7 @@ dd{margin:0; min-width:0; overflow-wrap:anywhere}
   <ol>
     <li><strong>A-1</strong> Cada sección muestra su estado: <em>sin llenar</em>, <em>ninguna</em> o cuántos registros tiene.</li>
     <li><strong>A-2</strong> «No he tenido ninguna» por sección; agregar un registro después la quita, y con registros no se puede marcar.</li>
-    <li><strong>A-3</strong> «Cuándo» es un año aproximado, o «En la infancia» / «No recuerdo». Un año futuro se rechaza.</li>
+    <li><strong>A-3</strong> «Cuándo» se contesta como el médico lo pregunta: la edad que tenías, o la etapa (antes de la primaria, primaria, secundaria, prepa), o el año si lo sabes, o «No recuerdo». Se guarda lo que dijiste y el año aproximado se calcula con tu fecha de nacimiento. Una edad mayor que la tuya o un año fuera de tu vida se rechazan.</li>
     <li><strong>A-4</strong> Enfermedades pasadas: condición (lista frecuente + otra), cuándo, ¿requirió hospitalización?, secuelas, nota.</li>
     <li><strong>A-5</strong> Cirugías y hospitalizaciones: qué fue, tipo, cuándo, motivo, hospital, médico, complicaciones, reacción a la anestesia, material implantado.</li>
     <li><strong>A-6</strong> Fracturas y lesiones: qué hueso o lesión, lado, cuándo, ¿requirió cirugía?, material implantado, secuelas.</li>
@@ -116,15 +116,15 @@ dd{margin:0; min-width:0; overflow-wrap:anywhere}
   médico y la IA conozcan mi condición actual aunque no tenga el papel del diagnóstico.</em></p>
   <ol>
     <li><strong>B-1</strong> Enfermedades crónicas desde una lista frecuente + otra; las de salud mental quedan marcadas como sensibles (para FR-014).</li>
-    <li><strong>B-2</strong> Estado <em>Activa</em> o <em>Ya no la tengo</em> (con hasta cuándo); desde cuándo como año aproximado.</li>
+    <li><strong>B-2</strong> Estado <em>Activa</em> o <em>Ya no la tengo</em> (con hasta cuándo); «desde» y «hasta» se contestan igual que A-3 (edad, etapa o año).</li>
     <li><strong>B-3</strong> Tratamiento actual como texto libre opcional.</li>
     <li><strong>B-4</strong> Enlace opcional al diagnóstico del expediente que la respalda.</li>
   </ol>
   <p><strong>Story C, hábitos:</strong> <em>Como paciente, quiero contar mis hábitos con el detalle que el médico
   pregunta (cuánto, cada cuándo, desde cuándo), para que no quede en un «sí fumo» o «tomo poco».</em></p>
   <ol>
-    <li><strong>C-1</strong> Alcohol: nunca / lo dejé (desde qué año) / actual. Si es actual, las 3 preguntas del AUDIT-C (frecuencia, bebidas en un día típico, 6 o más en una ocasión) y «sobre todo fines de semana».</li>
-    <li><strong>C-2</strong> Tabaco (nunca/antes/actual, cigarros al día, desde y hasta) y vapeador.</li>
+    <li><strong>C-1</strong> Alcohol: nunca / lo dejé (a qué edad) / actual. Si es actual, las 3 preguntas del AUDIT-C (frecuencia, bebidas en un día típico, 6 o más en una ocasión) y «sobre todo fines de semana».</li>
+    <li><strong>C-2</strong> Tabaco (nunca/antes/actual, cigarros al día, a qué edad empezaste y a qué edad lo dejaste) y vapeador.</li>
     <li><strong>C-3</strong> Humo de tabaco ajeno: dónde (casa, trabajo o escuela, otro lugar) y cuántos días por semana.</li>
     <li><strong>C-4</strong> Humo de leña: nunca/antes/actual y años aproximados.</li>
     <li><strong>C-5</strong> Ejercicio como lista de actividades, cada una con días por semana y minutos por vez; se muestra el total semanal.</li>
@@ -141,6 +141,28 @@ dd{margin:0; min-width:0; overflow-wrap:anywhere}
 
 <script>
 const ANIO = 2026;
+// «Cuándo» se guarda como lo dijo el paciente (edad, etapa o año); el año se calcula al mostrarlo.
+// Sin fecha de nacimiento (onboarding omitido) solo se muestra la edad o la etapa.
+const NACIMIENTO = 1988; // perfil básico de ejemplo: 38 años
+const EDAD = ANIO - NACIMIENTO;
+// Edades típicas por etapa escolar en México [ASSUMPTION]; solo sirven para estimar el año
+const ETAPAS = {"Antes de la primaria":[0,5], "En la primaria":[6,11], "En la secundaria":[12,14], "En la prepa":[15,17]};
+function partesCuando(val){ const i = (val || "").indexOf(":"); return i < 0 ? ["", val || ""] : [val.slice(0, i), val.slice(i + 1)]; }
+function anioAprox(val){
+  const [t, x] = partesCuando(val);
+  if(t === "edad") return [NACIMIENTO + +x, NACIMIENTO + +x];
+  if(t === "anio") return [+x, +x];
+  if(t === "etapa" && ETAPAS[x]) return ETAPAS[x].map(e => NACIMIENTO + e);
+  return null;
+}
+const rango = r => r[0] === r[1] ? `${r[0]}` : `${r[0]}–${r[1]}`;
+function textoCuando(val, desde){
+  const [t, x] = partesCuando(val), r = anioAprox(val), aprox = r ? ` (≈${rango(r)})` : "";
+  if(t === "edad") return (desde ? `desde los ${x} años` : `a los ${x} años`) + aprox;
+  if(t === "anio") return (desde ? "desde " : "en ") + x;
+  if(t === "etapa") return (desde ? "desde " + x.replace(/^En /, "") : x).toLowerCase() + aprox;
+  return val === "No recuerdo" ? "no recuerda cuándo" : val;
+}
 const $ = s => document.querySelector(s);
 const esc = t => { const d = document.createElement("span"); d.textContent = t ?? ""; return d.innerHTML; };
 const ac = (ids, b) => `<span class="ac${b ? " b" : ""}">${ids}</span>`;
@@ -207,11 +229,11 @@ const SECCIONES = [
 
 /* Datos de ejemplo: una sección en cada estado posible */
 const estado = {
-  cronicas:{ninguna:false, regs:[{condicion:"Hipotiroidismo", desde:"2019", estado:"Activa",
+  cronicas:{ninguna:false, regs:[{condicion:"Hipotiroidismo", desde:"edad:31", estado:"Activa",
     tratamiento:"Levotiroxina 50 mcg en ayunas", dx:DIAGNOSTICOS[0]}]},
-  pasadas:{ninguna:false, regs:[{condicion:"Varicela", cuando:"En la infancia", hosp:"No"},
-    {condicion:"COVID-19 grave", cuando:"2021", hosp:"Sí", secuelas:"Cansancio unos meses"}]},
-  cirugias:{ninguna:false, regs:[{tipo:"Cirugía", que:"Apendicectomía", cuando:"2012", motivo:"Apendicitis",
+  pasadas:{ninguna:false, regs:[{condicion:"Varicela", cuando:"etapa:En la primaria", hosp:"No"},
+    {condicion:"COVID-19 grave", cuando:"anio:2021", hosp:"Sí", secuelas:"Cansancio unos meses"}]},
+  cirugias:{ninguna:false, regs:[{tipo:"Cirugía", que:"Apendicectomía", cuando:"edad:24", motivo:"Apendicitis",
     hospital:"Hospital General de Zona", anestesia:"No"}]},
   fracturas:{ninguna:false, regs:[]},
   transfusiones:{ninguna:true, regs:[], grupo:"O+"},
@@ -286,12 +308,12 @@ function pintarPerfil(){
 function resumen(s, r){
   const partes = [];
   if(s.id === "cronicas"){
-    if(r.desde) partes.push(`desde ${r.desde}`);
-    if(r.estado) partes.push(r.estado === "Ya no la tengo" ? `ya no la tengo${r.hasta ? " (" + r.hasta + ")" : ""}` : "activa");
+    if(r.desde) partes.push(textoCuando(r.desde, true));
+    if(r.estado) partes.push(r.estado === "Ya no la tengo" ? `ya no la tengo${r.hasta ? " (" + textoCuando(r.hasta) + ")" : ""}` : "activa");
     if(r.tratamiento) partes.push(r.tratamiento);
   } else {
     if(r.lado && r.lado !== "No aplica") partes.push(r.lado.toLowerCase());
-    if(r.cuando) partes.push(r.cuando);
+    if(r.cuando) partes.push(textoCuando(r.cuando));
     if(r.tipo) partes.push(r.tipo.toLowerCase());
     if(r.componente) partes.push(r.componente.toLowerCase());
     if(r.hosp === "Sí") partes.push("hospitalizado");
@@ -368,11 +390,18 @@ function campoHtml(c, v, err){
       `<button data-chip="${c.k}" data-v="${o}" aria-pressed="${val === o}">${o}</button>`).join("")}</div>
       ${c.detalle && val === "Sí" ? `<input id="f-${c.k}-det" data-k="${c.k}Det" value="${esc(v[c.k + "Det"] || "")}" placeholder="${esc(c.detalle)}">` : ""}`;
   } else if(c.t === "cuando"){
-    const esAnio = /^\d+$/.test(val);
+    const [tipo, num] = partesCuando(val);
+    const modos = vista.modo || (vista.modo = {});
+    const modo = modos[c.k] || (tipo === "anio" ? "anio" : "edad");
+    const r = anioAprox(val);
     h = `${titulo}<div class="cuando">
-      <input id="f-${c.k}" data-k="${c.k}" data-cuando inputmode="numeric" placeholder="Año aprox." value="${esAnio ? esc(val) : ""}" aria-label="${esc(c.lbl)} (año)">
-      <div class="chips">${["En la infancia","No recuerdo"].map(o =>
-        `<button data-chip="${c.k}" data-v="${o}" aria-pressed="${val === o}">${o}</button>`).join("")}</div></div>`;
+      <span>${modo === "edad" ? "A los" : "En"}</span>
+      <input id="f-${c.k}" data-k="${c.k}" data-cuando="${modo}" inputmode="numeric" placeholder="${modo === "edad" ? "edad" : "año"}" value="${tipo === modo ? esc(num) : ""}" aria-label="${esc(c.lbl)} (${modo === "edad" ? "edad que tenías" : "año"})">
+      ${modo === "edad" ? "<span>años</span>" : ""}
+      <button class="link" data-modo="${c.k}">${modo === "edad" ? "o el año, si lo sabes" : "o la edad que tenías"}</button></div>
+      <div class="chips">${[...Object.keys(ETAPAS).map(e => ["etapa:" + e, e]), ["No recuerdo", "No recuerdo"]].map(([o, txt]) =>
+        `<button data-chip="${c.k}" data-v="${esc(o)}" aria-pressed="${val === o}">${esc(txt)}</button>`).join("")}</div>
+      ${r && tipo !== "anio" ? `<p class="hint">Año aproximado: ${rango(r)}, calculado con tu fecha de nacimiento.</p>` : ""}`;
   } else if(c.t === "select"){
     h = `<label for="f-${c.k}">${esc(c.lbl)} <span class="opt">(opcional)</span>${ac(c.ac, true)}</label>
       <select id="f-${c.k}" data-k="${c.k}"><option value="">Ninguno</option>${c.opts.map(o =>
@@ -423,7 +452,7 @@ function pintarHabitos(s){
       <div class="habito" style="border:0; margin-top:0; padding-top:0">
         <span class="lbl">Alcohol${ac("C-1", true)}</span>
         ${chipsDe("alcohol", ["Nunca","Lo dejé","Actual"], v, "Alcohol")}
-        ${v.alcohol === "Lo dejé" ? `<div class="cuando" style="margin-top:6px">${numH("alcDesde", "¿Desde qué año?", v)}</div>` : ""}
+        ${v.alcohol === "Lo dejé" ? `<div class="cuando" style="margin-top:6px">${numH("alcDesde", "¿A qué edad lo dejaste?", v)}</div>` : ""}
         ${v.alcohol === "Actual" ? `
           ${subLbl("¿Con qué frecuencia tomas?")}${chipsDe("alcFrec", ALC_FREC, v, "Frecuencia")}
           <div class="chips"><button data-chip="alcFinde" data-v="Sí" aria-pressed="${v.alcFinde === "Sí"}">Sobre todo fines de semana</button></div>
@@ -435,7 +464,7 @@ function pintarHabitos(s){
       <div class="habito">
         <span class="lbl">Tabaco${ac("C-2", true)}</span>
         ${chipsDe("tabaco", ["Nunca","Antes","Actual"], v, "Tabaco")}
-        ${v.tabaco && v.tabaco !== "Nunca" ? `<div class="cuando" style="margin-top:6px">${numH("cigarros", "Cigarros al día", v)}${numH("tabDesde", "Desde (año)", v)}${v.tabaco === "Antes" ? numH("tabHasta", "Hasta (año)", v) : ""}</div>` : ""}
+        ${v.tabaco && v.tabaco !== "Nunca" ? `<div class="cuando" style="margin-top:6px">${numH("cigarros", "Cigarros al día", v)}${numH("tabDesde", "¿A qué edad empezaste?", v)}${v.tabaco === "Antes" ? numH("tabHasta", "¿A qué edad lo dejaste?", v) : ""}</div>` : ""}
         ${subLbl("Vapeador o cigarro electrónico")}${chipsDe("vape", ["Nunca","Antes","Actual"], v, "Vapeador")}
       </div>
 
@@ -501,8 +530,13 @@ function pintar(){
 function leerInputs(){
   document.querySelectorAll("#vista input[data-k], #vista select[data-k]").forEach(i => {
     const v = i.value.trim();
-    // El año vacío no pisa «En la infancia» / «No recuerdo» elegido con chip
-    if("cuando" in i.dataset && !v && !/^\d+$/.test(vista.borrador[i.dataset.k] || "")) return;
+    if("cuando" in i.dataset){
+      // La caja vacía no pisa una etapa o «No recuerdo» elegidos con chip
+      const modo = i.dataset.cuando, k = i.dataset.k, actual = vista.borrador[k] || "";
+      if(v) vista.borrador[k] = modo + ":" + v;
+      else if(actual.startsWith(modo + ":")) vista.borrador[k] = "";
+      return;
+    }
     vista.borrador[i.dataset.k] = v;
   });
   document.querySelectorAll("#vista [data-act]").forEach(i => {
@@ -516,16 +550,15 @@ function validar(s, v){
     if(c.si && !c.si(v)) { delete v[c.k]; continue; }
     const val = v[c.k];
     if(c.req && !val) errs[c.k] = "Escribe o elige cuál fue.";
-    if(c.t === "cuando" && val && /^\d+$/.test(val)){
-      const n = Number(val);
-      if(n > ANIO) errs[c.k] = `El año no puede ser futuro (máximo ${ANIO}).`;
-      else if(n < 1900) errs[c.k] = "Escribe el año con cuatro dígitos, por ejemplo 2012.";
-    } else if(c.t === "cuando" && val && !["En la infancia","No recuerdo"].includes(val)){
-      errs[c.k] = "Escribe solo el año, por ejemplo 2012.";
+    if(c.t === "cuando" && val){
+      const [t, x] = partesCuando(val);
+      if((t === "edad" || t === "anio") && !/^\d+$/.test(x)) errs[c.k] = "Escribe solo el número.";
+      else if(t === "edad" && +x > EDAD) errs[c.k] = `No puede ser mayor que tu edad actual (${EDAD} años).`;
+      else if(t === "anio" && (+x > ANIO || +x < NACIMIENTO)) errs[c.k] = `Escribe un año entre ${NACIMIENTO} (cuando naciste) y ${ANIO}.`;
     }
   }
-  if(v.hasta && v.desde && /^\d+$/.test(v.hasta) && /^\d+$/.test(v.desde) && Number(v.hasta) < Number(v.desde))
-    errs.hasta = "No puede ser antes de «desde cuándo».";
+  const rd = anioAprox(v.desde), rh = anioAprox(v.hasta);
+  if(!errs.hasta && rd && rh && rh[1] < rd[0]) errs.hasta = "No puede ser antes de «desde cuándo».";
   if(!Object.keys(errs).length && !Object.values(v).some(Boolean)) errs._ = "Llena al menos un dato o cancela.";
   return errs;
 }
@@ -558,6 +591,13 @@ document.addEventListener("click", ev => {
   }
   if("actAdd" in d){ ev.preventDefault(); leerInputs(); vista.borrador.actividades.push({}); return pintar(); }
   if(d.actDel){ ev.preventDefault(); leerInputs(); vista.borrador.actividades.splice(+d.actDel, 1); return pintar(); }
+  if(d.modo){
+    ev.preventDefault(); leerInputs();
+    const m = vista.modo || (vista.modo = {});
+    const actual = m[d.modo] || (partesCuando(vista.borrador[d.modo])[0] === "anio" ? "anio" : "edad");
+    m[d.modo] = actual === "edad" ? "anio" : "edad";
+    return pintar();
+  }
   if(d.chip){
     ev.preventDefault(); leerInputs();
     const v = vista.borrador;
