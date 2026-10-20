@@ -27,27 +27,39 @@ test.use({ storageState: { cookies: [], origins: [] } })
 //                            eventos son enlaces (chronic y habits: sin enlace,
 //                            sin inputs, sin "Agregar").
 //   history-entries          lista de registros en la pantalla de sección
+//                            (region nombrada por el encabezado; recibe el
+//                            foco al guardar, cancelar, eliminar, marcar
+//                            "ninguna" y "Deshacer")
 //   history-entry            un elemento por registro, con su resumen
 // data-testid reutilizados: consent-accept-button, onboarding-wizard,
 //   profile-basic-data.
 //
 // Textos es-MX asertados como contrato (pantalla de sección):
-//   Botones "Agregar", "Editar", "Eliminar"; confirmación en la misma
-//   pantalla "Sí, eliminar" / "Cancelar"; guardar el formulario con
-//   "Guardar" (exact, convención de profile.spec.ts).
+//   Botones "Agregar", "Editar", "Eliminar"; por fila, el nombre accesible
+//   lleva el título del registro: "Editar Apendicectomía", "Eliminar Radio"
+//   (texto visible "Editar" / "Eliminar"). Confirmación en la misma
+//   pantalla "Sí, eliminar" / "Cancelar": al abrirla el foco va a
+//   "Sí, eliminar"; al cancelarla vuelve al "Eliminar <título>" de su fila.
+//   Guardar el formulario con "Guardar" (exact, convención de
+//   profile.spec.ts).
 //   "No he tenido ninguna" ("Nunca me han transfundido" en transfusiones) y
 //   "Deshacer"; estado de la sección "Ninguna" / "Sin llenar".
 //   Aviso al quitar la marca: "Guardado. La sección ya no dice «ninguna»."
 //   Registro vacío: "Llena al menos un dato".
 //   Transfusiones: grupo de chips "Grupo sanguíneo" (role group con ese
-//   nombre) con A+ A- B+ B- AB+ AB- O+ O- y "No lo sé"; el chip elegido lleva
-//   aria-pressed="true".
+//   nombre) con A+ A- B+ B- AB+ AB- O+ O- visibles y "No lo sé"; el nombre
+//   accesible de cada chip es el hablado: "A positivo", "A negativo", …,
+//   "O negativo", "No lo sé". El chip elegido lleva aria-pressed="true".
 //   WhenField: campo "Edad que tenías" (alterna con "Año" vía el botón
 //   "o el año, si lo sabes" / "o la edad que tenías"); chips
 //   "Antes de la primaria", "En la primaria", "En la secundaria",
 //   "En la prepa", "No recuerdo".
 //   Resumen de "cuándo": "a los 7 años (≈1997)", "en la primaria
 //   (≈1996–2001)", "en 2015"; sin fecha de nacimiento, sin el paréntesis.
+//   Pista en el formulario: "Año aproximado: …"; no aparece si ese año cae
+//   en el futuro. Un "cuándo" imposible que rechaza el servidor (p. ej.
+//   "La edad no puede ser mayor que tu edad actual") sale junto al campo y
+//   el foco va a ese campo (aria-invalid + aria-describedby).
 //
 // Campos del formulario (el contract no nombra sus labels; este spec los fija
 // con el texto de los campos del spec, como labels accesibles):
@@ -57,7 +69,7 @@ test.use({ storageState: { cookies: [], origins: [] } })
 //   "Qué hueso o lesión".
 //   Opciones (un combobox con ese label, o un group/radiogroup con ese
 //   nombre cuyas opciones son radio o botones): "Condición" (Varicela, …),
-//   "Tipo" (Cirugía / Hospitalización), "Lado" (Izquierdo / Derecho / …),
+//   "Tipo" (Cirugía / Hospitalización sin cirugía), "Lado" (Izquierdo / Derecho / …),
 //   "Qué se transfundió" (Sangre, …), y las preguntas sí/no
 //   "¿Requirió hospitalización?", "¿Reacción a la anestesia?",
 //   "¿Requirió cirugía?", "¿Hubo reacción?" con opciones "Sí" / "No" /
@@ -240,7 +252,9 @@ test.describe("Perfil médico — historial por secciones (perfil-eventos, grupo
       page.getByRole("heading", { name: "Mi perfil médico" }),
     ).toBeVisible()
 
-    await expect(card(page, "past")).toContainText("2 registros")
+    await expect(
+      card(page, "past").getByText("2 registros", { exact: true }),
+    ).toBeVisible()
     await expect(card(page, "transfusions")).toContainText("Ninguna")
     await expect(card(page, "surgeries")).toContainText("Sin llenar")
     await expect(card(page, "fractures")).toContainText("Sin llenar")
@@ -291,6 +305,23 @@ test.describe("Perfil médico — historial por secciones (perfil-eventos, grupo
     await expect(entries(page).first()).toContainText("en la primaria")
   })
 
+  test("S04 enfermedad pasada 'Otra': Chikungunya aparece en la lista", async ({
+    page,
+    request,
+  }) => {
+    await freshPatient(page, request)
+    await openSection(page, "/perfil/pasadas")
+    await startAdd(page)
+    await choose(page, /condición/i, "Otra")
+    await textbox(page, /^¿cuál fue\?/i).fill("Chikungunya")
+    await save(page)
+
+    await expect(entries(page)).toHaveCount(1)
+    await expect(
+      entries(page).first().getByText("Chikungunya", { exact: true }),
+    ).toBeVisible()
+  })
+
   test("S05 cirugía con todos sus datos; al editar se ven tal cual", async ({
     page,
     request,
@@ -313,7 +344,7 @@ test.describe("Perfil médico — historial por secciones (perfil-eventos, grupo
 
     await entries(page)
       .first()
-      .getByRole("button", { name: "Editar", exact: true })
+      .getByRole("button", { name: "Editar Apendicectomía", exact: true })
       .click()
     await expect(textbox(page, /^nombre/i)).toHaveValue("Apendicectomía")
     await expectChosen(page, /tipo/i, "Cirugía")
@@ -372,6 +403,10 @@ test.describe("Perfil médico — historial por secciones (perfil-eventos, grupo
     await save(page)
 
     await expect(page.getByText("Llena al menos un dato")).toBeVisible()
+
+    // "Cancelar" vuelve a la lista con el foco en ella.
+    await page.getByRole("button", { name: "Cancelar", exact: true }).click()
+    await expect(page.getByTestId("history-entries")).toBeFocused()
     await expect(entries(page)).toHaveCount(0)
     expect(await historyCount(api)).toBe(0)
   })
@@ -385,32 +420,37 @@ test.describe("Perfil médico — historial por secciones (perfil-eventos, grupo
     await openSection(page, "/perfil/fracturas")
     await expect(entries(page)).toHaveCount(1)
 
+    const list = page.getByTestId("history-entries")
     await entries(page)
       .first()
-      .getByRole("button", { name: "Editar", exact: true })
+      .getByRole("button", { name: "Editar Radio", exact: true })
       .click()
     await choose(page, /^lado/i, "Derecho")
     await save(page)
     await expect(entries(page).first()).toContainText("derecho")
+    await expect(list).toBeFocused()
 
-    // "Cancelar" conserva el registro.
-    await entries(page)
+    // "Cancelar" conserva el registro; el foco va a "Sí, eliminar" al abrir
+    // la confirmación y vuelve al "Eliminar" de la fila al cancelarla.
+    const deleteRadio = entries(page)
       .first()
-      .getByRole("button", { name: "Eliminar", exact: true })
-      .click()
+      .getByRole("button", { name: "Eliminar Radio", exact: true })
+    const confirmYes = page.getByRole("button", {
+      name: "Sí, eliminar",
+      exact: true,
+    })
+    await deleteRadio.click()
+    await expect(confirmYes).toBeFocused()
     await page.getByRole("button", { name: "Cancelar", exact: true }).click()
+    await expect(deleteRadio).toBeFocused()
     await expect(entries(page)).toHaveCount(1)
     expect(await historyCount(api)).toBe(1)
 
     // "Sí, eliminar" lo quita de la sección y del almacenamiento.
-    await entries(page)
-      .first()
-      .getByRole("button", { name: "Eliminar", exact: true })
-      .click()
-    await page
-      .getByRole("button", { name: "Sí, eliminar", exact: true })
-      .click()
+    await deleteRadio.click()
+    await confirmYes.click()
     await expect(entries(page)).toHaveCount(0)
+    await expect(list).toBeFocused()
     expect(await historyCount(api)).toBe(0)
   })
 
@@ -464,6 +504,34 @@ test.describe("Perfil médico — historial por secciones (perfil-eventos, grupo
     await expect(entries(page).first()).not.toContainText("≈")
   })
 
+  test("S13b edad imposible: sin año aproximado futuro, error junto a '¿Cuándo?' con el foco ahí", async ({
+    page,
+    request,
+  }) => {
+    const api = await freshPatient(page, request)
+    await setBirthDate(page, "1990-03-15", "15/03/1990")
+    await openSection(page, "/perfil/fracturas")
+    await startAdd(page)
+    await textbox(page, /^qué hueso o lesión/i).fill("Radio")
+    const age = page.getByLabel("Edad que tenías")
+
+    // Una edad posible muestra la pista; una que cae en el futuro, no.
+    await age.fill("10")
+    await expect(page.getByText("Año aproximado: 2000")).toBeVisible()
+    await age.fill("90")
+    await expect(page.getByText(/Año aproximado/)).toHaveCount(0)
+
+    // El servidor la rechaza: el mensaje queda junto al campo, que recibe
+    // el foco y lo lleva como descripción.
+    await save(page)
+    await expect(age).toBeFocused()
+    await expect(age).toHaveAttribute("aria-invalid", "true")
+    await expect(age).toHaveAccessibleDescription(
+      "La edad no puede ser mayor que tu edad actual",
+    )
+    expect(await historyCount(api)).toBe(0)
+  })
+
   test("S14 el año se recalcula al corregir la fecha de nacimiento", async ({
     page,
     request,
@@ -491,6 +559,7 @@ test.describe("Perfil médico — historial por secciones (perfil-eventos, grupo
     await openSection(page, "/perfil/cirugias")
     await page.getByRole("button", { name: "No he tenido ninguna" }).click()
     await expect(page.getByText("Ninguna", { exact: true })).toBeVisible()
+    await expect(page.getByTestId("history-entries")).toBeFocused()
 
     await page.goto("/perfil")
     await expect(card(page, "surgeries")).toContainText("Ninguna")
@@ -514,7 +583,9 @@ test.describe("Perfil médico — historial por secciones (perfil-eventos, grupo
     await expect(entries(page)).toHaveCount(1)
 
     await page.goto("/perfil")
-    await expect(card(page, "transfusions")).toContainText("1 registro")
+    await expect(
+      card(page, "transfusions").getByText("1 registro", { exact: true }),
+    ).toBeVisible()
     await expect(card(page, "transfusions")).not.toContainText("Ninguna")
   })
 
@@ -529,6 +600,7 @@ test.describe("Perfil médico — historial por secciones (perfil-eventos, grupo
 
     await page.getByRole("button", { name: "Deshacer", exact: true }).click()
     await expect(page.getByText("Sin llenar", { exact: true })).toBeVisible()
+    await expect(page.getByTestId("history-entries")).toBeFocused()
 
     await page.goto("/perfil")
     await expect(card(page, "surgeries")).toContainText("Sin llenar")
@@ -541,7 +613,8 @@ test.describe("Perfil médico — historial por secciones (perfil-eventos, grupo
     const api = await freshPatient(page, request)
     await openSection(page, "/perfil/transfusiones")
     const group = page.getByRole("group", { name: "Grupo sanguíneo" })
-    const oPlus = group.getByRole("button", { name: "O+", exact: true })
+    const oPlus = group.getByRole("button", { name: "O positivo", exact: true })
+    await expect(oPlus).toHaveText("O+")
     const unknown = group.getByRole("button", { name: "No lo sé", exact: true })
 
     await oPlus.click()
@@ -565,7 +638,7 @@ test.describe("Perfil médico — historial por secciones (perfil-eventos, grupo
       groupAfter.getByRole("button", { name: "No lo sé", exact: true }),
     ).toHaveAttribute("aria-pressed", "true")
     await expect(
-      groupAfter.getByRole("button", { name: "O+", exact: true }),
+      groupAfter.getByRole("button", { name: "O positivo", exact: true }),
     ).not.toHaveAttribute("aria-pressed", "true")
   })
 })

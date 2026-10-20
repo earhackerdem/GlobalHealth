@@ -79,12 +79,18 @@ function ageOn(birth: Date, on: Date): number {
   return age
 }
 
-/** Hoy en dd/mm/aaaa (es-MX), con la fecha LOCAL (no UTC). */
+/**
+ * Hoy en dd/mm/aaaa en America/Mexico_City: el servidor fecha `measured_on`
+ * con el día de México, no con el reloj de Node (el contenedor del CI corre
+ * en UTC; de 00:00 a 06:00 UTC ya es otro día).
+ */
 function todayMx(): string {
-  const now = new Date()
-  const day = String(now.getDate()).padStart(2, "0")
-  const month = String(now.getMonth() + 1).padStart(2, "0")
-  return `${day}/${month}/${now.getFullYear()}`
+  return new Intl.DateTimeFormat("es-MX", {
+    timeZone: "America/Mexico_City",
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+  }).format(new Date())
 }
 
 /**
@@ -260,18 +266,29 @@ test.describe("Perfil médico — onboarding y /perfil", () => {
     await expect(ahfAfter.getByText("Madre")).toBeVisible()
   })
 
-  test("Escenario 11 (Secciones listadas sin captura): las 6 tarjetas del historial dicen 'Sin llenar'; crónicas y hábitos sin inputs, enlace ni 'Agregar'", async ({
+  test("Escenario 11 (Secciones listadas sin captura): con un antecedente registrado, se ve contabilizado y las 6 tarjetas del historial dicen 'Sin llenar'; crónicas y hábitos sin inputs, enlace ni 'Agregar'", async ({
     page,
+    request,
   }) => {
-    // Nota (M29): el GIVEN del escenario pide "un antecedente
-    // registrado"; aquí la cuenta omite el onboarding porque lo que se asierta
-    // (las 6 tarjetas del historial, sin captura en crónicas y hábitos) no
-    // depende de él. La
-    // visibilidad de /perfil CON antecedentes registrados la cubren los
-    // escenarios 10, 13 y el de dos antecedentes (G3/M30).
-    // Cuenta con el onboarding ya cerrado (omitido).
-    await freshUserWithConsent(page)
+    // GIVEN del escenario: un antecedente familiar registrado (Diabetes /
+    // Madre, sembrado por el API) y nada en el historial. Cuenta con el
+    // onboarding ya cerrado (omitido).
+    const { email, password } = await freshUserWithConsent(page)
     await skipOnboardingToExpediente(page)
+    const login = await request.post(
+      `${process.env.VITE_API_URL}/api/v1/login/access-token`,
+      { form: { username: email, password } },
+    )
+    expect(login.ok()).toBeTruthy()
+    const { access_token } = await login.json()
+    const seeded = await request.post(
+      `${process.env.VITE_API_URL}/api/v1/profile/family-history`,
+      {
+        headers: { Authorization: `Bearer ${access_token}` },
+        data: { condition: "diabetes", relatives: ["mother"] },
+      },
+    )
+    expect(seeded.status()).toBe(201)
 
     // La navegación tiene la entrada "Mi perfil médico" y lleva a /perfil
     // (en móvil, tras abrir el menú colapsado).
@@ -282,6 +299,12 @@ test.describe("Perfil médico — onboarding y /perfil", () => {
     await expect(
       page.getByRole("heading", { name: "Mi perfil médico" }),
     ).toBeVisible()
+
+    // Su antecedente aparece contabilizado en la sección de antecedentes.
+    const ahf = page.getByTestId("profile-family-history")
+    await expect(ahf.getByText("Diabetes")).toBeVisible()
+    await expect(ahf.getByText("Madre", { exact: true })).toBeVisible()
+    await expect(ahf.getByText("Sin registros")).toHaveCount(0)
 
     // Las seis secciones del historial listadas, cada una "Sin llenar".
     for (const [key, name] of HISTORY_SECTIONS) {
