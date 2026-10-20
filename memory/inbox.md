@@ -80,3 +80,10 @@ task: if the person you work with doesn't mention it, it is not started.
   python:3.14: `DeadlineExceeded` vía el proxy `http.docker.internal:3128`), aunque el host sí llega a ghcr.io. Sin
   rebuild, `make migrate` aplica migraciones que el contenedor no trae. Revisar la configuración de proxy de Docker
   Desktop; mientras tanto, `docker compose cp backend/app backend:/app/backend/` o `docker compose watch`.
+- [2026-10-20] Nombres de tabla sin convención: `oauthidentity`, `consentgrant`, `healthrecord`,
+  `healthrecordmedicine` y `healthrecordattachment` salen del default de SQLModel (`cls.__name__.lower()`,
+  sqlmodel/main.py:907), y desde onboarding-perfil las tablas nuevas declaran `__tablename__` en snake_case
+  (`patient_profile`, `medical_history_entry`). Lo detectó Saúl Pérez explorando la BD. Decidir con un ADR:
+  renombrar (cambio propio `fix/tablas-snake-case`: `__tablename__` + migración nueva con `op.rename_table`, FKs a
+  `healthrecord.id`, índices y constraints, y 4 tests con nombres crudos) o fijar la convención solo para tablas
+  nuevas. Editar las migraciones viejas no sirve: no corren otra vez en las BD existentes.

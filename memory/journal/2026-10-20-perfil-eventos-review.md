@@ -38,3 +38,11 @@ Para compensar que el autor revisara su propia obra:
   de dos corridas; en la otra cayeron 2 heredados del template, que solos pasan 101/101.
 - **Para Saúl:** las notas S4, C5 y O2 están en `evidence.md` § Apply. La meta-mejora del hook `lint.py` (Python
   del sistema contra PEP 758) queda como candidata.
+
+**Exploración en Chrome tras el apply (2026-10-20).** Saúl Pérez notó que no la había corrido después del apply y
+fijó el orden: primero explora el agente y, si no hay defectos, valida él; si los hay, el agente rehace o se
+detiene si hace falta criterio humano. Saúl ya había validado a mano. Corrí la exploración: todos los hallazgos
+del apply se comportan como se aprobaron, y la exploración no encontró defectos. Dos observaciones, sin deuda
+nueva: el error de un campo se queda hasta reenviar (síntoma de H5, diferido) y tres `click()` programáticos
+duplican (el doble clic real no). Detalle en `evidence.md` § Exploración en Chrome tras el apply. De paso, Saúl
+vio tablas sin `_` en la BD (default de SQLModel); queda en el inbox para decidir con un ADR.

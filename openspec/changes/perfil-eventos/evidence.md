@@ -133,3 +133,36 @@ biome lo marca como error (`lint/a11y/useAriaPropsSupportedByRole`). El resto de
 - El hook `lint.py` compila con el Python 3.9 del sistema y marca como error de sintaxis el
   `except A, B:` (PEP 758) que exige `ruff format` con Python 3.14 (`profile.py:183`, igual que `deps.py:38`).
   Candidato a `memory/meta-improvements.md`.
+
+### Exploración en Chrome tras el apply (2026-10-20)
+
+Pedido de Saúl Pérez: primero explora el agente; si no encuentra defectos, la validación pasa a él, y si los
+encuentra, rehace o se detiene cuando necesita criterio humano. Navegué con Claude in Chrome contra
+`localhost:8000` (imagen del backend construida a las 11:15:40 −06, después de d81f3b9 y 56c1142), con la cuenta de
+exploración, en escritorio (1401 px) y en el ancho mínimo de Chrome (500 px; no baja de ahí).
+
+| Hallazgo del apply | Qué hice | Resultado |
+|---|---|---|
+| O1 | Abrí "Mi perfil médico" en los dos anchos | Flecha solo en las 4 tarjetas que se abren ✅ |
+| E1, E2, A1, B3 | "No he tenido ninguna" y "Deshacer" en cirugías | Avisos "Sección respondida" y "La sección vuelve a estar sin llenar"; texto "Queda registrado que lo respondiste."; foco a la `section` nombrada por su encabezado ✅ |
+| F11, H1, H2 | Abrí "Agregar" en cirugías | "Hospitalización sin cirugía"; asterisco rojo fuera del nombre accesible ("Nombre"); campos largos de varias líneas ✅ |
+| A2 | "Guardar" vacío; luego solo "Motivo" | "Llena al menos un dato" con `role="alert"`; después, foco a "Nombre", `aria-invalid` y error asociado ✅ |
+| A2/C5 | Edad 40 con nacimiento en 1990 | Error del servidor junto a "Edad que tenías", con foco ahí ✅ |
+| Año aprox. futuro | Edad 40 y luego 35 | Con 40 no muestra año; con 35 muestra "Año aproximado: 2025" ✅ |
+| A1, A3 | "Eliminar" → "Cancelar" → "Eliminar" → Enter | Botones "Editar/Eliminar Apendicectomía"; foco a "Sí, eliminar", descrito por "¿Eliminar este registro?"; "Cancelar" vuelve al "Eliminar" de esa fila; al borrar, foco a la lista ✅ |
+| O2, F6 | Toqué "A-" dos veces | Nombre "A negativo", `aria-pressed`; avisos "guardado" y luego "borrado" ✅ |
+| A2 ("Otra") | "Otra" sin texto, luego "Chikungunya" | Foco al input "¿Cuál fue?" con su error; se guarda y lista "Chikungunya" ✅ |
+| Romperla | Doble clic real en "Guardar", emoji en "Motivo", sección inexistente en la URL, "Editar" y "Cancelar" | Un solo registro; emoji intacto al editar; página 404; foco de vuelta a la lista ✅ |
+
+Consola: ningún error de la app (el único es de una extensión de Chrome, `Flags error response: status=401`).
+
+**Observaciones, ninguna es defecto del cambio:**
+- El error de un campo y su `aria-invalid` siguen visibles aunque el campo ya esté corregido, hasta el siguiente
+  "Guardar". Ya pasaba antes del apply (`setErrors` solo en el envío, en 56c1142~1 igual que ahora). Es el síntoma
+  concreto de H5 (formulario a mano en vez de RHF, que revalida al cambiar), diferido en `memory/closed.md`.
+- Tres `click()` programáticos en el mismo tick crearon 3 registros: React no alcanza a deshabilitar el botón. No es
+  el camino de un usuario: el doble clic real se protege con `LoadingButton loading={isPending}`
+  (`HistoryEntryForm.tsx:434`, mismo patrón que el resto de la app). El backend no tiene idempotencia; queda como
+  observación, no como deuda nueva.
+
+Veredicto: sin defectos que rehacer. La validación con `validation.md` pasa a Saúl Pérez.
