@@ -441,7 +441,7 @@ más años (research.md § ocupación). Decisión: va en el **Perfil básico**, 
 | paciente | abre una sección desde "Mi perfil médico" y agrega, corrige o elimina registros | cuando quiera | edad mayor que la actual o año fuera de su vida rechazados; "hasta" antes de "desde" rechazado; registro vacío no se guarda |
 | paciente | marca "No he tenido ninguna" | sección sin registros | agregar un registro después la quita |
 | paciente | elige su grupo sanguíneo | en la sección de transfusiones | "No lo sé" es un valor válido |
-| paciente | enlaza una crónica a un diagnóstico del expediente | al registrar o editar la crónica | si el diagnóstico se borra, la crónica queda sin enlace (no se borra) [ASSUMPTION] |
+| paciente | enlaza una crónica a un diagnóstico del expediente | al registrar o editar la crónica | si el diagnóstico se borra, la crónica queda sin enlace (no se borra) y la confirmación de borrado lo avisa (Saúl Pérez, 2026-10-20) |
 | sistema (futuro E5) | usa crónicas, hábitos (tabaco, humo ajeno, leña, AUDIT-C) y "ninguna" para avisos con fuente | FR-021 | fuera de esta rebanada; cualquier puntaje o riesgo es salida de la IA con fuente (NFR-008) |
 
 ## Datos sensibles
@@ -453,5 +453,6 @@ titular, como los AHF: opcionales por minimización.
 1. ~~**¿El prototipo refleja lo que respondiste?**~~ **RESPONDIDA (Saúl Pérez, 2026-10-20):** el v1 produjo la
    ronda 6 (hábitos), el v2 la 7 (trabajo, movimiento del día, sueño) y el v3 la 8 ("cuándo" por edad); sobre el
    v4: "procede con la story a".
-2. **(abierta, bloquea solo la Story B) Borrar un diagnóstico enlazado:** la crónica conserva su registro y pierde el enlace [ASSUMPTION] — ¿o debe
-   avisar antes de borrar el diagnóstico?
+2. ~~**Borrar un diagnóstico enlazado**~~ **RESPONDIDA (Saúl Pérez, 2026-10-20: "Se queda y se avisa"):** la
+   crónica conserva su registro y pierde el enlace, y la confirmación de borrado del diagnóstico avisa cuáles
+   crónicas respalda (criterio B-5 de perfil-cronicas).
