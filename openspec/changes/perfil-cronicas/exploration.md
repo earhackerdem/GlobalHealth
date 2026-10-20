@@ -32,7 +32,7 @@ archivado) · Explored by: el agente (orquestador), para Saúl Pérez (author)
   crónica guardaría para siempre el id de un dato que el paciente borró (ARCO, FR-003). Mejor quitarlo al borrar
   (§5).
 - **Que el cliente mande la categoría "salud mental":** se podría desincronizar de la condición. Se deriva en el
-  servidor.
+  servidor. *(Superado por §8: la marca es un interruptor del paciente, con valor por defecto según la condición.)*
 
 ## 4. Non-functional constraints detected
 
@@ -88,3 +88,17 @@ Pistas para el plan:
 - `openspec/specs/records/patient-profile/spec.md` y `openspec/specs/records/clinical-records/spec.md`.
 - `memory/closed.md` (S3, H5), `memory/decisions.md` (D13, D15), `product/technical-brief.md` § 4.
 - Archivo de perfil-eventos: `openspec/changes/archive/2026-10-20-perfil-eventos/design.md` (Decisions 2–4).
+
+## 8. Respuestas del gate (Saúl Pérez, 2026-10-20)
+
+- **§6 pregunta 1 → "Interruptor por crónica":** prefirió la opción (a) y la amplió: cada crónica lleva su propio
+  interruptor "Sensible", prendido por defecto en salud mental y adicciones. Pidió primero un CRUD de enfermedades
+  con su marca sensible. La objeción (entidad nueva con pantallas y reglas al editar o borrar del catálogo; cada
+  crónica ya es "su" enfermedad) la aceptó al elegir el interruptor. Queda como B-1b en la propuesta.
+- **Adicciones en el grupo sensible:** "Consumo de alcohol u otras sustancias" entra a la lista junto a salud mental,
+  como las agrupa la LGS art. 72 (`memory/research.md#salud-mental-lgs`). El detalle del consumo sigue en Hábitos
+  (Story C).
+- **Matriz §2 y supuestos §5:** sin objeciones. Pasa a `/epe-2-plan`, cuyo gate es el "plan approved" sobre el
+  prototipo actualizado (B-1b y B-5).
+- **Fuera de foco:** compartir por secciones y por marca sensible (FR-014, E3/E4) queda en el inbox.
+

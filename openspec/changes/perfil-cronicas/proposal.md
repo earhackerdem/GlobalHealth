@@ -24,9 +24,12 @@ aunque no tenga el papel del diagnóstico.
   "N registros"; "No tengo ninguna" se marca solo sin registros, se deshace, y agregar un registro la quita con
   aviso; eliminar pide confirmación en la misma pantalla; un registro vacío no se guarda.
 - **B-1** Condición desde una lista frecuente (diabetes tipo 2, hipertensión, asma, hipotiroidismo, colesterol alto,
-  EPOC, artritis, epilepsia) + **salud mental** (depresión, ansiedad, trastorno bipolar) + "otra"; **requerida**.
-  Las de salud mental se guardan marcadas con su categoría (para que FR-014 las oculte al compartir sin migrar) y se
-  ven marcadas como "sensible".
+  EPOC, artritis, epilepsia) + **salud mental y adicciones** (depresión, ansiedad, trastorno bipolar, consumo de
+  alcohol u otras sustancias) + "otra"; **requerida**.
+- **B-1b** (Saúl Pérez, 2026-10-20: "Interruptor por crónica") Cada crónica lleva un interruptor **"Sensible"** que el
+  paciente prende o apaga al registrarla o editarla. Viene prendido en las de salud mental y adicciones, apagado en
+  las demás, y en "otra" lo decide el paciente. La lista muestra "sensible" en las que lo tienen; FR-014 usará la
+  marca para ocultarlas al compartir. Sin catálogo propio de enfermedades.
 - **B-2** Estado **Activa** o **Ya no la tengo**. "Desde cuándo" y, si ya no la tiene, "hasta cuándo" se contestan
   con la mecánica "cuándo" de la Story A (edad, etapa escolar, año o "No recuerdo"). Se rechazan "hasta" antes de
   "desde" y las mismas edades y años imposibles que en A-3.
