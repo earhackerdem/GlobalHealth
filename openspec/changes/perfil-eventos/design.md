@@ -38,7 +38,8 @@ enlaces entre registros de secciones distintas; paginación (decenas de registro
 
 - **Se toca:** `backend/app/models.py` (tabla nueva + 2 columnas en `patient_profile` + esquemas),
   migración Alembic nueva (solo aditiva), `backend/app/api/routes/profile.py` (rutas nuevas + `blood_type` y
-  `sections_none` en GET/PUT `/profile`), `backend/tests/api/routes/test_profile_history.py` (nuevo); frontend:
+  `sections_none` en GET/PUT `/profile`), `backend/tests/api/routes/test_profile_history.py` (nuevo), `backend/tests/api/routes/test_profile.py:251`
+  (tarea 1.0: `today` en la zona de México, defecto visto en el CI del PR #17); frontend:
   `routes/_layout/perfil.tsx` (tarjetas con estado y navegables), ruta nueva `routes/_layout/perfil_.$seccion.tsx`
   (el `_` final la saca del anidamiento bajo `perfil.tsx`), componentes nuevos en `components/Profile/`
   (`HistorySection`, `HistoryEntryForm`, `WhenField`, `BloodTypePicker`), `locales/es-MX/profile.json`,

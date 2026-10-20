@@ -22,3 +22,9 @@ rama sale de la del discovery y se rebasa sobre `main` antes del PR. Exploració
 Con eso quedó el plan en DRAFT: spec delta (1 MODIFIED + 5 ADDED, 23 scenarios), design con el Interface contract
 y los citers (`profile.spec.ts:14,52,280-300`, `perfil.tsx:148`, `profile.json:79`) y tasks en grupos 0 (rebase),
 1 (backend, test→impl), 2 (frontend, test→impl) y 3 (cierre). `openspec validate --strict` limpio.
+
+**Defecto encontrado al preparar los merges:** el `test-backend` del PR #17 (solo docs) falló en
+`test_profile.py:259` con `'2026-10-19' == '2026-10-20'`. El test usa `date.today()` en UTC, mientras el servidor
+fecha en America/Mexico_City (`profile.py:204`). Falla cada día de 00:00 a 06:00 UTC, no en una ventana de
+milisegundos como suponía la fila diferida de closed.md (2026-10-19). Se relanzó el job fuera de la ventana y el
+arreglo entra como tarea 1.0 de esta story.

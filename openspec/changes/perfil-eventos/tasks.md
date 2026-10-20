@@ -15,6 +15,13 @@ files is `test→impl`; smaller groups are `single`. `make tdd-check` requires o
 
 ## 1. Backend: registros, "ninguna", "cuándo" y grupo sanguíneo · test→impl
 
+- [ ] 1.0 Orquestador (single, solo test): `backend/tests/api/routes/test_profile.py:251` compara
+      `measured_on` con `date.today()` del runner (UTC), pero el servidor fecha en America/Mexico_City
+      (`backend/app/api/routes/profile.py:204`): el test falla cada día entre 00:00 y 06:00 UTC (visto en el CI
+      del PR #17, 2026-10-20 00:11 UTC: `'2026-10-19' == '2026-10-20'`). Calcular `today` con la misma zona.
+      Reabre con evidencia la fila diferida de `memory/closed.md` 2026-10-19 ("flake de medianoche… ventana de
+      ms"): la ventana es de 6 h diarias en CI. Verificación: el test pasa con el reloj del proceso en UTC
+      00:30 (`faketime` o monkeypatch) y en hora normal; commit `test:`.
 - [ ] 1.1 Tester: `backend/tests/api/routes/test_profile_history.py` desde los escenarios 3, 4, 5, 8, 9, 10, 11, 15,
       16, 17, 18, 19, 20, 21, 22 y 23 (parte pytest del test plan) y el Interface contract del design: round-trip
       por sección, requeridos y vacío con el `detail` es-MX exacto, imposibles de `when` con y sin fecha de
