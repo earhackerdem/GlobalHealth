@@ -34,10 +34,12 @@ from app.models import (
     BodyMeasurementLatest,
     BodyMeasurementPublic,
     BodyMeasurementsPublic,
+    ChronicHistoryContent,
     FamilyHistoriesPublic,
     FamilyHistory,
     FamilyHistoryCreate,
     FamilyHistoryPublic,
+    HealthRecord,
     HistoryContent,
     HistoryContentModel,
     HistoryEntriesPublic,
@@ -51,6 +53,7 @@ from app.models import (
     PatientProfilePublic,
     PatientProfileUpdate,
     get_datetime_utc,
+    normalize_history_content,
     normalize_relatives,
     validate_birth_date,
     validate_history_content,
@@ -158,6 +161,35 @@ def _validate_history(content_in: HistoryContentModel, profile: PatientProfile) 
         )
     except ValueError as e:
         raise HTTPException(status_code=422, detail=str(e)) from e
+
+
+def _check_diagnosis_link(
+    session: SessionDep, current_user: ConsentedUser, content_in: HistoryContentModel
+) -> None:
+    """A chronic entry may only point to a diagnosis of the session user's own
+    records; the SAME 422 for a foreign one, a prescription or a missing id.
+    Only the id is selected, so no clinical text gets decrypted."""
+    if not isinstance(content_in, ChronicHistoryContent):
+        return
+    if content_in.diagnosis_id is None:
+        return
+    found = session.exec(
+        select(HealthRecord.id).where(
+            HealthRecord.id == content_in.diagnosis_id,
+            HealthRecord.owner_id == current_user.id,
+            HealthRecord.record_type == "diagnosis",
+        )
+    ).first()
+    if found is None:
+        raise HTTPException(
+            status_code=422, detail="Ese diagnóstico no está en tu expediente"
+        )
+
+
+def _history_content_json(content_in: HistoryContentModel) -> str:
+    """The JSON that gets encrypted: server defaults applied (perfil-cronicas
+    Decisions 2 and 5)."""
+    return json.dumps(normalize_history_content(content_in).model_dump(mode="json"))
 
 
 def _history_public(entry: MedicalHistoryEntry) -> HistoryEntry:
@@ -492,12 +524,13 @@ def create_history_entry(
     (Decision 3). No dedupe (Decision 6)."""
     profile = _lock_profile(session, current_user)
     _validate_history(entry_in, profile)
+    _check_diagnosis_link(session, current_user, entry_in)
     _store_sections_none(
         profile,
         [s for s in _sections_none(profile) if s != entry_in.section],
     )
     entry = MedicalHistoryEntry(
-        user_id=current_user.id, content=json.dumps(entry_in.model_dump(mode="json"))
+        user_id=current_user.id, content=_history_content_json(entry_in)
     )
     session.add(profile)
     session.add(entry)
@@ -522,7 +555,8 @@ def update_history_entry(
         raise HTTPException(
             status_code=422, detail="No se puede cambiar la sección de un registro"
         )
-    entry.content = json.dumps(entry_in.model_dump(mode="json"))
+    _check_diagnosis_link(session, current_user, entry_in)
+    entry.content = _history_content_json(entry_in)
     session.add(entry)
     session.commit()
     session.refresh(entry)

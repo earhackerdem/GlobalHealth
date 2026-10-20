@@ -18,6 +18,7 @@ from fastapi import APIRouter, HTTPException, Response, UploadFile
 from sqlalchemy.orm import InstrumentedAttribute, load_only
 from sqlmodel import col, delete, func, select
 
+from app import crud
 from app.api.deps import ConsentedUser, SessionDep
 from app.models import (
     HealthRecord,
@@ -218,8 +219,14 @@ def update_health_record(
 def delete_health_record(
     session: SessionDep, current_user: ConsentedUser, id: uuid.UUID
 ) -> Message:
-    """Delete an owned record (cancelación ARCO)."""
+    """Delete an owned record (cancelación ARCO). A diagnosis is first unlinked
+    from the chronic entries it backs, in the SAME transaction (perfil-cronicas
+    Decision 3)."""
     record = _get_owned_record(session, current_user, id)
+    if record.record_type == "diagnosis":
+        crud.unlink_diagnosis(
+            session=session, owner_id=current_user.id, diagnosis_id=record.id
+        )
     session.delete(record)
     session.commit()
     return Message(message="Registro eliminado")

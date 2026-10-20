@@ -1,10 +1,18 @@
+import json
 import uuid
 from typing import Any
 
 from sqlmodel import Session, select
 
 from app.core.security import get_password_hash, verify_password
-from app.models import Item, ItemCreate, User, UserCreate, UserUpdate
+from app.models import (
+    Item,
+    ItemCreate,
+    MedicalHistoryEntry,
+    User,
+    UserCreate,
+    UserUpdate,
+)
 
 
 def create_user(*, session: Session, user_create: UserCreate) -> User:
@@ -66,3 +74,31 @@ def create_item(*, session: Session, item_in: ItemCreate, owner_id: uuid.UUID) -
     session.commit()
     session.refresh(db_item)
     return db_item
+
+
+def unlink_diagnosis(
+    *, session: Session, owner_id: uuid.UUID, diagnosis_id: uuid.UUID
+) -> int:
+    """Drop `diagnosis_id` from the owner's chronic entries that point to it and
+    return how many changed (perfil-cronicas Decision 3). The link lives in the
+    encrypted JSON, so the owner's rows are decrypted here, in memory. Does NOT
+    commit: the caller deletes the diagnosis in the same transaction."""
+    rows = session.exec(
+        select(MedicalHistoryEntry).where(MedicalHistoryEntry.user_id == owner_id)
+    ).all()
+    changed = 0
+    for row in rows:
+        try:
+            content = json.loads(row.content)
+        except json.JSONDecodeError:
+            continue  # unreadable row: left as is, like the history list does
+        if (
+            isinstance(content, dict)
+            and content.get("section") == "chronic"
+            and content.get("diagnosis_id") == str(diagnosis_id)
+        ):
+            content["diagnosis_id"] = None
+            row.content = json.dumps(content)
+            session.add(row)
+            changed += 1
+    return changed
