@@ -63,7 +63,9 @@ def age_on(birth: date, today: date) -> int:
     )
 
 
-def post_entry(client: TestClient, headers: dict[str, str], body: dict[str, Any]) -> Any:
+def post_entry(
+    client: TestClient, headers: dict[str, str], body: dict[str, Any]
+) -> Any:
     return client.post(HISTORY_URL, headers=headers, json=body)
 
 
@@ -389,7 +391,10 @@ def test_s15_impossible_when_with_birth_date(client: TestClient, db: Session) ->
             {"kind": "age", "value": too_old},
             "La edad no puede ser mayor que tu edad actual",
         ),
-        ({"kind": "year", "value": 1985}, "El año no puede ser anterior a tu nacimiento"),
+        (
+            {"kind": "year", "value": 1985},
+            "El año no puede ser anterior a tu nacimiento",
+        ),
         ({"kind": "year", "value": today.year + 1}, "El año no puede ser futuro"),
     ]
     for when, expected in cases:
@@ -400,9 +405,7 @@ def test_s15_impossible_when_with_birth_date(client: TestClient, db: Session) ->
     assert_history_empty(client, headers)
 
 
-def test_s15_impossible_age_without_birth_date(
-    client: TestClient, db: Session
-) -> None:
+def test_s15_impossible_age_without_birth_date(client: TestClient, db: Session) -> None:
     """Sin birth_date: edad 131 -> 422 "La edad debe estar entre 0 y 130 años"."""
     headers, _ = consented_user(client, db)
 

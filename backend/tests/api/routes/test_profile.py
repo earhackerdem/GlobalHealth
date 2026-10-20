@@ -29,7 +29,7 @@ errors carry a STRING detail in es-MX; lists use {"data": [...], "count": N}):
 """
 
 import uuid
-from datetime import date, datetime
+from datetime import datetime
 from typing import Any
 from zoneinfo import ZoneInfo
 
