@@ -25,7 +25,7 @@ Para compensar que el autor revisara su propia obra:
 - **No aprueba:** bloque 6 (diferibles) ni bloque 7 (deuda fuera del cambio). Quedan en `closed.md`: 6 filas ⏸️
   y 1 🔒 de falsos positivos.
 
-**Siguiente:** `/epe-5-apply`.
+**Siguiente:** `/epe-5-apply` (hecho, ver Apply abajo).
 
 **Apply (2026-10-20):**
 - **Fixers:** dos, con archivos disjuntos, con la orden de no descartar nada.
