@@ -28,3 +28,25 @@ y los citers (`profile.spec.ts:14,52,280-300`, `perfil.tsx:148`, `profile.json:7
 fecha en America/Mexico_City (`profile.py:204`). Falla cada día de 00:00 a 06:00 UTC, no en una ventana de
 milisegundos como suponía la fila diferida de closed.md (2026-10-19). Se relanzó el job fuera de la ventana y el
 arreglo entra como tarea 1.0 de esta story.
+
+**Ejecución (Saúl Pérez: "plan approved", con #17, #18 y #19 mergeados):**
+- **0.1:** rebase sobre `main` (quedaron solo los commits del cambio). El MODIFIED tuvo que conservar el
+  scenario base "Secciones listadas sin captura", redefinido; ahora son 24 scenarios.
+- **1.0:** el test de mediciones usaba la fecha local del runner. Rojo reproducido con TZ=Asia/Tokyo; verde en
+  Tokio, UTC y México. closed.md reabre el flake con evidencia.
+- **Grupo 1, backend (test→impl):** tester 22 rojos (90af786); implementer verde al primer intento. Suite
+  completa 190 passed, 0 failed, 0 skipped, cobertura 96 %, mypy limpio, tdd-check ✓.
+- **Grupo 2, frontend (test→impl):** tester 17 rojos / 6 verdes (6c7dfca), incluido el citer de
+  profile.spec. El implementer agotó sus turnos ya en verde; el orquestador re-corrió: 23 passed en chromium,
+  tsc y biome limpios, tdd-check ✓. Estabilidad: 221/221 con `--repeat-each=5` en ambos proyectos.
+- **Suite Playwright completa como CI:** 4 de 6 corridas limpias; las caídas (`reset-password`, de Mailpit, y 2
+  no identificadas) quedan ajenas a los specs del cambio y declaradas como deuda.
+- **Exploración en Chrome:** sin defectos funcionales. Dos hallazgos de texto para el review: "Listo" duplicado
+  en el aviso, y "El médico verá que lo respondiste", que promete E3/E4.
+
+**Sorpresas de entorno:**
+- El daemon de Docker Desktop tardó en bajar imágenes base (proxy `http.docker.internal:3128`). Mientras tanto
+  el backend se probó con `docker compose cp`; el rebuild terminó más tarde.
+- Ya había un Vite tuyo en `:5173`; se usó sin matarlo.
+
+**Deuda al inbox:** `validate_birth_date` con `date.today()` del servidor, y la red del daemon de Docker.
