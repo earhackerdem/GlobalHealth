@@ -29,4 +29,3 @@ Includes rejections: a retro that repeats the previous one's menu manufactures f
   ../harness, rama `improve/exploracion-navegador-y-harness-primero` (25b4956). Pendiente upstream, en su inbox:
   un guard de `navigate` a URLs locales, un aviso cuando el template es más nuevo que el proyecto, y que
   `gate-plan` no ve archivos de worktrees secundarios.
-

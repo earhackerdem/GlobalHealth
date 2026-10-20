@@ -41,6 +41,9 @@ repos:
         require_serial: true
         language: unsupported
         types: [python]
+        # .claude/hooks/ is vendored from the harness (.agents/harness-manifest.json): reformatting it
+        # here would turn it into a fork. Fixes go upstream, to the harness template.
+        exclude: ^\.claude/hooks/
 
       - id: local-ruff-format
         name: ruff format
@@ -48,6 +51,9 @@ repos:
         require_serial: true
         language: unsupported
         types: [python]
+        # .claude/hooks/ is vendored from the harness (.agents/harness-manifest.json): reformatting it
+        # here would turn it into a fork. Fixes go upstream, to the harness template.
+        exclude: ^\.claude/hooks/
 
       - id: local-mypy
         name: mypy check
