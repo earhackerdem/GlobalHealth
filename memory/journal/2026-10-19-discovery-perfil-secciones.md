@@ -58,3 +58,7 @@ edad que el año, y el médico no pregunta el año sino "¿cuántos años tenía
 secundaria?" para calcularlo. Cambió en todo el perfil: crónicas (desde/hasta), tabaco y alcohol (a qué edad).
 Ahora se contesta con edad, etapa escolar o año. Se guarda lo dicho y el año se calcula al mostrarlo con la fecha
 de nacimiento; sin ella, solo se muestra la edad. Corrige la decisión de la ronda 1 ("año aproximado").
+
+**Cierre del gate (2026-10-20):** sobre el prototipo v4, Saúl Pérez respondió "procede con la story a". El
+dominio queda agreed para la Story A. La pregunta de la crónica con diagnóstico enlazado queda abierta porque
+solo afecta a la Story B.

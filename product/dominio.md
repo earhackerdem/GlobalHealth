@@ -301,7 +301,9 @@ las guías de semiología detallan [VERIFIED 2026-10-19, memory/research.md § a
 Date: 2026-10-19 · Interviewed: Saúl Pérez (author, con sombrero de stakeholder; pidió "procede con 028" tras
 archivar onboarding-perfil) · Método: borrador 0 desde memory/research.md § anamnesis, corregido en 5 rondas (la
 ronda 5 no añadió nada) + ronda 6 al clickear el prototipo v1: hábitos crece (research.md § hábitos) + ronda 7: ocupación,
-movimiento del día y sueño (research.md § ocupación) · Status: **draft — gate pendiente: Saúl Pérez navega el prototipo**
+movimiento del día y sueño (research.md § ocupación) · Status: **agreed para la Story A — gate cerrado el 2026-10-20: Saúl Pérez navegó el prototipo en 4
+versiones (rondas 6–8 salieron de clickearlo) y respondió "procede con la story a"**. La pregunta 2 (borrar un
+diagnóstico enlazado) solo toca la Story B y queda abierta hasta entonces
 Prototipo: **`product/prototipos/perfil-secciones.html`** (https://claude.ai/artifact/TRBywm3SEhDA5ey2duMV8n;
 toggle "Ver criterios" con AC A-n / B-n / C-n; v2 con hábitos ampliados; v3 con trabajo, movimiento del día y sueño; v4 con "cuándo" por edad o etapa).
 Alcance: llenar las 6 secciones que el PR #16 dejó visibles y vacías. NO entra: vacunación (catálogo propio,
@@ -448,7 +450,8 @@ Salud mental lleva además su categoría para FR-014. Médico y hospital son dat
 titular, como los AHF: opcionales por minimización.
 
 ## Open questions (max 4) — el gate del discovery
-1. **¿El prototipo v2 refleja lo que respondiste?** Navegarlo es el gate (incluye las stories B y C para validar
-   todo de una vez, aunque se construyan después). El v1 ya produjo la ronda 6 (hábitos).
-2. **Borrar un diagnóstico enlazado:** la crónica conserva su registro y pierde el enlace [ASSUMPTION] — ¿o debe
+1. ~~**¿El prototipo refleja lo que respondiste?**~~ **RESPONDIDA (Saúl Pérez, 2026-10-20):** el v1 produjo la
+   ronda 6 (hábitos), el v2 la 7 (trabajo, movimiento del día, sueño) y el v3 la 8 ("cuándo" por edad); sobre el
+   v4: "procede con la story a".
+2. **(abierta, bloquea solo la Story B) Borrar un diagnóstico enlazado:** la crónica conserva su registro y pierde el enlace [ASSUMPTION] — ¿o debe
    avisar antes de borrar el diagnóstico?
