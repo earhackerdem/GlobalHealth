@@ -1,4 +1,10 @@
-import { expect, type Locator, type Page, test } from "@playwright/test"
+import {
+  type APIRequestContext,
+  expect,
+  type Locator,
+  type Page,
+  test,
+} from "@playwright/test"
 import { createUser } from "./utils/privateApi"
 import { randomEmail, randomPassword } from "./utils/random"
 import { logInUser } from "./utils/user"
@@ -836,5 +842,108 @@ test.describe("Expediente — receta a la mexicana", () => {
 
     // El formulario manual sigue siendo utilizable en el mismo modal.
     await expect(dialog.getByLabel("Médico que la expide")).toBeVisible()
+  })
+})
+
+// --- perfil-cronicas (Historia B, B-5): borrar un diagnóstico que respalda ---
+
+const API = `${process.env.VITE_API_URL}/api/v1`
+
+type Api = {
+  request: APIRequestContext
+  headers: Record<string, string>
+}
+
+/**
+ * Como freshUserOnExpediente, pero cerrando el onboarding y devolviendo un
+ * cliente del API autenticado para sembrar datos.
+ */
+async function freshUserWithApi(
+  page: Page,
+  request: APIRequestContext,
+): Promise<Api> {
+  const email = randomEmail()
+  const password = randomPassword()
+  await createUser({ email, password })
+  await logInUser(page, email, password)
+
+  const consentButton = page.getByTestId("consent-accept-button")
+  await expect(consentButton).toBeVisible()
+  await consentButton.click()
+  await expect(consentButton).not.toBeVisible()
+  await page
+    .getByRole("button", { name: "Ahora no, llévame a mi expediente" })
+    .click()
+  await page.waitForURL(/\/expediente/)
+
+  const login = await request.post(`${API}/login/access-token`, {
+    form: { username: email, password },
+  })
+  expect(login.ok()).toBeTruthy()
+  const { access_token } = await login.json()
+  return { request, headers: { Authorization: `Bearer ${access_token}` } }
+}
+
+test.describe("Expediente — diagnóstico que respalda una crónica (perfil-cronicas)", () => {
+  test("E17 B-5 eliminar el diagnóstico que respalda «Hipotiroidismo»: el diálogo lo avisa y la crónica se queda sin respaldo", async ({
+    page,
+    request,
+  }) => {
+    const api = await freshUserWithApi(page, request)
+    const dx = await request.post(`${API}/health-records/`, {
+      headers: api.headers,
+      data: {
+        record_type: "diagnosis",
+        title: "Hipotiroidismo subclínico",
+        occurred_on: "2026-09-30",
+        professional: "Dra. Islas (endocrinología)",
+      },
+    })
+    expect(dx.ok()).toBeTruthy()
+    const { id: diagnosisId } = await dx.json()
+    const chronic = await request.post(`${API}/profile/history`, {
+      headers: api.headers,
+      data: {
+        section: "chronic",
+        condition: "hypothyroidism",
+        status: "active",
+        diagnosis_id: diagnosisId,
+      },
+    })
+    expect(chronic.status()).toBe(201)
+
+    // Antes de borrar: la crónica muestra su respaldo.
+    const entries = page.getByTestId("history-entry")
+    await page.goto("/perfil/cronicas")
+    await expect(entries).toHaveCount(1)
+    await expect(entries.first()).toContainText(
+      "Respaldo: Hipotiroidismo subclínico",
+    )
+
+    // El diálogo de borrado del diagnóstico nombra la crónica que respalda.
+    await page.goto("/expediente")
+    await clickRecordAction(
+      page,
+      "Hipotiroidismo subclínico",
+      "Eliminar registro",
+    )
+    await expect(
+      page.getByText(
+        "¿Seguro que quieres eliminar este registro? Se eliminarán también sus adjuntos.",
+      ),
+    ).toBeVisible()
+    await expect(
+      page.getByText(
+        "Respalda tu crónica «Hipotiroidismo». La crónica se queda, sin respaldo.",
+      ),
+    ).toBeVisible()
+    await page.getByRole("button", { name: "Eliminar", exact: true }).click()
+    await expect(page.getByText("Registro eliminado.")).toBeVisible()
+
+    // La crónica sigue, ya sin "Respaldo".
+    await page.goto("/perfil/cronicas")
+    await expect(entries).toHaveCount(1)
+    await expect(entries.first()).toContainText("Hipotiroidismo")
+    await expect(entries.first()).not.toContainText("Respaldo")
   })
 })
