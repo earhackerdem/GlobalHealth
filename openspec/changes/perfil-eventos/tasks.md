@@ -15,7 +15,7 @@ files is `test→impl`; smaller groups are `single`. `make tdd-check` requires o
 
 ## 1. Backend: registros, "ninguna", "cuándo" y grupo sanguíneo · test→impl
 
-- [ ] 1.0 Orquestador (single, solo test): `backend/tests/api/routes/test_profile.py:251` compara
+- [x] 1.0 Orquestador (single, solo test): `backend/tests/api/routes/test_profile.py:251` compara
       `measured_on` con `date.today()` del runner (UTC), pero el servidor fecha en America/Mexico_City
       (`backend/app/api/routes/profile.py:204`): el test falla cada día entre 00:00 y 06:00 UTC (visto en el CI
       del PR #17, 2026-10-20 00:11 UTC: `'2026-10-19' == '2026-10-20'`). Calcular `today` con la misma zona.
