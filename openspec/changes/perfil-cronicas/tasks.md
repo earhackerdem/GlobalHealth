@@ -11,7 +11,7 @@ are `single`. `make tdd-check` requires one `test:` commit per `test→impl` gro
 
 ## 0. Prototipo y base · single
 
-- [ ] 0.1 **Prototipo.** `product/prototipos/perfil-secciones.html` gana:
+- [x] 0.1 **Prototipo.** `product/prototipos/perfil-secciones.html` gana:
   - la casilla "Sensible" (B-1b), con su valor por defecto según la condición;
   - "Consumo de alcohol u otras sustancias" en el grupo "Salud mental y adicciones";
   - el resumen "hasta los N años";
@@ -19,7 +19,8 @@ are `single`. `make tdd-check` requires one `test:` commit per `test→impl` gro
   - insignias B-1b y B-5;
   - la historia B en la leyenda.
 
-  Verificación: Saúl Pérez lo navega antes de "plan approved".
+  Verificación: Saúl Pérez lo navega antes de "plan approved". Hecho el 2026-10-20 y probado en Chrome (marca
+  sensible por defecto y manual, desde/hasta, aviso de B-5).
 - [ ] 0.2 **Base.** Con #24 y #25 mergeados: `git rebase origin/main`, `openspec validate perfil-cronicas --strict`
   limpio y `make up`. Verificación: la rama solo tiene commits del cambio.
 
