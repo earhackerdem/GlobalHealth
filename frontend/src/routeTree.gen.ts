@@ -21,6 +21,7 @@ import { Route as LayoutExpedienteRouteImport } from './routes/_layout/expedient
 import { Route as LayoutItemsRouteImport } from './routes/_layout/items'
 import { Route as LayoutPerfilRouteImport } from './routes/_layout/perfil'
 import { Route as LayoutSettingsRouteImport } from './routes/_layout/settings'
+import { Route as LayoutPerfilSeccionRouteImport } from './routes/_layout/perfil_.$seccion'
 
 const LayoutRoute = LayoutRouteImport.update({
   id: '/_layout',
@@ -81,6 +82,11 @@ const LayoutSettingsRoute = LayoutSettingsRouteImport.update({
   path: '/settings',
   getParentRoute: () => LayoutRoute,
 } as any)
+const LayoutPerfilSeccionRoute = LayoutPerfilSeccionRouteImport.update({
+  id: '/perfil_/$seccion',
+  path: '/perfil/$seccion',
+  getParentRoute: () => LayoutRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof LayoutIndexRoute
@@ -94,6 +100,7 @@ export interface FileRoutesByFullPath {
   '/items': typeof LayoutItemsRoute
   '/perfil': typeof LayoutPerfilRoute
   '/settings': typeof LayoutSettingsRoute
+  '/perfil/$seccion': typeof LayoutPerfilSeccionRoute
 }
 export interface FileRoutesByTo {
   '/google-callback': typeof GoogleCallbackRoute
@@ -107,6 +114,7 @@ export interface FileRoutesByTo {
   '/perfil': typeof LayoutPerfilRoute
   '/settings': typeof LayoutSettingsRoute
   '/': typeof LayoutIndexRoute
+  '/perfil/$seccion': typeof LayoutPerfilSeccionRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -122,6 +130,7 @@ export interface FileRoutesById {
   '/_layout/perfil': typeof LayoutPerfilRoute
   '/_layout/settings': typeof LayoutSettingsRoute
   '/_layout/': typeof LayoutIndexRoute
+  '/_layout/perfil_/$seccion': typeof LayoutPerfilSeccionRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -137,6 +146,7 @@ export interface FileRouteTypes {
     | '/items'
     | '/perfil'
     | '/settings'
+    | '/perfil/$seccion'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/google-callback'
@@ -150,6 +160,7 @@ export interface FileRouteTypes {
     | '/perfil'
     | '/settings'
     | '/'
+    | '/perfil/$seccion'
   id:
     | '__root__'
     | '/_layout'
@@ -164,6 +175,7 @@ export interface FileRouteTypes {
     | '/_layout/perfil'
     | '/_layout/settings'
     | '/_layout/'
+    | '/_layout/perfil_/$seccion'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -261,6 +273,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LayoutSettingsRouteImport
       parentRoute: typeof LayoutRoute
     }
+    '/_layout/perfil_/$seccion': {
+      id: '/_layout/perfil_/$seccion'
+      path: '/perfil/$seccion'
+      fullPath: '/perfil/$seccion'
+      preLoaderRoute: typeof LayoutPerfilSeccionRouteImport
+      parentRoute: typeof LayoutRoute
+    }
   }
 }
 
@@ -271,6 +290,7 @@ interface LayoutRouteChildren {
   LayoutPerfilRoute: typeof LayoutPerfilRoute
   LayoutSettingsRoute: typeof LayoutSettingsRoute
   LayoutIndexRoute: typeof LayoutIndexRoute
+  LayoutPerfilSeccionRoute: typeof LayoutPerfilSeccionRoute
 }
 
 const LayoutRouteChildren: LayoutRouteChildren = {
@@ -280,6 +300,7 @@ const LayoutRouteChildren: LayoutRouteChildren = {
   LayoutPerfilRoute: LayoutPerfilRoute,
   LayoutSettingsRoute: LayoutSettingsRoute,
   LayoutIndexRoute: LayoutIndexRoute,
+  LayoutPerfilSeccionRoute: LayoutPerfilSeccionRoute,
 }
 
 const LayoutRouteWithChildren =

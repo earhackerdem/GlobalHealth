@@ -213,6 +213,98 @@ export type FamilyHistoryPublic = {
 };
 
 /**
+ * FractureHistoryContent
+ */
+export type FractureHistoryContent = {
+    /**
+     * Section
+     */
+    section: 'fractures';
+    /**
+     * What
+     */
+    what?: string | null;
+    /**
+     * Side
+     */
+    side?: 'left' | 'right' | 'both' | 'not_applicable' | null;
+    /**
+     * When
+     */
+    when?: ({
+        kind: 'age';
+    } & WhenAge) | ({
+        kind: 'stage';
+    } & WhenStage) | ({
+        kind: 'year';
+    } & WhenYear) | ({
+        kind: 'unknown';
+    } & WhenUnknown) | null;
+    /**
+     * Required Surgery
+     */
+    required_surgery?: 'yes' | 'no' | 'unknown' | null;
+    /**
+     * Implant
+     */
+    implant?: string | null;
+    /**
+     * Sequelae
+     */
+    sequelae?: string | null;
+};
+
+/**
+ * FractureHistoryEntry
+ */
+export type FractureHistoryEntry = {
+    /**
+     * Section
+     */
+    section: 'fractures';
+    /**
+     * What
+     */
+    what?: string | null;
+    /**
+     * Side
+     */
+    side?: 'left' | 'right' | 'both' | 'not_applicable' | null;
+    /**
+     * When
+     */
+    when?: ({
+        kind: 'age';
+    } & WhenAge) | ({
+        kind: 'stage';
+    } & WhenStage) | ({
+        kind: 'year';
+    } & WhenYear) | ({
+        kind: 'unknown';
+    } & WhenUnknown) | null;
+    /**
+     * Required Surgery
+     */
+    required_surgery?: 'yes' | 'no' | 'unknown' | null;
+    /**
+     * Implant
+     */
+    implant?: string | null;
+    /**
+     * Sequelae
+     */
+    sequelae?: string | null;
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Created At
+     */
+    created_at: string;
+};
+
+/**
  * HTTPValidationError
  */
 export type HTTPValidationError = {
@@ -479,6 +571,38 @@ export type HealthRecordsPublic = {
 };
 
 /**
+ * HistoryEntriesPublic
+ */
+export type HistoryEntriesPublic = {
+    /**
+     * Data
+     */
+    data: Array<({
+        section: 'past';
+    } & PastHistoryEntry) | ({
+        section: 'surgeries';
+    } & SurgeryHistoryEntry) | ({
+        section: 'fractures';
+    } & FractureHistoryEntry) | ({
+        section: 'transfusions';
+    } & TransfusionHistoryEntry)>;
+    /**
+     * Count
+     */
+    count: number;
+};
+
+/**
+ * HistorySectionNone
+ */
+export type HistorySectionNone = {
+    /**
+     * None
+     */
+    none: boolean;
+};
+
+/**
  * ItemCreate
  */
 export type ItemCreate = {
@@ -581,6 +705,98 @@ export type OnboardingClose = {
 };
 
 /**
+ * PastHistoryContent
+ */
+export type PastHistoryContent = {
+    /**
+     * Section
+     */
+    section: 'past';
+    /**
+     * Condition
+     */
+    condition?: 'varicella' | 'measles' | 'mumps' | 'rubella' | 'hepatitis_a' | 'hepatitis_b' | 'hepatitis_c' | 'severe_covid19' | 'dengue' | 'tuberculosis' | 'other' | null;
+    /**
+     * Other Text
+     */
+    other_text?: string | null;
+    /**
+     * When
+     */
+    when?: ({
+        kind: 'age';
+    } & WhenAge) | ({
+        kind: 'stage';
+    } & WhenStage) | ({
+        kind: 'year';
+    } & WhenYear) | ({
+        kind: 'unknown';
+    } & WhenUnknown) | null;
+    /**
+     * Hospitalized
+     */
+    hospitalized?: 'yes' | 'no' | 'unknown' | null;
+    /**
+     * Sequelae
+     */
+    sequelae?: string | null;
+    /**
+     * Note
+     */
+    note?: string | null;
+};
+
+/**
+ * PastHistoryEntry
+ */
+export type PastHistoryEntry = {
+    /**
+     * Section
+     */
+    section: 'past';
+    /**
+     * Condition
+     */
+    condition?: 'varicella' | 'measles' | 'mumps' | 'rubella' | 'hepatitis_a' | 'hepatitis_b' | 'hepatitis_c' | 'severe_covid19' | 'dengue' | 'tuberculosis' | 'other' | null;
+    /**
+     * Other Text
+     */
+    other_text?: string | null;
+    /**
+     * When
+     */
+    when?: ({
+        kind: 'age';
+    } & WhenAge) | ({
+        kind: 'stage';
+    } & WhenStage) | ({
+        kind: 'year';
+    } & WhenYear) | ({
+        kind: 'unknown';
+    } & WhenUnknown) | null;
+    /**
+     * Hospitalized
+     */
+    hospitalized?: 'yes' | 'no' | 'unknown' | null;
+    /**
+     * Sequelae
+     */
+    sequelae?: string | null;
+    /**
+     * Note
+     */
+    note?: string | null;
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Created At
+     */
+    created_at: string;
+};
+
+/**
  * PatientProfilePublic
  */
 export type PatientProfilePublic = {
@@ -602,6 +818,14 @@ export type PatientProfilePublic = {
     onboarding: string;
     latest_weight: BodyMeasurementLatest | null;
     latest_height: BodyMeasurementLatest | null;
+    /**
+     * Blood Type
+     */
+    blood_type: 'A+' | 'A-' | 'B+' | 'B-' | 'AB+' | 'AB-' | 'O+' | 'O-' | 'unknown' | null;
+    /**
+     * Sections None
+     */
+    sections_none: Array<'past' | 'surgeries' | 'fractures' | 'transfusions'>;
 };
 
 /**
@@ -620,6 +844,10 @@ export type PatientProfileUpdate = {
      * Allergies
      */
     allergies?: string | null;
+    /**
+     * Blood Type
+     */
+    blood_type?: 'A+' | 'A-' | 'B+' | 'B-' | 'AB+' | 'AB-' | 'O+' | 'O-' | 'unknown' | null;
 };
 
 /**
@@ -645,6 +873,130 @@ export type PrivateUserCreate = {
 };
 
 /**
+ * SurgeryHistoryContent
+ */
+export type SurgeryHistoryContent = {
+    /**
+     * Section
+     */
+    section: 'surgeries';
+    /**
+     * Kind
+     */
+    kind?: 'surgery' | 'hospitalization' | null;
+    /**
+     * Name
+     */
+    name?: string | null;
+    /**
+     * When
+     */
+    when?: ({
+        kind: 'age';
+    } & WhenAge) | ({
+        kind: 'stage';
+    } & WhenStage) | ({
+        kind: 'year';
+    } & WhenYear) | ({
+        kind: 'unknown';
+    } & WhenUnknown) | null;
+    /**
+     * Reason
+     */
+    reason?: string | null;
+    /**
+     * Place
+     */
+    place?: string | null;
+    /**
+     * Physician
+     */
+    physician?: string | null;
+    /**
+     * Complications
+     */
+    complications?: string | null;
+    /**
+     * Anesthesia Reaction
+     */
+    anesthesia_reaction?: 'yes' | 'no' | 'unknown' | null;
+    /**
+     * Anesthesia Reaction Detail
+     */
+    anesthesia_reaction_detail?: string | null;
+    /**
+     * Implant
+     */
+    implant?: string | null;
+};
+
+/**
+ * SurgeryHistoryEntry
+ */
+export type SurgeryHistoryEntry = {
+    /**
+     * Section
+     */
+    section: 'surgeries';
+    /**
+     * Kind
+     */
+    kind?: 'surgery' | 'hospitalization' | null;
+    /**
+     * Name
+     */
+    name?: string | null;
+    /**
+     * When
+     */
+    when?: ({
+        kind: 'age';
+    } & WhenAge) | ({
+        kind: 'stage';
+    } & WhenStage) | ({
+        kind: 'year';
+    } & WhenYear) | ({
+        kind: 'unknown';
+    } & WhenUnknown) | null;
+    /**
+     * Reason
+     */
+    reason?: string | null;
+    /**
+     * Place
+     */
+    place?: string | null;
+    /**
+     * Physician
+     */
+    physician?: string | null;
+    /**
+     * Complications
+     */
+    complications?: string | null;
+    /**
+     * Anesthesia Reaction
+     */
+    anesthesia_reaction?: 'yes' | 'no' | 'unknown' | null;
+    /**
+     * Anesthesia Reaction Detail
+     */
+    anesthesia_reaction_detail?: string | null;
+    /**
+     * Implant
+     */
+    implant?: string | null;
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Created At
+     */
+    created_at: string;
+};
+
+/**
  * Token
  */
 export type Token = {
@@ -656,6 +1008,98 @@ export type Token = {
      * Token Type
      */
     token_type?: string;
+};
+
+/**
+ * TransfusionHistoryContent
+ */
+export type TransfusionHistoryContent = {
+    /**
+     * Section
+     */
+    section: 'transfusions';
+    /**
+     * When
+     */
+    when?: ({
+        kind: 'age';
+    } & WhenAge) | ({
+        kind: 'stage';
+    } & WhenStage) | ({
+        kind: 'year';
+    } & WhenYear) | ({
+        kind: 'unknown';
+    } & WhenUnknown) | null;
+    /**
+     * Reason
+     */
+    reason?: string | null;
+    /**
+     * Component
+     */
+    component?: 'blood' | 'platelets' | 'plasma' | 'unknown' | null;
+    /**
+     * Place
+     */
+    place?: string | null;
+    /**
+     * Reaction
+     */
+    reaction?: 'yes' | 'no' | 'unknown' | null;
+    /**
+     * Reaction Detail
+     */
+    reaction_detail?: string | null;
+};
+
+/**
+ * TransfusionHistoryEntry
+ */
+export type TransfusionHistoryEntry = {
+    /**
+     * Section
+     */
+    section: 'transfusions';
+    /**
+     * When
+     */
+    when?: ({
+        kind: 'age';
+    } & WhenAge) | ({
+        kind: 'stage';
+    } & WhenStage) | ({
+        kind: 'year';
+    } & WhenYear) | ({
+        kind: 'unknown';
+    } & WhenUnknown) | null;
+    /**
+     * Reason
+     */
+    reason?: string | null;
+    /**
+     * Component
+     */
+    component?: 'blood' | 'platelets' | 'plasma' | 'unknown' | null;
+    /**
+     * Place
+     */
+    place?: string | null;
+    /**
+     * Reaction
+     */
+    reaction?: 'yes' | 'no' | 'unknown' | null;
+    /**
+     * Reaction Detail
+     */
+    reaction_detail?: string | null;
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Created At
+     */
+    created_at: string;
 };
 
 /**
@@ -826,6 +1270,58 @@ export type ValidationError = {
     ctx?: {
         [key: string]: unknown;
     };
+};
+
+/**
+ * WhenAge
+ */
+export type WhenAge = {
+    /**
+     * Kind
+     */
+    kind: 'age';
+    /**
+     * Value
+     */
+    value: number;
+};
+
+/**
+ * WhenStage
+ */
+export type WhenStage = {
+    /**
+     * Kind
+     */
+    kind: 'stage';
+    /**
+     * Value
+     */
+    value: 'before_primary' | 'primary' | 'secondary' | 'high_school';
+};
+
+/**
+ * WhenUnknown
+ */
+export type WhenUnknown = {
+    /**
+     * Kind
+     */
+    kind: 'unknown';
+};
+
+/**
+ * WhenYear
+ */
+export type WhenYear = {
+    /**
+     * Kind
+     */
+    kind: 'year';
+    /**
+     * Value
+     */
+    value: number;
 };
 
 export type loginLoginAccessTokenData = {
@@ -2036,6 +2532,179 @@ export type profileUpdateFamilyHistoryResponses = {
 };
 
 export type profileUpdateFamilyHistoryResponse = profileUpdateFamilyHistoryResponses[keyof profileUpdateFamilyHistoryResponses];
+
+export type profileReadHistoryData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/profile/history';
+};
+
+export type profileReadHistoryResponses = {
+    /**
+     * Successful Response
+     */
+    200: HistoryEntriesPublic;
+};
+
+export type profileReadHistoryResponse = profileReadHistoryResponses[keyof profileReadHistoryResponses];
+
+export type profileCreateHistoryEntryData = {
+    /**
+     * Entry In
+     */
+    body: ({
+        section: 'past';
+    } & PastHistoryContent) | ({
+        section: 'surgeries';
+    } & SurgeryHistoryContent) | ({
+        section: 'fractures';
+    } & FractureHistoryContent) | ({
+        section: 'transfusions';
+    } & TransfusionHistoryContent);
+    path?: never;
+    query?: never;
+    url: '/api/v1/profile/history';
+};
+
+export type profileCreateHistoryEntryErrors = {
+    /**
+     * Validation Error
+     */
+    422: HTTPValidationError;
+};
+
+export type profileCreateHistoryEntryError = profileCreateHistoryEntryErrors[keyof profileCreateHistoryEntryErrors];
+
+export type profileCreateHistoryEntryResponses = {
+    /**
+     * Response Profile-Create History Entry
+     *
+     * Successful Response
+     */
+    201: ({
+        section: 'past';
+    } & PastHistoryEntry) | ({
+        section: 'surgeries';
+    } & SurgeryHistoryEntry) | ({
+        section: 'fractures';
+    } & FractureHistoryEntry) | ({
+        section: 'transfusions';
+    } & TransfusionHistoryEntry);
+};
+
+export type profileCreateHistoryEntryResponse = profileCreateHistoryEntryResponses[keyof profileCreateHistoryEntryResponses];
+
+export type profileDeleteHistoryEntryData = {
+    body?: never;
+    path: {
+        /**
+         * Id
+         */
+        id: string;
+    };
+    query?: never;
+    url: '/api/v1/profile/history/{id}';
+};
+
+export type profileDeleteHistoryEntryErrors = {
+    /**
+     * Validation Error
+     */
+    422: HTTPValidationError;
+};
+
+export type profileDeleteHistoryEntryError = profileDeleteHistoryEntryErrors[keyof profileDeleteHistoryEntryErrors];
+
+export type profileDeleteHistoryEntryResponses = {
+    /**
+     * Successful Response
+     */
+    200: Message;
+};
+
+export type profileDeleteHistoryEntryResponse = profileDeleteHistoryEntryResponses[keyof profileDeleteHistoryEntryResponses];
+
+export type profileUpdateHistoryEntryData = {
+    /**
+     * Entry In
+     */
+    body: ({
+        section: 'past';
+    } & PastHistoryContent) | ({
+        section: 'surgeries';
+    } & SurgeryHistoryContent) | ({
+        section: 'fractures';
+    } & FractureHistoryContent) | ({
+        section: 'transfusions';
+    } & TransfusionHistoryContent);
+    path: {
+        /**
+         * Id
+         */
+        id: string;
+    };
+    query?: never;
+    url: '/api/v1/profile/history/{id}';
+};
+
+export type profileUpdateHistoryEntryErrors = {
+    /**
+     * Validation Error
+     */
+    422: HTTPValidationError;
+};
+
+export type profileUpdateHistoryEntryError = profileUpdateHistoryEntryErrors[keyof profileUpdateHistoryEntryErrors];
+
+export type profileUpdateHistoryEntryResponses = {
+    /**
+     * Response Profile-Update History Entry
+     *
+     * Successful Response
+     */
+    200: ({
+        section: 'past';
+    } & PastHistoryEntry) | ({
+        section: 'surgeries';
+    } & SurgeryHistoryEntry) | ({
+        section: 'fractures';
+    } & FractureHistoryEntry) | ({
+        section: 'transfusions';
+    } & TransfusionHistoryEntry);
+};
+
+export type profileUpdateHistoryEntryResponse = profileUpdateHistoryEntryResponses[keyof profileUpdateHistoryEntryResponses];
+
+export type profileSetHistorySectionNoneData = {
+    body: HistorySectionNone;
+    path: {
+        /**
+         * Section
+         */
+        section: 'past' | 'surgeries' | 'fractures' | 'transfusions';
+    };
+    query?: never;
+    url: '/api/v1/profile/history/sections/{section}/none';
+};
+
+export type profileSetHistorySectionNoneErrors = {
+    /**
+     * Validation Error
+     */
+    422: HTTPValidationError;
+};
+
+export type profileSetHistorySectionNoneError = profileSetHistorySectionNoneErrors[keyof profileSetHistorySectionNoneErrors];
+
+export type profileSetHistorySectionNoneResponses = {
+    /**
+     * Successful Response
+     */
+    200: PatientProfilePublic;
+};
+
+export type profileSetHistorySectionNoneResponse = profileSetHistorySectionNoneResponses[keyof profileSetHistorySectionNoneResponses];
 
 export type privateCreateUserData = {
     body: PrivateUserCreate;
