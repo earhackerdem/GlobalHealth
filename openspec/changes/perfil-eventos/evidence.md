@@ -10,7 +10,8 @@ Date: 2026-10-20 · Branch: `feat/perfil-eventos` · PR: https://github.com/earh
 | `cd backend && uv run mypy app` | Success: no issues found in 25 source files | 0 | — | ✅ |
 | Grupo 2: `bunx playwright test tests/profile-history.spec.ts tests/profile.spec.ts --project=chromium` (vs Vite :5173), `tsc --noEmit`, `biome check src/` | **23 passed, 0 failed**; tsc 0 errores; biome "No fixes applied" | 0 | 0 | ✅ |
 | Estabilidad del cambio: `PLAYWRIGHT_BASE_URL=http://localhost:8000 bunx playwright test tests/profile-history.spec.ts tests/profile.spec.ts --repeat-each=5` (chromium + s26-ultra, imagen reconstruida) | **221 passed, 0 failed, 0 flaky** | 0 | 0 | ✅ |
-| Suite Playwright COMPLETA como CI (ambos proyectos, build servido por el backend en :8000), 6 corridas | 4 × **141 passed**; 1 × 140 passed + 1 failed (`reset-password.spec.ts:32`, heredado, sola pasa 49/49 con `--repeat-each=8`); 1 × 139 passed + 2 failed ("toBeVisible"/"element(s) not found", no identificados en esa corrida). Ningún fallo en specs de este cambio | 0 | 0 | 🟡 ver deuda |
+| Suite Playwright COMPLETA como CI (ambos proyectos, build servido por el backend en :8000), 6 corridas | 4 × **141 passed**; 1 × 140 passed + 1 failed (`reset-password.spec.ts:32`, heredado, sola pasa 49/49 con `--repeat-each=8`); 1 × 139 passed + 2 failed ("toBeVisible"/"element(s) not found", **no identificados**: no se puede descartar que fueran de este cambio — corrección del review C10a) | 2 corridas con fallos | 0 | 🟡 ver deuda |
+| CI del PR #20 (GitHub Actions, run 39456662518, head `40e2468`, 2026-10-20 16:21 UTC): backend, pre-commit, docker-compose y Playwright en 4 shards con `--fail-on-flaky-tests` (añadido por el review C10b) | **success** en todos los jobs | 0 | 0 | ✅ — fuera de la ventana 00–06 UTC del defecto T1 del review, que esa corrida no podía ver |
 | Tarea 1.0: `TZ=<zona> uv run pytest tests/api/routes/test_profile.py -q` con Asia/Tokyo, UTC y America/Mexico_City | 22 passed en las tres (antes del arreglo: **1 failed** con Asia/Tokyo, el fallo del CI del PR #17) | 0 | 0 | ✅ |
 
 ## Red before green (tasks executed as test→impl)
@@ -36,7 +37,8 @@ Date: 2026-10-20 · Branch: `feat/perfil-eventos` · PR: https://github.com/earh
 | 16 Marcar ninguna | `test_s16_mark_section_none` | ídem | ✅ (+ e2e) |
 | 17 No con registros | `test_s17_cannot_mark_none_with_entries` | ídem | ✅ |
 | 18 Agregar quita la marca | `test_s18_adding_entry_clears_none_mark` | ídem | ✅ (+ e2e) |
-| 19 Deshacer | `test_s19_undo_none_mark`, `test_s19_none_on_section_outside_story_rejected` | ídem | ✅ (+ e2e) |
+| 19 Deshacer | `test_s19_undo_none_mark` | ídem | ✅ (+ e2e) |
+| Contract: sección fuera de esta story → 422 | `test_s19_none_on_section_outside_story_rejected` (reubicado por el review C10c) | ídem | ✅ |
 | 20 Grupo sanguíneo | `test_s20_blood_type_set_change_and_clear` | ídem | ✅ (+ e2e) |
 | 21 Grupo fuera del catálogo | `test_s21_blood_type_outside_catalog_rejected` | ídem | ✅ |
 | 22 Ajeno indistinguible | `test_s22_foreign_entry_indistinguishable_from_missing` | ídem | ✅ |
@@ -81,10 +83,11 @@ Hallazgos para el review (no se tocaron: fuera del plan):
 
 ## Declared debt
 
-- **Inestabilidad de la suite completa de Playwright fuera de este cambio:** en 2 de 6 corridas completas cayó
-  algo ajeno a los specs del perfil (una vez `reset-password.spec.ts:32`, que lee Mailpit y sola pasa 49/49; otra
-  vez 2 fallos no identificados). El CI corre con `--fail-on-flaky-tests`: si el PR cae ahí, el diagnóstico
-  empieza por esta línea. Los specs del cambio: 0 fallos en 6 corridas completas + 221/221 en `--repeat-each=5`.
+- **Inestabilidad de la suite completa de Playwright:** en 2 de 6 corridas locales completas hubo fallos: una vez
+  `reset-password.spec.ts:32` (lee Mailpit; sola pasa 49/49) y otra vez 2 fallos **no identificados**, de los que
+  no se puede afirmar si eran de este cambio (corrección del review C10a: la versión anterior lo afirmaba sin
+  base). Lo medido de los specs del cambio: 221/221 en `--repeat-each=5`; el CI del PR pasó completo con
+  `--fail-on-flaky-tests`. Si el CI cae, el diagnóstico empieza por esta línea.
 
 - **Build de la imagen del backend bloqueado por la red del daemon de Docker:** `docker compose build backend` y
   `docker pull ghcr.io/astral-sh/uv:0.9.26` se quedan sin respuesta (`DeadlineExceeded`); Docker Desktop sale

@@ -38,7 +38,9 @@ cómo va, y "cuándo" se contesta con la edad que tenías.
    - [ ] La lista dice "en la primaria (≈año–año)".
 3. En otra, toca **"o el año, si lo sabes"** y escribe un año.
    - [ ] La lista dice "en <año>".
-4. Prueba una edad mayor que la tuya, o un año antes de que nacieras.
+4. Con tu fecha de nacimiento ya registrada en "Editar datos básicos", prueba una edad mayor que la tuya, o un año
+   antes de que nacieras. (Sin fecha de nacimiento la app no sabe tu edad: solo rechaza edades fuera de 0–130 y
+   años antes de 1900 o futuros.)
    - [ ] No se guarda y te dice por qué, en español.
 5. Cambia tu fecha de nacimiento en "Editar datos básicos" y vuelve a la sección.
    - [ ] El año aproximado cambió solo; la edad que contestaste sigue igual.
