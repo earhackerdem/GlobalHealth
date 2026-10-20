@@ -80,4 +80,3 @@ task: if the person you work with doesn't mention it, it is not started.
   python:3.14: `DeadlineExceeded` vía el proxy `http.docker.internal:3128`), aunque el host sí llega a ghcr.io. Sin
   rebuild, `make migrate` aplica migraciones que el contenedor no trae. Revisar la configuración de proxy de Docker
   Desktop; mientras tanto, `docker compose cp backend/app backend:/app/backend/` o `docker compose watch`.
-
