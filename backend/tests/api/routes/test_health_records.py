@@ -971,3 +971,143 @@ def test_review_s1_medicines_capped_at_20(client: TestClient, db: Session) -> No
     r_after = get_record(client, headers, record_id)
     assert r_after.status_code == 200, r_after.text
     assert len(r_after.json()["medicines"]) == 20
+
+
+# --- perfil-cronicas (B-5): borrar un diagnóstico desenlaza las crónicas ----------
+#
+# Contract: DELETE /health-records/{id} of a diagnosis unlinks it from the
+# patient's chronic entries in the same transaction (response unchanged);
+# crud.unlink_diagnosis(session, owner_id, diagnosis_id) -> int (entries changed).
+
+HISTORY_URL = f"{settings.API_V1_STR}/profile/history"
+
+
+def post_chronic(
+    client: TestClient, headers: dict[str, str], **fields: Any
+) -> dict[str, Any]:
+    r = client.post(HISTORY_URL, headers=headers, json={"section": "chronic", **fields})
+    assert r.status_code == 201, r.text
+    entry: dict[str, Any] = r.json()
+    return entry
+
+
+def chronic_entries(client: TestClient, headers: dict[str, str]) -> dict[str, Any]:
+    r = client.get(HISTORY_URL, headers=headers)
+    assert r.status_code == 200, r.text
+    return {str(e["id"]): e for e in r.json()["data"] if e.get("section") == "chronic"}
+
+
+def user_id_of(client: TestClient, headers: dict[str, str]) -> uuid.UUID:
+    r = client.get(f"{settings.API_V1_STR}/users/me", headers=headers)
+    assert r.status_code == 200, r.text
+    return uuid.UUID(str(r.json()["id"]))
+
+
+def test_b5_delete_diagnosis_unlinks_chronic_entries(
+    client: TestClient, db: Session
+) -> None:
+    """A borra "Hipotiroidismo subclínico": respuesta de siempre; su crónica
+    hypothyroidism sigue, sin diagnosis_id; la crónica de B sigue enlazada."""
+    headers_a = consented_user_headers(client, db)
+    headers_b = consented_user_headers(client, db)
+    r_diag_a = post_record(client, headers_a, diagnosis_payload())
+    assert r_diag_a.status_code == 201, r_diag_a.text
+    diag_a = str(r_diag_a.json()["id"])
+    r_diag_b = post_record(client, headers_b, diagnosis_payload())
+    assert r_diag_b.status_code == 201, r_diag_b.text
+    diag_b = str(r_diag_b.json()["id"])
+    entry_a = post_chronic(
+        client,
+        headers_a,
+        condition="hypothyroidism",
+        status="active",
+        treatment="Levotiroxina 50 mcg en ayunas",
+        diagnosis_id=diag_a,
+    )
+    entry_b = post_chronic(
+        client, headers_b, condition="hypothyroidism", diagnosis_id=diag_b
+    )
+
+    r_delete = client.delete(record_url(diag_a), headers=headers_a)
+
+    assert r_delete.status_code == 200, r_delete.text
+    assert r_delete.json() == {"message": "Registro eliminado"}
+    assert get_record(client, headers_a, diag_a).status_code == 404
+
+    mine = chronic_entries(client, headers_a)
+    assert str(entry_a["id"]) in mine
+    kept = mine[str(entry_a["id"])]
+    assert kept.get("diagnosis_id") is None
+    assert kept["condition"] == "hypothyroidism"
+    assert kept["status"] == "active"
+    assert kept["treatment"] == "Levotiroxina 50 mcg en ayunas"
+
+    theirs = chronic_entries(client, headers_b)
+    assert str(theirs[str(entry_b["id"])]["diagnosis_id"]) == diag_b
+    assert get_record(client, headers_b, diag_b).status_code == 200
+
+
+def test_b5_delete_diagnosis_backing_nothing_unchanged(
+    client: TestClient, db: Session
+) -> None:
+    """Borrar un diagnóstico que no respalda ninguna crónica: misma respuesta y la
+    crónica enlazada a OTRO diagnóstico no cambia."""
+    headers = consented_user_headers(client, db)
+    r_unused = post_record(client, headers, diagnosis_payload(title="Faringitis"))
+    assert r_unused.status_code == 201, r_unused.text
+    unused_id = str(r_unused.json()["id"])
+    r_used = post_record(client, headers, diagnosis_payload())
+    assert r_used.status_code == 201, r_used.text
+    used_id = str(r_used.json()["id"])
+    entry = post_chronic(
+        client, headers, condition="hypothyroidism", diagnosis_id=used_id
+    )
+
+    r_delete = client.delete(record_url(unused_id), headers=headers)
+
+    assert r_delete.status_code == 200, r_delete.text
+    assert r_delete.json() == {"message": "Registro eliminado"}
+    assert get_record(client, headers, unused_id).status_code == 404
+    mine = chronic_entries(client, headers)
+    assert str(mine[str(entry["id"])]["diagnosis_id"]) == used_id
+
+
+def test_b5_crud_unlink_diagnosis_counts_and_scopes_by_owner(
+    client: TestClient, db: Session
+) -> None:
+    """crud.unlink_diagnosis devuelve 1 para la crónica enlazada del dueño y 0
+    para el diagnóstico de otro paciente (cuya crónica no se toca)."""
+    headers_a = consented_user_headers(client, db)
+    headers_b = consented_user_headers(client, db)
+    owner_a = user_id_of(client, headers_a)
+    r_diag_a = post_record(client, headers_a, diagnosis_payload())
+    assert r_diag_a.status_code == 201, r_diag_a.text
+    diag_a = str(r_diag_a.json()["id"])
+    r_diag_b = post_record(client, headers_b, diagnosis_payload())
+    assert r_diag_b.status_code == 201, r_diag_b.text
+    diag_b = str(r_diag_b.json()["id"])
+    entry_a = post_chronic(
+        client, headers_a, condition="hypothyroidism", diagnosis_id=diag_a
+    )
+    entry_b = post_chronic(
+        client, headers_b, condition="hypothyroidism", diagnosis_id=diag_b
+    )
+
+    changed_foreign = crud.unlink_diagnosis(
+        session=db, owner_id=owner_a, diagnosis_id=uuid.UUID(diag_b)
+    )
+    changed_own = crud.unlink_diagnosis(
+        session=db, owner_id=owner_a, diagnosis_id=uuid.UUID(diag_a)
+    )
+    db.commit()
+
+    assert changed_foreign == 0
+    assert changed_own == 1
+    assert (
+        chronic_entries(client, headers_a)[str(entry_a["id"])].get("diagnosis_id")
+        is None
+    )
+    assert (
+        str(chronic_entries(client, headers_b)[str(entry_b["id"])]["diagnosis_id"])
+        == diag_b
+    )

@@ -3,7 +3,8 @@
 Interface contract (design.md, "## Interface contract"; base /api/v1/profile,
 all behind a current consent; 422/409/404 carry a STRING detail in es-MX;
 lists use {"data": [...], "count": N}):
-- section: "past" | "surgeries" | "fractures" | "transfusions".
+- section: "past" | "surgeries" | "fractures" | "transfusions" (Story B adds
+  "chronic", tested at the end of this file; "habits" is not valid yet).
 - When: {kind: "age", value: int} | {kind: "stage", value: "before_primary" |
   "primary" | "secondary" | "high_school"} | {kind: "year", value: int} |
   {kind: "unknown"}. YesNoUnknown: "yes" | "no" | "unknown".
@@ -41,6 +42,13 @@ from app.api.routes import profile as profile_routes
 from app.core.db import engine
 from app.core.encrypted import decrypt_str
 from app.models import MedicalHistoryEntry
+from tests.api.routes.test_health_records import (
+    diagnosis_payload,
+    prescription_payload,
+)
+from tests.api.routes.test_health_records import (
+    post_record as post_health_record,
+)
 from tests.api.routes.test_profile import (
     PROFILE_URL,
     consented_user,
@@ -556,13 +564,14 @@ def test_s19_undo_none_mark(client: TestClient, db: Session) -> None:
 def test_s19_none_on_section_outside_story_rejected(
     client: TestClient, db: Session
 ) -> None:
-    """Sección fuera de esta story (chronic) -> 422; sections_none no la trae."""
+    """Sección aún no soportada (habits) -> 422; sections_none no la trae.
+    (chronic ya es válida desde perfil-cronicas.)"""
     headers, _ = consented_user(client, db)
 
-    r = set_none(client, headers, "chronic", True)
+    r = set_none(client, headers, "habits", True)
 
     assert r.status_code == 422, r.text
-    assert "chronic" not in sections_none(client, headers)
+    assert "habits" not in sections_none(client, headers)
 
 
 # --- Escenario 20: Grupo sanguíneo ------------------------------------------------
@@ -755,3 +764,695 @@ def test_consent_history_routes_require_consent(
         r = client.request(method, url, headers=headers, json=json_body)
         assert r.status_code == 403, (method, url, r.text)
         assert r.json()["detail"] == "CONSENT_REQUIRED", (method, url)
+
+
+# ==================================================================================
+# Story B (perfil-cronicas, grupo 1): sección "chronic".
+#
+# Contract: section "chronic" (first in canonical order); content = condition
+# (required, catalog or "other" + other_text), sensitive (server default true
+# for depression/anxiety/bipolar_disorder/substance_use, false otherwise,
+# always returned), status active|resolved, since/until: When (until dropped
+# unless status is resolved), treatment, note, diagnosis_id (a diagnosis of
+# the same patient's records). Same operations and rules as Story A.
+# ==================================================================================
+
+CHRONIC_CONDITIONS = (
+    "type2_diabetes",
+    "hypertension",
+    "asthma",
+    "hypothyroidism",
+    "high_cholesterol",
+    "copd",
+    "arthritis",
+    "epilepsy",
+    "depression",
+    "anxiety",
+    "bipolar_disorder",
+    "substance_use",
+)
+SENSITIVE_BY_DEFAULT = {"depression", "anxiety", "bipolar_disorder", "substance_use"}
+
+CONDITION_REQUIRED = "Elige la condición o escribe cuál es"
+UNTIL_BEFORE_SINCE = "No puede ser antes de «desde cuándo»"
+DIAGNOSIS_NOT_YOURS = "Ese diagnóstico no está en tu expediente"
+
+HYPOTHYROIDISM_ACTIVE: dict[str, Any] = {
+    "section": "chronic",
+    "condition": "hypothyroidism",
+    "status": "active",
+    "since": {"kind": "age", "value": 31},
+    "treatment": "Levotiroxina 50 mcg en ayunas",
+}
+
+
+def chronic(**fields: Any) -> dict[str, Any]:
+    return {"section": "chronic", **fields}
+
+
+def only_entry(client: TestClient, headers: dict[str, str]) -> dict[str, Any]:
+    r = list_entries(client, headers)
+    assert r.status_code == 200, r.text
+    assert r.json()["count"] == 1, r.text
+    entry: dict[str, Any] = r.json()["data"][0]
+    return entry
+
+
+def create_diagnosis(
+    client: TestClient, headers: dict[str, str], **overrides: Any
+) -> str:
+    r = post_health_record(client, headers, diagnosis_payload(**overrides))
+    assert r.status_code == 201, r.text
+    return str(r.json()["id"])
+
+
+def create_prescription(client: TestClient, headers: dict[str, str]) -> str:
+    r = post_health_record(client, headers, prescription_payload())
+    assert r.status_code == 201, r.text
+    return str(r.json()["id"])
+
+
+# --- Escenario 1 (B-1, B-3): crónica del catálogo, activa, con tratamiento --------
+
+
+def test_b1_chronic_hypothyroidism_active_round_trip(
+    client: TestClient, db: Session
+) -> None:
+    """Nacida 1990-03-15, sin crónicas: POST hipotiroidismo activo desde los 31
+    con Levotiroxina -> 201; GET la trae con esos datos y sensitive false."""
+    headers, _ = consented_user(client, db)
+    r_profile = put_profile(client, headers, {"birth_date": BIRTH_DATE})
+    assert r_profile.status_code == 200, r_profile.text
+    assert_history_empty(client, headers)
+
+    r = post_entry(client, headers, HYPOTHYROIDISM_ACTIVE)
+
+    assert r.status_code == 201, r.text
+    created = r.json()
+    assert created["id"]
+    listed = only_entry(client, headers)
+    assert str(listed["id"]) == str(created["id"])
+    for entry in (created, listed):
+        assert entry["section"] == "chronic"
+        assert entry["condition"] == "hypothyroidism"
+        assert entry["status"] == "active"
+        assert entry["since"] == {"kind": "age", "value": 31}
+        assert entry["treatment"] == "Levotiroxina 50 mcg en ayunas"
+        assert entry["sensitive"] is False
+        assert entry.get("until") is None
+
+
+# --- Escenario 2 (B-1b): "Sensible" por omisión según la condición ----------------
+
+
+@pytest.mark.parametrize(
+    "condition",
+    [*CHRONIC_CONDITIONS, "other"],
+)
+def test_b1b_sensitive_default_by_condition(
+    client: TestClient, db: Session, condition: str
+) -> None:
+    """Sin `sensitive`: true para depression/anxiety/bipolar_disorder/
+    substance_use, false para el resto; siempre explícito en POST y GET."""
+    headers, _ = consented_user(client, db)
+    body = chronic(condition=condition, status="active")
+    if condition == "other":
+        body["other_text"] = "Migraña crónica"
+    expected = condition in SENSITIVE_BY_DEFAULT
+
+    r = post_entry(client, headers, body)
+
+    assert r.status_code == 201, (condition, r.text)
+    assert r.json()["sensitive"] is expected, (condition, r.text)
+    assert only_entry(client, headers)["sensitive"] is expected, condition
+
+
+def test_b1b_anxiety_sensitive_by_default(client: TestClient, db: Session) -> None:
+    """POST anxiety sin `sensitive` -> sensitive true; hypertension -> false."""
+    headers, _ = consented_user(client, db)
+
+    r_anx = post_entry(client, headers, chronic(condition="anxiety"))
+    r_hyp = post_entry(client, headers, chronic(condition="hypertension"))
+
+    assert r_anx.status_code == 201, r_anx.text
+    assert r_hyp.status_code == 201, r_hyp.text
+    assert r_anx.json()["sensitive"] is True
+    assert r_hyp.json()["sensitive"] is False
+    r_list = list_entries(client, headers)
+    by_id = {str(e["id"]): e for e in r_list.json()["data"]}
+    assert by_id[str(r_anx.json()["id"])]["sensitive"] is True
+    assert by_id[str(r_hyp.json()["id"])]["sensitive"] is False
+
+
+# --- Escenario 3 (B-1b): el valor explícito de "Sensible" se respeta --------------
+
+
+def test_b1b_explicit_sensitive_respected(client: TestClient, db: Session) -> None:
+    """other "TOC" con sensitive true -> true; anxiety con false explícito -> false;
+    hypertension (false) PUT sensitive true -> true, PUT false -> false."""
+    headers, _ = consented_user(client, db)
+
+    r_toc = post_entry(
+        client, headers, chronic(condition="other", other_text="TOC", sensitive=True)
+    )
+    assert r_toc.status_code == 201, r_toc.text
+    assert r_toc.json()["sensitive"] is True
+
+    r_anx = post_entry(client, headers, chronic(condition="anxiety", sensitive=False))
+    assert r_anx.status_code == 201, r_anx.text
+    assert r_anx.json()["sensitive"] is False
+
+    hyp = chronic(condition="hypertension", status="active")
+    r_hyp = post_entry(client, headers, hyp)
+    assert r_hyp.status_code == 201, r_hyp.text
+    assert r_hyp.json()["sensitive"] is False
+    hyp_id = r_hyp.json()["id"]
+
+    r_on = client.put(
+        entry_url(hyp_id), headers=headers, json={**hyp, "sensitive": True}
+    )
+    assert r_on.status_code == 200, r_on.text
+    assert r_on.json()["sensitive"] is True
+    r_list = list_entries(client, headers)
+    by_id = {str(e["id"]): e for e in r_list.json()["data"]}
+    assert by_id[str(hyp_id)]["sensitive"] is True
+
+    r_off = client.put(
+        entry_url(hyp_id), headers=headers, json={**hyp, "sensitive": False}
+    )
+    assert r_off.status_code == 200, r_off.text
+    assert r_off.json()["sensitive"] is False
+
+    r_list = list_entries(client, headers)
+    by_id = {str(e["id"]): e for e in r_list.json()["data"]}
+    assert by_id[str(r_toc.json()["id"])]["sensitive"] is True
+    assert by_id[str(r_toc.json()["id"])]["other_text"] == "TOC"
+    assert by_id[str(r_anx.json()["id"])]["sensitive"] is False
+    assert by_id[str(hyp_id)]["sensitive"] is False
+
+
+# --- Escenario 5 (B-2): "hasta" antes de "desde" ----------------------------------
+
+
+def test_b2_until_age_before_since_age_rejected(
+    client: TestClient, db: Session
+) -> None:
+    """since edad 20, until edad 12, resolved -> 422 exacto; nada se guarda."""
+    headers, _ = consented_user(client, db)
+    r_profile = put_profile(client, headers, {"birth_date": BIRTH_DATE})
+    assert r_profile.status_code == 200, r_profile.text
+
+    r = post_entry(
+        client,
+        headers,
+        chronic(
+            condition="asthma",
+            status="resolved",
+            since={"kind": "age", "value": 20},
+            until={"kind": "age", "value": 12},
+        ),
+    )
+
+    assert r.status_code == 422, r.text
+    assert r.json()["detail"] == UNTIL_BEFORE_SINCE
+    assert_history_empty(client, headers)
+
+
+# (since, until, with_birth_date, expected_status). Stage ranges (Story A):
+# before_primary 0-5, primary 6-11, secondary 12-14, high_school 15-17.
+UNTIL_SINCE_CASES = [
+    pytest.param(
+        {"kind": "stage", "value": "high_school"},
+        {"kind": "age", "value": 12},
+        False,
+        422,
+        id="stage-after-until-age-rejected",
+    ),
+    pytest.param(
+        {"kind": "stage", "value": "secondary"},
+        {"kind": "age", "value": 13},
+        False,
+        201,
+        id="stage-overlapping-until-age-accepted",
+    ),
+    pytest.param(
+        {"kind": "age", "value": 20},
+        {"kind": "stage", "value": "high_school"},
+        False,
+        422,
+        id="until-stage-before-since-age-rejected",
+    ),
+    pytest.param(
+        {"kind": "age", "value": 13},
+        {"kind": "stage", "value": "secondary"},
+        False,
+        201,
+        id="until-stage-overlapping-since-age-accepted",
+    ),
+    pytest.param(
+        {"kind": "year", "value": 2010},
+        {"kind": "age", "value": 12},
+        True,
+        422,
+        id="year-with-birth-date-rejected",
+    ),
+    pytest.param(
+        {"kind": "age", "value": 20},
+        {"kind": "year", "value": 2002},
+        True,
+        422,
+        id="until-year-with-birth-date-rejected",
+    ),
+    pytest.param(
+        {"kind": "year", "value": 2010},
+        {"kind": "age", "value": 12},
+        False,
+        201,
+        id="year-without-birth-date-not-compared",
+    ),
+    pytest.param(
+        {"kind": "unknown"},
+        {"kind": "age", "value": 12},
+        True,
+        201,
+        id="since-unknown-never-rejected",
+    ),
+    pytest.param(
+        {"kind": "age", "value": 20},
+        {"kind": "unknown"},
+        True,
+        201,
+        id="until-unknown-never-rejected",
+    ),
+    pytest.param(
+        {"kind": "age", "value": 12},
+        {"kind": "age", "value": 12},
+        True,
+        201,
+        id="same-age-accepted",
+    ),
+    pytest.param(
+        {"kind": "age", "value": 12},
+        {"kind": "age", "value": 20},
+        True,
+        201,
+        id="until-after-since-accepted",
+    ),
+]
+
+
+@pytest.mark.parametrize(
+    ("since", "until", "with_birth_date", "expected_status"), UNTIL_SINCE_CASES
+)
+def test_b2_until_vs_since_by_age_range(
+    client: TestClient,
+    db: Session,
+    since: dict[str, Any],
+    until: dict[str, Any],
+    with_birth_date: bool,
+    expected_status: int,
+) -> None:
+    """Comparación por rango de edad; se rechaza solo si max(until) < min(since)."""
+    headers, _ = consented_user(client, db)
+    if with_birth_date:
+        r_profile = put_profile(client, headers, {"birth_date": BIRTH_DATE})
+        assert r_profile.status_code == 200, r_profile.text
+
+    r = post_entry(
+        client,
+        headers,
+        chronic(condition="asthma", status="resolved", since=since, until=until),
+    )
+
+    assert r.status_code == expected_status, r.text
+    if expected_status == 422:
+        assert r.json()["detail"] == UNTIL_BEFORE_SINCE
+        assert_history_empty(client, headers)
+    else:
+        entry = only_entry(client, headers)
+        assert entry["since"] == since
+        assert entry["until"] == until
+        assert entry["status"] == "resolved"
+
+
+def test_b2_since_until_use_story_a_when_validation(
+    client: TestClient, db: Session
+) -> None:
+    """since/until pasan por la validación de "cuándo" de la Story A, con sus
+    mensajes exactos; ninguno crea registro."""
+    headers_no_birth, _ = consented_user(client, db)
+    today = mexico_today()
+    cases_no_birth = [
+        (
+            {"since": {"kind": "age", "value": 131}},
+            "La edad debe estar entre 0 y 130 años",
+        ),
+        (
+            {
+                "since": {"kind": "age", "value": 20},
+                "until": {"kind": "age", "value": 131},
+            },
+            "La edad debe estar entre 0 y 130 años",
+        ),
+        (
+            {
+                "since": {"kind": "age", "value": 20},
+                "until": {"kind": "year", "value": today.year + 1},
+            },
+            "El año no puede ser futuro",
+        ),
+    ]
+    for fields, expected in cases_no_birth:
+        r = post_entry(
+            client,
+            headers_no_birth,
+            chronic(condition="asthma", status="resolved", **fields),
+        )
+        assert r.status_code == 422, (fields, r.text)
+        assert r.json()["detail"] == expected, (fields, r.text)
+    assert_history_empty(client, headers_no_birth)
+
+    headers, _ = consented_user(client, db)
+    r_profile = put_profile(client, headers, {"birth_date": BIRTH_DATE})
+    assert r_profile.status_code == 200, r_profile.text
+    too_old = age_on(date(1990, 3, 15), today) + 4
+    cases_birth = [
+        (
+            {"since": {"kind": "age", "value": too_old}},
+            "La edad no puede ser mayor que tu edad actual",
+        ),
+        (
+            {"since": {"kind": "year", "value": 1985}},
+            "El año no puede ser anterior a tu nacimiento",
+        ),
+        (
+            {
+                "since": {"kind": "age", "value": 20},
+                "until": {"kind": "age", "value": too_old},
+            },
+            "La edad no puede ser mayor que tu edad actual",
+        ),
+    ]
+    for fields, expected in cases_birth:
+        r = post_entry(
+            client, headers, chronic(condition="asthma", status="resolved", **fields)
+        )
+        assert r.status_code == 422, (fields, r.text)
+        assert r.json()["detail"] == expected, (fields, r.text)
+    assert_history_empty(client, headers)
+
+
+# --- Escenario 6 (B-2): "hasta" solo con "Ya no la tengo" -------------------------
+
+
+def test_b2_until_dropped_when_status_active(client: TestClient, db: Session) -> None:
+    """Resuelta con until edad 16; PUT status active (aún enviando until) ->
+    GET status active y sin until. POST active con until -> until descartado."""
+    headers, _ = consented_user(client, db)
+    resolved = chronic(
+        condition="asthma",
+        status="resolved",
+        since={"kind": "age", "value": 8},
+        until={"kind": "age", "value": 16},
+    )
+    r_create = post_entry(client, headers, resolved)
+    assert r_create.status_code == 201, r_create.text
+    assert r_create.json()["until"] == {"kind": "age", "value": 16}
+    entry_id = r_create.json()["id"]
+
+    r_put = client.put(
+        entry_url(entry_id), headers=headers, json={**resolved, "status": "active"}
+    )
+
+    assert r_put.status_code == 200, r_put.text
+    assert r_put.json()["status"] == "active"
+    assert r_put.json().get("until") is None
+    listed = only_entry(client, headers)
+    assert listed["status"] == "active"
+    assert listed.get("until") is None
+    assert listed["since"] == {"kind": "age", "value": 8}
+
+    headers_new, _ = consented_user(client, db)
+    r_active = post_entry(
+        client,
+        headers_new,
+        chronic(
+            condition="epilepsy",
+            status="active",
+            since={"kind": "age", "value": 8},
+            until={"kind": "age", "value": 16},
+        ),
+    )
+    assert r_active.status_code == 201, r_active.text
+    assert r_active.json().get("until") is None
+    assert only_entry(client, headers_new).get("until") is None
+
+
+# --- Escenario 8 (B-4): el diagnóstico enlazado es del propio expediente ----------
+
+
+def test_b4_diagnosis_link_must_be_own_diagnosis(
+    client: TestClient, db: Session
+) -> None:
+    """A enlaza el diagnóstico de B, su propia receta o un uuid inexistente ->
+    422 con el mismo detail y nada persiste; su propio diagnóstico -> 201."""
+    headers_a, _ = consented_user(client, db)
+    headers_b, _ = consented_user(client, db)
+    diag_b = create_diagnosis(client, headers_b)
+    rx_a = create_prescription(client, headers_a)
+    diag_a = create_diagnosis(client, headers_a)
+
+    bodies = []
+    for bad_id in (diag_b, rx_a, str(uuid.uuid4())):
+        r = post_entry(
+            client,
+            headers_a,
+            chronic(condition="hypothyroidism", diagnosis_id=bad_id),
+        )
+        assert r.status_code == 422, (bad_id, r.text)
+        assert r.json()["detail"] == DIAGNOSIS_NOT_YOURS, (bad_id, r.text)
+        bodies.append(r.json())
+    assert bodies[0] == bodies[1] == bodies[2]
+    assert_history_empty(client, headers_a)
+
+    good = chronic(condition="hypothyroidism", status="active", diagnosis_id=diag_a)
+    r_ok = post_entry(client, headers_a, good)
+    assert r_ok.status_code == 201, r_ok.text
+    assert str(r_ok.json()["diagnosis_id"]) == diag_a
+    assert str(only_entry(client, headers_a)["diagnosis_id"]) == diag_a
+
+
+def test_b4_put_diagnosis_link_must_be_own_diagnosis(
+    client: TestClient, db: Session
+) -> None:
+    """PUT de una crónica de A con el diagnóstico de B o su receta -> 422 exacto;
+    la crónica sigue enlazada al diagnóstico propio."""
+    headers_a, _ = consented_user(client, db)
+    headers_b, _ = consented_user(client, db)
+    diag_a = create_diagnosis(client, headers_a)
+    diag_b = create_diagnosis(client, headers_b)
+    rx_a = create_prescription(client, headers_a)
+    body = chronic(condition="hypothyroidism", status="active", diagnosis_id=diag_a)
+    r_create = post_entry(client, headers_a, body)
+    assert r_create.status_code == 201, r_create.text
+    entry_id = r_create.json()["id"]
+
+    for bad_id in (diag_b, rx_a, str(uuid.uuid4())):
+        r = client.put(
+            entry_url(entry_id),
+            headers=headers_a,
+            json={**body, "diagnosis_id": bad_id},
+        )
+        assert r.status_code == 422, (bad_id, r.text)
+        assert r.json()["detail"] == DIAGNOSIS_NOT_YOURS, (bad_id, r.text)
+
+    assert str(only_entry(client, headers_a)["diagnosis_id"]) == diag_a
+
+
+# --- Escenario 9 (B-1): la condición es requerida ---------------------------------
+
+
+def test_b1_chronic_without_condition_rejected(client: TestClient, db: Session) -> None:
+    """Sin condition (con since y treatment) -> 422 exacto; nada se guarda."""
+    headers, _ = consented_user(client, db)
+
+    r = post_entry(
+        client,
+        headers,
+        chronic(
+            since={"kind": "age", "value": 31},
+            treatment="Levotiroxina 50 mcg en ayunas",
+        ),
+    )
+
+    assert r.status_code == 422, r.text
+    assert r.json()["detail"] == CONDITION_REQUIRED
+    assert_history_empty(client, headers)
+
+
+@pytest.mark.parametrize(
+    "other_text", [None, "", "   "], ids=["absent", "empty", "blank"]
+)
+def test_b1_chronic_other_without_text_rejected(
+    client: TestClient, db: Session, other_text: str | None
+) -> None:
+    """condition other sin other_text (o en blanco) -> 422 exacto; nada se guarda."""
+    headers, _ = consented_user(client, db)
+    body = chronic(condition="other", status="active")
+    if other_text is not None:
+        body["other_text"] = other_text
+
+    r = post_entry(client, headers, body)
+
+    assert r.status_code == 422, r.text
+    assert r.json()["detail"] == CONDITION_REQUIRED
+    assert_history_empty(client, headers)
+
+
+def test_b1_empty_chronic_rejected(client: TestClient, db: Session) -> None:
+    """POST {section: chronic} sin nada más -> 422 es-MX (string); nada persiste."""
+    headers, _ = consented_user(client, db)
+
+    r = post_entry(client, headers, {"section": "chronic"})
+
+    assert r.status_code == 422, r.text
+    assert isinstance(r.json()["detail"], str), r.text
+    assert_history_empty(client, headers)
+
+
+# --- Escenario 14 (B-0): "No tengo ninguna" en crónicas ---------------------------
+
+
+def test_b0_chronic_none_mark_then_entry_clears_it(
+    client: TestClient, db: Session
+) -> None:
+    """PUT none chronic -> sections_none la trae; POST una crónica la quita."""
+    headers, _ = consented_user(client, db)
+
+    r_mark = set_none(client, headers, "chronic", True)
+
+    assert r_mark.status_code == 200, r_mark.text
+    assert "chronic" in r_mark.json()["sections_none"]
+    assert "chronic" in sections_none(client, headers)
+
+    r = post_entry(client, headers, chronic(condition="hypertension"))
+    assert r.status_code == 201, r.text
+    assert "chronic" not in sections_none(client, headers)
+
+
+def test_b0_chronic_none_undo(client: TestClient, db: Session) -> None:
+    """none true y luego none false en chronic -> sale de sections_none."""
+    headers, _ = consented_user(client, db)
+    r_mark = set_none(client, headers, "chronic", True)
+    assert r_mark.status_code == 200, r_mark.text
+
+    r_undo = set_none(client, headers, "chronic", False)
+
+    assert r_undo.status_code == 200, r_undo.text
+    assert "chronic" not in r_undo.json()["sections_none"]
+    assert "chronic" not in sections_none(client, headers)
+
+
+def test_b0_cannot_mark_chronic_none_with_entries(
+    client: TestClient, db: Session
+) -> None:
+    """Con 1 crónica: PUT none chronic -> el rechazo de la Story A (409 exacto);
+    sections_none sin cambio y la crónica sigue."""
+    headers, _ = consented_user(client, db)
+    r_create = post_entry(client, headers, HYPOTHYROIDISM_ACTIVE)
+    assert r_create.status_code == 201, r_create.text
+    before = sections_none(client, headers)
+
+    r = set_none(client, headers, "chronic", True)
+
+    assert r.status_code == 409, r.text
+    assert r.json()["detail"] == (
+        "No puedes marcar «ninguna» si la sección tiene registros"
+    )
+    after = sections_none(client, headers)
+    assert after == before
+    assert "chronic" not in after
+    assert list_entries(client, headers).json()["count"] == 1
+
+
+# --- Escenario 15: aislamiento ----------------------------------------------------
+
+
+def test_b_isolation_foreign_chronic_indistinguishable_from_missing(
+    client: TestClient, db: Session
+) -> None:
+    """PUT/DELETE de A sobre la crónica de B = mismo status y cuerpo que un id
+    inexistente; la crónica de B no cambia."""
+    headers_a, _ = consented_user(client, db)
+    headers_b, _ = consented_user(client, db)
+    body_b = chronic(
+        condition="anxiety",
+        status="active",
+        treatment="Sertralina 50 mg",
+    )
+    r_b = post_entry(client, headers_b, body_b)
+    assert r_b.status_code == 201, r_b.text
+    foreign_id = r_b.json()["id"]
+    missing_id = str(uuid.uuid4())
+
+    put_body = {**body_b, "treatment": "intento de edición ajena", "sensitive": False}
+    for method, kwargs in (("PUT", {"json": put_body}), ("DELETE", {})):
+        r_foreign = client.request(
+            method, entry_url(foreign_id), headers=headers_a, **kwargs
+        )
+        r_missing = client.request(
+            method, entry_url(missing_id), headers=headers_a, **kwargs
+        )
+        assert r_foreign.status_code == r_missing.status_code, method
+        assert r_foreign.status_code == 404, (method, r_foreign.text)
+        assert r_foreign.json() == r_missing.json(), method
+        assert r_foreign.json() == {"detail": "Registro no encontrado"}, method
+        assert "Sertralina" not in r_foreign.text, method
+
+    assert_history_empty(client, headers_a)
+    entry_b = only_entry(client, headers_b)
+    assert str(entry_b["id"]) == str(foreign_id)
+    assert entry_b["condition"] == "anxiety"
+    assert entry_b["treatment"] == "Sertralina 50 mg"
+    assert entry_b["sensitive"] is True
+
+
+# --- Escenario 16 (B-6): cifrado en reposo de la crónica --------------------------
+
+
+def test_b6_chronic_encrypted_at_rest(client: TestClient, db: Session) -> None:
+    """Crónica anxiety, sensitive true, Sertralina, enlazada a un diagnóstico:
+    medical_history_entry.content no contiene nada en claro y descifra al valor."""
+    headers, user_id = consented_user(client, db)
+    diag_id = create_diagnosis(client, headers, title="Trastorno de ansiedad")
+    r = post_entry(
+        client,
+        headers,
+        chronic(
+            condition="anxiety",
+            sensitive=True,
+            status="active",
+            treatment="Sertralina 50 mg",
+            diagnosis_id=diag_id,
+        ),
+    )
+    assert r.status_code == 201, r.text
+
+    entries = raw_rows(
+        "SELECT content FROM medical_history_entry WHERE user_id = CAST(:uid AS uuid)",
+        {"uid": user_id},
+    )
+    assert len(entries) == 1
+    content = str(entries[0]["content"])
+    assert content.startswith("gAAAA"), content
+    for plain in ("anxiety", "Ansiedad", "Sertralina", "sensitive", diag_id, "chronic"):
+        assert plain not in content, plain
+
+    decrypted = decrypt_str(content)
+    assert decrypted is not None
+    stored = json.loads(decrypted)
+    assert stored["section"] == "chronic"
+    assert stored["condition"] == "anxiety"
+    assert stored["sensitive"] is True
+    assert stored["treatment"] == "Sertralina 50 mg"
+    assert str(stored["diagnosis_id"]) == diag_id
