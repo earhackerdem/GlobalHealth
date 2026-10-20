@@ -26,17 +26,21 @@ lists use {"data": [...], "count": N}):
 """
 
 import json
+import logging
 import uuid
-from datetime import date, datetime
+from datetime import date, datetime, tzinfo
 from typing import Any
 from zoneinfo import ZoneInfo
 
+import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import text
 from sqlmodel import Session
 
+from app.api.routes import profile as profile_routes
 from app.core.db import engine
 from app.core.encrypted import decrypt_str
+from app.models import MedicalHistoryEntry
 from tests.api.routes.test_profile import (
     PROFILE_URL,
     consented_user,
@@ -61,6 +65,19 @@ def age_on(birth: date, today: date) -> int:
     return (
         today.year - birth.year - ((today.month, today.day) < (birth.month, birth.day))
     )
+
+
+def freeze_routes_clock(monkeypatch: pytest.MonkeyPatch, mexico_wall: datetime) -> None:
+    """Freeze the routes module's clock at a Mexico City wall time; now(tz)
+    still converts to the zone it is asked for."""
+    instant = mexico_wall.replace(tzinfo=MX)
+
+    class FrozenDatetime(datetime):
+        @classmethod
+        def now(cls, tz: tzinfo | None = None) -> datetime:  # type: ignore[override]
+            return instant.astimezone(tz)
+
+    monkeypatch.setattr(profile_routes, "datetime", FrozenDatetime)
 
 
 def post_entry(
@@ -416,6 +433,55 @@ def test_s15_impossible_age_without_birth_date(client: TestClient, db: Session) 
     assert_history_empty(client, headers)
 
 
+# Frozen Mexico City wall time for the edge cases (the tests never expire).
+EDGE_NOW = datetime(2026, 10, 20, 12, 0)
+EDGE_AGE = age_on(date(1990, 3, 15), EDGE_NOW.date())
+
+
+@pytest.mark.parametrize(
+    "when",
+    [
+        pytest.param({"kind": "age", "value": EDGE_AGE}, id="age-equals-current"),
+        pytest.param({"kind": "year", "value": 1990}, id="year-equals-birth"),
+        pytest.param(
+            {"kind": "year", "value": EDGE_NOW.year}, id="year-equals-current"
+        ),
+    ],
+)
+def test_s15_when_edges_accepted(
+    client: TestClient,
+    db: Session,
+    monkeypatch: pytest.MonkeyPatch,
+    when: dict[str, Any],
+) -> None:
+    """Con birth_date 1990-03-15, los bordes son válidos: edad = edad actual,
+    año = año de nacimiento y año = año actual en México -> 201 (review C9)."""
+    headers, _ = consented_user(client, db)
+    r_profile = put_profile(client, headers, {"birth_date": BIRTH_DATE})
+    assert r_profile.status_code == 200, r_profile.text
+    freeze_routes_clock(monkeypatch, EDGE_NOW)
+
+    r = post_entry(client, headers, _surgery_when(when))
+
+    assert r.status_code == 201, (when, r.text)
+    assert r.json()["when"] == when
+
+
+def test_s15_future_year_uses_mexico_today(
+    client: TestClient, db: Session, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Reloj a 2026-12-31 20:00 en México (ya 2027-01-01 en UTC): el año 2027
+    sigue siendo futuro -> 422 "El año no puede ser futuro" (review T2)."""
+    headers, _ = consented_user(client, db)
+    freeze_routes_clock(monkeypatch, datetime(2026, 12, 31, 20, 0))
+
+    r = post_entry(client, headers, _surgery_when({"kind": "year", "value": 2027}))
+
+    assert r.status_code == 422, r.text
+    assert r.json()["detail"] == "El año no puede ser futuro"
+    assert_history_empty(client, headers)
+
+
 # --- Escenario 16: Marcar "ninguna" -----------------------------------------------
 
 
@@ -541,7 +607,8 @@ def test_s22_foreign_entry_indistinguishable_from_missing(
     client: TestClient, db: Session
 ) -> None:
     """A contra la cirugía de B y contra un uuid inexistente: 404 con el mismo
-    cuerpo {"detail": "Registro no encontrado"}; la cirugía de B no cambia."""
+    cuerpo {"detail": "Registro no encontrado"}; la cirugía de B no cambia, el
+    GET /history de A sigue vacío y A puede marcar surgeries como ninguna."""
     headers_a, _ = consented_user(client, db)
     headers_b, _ = consented_user(client, db)
     r_b = post_entry(client, headers_b, SURGERY_FULL)
@@ -565,6 +632,12 @@ def test_s22_foreign_entry_indistinguishable_from_missing(
         )
         assert r_foreign.json() == r_missing.json(), method
         assert "Apendicectomía" not in r_foreign.text, method
+
+    # With B's surgery stored, A's list and A's "ninguna" only see A (review S5).
+    assert_history_empty(client, headers_a)
+    r_none_a = set_none(client, headers_a, "surgeries", True)
+    assert r_none_a.status_code == 200, r_none_a.text
+    assert "surgeries" in r_none_a.json()["sections_none"]
 
     r_list_b = list_entries(client, headers_b)
     assert r_list_b.status_code == 200, r_list_b.text
@@ -624,6 +697,39 @@ def test_s23_history_none_mark_and_blood_type_encrypted_at_rest(
     decrypted_marks = decrypt_str(marks)
     assert decrypted_marks is not None
     assert json.loads(decrypted_marks) == ["fractures"]
+
+
+# --- Review S4: registro ilegible -------------------------------------------------
+
+
+def test_unreadable_entry_left_out_and_logged_by_id(
+    client: TestClient, db: Session, caplog: pytest.LogCaptureFixture
+) -> None:
+    """Una fila cifrada cuyo contenido ya no valida (condition "zika"): GET
+    /history -> 200 sin ella, "ninguna" de otra sección -> 200, y el log trae
+    solo su id, nunca el contenido."""
+    headers, user_id = consented_user(client, db)
+    r_ok = post_entry(client, headers, FRACTURE_RADIO)
+    assert r_ok.status_code == 201, r_ok.text
+    bad = MedicalHistoryEntry(
+        user_id=uuid.UUID(user_id),
+        content=json.dumps({"section": "past", "condition": "zika"}),
+    )
+    db.add(bad)
+    db.commit()
+    db.refresh(bad)
+
+    with caplog.at_level(logging.WARNING, logger=profile_routes.__name__):
+        r_list = list_entries(client, headers)
+        r_none = set_none(client, headers, "surgeries", True)
+
+    assert r_list.status_code == 200, r_list.text
+    assert r_list.json()["count"] == 1, r_list.text
+    assert str(r_list.json()["data"][0]["id"]) == str(r_ok.json()["id"])
+    assert r_none.status_code == 200, r_none.text
+    assert "surgeries" in r_none.json()["sections_none"]
+    assert str(bad.id) in caplog.text
+    assert "zika" not in caplog.text
 
 
 # --- Humo: sin consentimiento, el mismo rechazo que el resto del perfil -----------
