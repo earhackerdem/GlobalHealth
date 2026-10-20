@@ -1,12 +1,18 @@
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 
-export type ChipOption<V extends string> = { value: V; label: string }
+/** `spokenLabel`: the accessible name when the visible text is a symbol ("A-"). */
+export type ChipOption<V extends string> = {
+  value: V
+  label: string
+  spokenLabel?: string
+}
 
 /**
  * Single-choice chips (prototype v4): a group (fieldset) named by `label`, one
  * toggle button per option with `aria-pressed`. Tapping the chosen chip again
- * clears it (`onChange(null)`), so every answer stays optional.
+ * clears it (`onChange(null)`), so every answer stays optional. `required`
+ * only adds the visual asterisk: the group's name stays the clean label.
  */
 function ChipGroup<V extends string>({
   label,
@@ -14,6 +20,7 @@ function ChipGroup<V extends string>({
   value,
   onChange,
   showLabel = true,
+  required = false,
   invalid = false,
   describedBy,
   className,
@@ -23,6 +30,7 @@ function ChipGroup<V extends string>({
   value: V | null
   onChange: (next: V | null) => void
   showLabel?: boolean
+  required?: boolean
   invalid?: boolean
   describedBy?: string
   className?: string
@@ -32,6 +40,12 @@ function ChipGroup<V extends string>({
       {showLabel && (
         <span className="text-sm font-medium" aria-hidden="true">
           {label}
+          {required && (
+            <>
+              {" "}
+              <span className="text-destructive">*</span>
+            </>
+          )}
         </span>
       )}
       {/* A fieldset is the native role="group"; aria-label names it (K5). */}
@@ -50,6 +64,7 @@ function ChipGroup<V extends string>({
               size="sm"
               variant={pressed ? "default" : "outline"}
               aria-pressed={pressed}
+              aria-label={option.spokenLabel}
               onClick={() => onChange(pressed ? null : option.value)}
             >
               {option.label}

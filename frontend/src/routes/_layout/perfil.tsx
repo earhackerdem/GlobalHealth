@@ -1,5 +1,6 @@
 import { useSuspenseQuery } from "@tanstack/react-query"
 import { createFileRoute, Link } from "@tanstack/react-router"
+import { ChevronRight } from "lucide-react"
 import { Suspense } from "react"
 import { useTranslation } from "react-i18next"
 
@@ -178,7 +179,15 @@ function ProfileContent() {
                 data-testid={`history-card-${key}`}
                 className="flex flex-col gap-2 rounded-lg border p-4 transition-colors hover:bg-accent focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
               >
-                {title}
+                {/* The chevron marks, on touch too, the 4 cards that open a
+                    screen (decorative: the link's name stays the text). */}
+                <div className="flex items-start justify-between gap-2">
+                  {title}
+                  <ChevronRight
+                    aria-hidden="true"
+                    className="size-5 shrink-0 text-muted-foreground"
+                  />
+                </div>
                 <Badge variant={count || none ? "secondary" : "outline"}>
                   {sectionStatus(count, none, t)}
                 </Badge>

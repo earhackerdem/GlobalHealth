@@ -5,7 +5,7 @@ import {
 } from "@tanstack/react-query"
 import { Link } from "@tanstack/react-router"
 import type { TFunction } from "i18next"
-import { useRef, useState } from "react"
+import { useEffect, useId, useRef, useState } from "react"
 import { useTranslation } from "react-i18next"
 
 import { type PatientProfilePublic, ProfileService } from "@/client"
@@ -98,13 +98,21 @@ type Mode = { kind: "list" } | { kind: "form"; entry: HistoryEntry | null }
  * One section of the medical history on its own screen (Decision 5, prototype
  * v4): status, the list with inline delete confirmation, the "ninguna" mark
  * and its undo, and the add/edit form in place of the list. Focus returns to
- * the list after saving, cancelling or deleting.
+ * the list (a region named by the heading) after saving, cancelling,
+ * deleting, marking "ninguna" or undoing it; opening a delete confirmation
+ * focuses "Sí, eliminar" (described by the question) and cancelling it
+ * returns to that row's "Eliminar".
  */
 function HistorySection({ section }: { section: Section }) {
   const { t } = useTranslation("profile")
   const queryClient = useQueryClient()
   const { showSuccessToast, showErrorToast } = useCustomToast()
-  const listRef = useRef<HTMLDivElement>(null)
+  const headingId = useId()
+  const confirmQuestionId = useId()
+  const listRef = useRef<HTMLElement>(null)
+  // LoadingButton takes no ref: its first button is "Sí, eliminar".
+  const confirmRef = useRef<HTMLDivElement>(null)
+  const deleteButtons = useRef(new Map<string, HTMLButtonElement>())
 
   const { data: profile } = useSuspenseQuery(getProfileQueryOptions())
   const { data: history } = useSuspenseQuery(getHistoryQueryOptions())
@@ -116,10 +124,26 @@ function HistorySection({ section }: { section: Section }) {
   const none = profile.sections_none.includes(section)
   const noneKey = section === "transfusions" ? "transfusions" : "default"
 
-  const focusList = () => {
-    // After React paints the list again.
-    requestAnimationFrame(() => listRef.current?.focus())
+  // Where the focus goes once the next render has painted its target (it may
+  // not exist yet: the list after the form, "Sí, eliminar" after "Eliminar").
+  // Kept until the target exists, so an unrelated render in between (a
+  // refetch) does not lose it.
+  const pendingFocus = useRef<(() => HTMLElement | null | undefined) | null>(
+    null,
+  )
+  useEffect(() => {
+    const target = pendingFocus.current?.()
+    if (target) {
+      pendingFocus.current = null
+      target.focus()
+    }
+  })
+  const [, forceRender] = useState(0)
+  const focusAfterRender = (target: () => HTMLElement | null | undefined) => {
+    pendingFocus.current = target
+    forceRender((n) => n + 1)
   }
+  const focusList = () => focusAfterRender(() => listRef.current)
 
   const backToList = () => {
     setMode({ kind: "list" })
@@ -137,6 +161,8 @@ function HistorySection({ section }: { section: Section }) {
     onSuccess: (saved: PatientProfilePublic, value) => {
       queryClient.setQueryData(["profile"], saved)
       showSuccessToast(value ? t("history.noneToast") : t("history.undoToast"))
+      // The button just pressed is gone: the focus would fall to <body>.
+      focusList()
     },
     onError: handleError.bind(showErrorToast),
   })
@@ -156,7 +182,7 @@ function HistorySection({ section }: { section: Section }) {
   return (
     <div className="flex flex-col gap-4">
       <div className="flex flex-wrap items-center gap-2">
-        <h1 className="text-2xl font-bold tracking-tight">
+        <h1 id={headingId} className="text-2xl font-bold tracking-tight">
           {t(`pending.sections.${section}`)}
         </h1>
         <Badge variant={entries.length || none ? "secondary" : "outline"}>
@@ -177,77 +203,110 @@ function HistorySection({ section }: { section: Section }) {
         />
       ) : (
         <>
-          <div
+          <section
             ref={listRef}
             tabIndex={-1}
+            aria-labelledby={headingId}
             data-testid="history-entries"
             className="flex flex-col gap-3 rounded-lg border p-4 outline-none"
           >
             {entries.length > 0 ? (
-              entries.map((entry) => (
-                <div
-                  key={entry.id}
-                  data-testid="history-entry"
-                  className="flex flex-col gap-2 border-b pb-3 last:border-b-0 last:pb-0 sm:flex-row sm:items-start sm:justify-between"
-                >
-                  <div className="min-w-0">
-                    <p className="font-medium wrap-break-word">
-                      {entryTitle(entry, t)}
-                    </p>
-                    <p className="text-sm text-muted-foreground wrap-break-word">
-                      {entrySummary(entry, profile.birth_date, t) ||
-                        t("history.noMoreData")}
-                    </p>
+              entries.map((entry) => {
+                const title = entryTitle(entry, t)
+                return (
+                  <div
+                    key={entry.id}
+                    data-testid="history-entry"
+                    className="flex flex-col gap-2 border-b pb-3 last:border-b-0 last:pb-0 sm:flex-row sm:items-start sm:justify-between"
+                  >
+                    <div className="min-w-0">
+                      <p className="font-medium wrap-break-word">{title}</p>
+                      <p className="text-sm text-muted-foreground wrap-break-word">
+                        {entrySummary(entry, profile.birth_date, t) ||
+                          t("history.noMoreData")}
+                      </p>
+                    </div>
+                    {confirmingId === entry.id ? (
+                      <div
+                        ref={confirmRef}
+                        className="flex flex-wrap items-center gap-2"
+                      >
+                        <span id={confirmQuestionId} className="text-sm">
+                          {t("history.confirmDelete")}
+                        </span>
+                        <LoadingButton
+                          type="button"
+                          size="sm"
+                          variant="destructive"
+                          aria-describedby={confirmQuestionId}
+                          loading={deleteMutation.isPending}
+                          onClick={() => deleteMutation.mutate(entry.id)}
+                        >
+                          {t("history.confirmDeleteYes")}
+                        </LoadingButton>
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="outline"
+                          disabled={deleteMutation.isPending}
+                          onClick={() => {
+                            setConfirmingId(null)
+                            focusAfterRender(() =>
+                              deleteButtons.current.get(entry.id),
+                            )
+                          }}
+                        >
+                          {t("history.cancel")}
+                        </Button>
+                      </div>
+                    ) : (
+                      <div className="flex flex-wrap gap-2">
+                        {/* Visible "Editar" / "Eliminar"; the name says which
+                            entry, so a screen reader's list of buttons tells
+                            the rows apart. */}
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="outline"
+                          aria-label={
+                            title
+                              ? t("history.editEntry", { title })
+                              : undefined
+                          }
+                          onClick={() => {
+                            setConfirmingId(null)
+                            setMode({ kind: "form", entry })
+                          }}
+                        >
+                          {t("history.edit")}
+                        </Button>
+                        <Button
+                          ref={(el) => {
+                            if (el) deleteButtons.current.set(entry.id, el)
+                            else deleteButtons.current.delete(entry.id)
+                          }}
+                          type="button"
+                          size="sm"
+                          variant="outline"
+                          aria-label={
+                            title
+                              ? t("history.deleteEntry", { title })
+                              : undefined
+                          }
+                          onClick={() => {
+                            setConfirmingId(entry.id)
+                            focusAfterRender(() =>
+                              confirmRef.current?.querySelector("button"),
+                            )
+                          }}
+                        >
+                          {t("history.delete")}
+                        </Button>
+                      </div>
+                    )}
                   </div>
-                  {confirmingId === entry.id ? (
-                    <div className="flex flex-wrap items-center gap-2">
-                      <span className="text-sm">
-                        {t("history.confirmDelete")}
-                      </span>
-                      <LoadingButton
-                        type="button"
-                        size="sm"
-                        variant="destructive"
-                        loading={deleteMutation.isPending}
-                        onClick={() => deleteMutation.mutate(entry.id)}
-                      >
-                        {t("history.confirmDeleteYes")}
-                      </LoadingButton>
-                      <Button
-                        type="button"
-                        size="sm"
-                        variant="outline"
-                        disabled={deleteMutation.isPending}
-                        onClick={() => setConfirmingId(null)}
-                      >
-                        {t("history.cancel")}
-                      </Button>
-                    </div>
-                  ) : (
-                    <div className="flex flex-wrap gap-2">
-                      <Button
-                        type="button"
-                        size="sm"
-                        variant="outline"
-                        onClick={() => {
-                          setConfirmingId(null)
-                          setMode({ kind: "form", entry })
-                        }}
-                      >
-                        {t("history.edit")}
-                      </Button>
-                      <Button
-                        type="button"
-                        size="sm"
-                        variant="outline"
-                        onClick={() => setConfirmingId(entry.id)}
-                      >
-                        {t("history.delete")}
-                      </Button>
-                    </div>
-                  )}
-                </div>
-              ))
+                )
+              })
             ) : none ? (
               <div className="flex flex-col items-start gap-1">
                 <p className="font-medium">
@@ -282,7 +341,7 @@ function HistorySection({ section }: { section: Section }) {
                 </LoadingButton>
               </div>
             )}
-          </div>
+          </section>
           <div className="flex flex-wrap gap-2">
             <Button
               type="button"

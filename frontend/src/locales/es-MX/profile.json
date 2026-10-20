@@ -97,7 +97,9 @@
     "back": "‹ Mi perfil médico",
     "add": "Agregar",
     "edit": "Editar",
+    "editEntry": "Editar {{title}}",
     "delete": "Eliminar",
+    "deleteEntry": "Eliminar {{title}}",
     "confirmDelete": "¿Eliminar este registro?",
     "confirmDeleteYes": "Sí, eliminar",
     "cancel": "Cancelar",
@@ -111,10 +113,10 @@
       "default": "Marcaste: no he tenido ninguna.",
       "transfusions": "Marcaste: nunca me han transfundido."
     },
-    "noneHint": "El médico verá que lo respondiste, no que falta.",
+    "noneHint": "Queda registrado que lo respondiste.",
     "undo": "Deshacer",
-    "noneToast": "Listo: sección respondida",
-    "undoToast": "Listo: la sección vuelve a estar sin llenar",
+    "noneToast": "Sección respondida",
+    "undoToast": "La sección vuelve a estar sin llenar",
     "savedToast": "Guardado",
     "savedClearedNoneToast": "Guardado. La sección ya no dice «ninguna».",
     "deletedToast": "Registro eliminado",
@@ -161,7 +163,7 @@
       },
       "kind": {
         "surgery": "Cirugía",
-        "hospitalization": "Hospitalización"
+        "hospitalization": "Hospitalización sin cirugía"
       },
       "side": {
         "left": "Izquierdo",
@@ -246,7 +248,19 @@
         "O-": "O-",
         "unknown": "No lo sé"
       },
-      "savedToast": "Grupo sanguíneo guardado"
+      "spoken": {
+        "A+": "A positivo",
+        "A-": "A negativo",
+        "B+": "B positivo",
+        "B-": "B negativo",
+        "AB+": "AB positivo",
+        "AB-": "AB negativo",
+        "O+": "O positivo",
+        "O-": "O negativo",
+        "unknown": "No lo sé"
+      },
+      "savedToast": "Grupo sanguíneo guardado",
+      "clearedToast": "Grupo sanguíneo borrado"
     },
     "validation": {
       "empty": "Llena al menos un dato",

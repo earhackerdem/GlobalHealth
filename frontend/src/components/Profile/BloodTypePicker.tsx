@@ -35,13 +35,17 @@ function BloodTypePicker({ profile }: { profile: PatientProfilePublic }) {
         prev ? { ...prev, blood_type: bloodType } : prev,
       )
     },
-    onSuccess: (saved) => {
+    onSuccess: (saved, bloodType) => {
       // Only the last pending tap writes the server's answer back, so an
       // earlier response never flickers the chips.
       if (queryClient.isMutating({ mutationKey: MUTATION_KEY }) <= 1) {
         queryClient.setQueryData(["profile"], saved)
       }
-      showSuccessToast(t("history.bloodType.savedToast"))
+      showSuccessToast(
+        bloodType === null
+          ? t("history.bloodType.clearedToast")
+          : t("history.bloodType.savedToast"),
+      )
     },
     onError: (err) => {
       handleError.call(showErrorToast, err)
@@ -56,6 +60,8 @@ function BloodTypePicker({ profile }: { profile: PatientProfilePublic }) {
         options={BLOOD_TYPES.map((value) => ({
           value,
           label: t(`history.bloodType.options.${value}`),
+          // "A-" is read "A guion": the chip's name is the spoken form.
+          spokenLabel: t(`history.bloodType.spoken.${value}`),
         }))}
         value={profile.blood_type}
         onChange={(next) => mutation.mutate(next)}

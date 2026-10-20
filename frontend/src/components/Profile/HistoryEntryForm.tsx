@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { LoadingButton } from "@/components/ui/loading-button"
+import { Textarea } from "@/components/ui/textarea"
 import useCustomToast from "@/hooks/useCustomToast"
 import { handleError } from "@/utils"
 import ChipGroup from "./ChipGroup"
@@ -158,11 +159,15 @@ function activeKeys(section: HistorySection, values: Values): string[] {
   return keys
 }
 
-function serverMessage(err: unknown): string | null {
+function serverMessage(
+  err: unknown,
+): { status?: number; detail: string } | null {
   if (err instanceof AxiosError) {
     const detail = (err.response?.data as { detail?: unknown } | undefined)
       ?.detail
-    if (typeof detail === "string") return detail
+    if (typeof detail === "string") {
+      return { status: err.response?.status, detail }
+    }
   }
   return null
 }
@@ -171,8 +176,11 @@ function serverMessage(err: unknown): string | null {
  * Add / edit form of one history entry, on the section's own screen (Decision
  * 5). Validates what the API would reject anyway (nothing filled in, the
  * section's required datum, a non-numeric "cuándo") so the es-MX message
- * shows inline; anything else the server says (an impossible age or year)
- * is shown inline too. `onDone` fires after a save or a cancel.
+ * shows inline next to its field; anything else the server says is shown
+ * inline too: a 422 with a "cuándo" sent is the impossible age or year (the
+ * only server check the form does not repeat), so it goes next to "¿Cuándo?".
+ * A failed validation moves the focus to the invalid field, whose
+ * aria-describedby reads the message. `onDone` fires after a save or a cancel.
  */
 function HistoryEntryForm({
   section,
@@ -192,16 +200,36 @@ function HistoryEntryForm({
   const queryClient = useQueryClient()
   const { showSuccessToast, showErrorToast } = useCustomToast()
   const headingRef = useRef<HTMLHeadingElement>(null)
+  const formRef = useRef<HTMLFormElement>(null)
 
   const [values, setValues] = useState<Values>(() => valuesFrom(entry))
   const [when, setWhen] = useState<WhenDraft>(() =>
     entry ? whenToDraft(entry.when) : EMPTY_WHEN,
   )
   const [errors, setErrors] = useState<Record<string, string>>({})
+  // Bumped on every failed validation so the focus moves even when the
+  // same error repeats.
+  const [failedAttempt, setFailedAttempt] = useState(0)
 
   useEffect(() => {
     headingRef.current?.focus()
   }, [])
+
+  useEffect(() => {
+    if (!failedAttempt) return
+    // First invalid field in document order: a box (aria-invalid) or the
+    // first chip of an invalid chip group (a fieldset is not focusable).
+    formRef.current
+      ?.querySelector<HTMLElement>(
+        '[aria-invalid="true"], fieldset[data-invalid] button',
+      )
+      ?.focus()
+  }, [failedAttempt])
+
+  const fail = (next: Record<string, string>) => {
+    setErrors(next)
+    setFailedAttempt((n) => n + 1)
+  }
 
   const mutation = useMutation({
     mutationFn: (body: EntryBody) =>
@@ -220,10 +248,14 @@ function HistoryEntryForm({
       )
       onDone()
     },
-    onError: (err) => {
+    onError: (err, body) => {
       const message = serverMessage(err)
       if (message) {
-        setErrors({ _form: message })
+        fail(
+          message.status === 422 && body.when
+            ? { when: message.detail }
+            : { _form: message.detail },
+        )
       } else {
         handleError.call(showErrorToast, err as Error)
       }
@@ -242,22 +274,23 @@ function HistoryEntryForm({
     }
     const parsedWhen = draftToWhen(when)
     if (parsedWhen === "invalid") {
-      setErrors({ when: t("history.when.onlyNumber") })
+      fail({ when: t("history.when.onlyNumber") })
       return
     }
     if (parsedWhen) body.when = parsedWhen
 
     if (Object.keys(body).length === 0) {
-      setErrors({ _form: t("history.validation.empty") })
+      fail({ _form: t("history.validation.empty") })
       return
     }
     const requiredKey = REQUIRED_KEY[section]
-    const missingRequired =
-      requiredKey &&
-      (!body[requiredKey] ||
-        (section === "past" && body.condition === "other" && !body.other_text))
-    if (requiredKey && missingRequired) {
-      setErrors({ [requiredKey]: t(`history.validation.${section}`) })
+    if (requiredKey && !body[requiredKey]) {
+      fail({ [requiredKey]: t(`history.validation.${section}`) })
+      return
+    }
+    // "Otra" chosen but "¿Cuál fue?" empty: the error belongs to that box.
+    if (section === "past" && body.condition === "other" && !body.other_text) {
+      fail({ other_text: t("history.validation.past") })
       return
     }
     setErrors({})
@@ -275,21 +308,35 @@ function HistoryEntryForm({
 
   const textField = (key: string, label: string, required = false) => {
     const id = `${idPrefix}-${key}`
+    const short = SHORT_TEXT_KEYS.has(key)
+    const props = {
+      id,
+      value: values[key] ?? "",
+      maxLength: short ? NAME_MAX : TEXT_MAX,
+      "aria-required": required || undefined,
+      "aria-invalid": !!errors[key] || undefined,
+      "aria-describedby": errors[key] ? errorId(key) : undefined,
+    }
     return (
       <div key={key} className="grid gap-1.5">
         <Label htmlFor={id}>
           {label}
-          {required && <span aria-hidden="true">*</span>}
+          {required && (
+            <>
+              {" "}
+              <span className="text-destructive" aria-hidden="true">
+                *
+              </span>
+            </>
+          )}
         </Label>
-        <Input
-          id={id}
-          value={values[key] ?? ""}
-          maxLength={SHORT_TEXT_KEYS.has(key) ? NAME_MAX : TEXT_MAX}
-          aria-required={required || undefined}
-          aria-invalid={!!errors[key] || undefined}
-          aria-describedby={errors[key] ? errorId(key) : undefined}
-          onChange={(e) => set(key, e.target.value)}
-        />
+        {/* Up to 2000 characters (secuelas, nota, motivo…) get a Textarea,
+            like EditBasicData's allergies; names stay one line. */}
+        {short ? (
+          <Input {...props} onChange={(e) => set(key, e.target.value)} />
+        ) : (
+          <Textarea {...props} onChange={(e) => set(key, e.target.value)} />
+        )}
         {fieldError(key)}
       </div>
     )
@@ -297,6 +344,7 @@ function HistoryEntryForm({
 
   return (
     <form
+      ref={formRef}
       onSubmit={handleSubmit}
       noValidate
       className="grid gap-4 rounded-lg border p-4"
@@ -340,7 +388,8 @@ function HistoryEntryForm({
           return (
             <div key={field.key} className="grid gap-2">
               <ChipGroup
-                label={isRequired ? `${label} *` : label}
+                label={label}
+                required={isRequired}
                 options={field.options.map((option) => ({
                   value: option,
                   label: t(`history.options.${field.key}.${option}`),

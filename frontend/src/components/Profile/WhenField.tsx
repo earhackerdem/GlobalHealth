@@ -18,6 +18,8 @@ import {
  * you were (default), or the year if you know it (toggle button), or a school
  * stage chip, or "No recuerdo". With a birth date, a hint shows the
  * approximate year computed on screen (Decision 4: nothing derived is stored).
+ * `error` (local or the server's impossible age/year) shows under the box,
+ * which carries aria-invalid + aria-describedby so the form can focus it.
  */
 function WhenField({
   idPrefix,
@@ -38,10 +40,13 @@ function WhenField({
   const isAge = value.mode === "age"
 
   const parsed = draftToWhen(value)
-  const range =
+  const approx =
     parsed && parsed !== "invalid" && parsed.kind !== "year"
       ? approxYears(parsed, birthDate)
       : null
+  // An approximate year after this one (born 1990, "40 años" → 2030) is an
+  // impossible answer the server rejects: no hint that makes it look valid.
+  const range = approx && approx[0] <= new Date().getFullYear() ? approx : null
 
   const chipOptions: { value: Stage | "unknown"; label: string }[] = [
     ...STAGES.map((stage) => ({
