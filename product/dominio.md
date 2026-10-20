@@ -214,7 +214,7 @@ nada del compartir (E3/E4).
 | Their word | Meaning here | Never call it |
 |---|---|---|
 | antecedentes familiares | condiciones de salud en la familia directa (AHF) | "heredo-familiares" en la UI (tecnicismo), historia clínica |
-| perfil | los datos básicos del paciente (nacimiento, sexo, peso, estatura, alergias) | ficha de identificación, demographics |
+| perfil | los datos básicos del paciente (nacimiento, sexo, peso, estatura, alergias; y trabajo desde FR-028 Story C) | ficha de identificación, demographics |
 | onboarding | la única vez que la app pregunta el perfil al entrar | wizard, setup |
 
 ## Procesos (who / when / with whom → future FRs)
@@ -245,7 +245,7 @@ las guías de semiología detallan [VERIFIED 2026-10-19, memory/research.md § a
 | Antecedentes familiares (AHF) | condición + parentesco con línea materna/paterna, edad al diagnóstico opcional | **sí** |
 | Alergias | a medicamentos, alimentos u otras sustancias | **sí** (propuesta Q4: es lo primero que preguntan) |
 | Enfermedades crónicas (APP) | las que el paciente reconoce directamente (diabetes, hipertensión…) | no — sugerida al terminar |
-| Enfermedades pasadas e infecciosas (APP) | hepatitis, varicela, COVID grave… con año aproximado | no — sugerida |
+| Enfermedades pasadas e infecciosas (APP) | hepatitis, varicela, COVID grave… con la edad que tenía o el año (rebanada FR-028, ronda 8) | no — sugerida |
 | Cirugías y hospitalizaciones (APP) | qué, cuándo, complicaciones | no — sugerida |
 | Fracturas y lesiones (APP traumáticos) | qué hueso/lesión, cuándo, secuelas | no — sugerida |
 | Transfusiones y grupo sanguíneo (APP) | fecha, motivo, reacción; tipo de sangre | no — sugerida |
@@ -293,3 +293,165 @@ las guías de semiología detallan [VERIFIED 2026-10-19, memory/research.md § a
    pero vacías** (FR-027); el llenado de APP/APNP (crónicas, hepatitis, fracturas, cirugías, transfusiones,
    hábitos) es la story siguiente (FR-028), y las preguntas por especialidad llegan vía E4/FR-022. Sexo y alergias
    quedaron dentro (no los recortó al validar el prototipo).
+
+---
+
+# Dominio — GlobalHealth · rebanada "perfil médico por secciones (llenado, FR-028)"
+
+Date: 2026-10-19 · Interviewed: Saúl Pérez (author, con sombrero de stakeholder; pidió "procede con 028" tras
+archivar onboarding-perfil) · Método: borrador 0 desde memory/research.md § anamnesis, corregido en 5 rondas (la
+ronda 5 no añadió nada) + ronda 6 al clickear el prototipo v1: hábitos crece (research.md § hábitos) + ronda 7: ocupación,
+movimiento del día y sueño (research.md § ocupación) · Status: **agreed para la Story A — gate cerrado el 2026-10-20: Saúl Pérez navegó el prototipo en 4
+versiones (rondas 6–8 salieron de clickearlo) y respondió "procede con la story a"**. La pregunta 2 (borrar un
+diagnóstico enlazado) solo toca la Story B y queda abierta hasta entonces
+Prototipo: **`product/prototipos/perfil-secciones.html`** (https://claude.ai/artifact/TRBywm3SEhDA5ey2duMV8n;
+toggle "Ver criterios" con AC A-n / B-n / C-n; v2 con hábitos ampliados; v3 con trabajo, movimiento del día y sueño; v4 con "cuándo" por edad o etapa).
+Alcance: llenar las 6 secciones que el PR #16 dejó visibles y vacías. NO entra: vacunación (catálogo propio,
+futuro), otras sustancias, alimentación, cuestionarios por especialidad (E4/FR-022), enlaces entre
+registros de secciones distintas, enlace tratamiento↔medicinas de receta.
+
+## Partición en stories (Saúl Pérez, ronda 3; rehecha en la ronda 6)
+- **Story A — eventos:** enfermedades pasadas e infecciosas, cirugías y hospitalizaciones, fracturas y lesiones,
+  transfusiones + grupo sanguíneo, y el mecanismo "ninguna" común a todas (4 de las 6 tarjetas cobran vida).
+- **Story B — crónicas:** con enlace opcional al diagnóstico del expediente.
+- **Story C — hábitos + trabajo:** cuestionario con lista anidada (ejercicio), movimiento del día y sueño, más
+  el bloque "Trabajo" del Perfil básico. Se separó de B en la ronda 6 al crecer: no comparte forma con crónicas.
+
+## Catálogos (en las palabras de Saúl / del borrador que aceptó)
+
+Mecánica común a las secciones de lista (todas salvo hábitos):
+- **Estado de la sección** (ronda 2, "Sí, por sección"): `sin llenar → ninguna (negado) → con registros`. "Ninguna"
+  solo se marca sin registros; agregar uno lo quita. Motivo: el médico y la IA deben distinguir "no ha pasado"
+  de "no lo ha contado" (la historia clínica escribe "quirúrgicos: negados").
+- **"Cuándo"** (ronda 1, corregida en la ronda 8): se pregunta **como el médico** — "¿cuántos años tenías?" o
+  "¿ibas en la primaria o en la secundaria?" (Saúl Pérez: "el médico no pregunta en qué año crees que te dio…
+  para calcular el año"). El paciente contesta con **edad**, **etapa** (antes de la primaria · primaria ·
+  secundaria · prepa), **año** si lo sabe, o "No recuerdo". Se **guarda lo que dijo** (tipo + valor) y el año
+  aproximado se **calcula al mostrarlo** con la fecha de nacimiento del perfil: si el paciente la corrige, el año
+  se recalcula; si la omitió en el onboarding, solo se muestra la edad o la etapa. Las edades por etapa
+  (primaria 6–11, secundaria 12–14, prepa 15–17) son [ASSUMPTION] y solo sirven para estimar. Validación: edad no
+  mayor que la actual; año entre el nacimiento y hoy. NO fecha exacta — difiere a propósito de `occurred_on` de
+  los registros del expediente.
+- **Cruces entre secciones** (ronda 3, "Marca sí/no, sin enlace"): una fractura dice "¿requirió cirugía?" y una
+  enfermedad pasada "¿requirió hospitalización?"; si el paciente quiere el detalle, lo registra en Cirugías. Sin
+  modelo de enlaces entre registros.
+
+### Enfermedad pasada e infecciosa (APP)
+| Attribute | Notes |
+|---|---|
+| condición | lista frecuente (varicela, sarampión, paperas, rubéola, hepatitis A/B/C, COVID-19 grave, dengue, tuberculosis) + "otra"; **requerido** |
+| cuándo | mecánica común |
+| ¿requirió hospitalización? | sí / no / no sé |
+| secuelas, nota | texto opcional |
+(ronda 5: "nada más"; tratamiento recibido descartado)
+
+### Cirugía u hospitalización (APP quirúrgicos)
+| Attribute | Notes |
+|---|---|
+| tipo | cirugía / hospitalización sin cirugía |
+| nombre ("qué fue") | **requerido** |
+| cuándo, motivo, complicaciones | borrador aceptado |
+| hospital o lugar | ronda 2 (sirve para pedir el expediente al hospital) |
+| médico que operó o atendió | ronda 2 — dato de un tercero, opcional |
+| ¿reacción a la anestesia? + qué pasó | ronda 2 |
+| material implantado | ronda 4: "en fracturas y cirugías" (placa, prótesis, marcapasos; lo pregunta la resonancia) |
+
+### Fractura o lesión (APP traumáticos)
+| Attribute | Notes |
+|---|---|
+| qué hueso o lesión | **requerido** |
+| lado | izquierdo / derecho / ambos / no aplica (ronda 3) |
+| cuándo, ¿requirió cirugía?, secuelas | borrador aceptado |
+| material implantado | ronda 3 |
+
+### Transfusión y grupo sanguíneo (APP transfusionales)
+| Attribute | Notes |
+|---|---|
+| cuándo, motivo, ¿hubo reacción? + qué pasó | borrador aceptado |
+| qué se transfundió | sangre / plaquetas / plasma / no sé (ronda 3) |
+| hospital o lugar | ronda 3 |
+| **grupo sanguíneo** | **un solo dato del paciente**, no por transfusión: A/B/AB/O con Rh ±, o "no lo sé" (ronda 5: solo el valor; el estudio que lo respalde va como adjunto del expediente) |
+
+### Enfermedad crónica (APP crónico-degenerativos) — Story B
+| Attribute | Notes |
+|---|---|
+| condición | lista frecuente (diabetes tipo 2, hipertensión, asma, hipotiroidismo, colesterol alto, EPOC, artritis, epilepsia) + **salud mental** (depresión, ansiedad, trastorno bipolar) + "otra"; **requerido** |
+| categoría sensible | ronda 4: las de salud mental se guardan **marcadas como "salud mental"** para que FR-014 (enlaces por categoría) las oculte sin migrar datos |
+| desde cuándo | mecánica "cuándo" (edad, etapa o año) |
+| estado | **Activa / Ya no la tengo** + hasta cuándo, con la mecánica "cuándo" (ronda 2; "controlada" es juicio clínico, no se pide al paciente) |
+| tratamiento actual | texto libre opcional (ronda 2; el enlace a medicinas de receta, después) |
+| diagnóstico que la respalda | **enlace opcional** a un diagnóstico del expediente (ronda 1: "aparte, enlazable") |
+| nota | texto opcional |
+
+### Hábitos (APNP + tabaquismo) — Story C, cuestionario (no lista; sin "ninguna": cada hábito tiene "Nunca")
+Ronda 6 (Saúl Pérez al clickear el prototipo v1: "hábitos puede o debe crecer más… consumo de alcohol puede ser
+fines de semana… me expongo a humo de cigarro dos veces por semana… varios ejercicios con su propia frecuencia",
+y pidió investigar cómo se maneja). La evidencia (research.md § hábitos) dice que justo frecuencia, cantidad,
+estado, fechas y humo ajeno son lo que los campos estructurados de los expedientes no capturan.
+
+| Hábito | Respuesta |
+|---|---|
+| alcohol | **nunca / lo dejé (a qué edad; ronda 8) / actual**. Si actual, las 3 preguntas del **AUDIT-C** con su escala: frecuencia (una vez al mes o menos · 2–4 al mes · 2–3 por semana · 4+ por semana), bebidas en un día típico (1–2 · 3–4 · 5–6 · 7–9 · 10+), frecuencia de 6 o más en una ocasión (nunca · menos de una vez al mes · cada mes · cada semana · diario o casi) + marca "sobre todo fines de semana". **Sin puntaje** (C-6) |
+| tabaco | nunca / antes / actual + cigarros al día + a qué edad empezó + a qué edad lo dejó (si "antes") — ronda 8: edad, no año |
+| vapeador | nunca / antes / actual |
+| humo de tabaco ajeno | **hábito propio** (ronda 6): dónde (casa · trabajo o escuela · otro lugar, varios) + días por semana, o "no me expongo" |
+| humo de leña | nunca / antes / actual + años aprox.; riesgo [VERIFIED] (research.md § humo de leña), forma de captura [ASSUMPTION] |
+| ejercicio | **lista de actividades** (caminar, correr, bicicleta, nadar, pesas o gimnasio, fútbol u otro deporte, yoga o pilates, baile, otra), cada una con días por semana + minutos por vez (forma del Exercise Vital Sign, por actividad); se muestra el total semanal **sin veredicto** contra la OMS. El tipo permite distinguir aeróbico de fuerza (OMS 2020) sin preguntar intensidad |
+
+| movimiento del día | ronda 7, forma del GPAQ (OMS): en el trabajo o actividad principal (casi todo sentado · de pie o caminando · esfuerzo físico pesado), desplazamiento activo (caminar o bici para ir a algún lado: sí/no + días por semana) y horas sentado al día. **No se suma al total de ejercicio** (paradoja de la actividad física, research.md § ocupación) |
+| sueño | ronda 7 (antes fuera): horas por noche + ¿te cuesta dormir o te despiertas? (nunca · a veces · casi siempre). Sin diagnóstico ni puntaje |
+
+### Trabajo — se suma al Perfil básico (Story C)
+Ronda 7 (Saúl Pérez: "también te preguntan por tu profesión… paso mucho tiempo sentado… hay oficios que implican
+movimiento diario"). Las plantillas mexicanas de historia clínica ponen la ocupación en la ficha de
+identificación; NIOSH (Occupational Data for Health) define el mínimo: situación laboral, trabajo actual y el de
+más años (research.md § ocupación). Decisión: va en el **Perfil básico**, no en Hábitos.
+| Attribute | Notes |
+|---|---|
+| situación laboral | trabajo · busco trabajo · jubilado o pensionado · hogar · estudio |
+| a qué te dedicas | texto libre (NIOSH tiene catálogo con traducción al español; codificar queda fuera) |
+| el trabajo de más años | texto libre, si es otro (explica exposiciones antiguas) |
+| exposiciones | polvo · químicos o solventes · ruido fuerte · cargar peso (varias) o "nada de esto" |
+| turno | de día · de noche · rotativo — [ASSUMPTION] su relevancia (sueño); no está en el estándar NIOSH consultado |
+
+- **Regla C-6 (objeción del harness, aceptada por Saúl Pérez):** la app captura con la forma de los
+  instrumentos, pero NO calcula puntajes (AUDIT-C), riesgos ni "cumples / no cumples": los cortes varían por fuente
+  y es juicio clínico; cualquier interpretación futura es salida de la IA con fuente y leyenda (NFR-008).
+
+- **Relations:** paciente → registro de sección (1→0..N, con tipo de sección) · paciente → estado por sección
+  (ninguna sí/no) · paciente → grupo sanguíneo (1→0..1) · paciente → hábitos (1→0..1) → actividad física (1→0..N) · perfil → trabajo (1→0..1) · crónica → diagnóstico
+  del expediente (N→0..1, opcional; el diagnóstico NO depende de la crónica).
+- **States / lifecycle:** sección `sin llenar → ninguna → con registros` (ver arriba); crónica `activa → ya no la
+  tengo` (reversible: el paciente corrige). Los registros de eventos no tienen estado: son pasado.
+- **What they explicitly do NOT want (esta rebanada):** vacunación, otras sustancias, alimentación/sueño
+  (ronda 1: "nada más por ahora"; el sueño y el sedentarismo entraron en la ronda 7); enlaces entre registros de secciones distintas (ronda 3); tratamiento
+  enlazado a recetas (ronda 2).
+
+## Glosario (se suma al de la rebanada onboarding)
+| Their word | Meaning here | Never call it |
+|---|---|---|
+| secciones / historial | las 6 secciones de antecedentes personales del perfil médico | APP/APNP en la UI (tecnicismo), anamnesis |
+| ninguna | el paciente declara que no ha tenido nada de esa sección | negados, N/A, vacío |
+| crónica | enfermedad que el paciente tiene o tuvo de forma duradera, aunque no tenga el papel del diagnóstico | diagnóstico (eso es el registro con fecha del expediente) |
+| ya no la tengo | crónica que se resolvió | remisión, inactiva, curada |
+
+## Procesos (who / when / with whom → future FRs)
+| Who | Does what | When / trigger | Exceptional paths |
+|---|---|---|---|
+| paciente | abre una sección desde "Mi perfil médico" y agrega, corrige o elimina registros | cuando quiera | edad mayor que la actual o año fuera de su vida rechazados; "hasta" antes de "desde" rechazado; registro vacío no se guarda |
+| paciente | marca "No he tenido ninguna" | sección sin registros | agregar un registro después la quita |
+| paciente | elige su grupo sanguíneo | en la sección de transfusiones | "No lo sé" es un valor válido |
+| paciente | enlaza una crónica a un diagnóstico del expediente | al registrar o editar la crónica | si el diagnóstico se borra, la crónica queda sin enlace (no se borra) [ASSUMPTION] |
+| sistema (futuro E5) | usa crónicas, hábitos (tabaco, humo ajeno, leña, AUDIT-C) y "ninguna" para avisos con fuente | FR-021 | fuera de esta rebanada; cualquier puntaje o riesgo es salida de la IA con fuente (NFR-008) |
+
+## Datos sensibles
+Todo es dato sensible (LFPDPPP art. 3-VI), mismo cifrado en reposo (D13) y detrás del consentimiento (D16).
+Salud mental lleva además su categoría para FR-014. Médico y hospital son datos de terceros aportados por el
+titular, como los AHF: opcionales por minimización.
+
+## Open questions (max 4) — el gate del discovery
+1. ~~**¿El prototipo refleja lo que respondiste?**~~ **RESPONDIDA (Saúl Pérez, 2026-10-20):** el v1 produjo la
+   ronda 6 (hábitos), el v2 la 7 (trabajo, movimiento del día, sueño) y el v3 la 8 ("cuándo" por edad); sobre el
+   v4: "procede con la story a".
+2. **(abierta, bloquea solo la Story B) Borrar un diagnóstico enlazado:** la crónica conserva su registro y pierde el enlace [ASSUMPTION] — ¿o debe
+   avisar antes de borrar el diagnóstico?

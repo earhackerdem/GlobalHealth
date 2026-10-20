@@ -1,0 +1,635 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Historial por secciones</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<style>
+/* Layout: una columna móvil-primero; mismos tokens que onboarding-perfil.html y receta-primero.html */
+:root{
+  --bg:#f7f5f2; --surface:#ffffff; --fg:#2b2a27; --muted:#6f6a61;
+  --accent:#0f766e; --accent-fg:#ffffff; --line:#e4e0d8; --warn-bg:#fdf3e2; --warn-fg:#7a5410;
+  --chip:#eef4f3; --danger:#b42318; --b-tag:#5b4bb7;
+  --font-body:"Atkinson Hyperlegible",system-ui,sans-serif;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#171a19; --surface:#202423; --fg:#e8e6e1; --muted:#a39d92;
+  --accent:#2dd4bf; --accent-fg:#0c2b27; --line:#343a38; --warn-bg:#3a2f14; --warn-fg:#e8c27a;
+  --chip:#263230; --danger:#f97066; --b-tag:#a99bf5; color-scheme:dark
+}}
+:root[data-theme="dark"]{
+  --bg:#171a19; --surface:#202423; --fg:#e8e6e1; --muted:#a39d92;
+  --accent:#2dd4bf; --accent-fg:#0c2b27; --line:#343a38; --warn-bg:#3a2f14; --warn-fg:#e8c27a;
+  --chip:#263230; --danger:#f97066; --b-tag:#a99bf5; color-scheme:dark
+}
+body{background:var(--bg); color:var(--fg); font:16px/1.5 var(--font-body);
+  padding-left:max(16px, env(safe-area-inset-left, 0px)); padding-right:max(16px, env(safe-area-inset-right, 0px));
+  padding-block:8px 64px; max-width:620px; margin:0 auto}
+h1{font-size:1.35rem; margin:.4rem 0 0; text-wrap:balance}
+h2{font-size:1.1rem; margin:0; text-wrap:balance}
+h3{font-size:.95rem; margin:0}
+p{margin:.35rem 0}
+.sub{color:var(--muted); font-size:.9rem}
+.banner{background:var(--warn-bg); color:var(--warn-fg); border-radius:8px; padding:8px 12px; font-size:.85rem; margin:12px 0}
+button{font:inherit; border:1px solid var(--line); background:var(--surface); color:var(--fg);
+  border-radius:10px; padding:10px 14px; cursor:pointer}
+button.primary{background:var(--accent); color:var(--accent-fg); border-color:transparent; font-weight:700}
+button.link{border:none; background:none; color:var(--accent); padding:4px; font-weight:600}
+button.danger{color:var(--danger)}
+button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--accent); outline-offset:2px}
+.actions{display:flex; flex-wrap:wrap; gap:8px; margin:14px 0; align-items:center}
+.card{background:var(--surface); border:1px solid var(--line); border-radius:12px; padding:14px; min-width:0}
+.grid{display:grid; grid-template-columns:repeat(auto-fit, minmax(240px, 1fr)); gap:10px; margin-top:10px}
+.sec{text-align:left; display:flex; flex-direction:column; gap:4px; min-width:0; padding:14px}
+.sec:hover{border-color:var(--accent)}
+.estado{font-size:.85rem; color:var(--muted); display:flex; gap:6px; flex-wrap:wrap; align-items:center}
+.pill{display:inline-block; border-radius:999px; padding:1px 10px; font-size:.78rem; font-weight:700}
+.pill.vacia{background:var(--chip); color:var(--muted)}
+.pill.ninguna{border:1px solid var(--accent); color:var(--accent)}
+.pill.datos{background:var(--accent); color:var(--accent-fg)}
+.story{font-size:.7rem; font-weight:700; letter-spacing:.04em; color:var(--b-tag); border:1px solid currentColor;
+  border-radius:6px; padding:0 6px}
+label,.lbl{font-size:.85rem; font-weight:700; display:block; margin-bottom:3px}
+.opt{font-weight:400; color:var(--muted)}
+input,select{font:inherit; width:100%; box-sizing:border-box; border:1px solid var(--line);
+  border-radius:8px; padding:8px 10px; background:var(--bg); color:var(--fg)}
+.campo{margin:12px 0}
+.hint{font-size:.8rem; color:var(--muted); margin-top:2px}
+.err{font-size:.82rem; color:var(--danger); margin-top:3px}
+.chips{display:flex; flex-wrap:wrap; gap:6px; margin:4px 0}
+.chips button{border-radius:999px; padding:5px 12px; font-size:.85rem}
+.chips button[aria-pressed="true"]{background:var(--accent); color:var(--accent-fg); border-color:transparent}
+.grupo{font-size:.78rem; color:var(--muted); width:100%; margin-top:4px}
+.chip{display:inline-block; background:var(--chip); color:var(--fg); border-radius:999px; padding:1px 10px; font-size:.78rem}
+.chip.sens{background:var(--warn-bg); color:var(--warn-fg)}
+.cuando{display:flex; gap:8px; flex-wrap:wrap; align-items:center}
+.cuando input{flex:0 1 120px; font-variant-numeric:tabular-nums}
+.registro{display:flex; justify-content:space-between; gap:10px; align-items:flex-start}
+.registro>div{min-width:0}
+.registro + .registro{border-top:1px solid var(--line); margin-top:12px; padding-top:12px}
+.meta{font-size:.85rem; color:var(--muted); overflow-wrap:anywhere}
+.lista{margin-top:10px}
+.fila-act{display:grid; grid-template-columns:minmax(0,2fr) minmax(0,1fr) minmax(0,1fr) auto; gap:6px; margin-top:8px; align-items:center}
+@media (max-width:480px){ .fila-act{grid-template-columns:1fr 1fr auto} .fila-act select{grid-column:1 / -1} }
+.habito{border-top:1px solid var(--line); padding-top:10px; margin-top:12px}
+.migas{color:var(--muted); font-size:.85rem; margin:8px 0}
+#toast{position:fixed; left:50%; transform:translateX(-50%); bottom:calc(14px + env(safe-area-inset-bottom,0px));
+  background:var(--fg); color:var(--bg); border-radius:999px; padding:8px 18px; font-size:.9rem; transition:opacity .3s}
+#toast[hidden]{display:block !important; opacity:0; pointer-events:none}
+@media (prefers-reduced-motion: reduce){ #toast{transition:none} }
+.ac{display:none; font-size:.7rem; font-weight:700; letter-spacing:.03em; background:var(--accent); color:var(--bg);
+  border-radius:6px; padding:1px 6px; vertical-align:middle; margin-left:6px}
+.ac.b{background:var(--b-tag)}
+.show-ac .ac{display:inline-block}
+#leyenda{display:none; margin:0 0 10px; font-size:.85rem}
+.show-ac #leyenda{display:block}
+#leyenda ol{padding-left:1.4rem; margin:.3rem 0 .6rem}
+#leyenda li{margin:.2rem 0}
+dl{margin:.4rem 0 0; display:grid; grid-template-columns:auto 1fr; gap:2px 12px}
+dt{color:var(--muted); font-size:.85rem}
+dd{margin:0; min-width:0; overflow-wrap:anywhere}
+</style>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&display=swap">
+
+<h1>Mi perfil médico</h1>
+<p class="sub">Lo que todo médico te pregunta, en un solo lugar. Llénalo a tu ritmo: todo es opcional.</p>
+<div class="banner">Prototipo con datos de ejemplo. Nada se guarda ni sale de esta página.</div>
+
+<div class="actions">
+  <button class="link" id="verAc" aria-pressed="false">Ver criterios</button>
+</div>
+
+<div id="leyenda" class="card">
+  <p><strong>Historias de usuario (borrador, gate pendiente).</strong> FR-028 / US-18 se parte en dos:</p>
+  <p><strong>Story A, eventos:</strong> <em>Como paciente, quiero registrar mis enfermedades pasadas, cirugías,
+  fracturas y transfusiones (o decir que no he tenido ninguna), para que el médico no tenga que preguntármelo cada vez.</em></p>
+  <ol>
+    <li><strong>A-1</strong> Cada sección muestra su estado: <em>sin llenar</em>, <em>ninguna</em> o cuántos registros tiene.</li>
+    <li><strong>A-2</strong> «No he tenido ninguna» por sección; agregar un registro después la quita, y con registros no se puede marcar.</li>
+    <li><strong>A-3</strong> «Cuándo» se contesta como el médico lo pregunta: la edad que tenías, o la etapa (antes de la primaria, primaria, secundaria, prepa), o el año si lo sabes, o «No recuerdo». Se guarda lo que dijiste y el año aproximado se calcula con tu fecha de nacimiento. Una edad mayor que la tuya o un año fuera de tu vida se rechazan.</li>
+    <li><strong>A-4</strong> Enfermedades pasadas: condición (lista frecuente + otra), cuándo, ¿requirió hospitalización?, secuelas, nota.</li>
+    <li><strong>A-5</strong> Cirugías y hospitalizaciones: qué fue, tipo, cuándo, motivo, hospital, médico, complicaciones, reacción a la anestesia, material implantado.</li>
+    <li><strong>A-6</strong> Fracturas y lesiones: qué hueso o lesión, lado, cuándo, ¿requirió cirugía?, material implantado, secuelas.</li>
+    <li><strong>A-7</strong> Transfusiones: cuándo, motivo, qué se transfundió, hospital, reacción. Grupo sanguíneo como un solo dato, con «No lo sé».</li>
+    <li><strong>A-8</strong> Solo tú agregas, corriges o eliminas; eliminar pide confirmación en la misma pantalla.</li>
+    <li><strong>A-9</strong> Todo se guarda cifrado, como el resto del expediente (criterio técnico, no clickeable).</li>
+  </ol>
+  <p><strong>Story B, crónicas:</strong> <em>Como paciente, quiero registrar mis enfermedades crónicas, para que el
+  médico y la IA conozcan mi condición actual aunque no tenga el papel del diagnóstico.</em></p>
+  <ol>
+    <li><strong>B-1</strong> Enfermedades crónicas desde una lista frecuente + otra; las de salud mental quedan marcadas como sensibles (para FR-014).</li>
+    <li><strong>B-2</strong> Estado <em>Activa</em> o <em>Ya no la tengo</em> (con hasta cuándo); «desde» y «hasta» se contestan igual que A-3 (edad, etapa o año).</li>
+    <li><strong>B-3</strong> Tratamiento actual como texto libre opcional.</li>
+    <li><strong>B-4</strong> Enlace opcional al diagnóstico del expediente que la respalda.</li>
+  </ol>
+  <p><strong>Story C, hábitos:</strong> <em>Como paciente, quiero contar mis hábitos con el detalle que el médico
+  pregunta (cuánto, cada cuándo, desde cuándo), para que no quede en un «sí fumo» o «tomo poco».</em></p>
+  <ol>
+    <li><strong>C-1</strong> Alcohol: nunca / lo dejé (a qué edad) / actual. Si es actual, las 3 preguntas del AUDIT-C (frecuencia, bebidas en un día típico, 6 o más en una ocasión) y «sobre todo fines de semana».</li>
+    <li><strong>C-2</strong> Tabaco (nunca/antes/actual, cigarros al día, a qué edad empezaste y a qué edad lo dejaste) y vapeador.</li>
+    <li><strong>C-3</strong> Humo de tabaco ajeno: dónde (casa, trabajo o escuela, otro lugar) y cuántos días por semana.</li>
+    <li><strong>C-4</strong> Humo de leña: nunca/antes/actual y años aproximados.</li>
+    <li><strong>C-5</strong> Ejercicio como lista de actividades, cada una con días por semana y minutos por vez; se muestra el total semanal.</li>
+    <li><strong>C-6</strong> La app no calcula puntajes ni riesgos con estas respuestas: interpretarlas es del médico (NFR-008).</li>
+    <li><strong>C-7</strong> Movimiento del día, aparte del ejercicio y sin sumarse a su total: cómo pasas el día en tu trabajo (casi todo sentado / de pie o caminando / esfuerzo físico pesado), si caminas o vas en bici para ir a algún lado (días por semana) y horas sentado al día.</li>
+    <li><strong>C-8</strong> Sueño: horas por noche y si te cuesta dormir o te despiertas (nunca / a veces / casi siempre).</li>
+    <li><strong>C-9</strong> El Perfil básico suma «Trabajo»: situación laboral, a qué te dedicas, el trabajo de más años, exposiciones (polvo, químicos o solventes, ruido fuerte, cargar peso) y turno (de día, de noche, rotativo).</li>
+  </ol>
+  <p class="sub">Origin: product/dominio.md (rebanada perfil médico por secciones, 2026-10-19) · FR-028 / US-18.</p>
+</div>
+
+<main id="vista"></main>
+<div id="toast" role="status" hidden></div>
+
+<script>
+const ANIO = 2026;
+// «Cuándo» se guarda como lo dijo el paciente (edad, etapa o año); el año se calcula al mostrarlo.
+// Sin fecha de nacimiento (onboarding omitido) solo se muestra la edad o la etapa.
+const NACIMIENTO = 1988; // perfil básico de ejemplo: 38 años
+const EDAD = ANIO - NACIMIENTO;
+// Edades típicas por etapa escolar en México [ASSUMPTION]; solo sirven para estimar el año
+const ETAPAS = {"Antes de la primaria":[0,5], "En la primaria":[6,11], "En la secundaria":[12,14], "En la prepa":[15,17]};
+function partesCuando(val){ const i = (val || "").indexOf(":"); return i < 0 ? ["", val || ""] : [val.slice(0, i), val.slice(i + 1)]; }
+function anioAprox(val){
+  const [t, x] = partesCuando(val);
+  if(t === "edad") return [NACIMIENTO + +x, NACIMIENTO + +x];
+  if(t === "anio") return [+x, +x];
+  if(t === "etapa" && ETAPAS[x]) return ETAPAS[x].map(e => NACIMIENTO + e);
+  return null;
+}
+const rango = r => r[0] === r[1] ? `${r[0]}` : `${r[0]}–${r[1]}`;
+function textoCuando(val, desde){
+  const [t, x] = partesCuando(val), r = anioAprox(val), aprox = r ? ` (≈${rango(r)})` : "";
+  if(t === "edad") return (desde ? `desde los ${x} años` : `a los ${x} años`) + aprox;
+  if(t === "anio") return (desde ? "desde " : "en ") + x;
+  if(t === "etapa") return (desde ? "desde " + x.replace(/^En /, "") : x).toLowerCase() + aprox;
+  return val === "No recuerdo" ? "no recuerda cuándo" : val;
+}
+const $ = s => document.querySelector(s);
+const esc = t => { const d = document.createElement("span"); d.textContent = t ?? ""; return d.innerHTML; };
+const ac = (ids, b) => `<span class="ac${b ? " b" : ""}">${ids}</span>`;
+
+const DIAGNOSTICOS = ["Hipotiroidismo · 14/03/2019 · sin confirmar", "Gastritis · 02/08/2023"];
+const SALUD_MENTAL = ["Depresión", "Ansiedad", "Trastorno bipolar"];
+
+const SECCIONES = [
+  { id:"cronicas", story:"B", titulo:"Enfermedades crónicas", ninguna:"No tengo ninguna", acList:"B-1",
+    campos:[
+      {k:"condicion", t:"chips", lbl:"¿Cuál?", req:true, ac:"B-1", otra:true,
+       opts:["Diabetes tipo 2","Hipertensión","Asma","Hipotiroidismo","Colesterol alto","EPOC","Artritis","Epilepsia"],
+       grupo:{lbl:"Salud mental (se guarda como dato sensible)", opts:SALUD_MENTAL}},
+      {k:"desde", t:"cuando", lbl:"¿Desde cuándo?", ac:"B-2"},
+      {k:"estado", t:"chips", lbl:"¿La tienes todavía?", ac:"B-2", opts:["Activa","Ya no la tengo"]},
+      {k:"hasta", t:"cuando", lbl:"¿Hasta cuándo?", ac:"B-2", si:v => v.estado === "Ya no la tengo"},
+      {k:"tratamiento", t:"texto", lbl:"Tratamiento actual", ac:"B-3", ph:"Metformina 850 mg cada 12 h"},
+      {k:"dx", t:"select", lbl:"Diagnóstico del expediente que la respalda", ac:"B-4", opts:DIAGNOSTICOS,
+       hint:"Si ya registraste el diagnóstico en tu expediente, enlázalo aquí."},
+      {k:"nota", t:"texto", lbl:"Nota"}
+    ]},
+  { id:"pasadas", story:"A", titulo:"Enfermedades pasadas e infecciosas", ninguna:"No he tenido ninguna", acList:"A-4",
+    campos:[
+      {k:"condicion", t:"chips", lbl:"¿Cuál?", req:true, ac:"A-4", otra:true,
+       opts:["Varicela","Sarampión","Paperas","Rubéola","Hepatitis A","Hepatitis B","Hepatitis C","COVID-19 grave","Dengue","Tuberculosis"]},
+      {k:"cuando", t:"cuando", lbl:"¿Cuándo?", ac:"A-3"},
+      {k:"hosp", t:"sino", lbl:"¿Requirió hospitalización?", ac:"A-4"},
+      {k:"secuelas", t:"texto", lbl:"Secuelas", ph:"Cicatrices, pérdida de audición…"},
+      {k:"nota", t:"texto", lbl:"Nota"}
+    ]},
+  { id:"cirugias", story:"A", titulo:"Cirugías y hospitalizaciones", ninguna:"No he tenido ninguna", acList:"A-5",
+    campos:[
+      {k:"tipo", t:"chips", lbl:"¿Qué fue?", ac:"A-5", opts:["Cirugía","Hospitalización sin cirugía"]},
+      {k:"que", t:"texto", lbl:"Nombre", req:true, ac:"A-5", ph:"Apendicectomía, cesárea, neumonía…"},
+      {k:"cuando", t:"cuando", lbl:"¿Cuándo?", ac:"A-3"},
+      {k:"motivo", t:"texto", lbl:"Motivo"},
+      {k:"hospital", t:"texto", lbl:"Hospital o lugar"},
+      {k:"medico", t:"texto", lbl:"Médico que te operó o atendió"},
+      {k:"complicaciones", t:"texto", lbl:"Complicaciones"},
+      {k:"anestesia", t:"sino", lbl:"¿Hubo reacción a la anestesia?", ac:"A-5", detalle:"¿Qué pasó?"},
+      {k:"implante", t:"texto", lbl:"Material implantado", ac:"A-5", ph:"Placa, tornillos, prótesis, marcapasos…",
+       hint:"El médico lo pregunta antes de una resonancia magnética."}
+    ]},
+  { id:"fracturas", story:"A", titulo:"Fracturas y lesiones", ninguna:"No he tenido ninguna", acList:"A-6",
+    campos:[
+      {k:"que", t:"texto", lbl:"Qué hueso o lesión", req:true, ac:"A-6", ph:"Radio, esguince de tobillo, luxación de hombro…"},
+      {k:"lado", t:"chips", lbl:"Lado", ac:"A-6", opts:["Izquierdo","Derecho","Ambos","No aplica"]},
+      {k:"cuando", t:"cuando", lbl:"¿Cuándo?", ac:"A-3"},
+      {k:"cirugia", t:"sino", lbl:"¿Requirió cirugía?", ac:"A-6",
+       hint:"Si quieres el detalle de la operación, regístrala también en Cirugías."},
+      {k:"implante", t:"texto", lbl:"Material implantado", ac:"A-6", ph:"Placa, clavos, tornillos…"},
+      {k:"secuelas", t:"texto", lbl:"Secuelas", ph:"Dolor al cambiar el clima, menos movilidad…"}
+    ]},
+  { id:"transfusiones", story:"A", titulo:"Transfusiones y grupo sanguíneo", ninguna:"Nunca me han transfundido", acList:"A-7",
+    campos:[
+      {k:"cuando", t:"cuando", lbl:"¿Cuándo?", ac:"A-3"},
+      {k:"motivo", t:"texto", lbl:"Motivo", ph:"Parto, accidente, cirugía…"},
+      {k:"componente", t:"chips", lbl:"¿Qué te transfundieron?", ac:"A-7", opts:["Sangre","Plaquetas","Plasma","No sé"]},
+      {k:"hospital", t:"texto", lbl:"Hospital o lugar"},
+      {k:"reaccion", t:"sino", lbl:"¿Hubo reacción?", ac:"A-7", detalle:"¿Qué pasó?"}
+    ]},
+  { id:"habitos", story:"C", titulo:"Hábitos", habitos:true }
+];
+
+/* Datos de ejemplo: una sección en cada estado posible */
+const estado = {
+  cronicas:{ninguna:false, regs:[{condicion:"Hipotiroidismo", desde:"edad:31", estado:"Activa",
+    tratamiento:"Levotiroxina 50 mcg en ayunas", dx:DIAGNOSTICOS[0]}]},
+  pasadas:{ninguna:false, regs:[{condicion:"Varicela", cuando:"etapa:En la primaria", hosp:"No"},
+    {condicion:"COVID-19 grave", cuando:"anio:2021", hosp:"Sí", secuelas:"Cansancio unos meses"}]},
+  cirugias:{ninguna:false, regs:[{tipo:"Cirugía", que:"Apendicectomía", cuando:"edad:24", motivo:"Apendicitis",
+    hospital:"Hospital General de Zona", anestesia:"No"}]},
+  fracturas:{ninguna:false, regs:[]},
+  transfusiones:{ninguna:true, regs:[], grupo:"O+"},
+  habitos:{datos:null},
+  trabajo:{situacion:"Trabajo", ocupacion:"Diseñador gráfico", masAnios:"", exposiciones:[], expoNinguna:"Sí", turno:"De día"}
+};
+
+function resumenTrabajo(){
+  const t = estado.trabajo;
+  if(!t.situacion && !t.ocupacion) return `<span class="opt">Sin llenar</span>`;
+  const partes = [t.ocupacion || t.situacion, t.turno && t.turno.toLowerCase(),
+    t.masAnios && "antes: " + t.masAnios, t.exposiciones.length && "expuesto a " + t.exposiciones.join(", ").toLowerCase()];
+  return partes.filter(Boolean).map(esc).join(" · ");
+}
+
+const SITUACION = ["Trabajo","Busco trabajo","Jubilado o pensionado","Hogar","Estudio"];
+const EXPOSICIONES = ["Polvo","Químicos o solventes","Ruido fuerte","Cargar peso"];
+function pintarTrabajo(){
+  const v = vista.borrador;
+  return `
+    <p class="migas"><button class="link" data-volver>‹ Mi perfil médico</button></p>
+    <h2>Tu trabajo <span class="story">Story C</span></h2>
+    <p class="sub">El médico lo pregunta porque lo que haces todo el día también es salud.${ac("C-9", true)}</p>
+    <form class="card" id="form-trabajo" style="margin-top:10px" novalidate>
+      <span class="lbl">Hoy…</span>${chipsDe("situacion", SITUACION, v, "Situación laboral")}
+      <div class="campo"><label for="t-ocupacion">¿A qué te dedicas? <span class="opt">(opcional)</span></label>
+        <input id="t-ocupacion" data-k="ocupacion" value="${esc(v.ocupacion || "")}" placeholder="Albañil, maestra, chofer, programador…"></div>
+      <div class="campo"><label for="t-masAnios">El trabajo que más años has tenido, si es otro <span class="opt">(opcional)</span></label>
+        <input id="t-masAnios" data-k="masAnios" value="${esc(v.masAnios || "")}" placeholder="Minero, costurera…"></div>
+      <span class="lbl">En tu trabajo te expones a…</span>
+      <div class="chips" role="group" aria-label="Exposiciones">${EXPOSICIONES.map(o =>
+        `<button data-multi="exposiciones" data-v="${esc(o)}" aria-pressed="${v.exposiciones.includes(o)}">${esc(o)}</button>`).join("")}
+        <button data-chip="expoNinguna" data-v="Sí" aria-pressed="${v.expoNinguna === "Sí"}">Nada de esto</button></div>
+      <span class="lbl" style="margin-top:12px">Turno</span>${chipsDe("turno", ["De día","De noche","Rotativo"], v, "Turno")}
+      <div class="actions"><button class="primary" type="submit">Guardar</button><button type="button" data-volver>Cancelar</button></div>
+    </form>`;
+}
+
+let vista = {nombre:"perfil"};
+function ir(v){ vista = v; pintar(); window.scrollTo({top:0}); }
+
+function pillDe(s){
+  if(s.habitos){ return estado.habitos.datos ? `<span class="pill datos">Con datos</span>` : `<span class="pill vacia">Sin llenar</span>`; }
+  const e = estado[s.id];
+  if(e.regs.length) return `<span class="pill datos">${e.regs.length} ${e.regs.length === 1 ? "registro" : "registros"}</span>`;
+  if(e.ninguna) return `<span class="pill ninguna">Ninguna</span>`;
+  return `<span class="pill vacia">Sin llenar</span>`;
+}
+
+function pintarPerfil(){
+  return `
+  <div class="card">
+    <h2>Perfil básico</h2>
+    <dl><dt>Edad</dt><dd>38 años</dd><dt>Peso</dt><dd>72 kg <span class="opt">(12/10/2026)</span></dd>
+    <dt>Estatura</dt><dd>168 cm</dd><dt>Alergias</dt><dd>Penicilina</dd>
+    <dt>Trabajo${ac("C-9", true)}</dt><dd>${resumenTrabajo()}</dd></dl>
+    <div class="actions" style="margin:8px 0 0"><button class="link" data-trabajo>Editar trabajo</button>
+      <span class="story">Story C</span></div>
+    <p class="hint">Edad, peso, estatura y alergias vienen del onboarding (PR #16).</p>
+  </div>
+  <h2 style="margin-top:22px">Tu historial</h2>
+  <p class="sub">Toca una sección para llenarla o decir que no aplica.${ac("A-1")}</p>
+  <div class="grid">
+    ${SECCIONES.map(s => `
+      <button class="card sec" data-sec="${s.id}">
+        <h3>${esc(s.titulo)}</h3>
+        <span class="estado">${pillDe(s)} ${s.story !== "A" ? `<span class="story" title="Llega con la Story ${s.story}">Story ${s.story}</span>` : ""}</span>
+      </button>`).join("")}
+  </div>`;
+}
+
+function resumen(s, r){
+  const partes = [];
+  if(s.id === "cronicas"){
+    if(r.desde) partes.push(textoCuando(r.desde, true));
+    if(r.estado) partes.push(r.estado === "Ya no la tengo" ? `ya no la tengo${r.hasta ? " (" + textoCuando(r.hasta) + ")" : ""}` : "activa");
+    if(r.tratamiento) partes.push(r.tratamiento);
+  } else {
+    if(r.lado && r.lado !== "No aplica") partes.push(r.lado.toLowerCase());
+    if(r.cuando) partes.push(textoCuando(r.cuando));
+    if(r.tipo) partes.push(r.tipo.toLowerCase());
+    if(r.componente) partes.push(r.componente.toLowerCase());
+    if(r.hosp === "Sí") partes.push("hospitalizado");
+    if(r.cirugia === "Sí") partes.push("operada");
+    if(r.motivo) partes.push(r.motivo);
+    if(r.implante) partes.push("implante: " + r.implante);
+    if(r.anestesia === "Sí" || r.reaccion === "Sí") partes.push("hubo reacción");
+  }
+  return partes.map(esc).join(" · ");
+}
+const tituloReg = (s, r) => r.condicion || r.que || (r.motivo ? "Transfusión · " + r.motivo : "Transfusión");
+
+function pintarSeccion(){
+  const s = SECCIONES.find(x => x.id === vista.sec);
+  if(s.habitos) return pintarHabitos(s);
+  const e = estado[s.id];
+  const grupo = s.id === "transfusiones" ? `
+    <div class="card" style="margin-top:10px">
+      <span class="lbl">Grupo sanguíneo ${ac("A-7")}</span>
+      <div class="chips" role="group" aria-label="Grupo sanguíneo">
+        ${["A+","A−","B+","B−","AB+","AB−","O+","O−","No lo sé"].map(g =>
+          `<button data-grupo="${g}" aria-pressed="${e.grupo === g}">${g}</button>`).join("")}
+      </div>
+      <p class="hint">Un solo dato. Si te equivocaste, tócalo de nuevo.</p>
+    </div>` : "";
+  let cuerpo;
+  if(e.regs.length){
+    cuerpo = `<div class="card lista">${e.regs.map((r, i) => `
+      <div class="registro">
+        <div>
+          <strong>${esc(tituloReg(s, r))}</strong>
+          ${SALUD_MENTAL.includes(r.condicion) ? `<span class="chip sens">sensible</span>${ac("B-1", true)}` : ""}
+          <div class="meta">${resumen(s, r) || "Sin más datos"}</div>
+          ${r.dx ? `<div class="meta">Respaldo: ${esc(r.dx)}${ac("B-4", true)}</div>` : ""}
+        </div>
+        <div class="actions" style="margin:0; flex-wrap:nowrap">
+          ${vista.borrar === i
+            ? `<button class="danger" data-si="${i}">Eliminar</button><button data-no>Cancelar</button>`
+            : `<button class="link" data-editar="${i}">Editar</button><button class="link danger" data-borrar="${i}">Eliminar${ac("A-8")}</button>`}
+        </div>
+      </div>`).join("")}</div>`;
+  } else if(e.ninguna){
+    cuerpo = `<div class="card lista"><p><strong>Marcaste: ${esc(s.ninguna.toLowerCase())}.</strong></p>
+      <p class="sub">El médico verá que lo respondiste, no que falta.${ac("A-2")}</p>
+      <button class="link" data-deshacer>Deshacer</button></div>`;
+  } else {
+    cuerpo = `<div class="card lista"><p class="sub">Aún no has llenado esta sección.</p>
+      <div class="actions"><button data-ninguna>${esc(s.ninguna)}${ac("A-2")}</button></div></div>`;
+  }
+  return `
+    <p class="migas"><button class="link" data-volver>‹ Mi perfil médico</button></p>
+    <h2>${esc(s.titulo)} ${s.story !== "A" ? `<span class="story">Story ${s.story}</span>` : ""}</h2>
+    ${grupo}
+    ${cuerpo}
+    <div class="actions"><button class="primary" data-agregar>Agregar${s.id === "transfusiones" ? " transfusión" : ""}</button></div>`;
+}
+
+function campoHtml(c, v, err){
+  const val = v[c.k] ?? "";
+  const titulo = `<span class="lbl">${esc(c.lbl)} ${c.req ? "" : `<span class="opt">(opcional)</span>`}${c.ac ? ac(c.ac, c.ac.startsWith("B")) : ""}</span>`;
+  let h = "";
+  if(c.t === "texto"){
+    h = `<label for="f-${c.k}">${esc(c.lbl)} ${c.req ? "" : `<span class="opt">(opcional)</span>`}${c.ac ? ac(c.ac, c.ac.startsWith("B")) : ""}</label>
+      <input id="f-${c.k}" data-k="${c.k}" value="${esc(val)}" placeholder="${esc(c.ph || "")}">`;
+  } else if(c.t === "chips"){
+    const btn = o => `<button data-chip="${c.k}" data-v="${esc(o)}" aria-pressed="${val === o}">${esc(o)}</button>`;
+    const esOtra = c.otra && val && !c.opts.includes(val) && !(c.grupo && c.grupo.opts.includes(val));
+    h = `${titulo}<div class="chips" role="group" aria-label="${esc(c.lbl)}">${c.opts.map(btn).join("")}
+      ${c.grupo ? `<span class="grupo">${esc(c.grupo.lbl)}</span>${c.grupo.opts.map(btn).join("")}` : ""}
+      ${c.otra ? `<button data-chip="${c.k}" data-v="__otra" aria-pressed="${esOtra || vista.otra === c.k}">Otra</button>` : ""}</div>
+      ${c.otra && (esOtra || vista.otra === c.k) ? `<input id="f-${c.k}-otra" data-k="${c.k}" value="${esOtra ? esc(val) : ""}" placeholder="Escríbela">` : ""}`;
+  } else if(c.t === "sino"){
+    h = `${titulo}<div class="chips" role="group" aria-label="${esc(c.lbl)}">${["Sí","No","No sé"].map(o =>
+      `<button data-chip="${c.k}" data-v="${o}" aria-pressed="${val === o}">${o}</button>`).join("")}</div>
+      ${c.detalle && val === "Sí" ? `<input id="f-${c.k}-det" data-k="${c.k}Det" value="${esc(v[c.k + "Det"] || "")}" placeholder="${esc(c.detalle)}">` : ""}`;
+  } else if(c.t === "cuando"){
+    const [tipo, num] = partesCuando(val);
+    const modos = vista.modo || (vista.modo = {});
+    const modo = modos[c.k] || (tipo === "anio" ? "anio" : "edad");
+    const r = anioAprox(val);
+    h = `${titulo}<div class="cuando">
+      <span>${modo === "edad" ? "A los" : "En"}</span>
+      <input id="f-${c.k}" data-k="${c.k}" data-cuando="${modo}" inputmode="numeric" placeholder="${modo === "edad" ? "edad" : "año"}" value="${tipo === modo ? esc(num) : ""}" aria-label="${esc(c.lbl)} (${modo === "edad" ? "edad que tenías" : "año"})">
+      ${modo === "edad" ? "<span>años</span>" : ""}
+      <button class="link" data-modo="${c.k}">${modo === "edad" ? "o el año, si lo sabes" : "o la edad que tenías"}</button></div>
+      <div class="chips">${[...Object.keys(ETAPAS).map(e => ["etapa:" + e, e]), ["No recuerdo", "No recuerdo"]].map(([o, txt]) =>
+        `<button data-chip="${c.k}" data-v="${esc(o)}" aria-pressed="${val === o}">${esc(txt)}</button>`).join("")}</div>
+      ${r && tipo !== "anio" ? `<p class="hint">Año aproximado: ${rango(r)}, calculado con tu fecha de nacimiento.</p>` : ""}`;
+  } else if(c.t === "select"){
+    h = `<label for="f-${c.k}">${esc(c.lbl)} <span class="opt">(opcional)</span>${ac(c.ac, true)}</label>
+      <select id="f-${c.k}" data-k="${c.k}"><option value="">Ninguno</option>${c.opts.map(o =>
+        `<option ${val === o ? "selected" : ""}>${esc(o)}</option>`).join("")}</select>`;
+  }
+  return `<div class="campo">${h}${c.hint ? `<p class="hint">${esc(c.hint)}</p>` : ""}${err ? `<p class="err">${esc(err)}</p>` : ""}</div>`;
+}
+
+function pintarForm(){
+  const s = SECCIONES.find(x => x.id === vista.sec);
+  const v = vista.borrador, errs = vista.errs || {};
+  return `
+    <p class="migas"><button class="link" data-cancelar>‹ ${esc(s.titulo)}</button></p>
+    <h2>${vista.idx == null ? "Agregar" : "Editar"} · ${esc(s.titulo)}</h2>
+    <form class="card" id="form" style="margin-top:10px" novalidate>
+      ${s.campos.filter(c => !c.si || c.si(v)).map(c => campoHtml(c, v, errs[c.k])).join("")}
+      ${errs._ ? `<p class="err">${esc(errs._)}</p>` : ""}
+      <div class="actions"><button class="primary" type="submit">Guardar</button><button type="button" data-cancelar>Cancelar</button></div>
+    </form>`;
+}
+
+/* Hábitos (Story C): cuestionario, no lista; cada hábito tiene su «Nunca» */
+const ALC_FREC = ["Una vez al mes o menos","2 a 4 veces al mes","2 a 3 veces por semana","4 o más veces por semana"];
+const ALC_TIPICAS = ["1 o 2","3 o 4","5 o 6","7 a 9","10 o más"];
+const ALC_SEIS = ["Nunca","Menos de una vez al mes","Cada mes","Cada semana","Diario o casi diario"];
+const ACTIVIDADES = ["Caminar","Correr","Bicicleta","Nadar","Pesas o gimnasio","Fútbol u otro deporte","Yoga o pilates","Baile","Otra"];
+const AJENO_DONDE = ["Casa","Trabajo o escuela","Otro lugar"];
+
+function chipsDe(k, opts, v, lbl){
+  return `<div class="chips" role="group" aria-label="${esc(lbl)}">${opts.map(o =>
+    `<button data-chip="${k}" data-v="${esc(o)}" aria-pressed="${v[k] === o}">${esc(o)}</button>`).join("")}</div>`;
+}
+const numH = (k, ph, v) => `<input id="h-${k}" data-k="${k}" inputmode="numeric" placeholder="${ph}" value="${esc(v[k] || "")}" aria-label="${ph}">`;
+const subLbl = t => `<span class="lbl" style="margin-top:10px; font-weight:400">${esc(t)}</span>`;
+function totalSemanal(acts){
+  return acts.reduce((t, a) => t + (Number(a.dias) || 0) * (Number(a.min) || 0), 0);
+}
+
+function pintarHabitos(s){
+  const v = vista.borrador || (vista.borrador = JSON.parse(JSON.stringify(estado.habitos.datos || {actividades:[], ajenoDonde:[]})));
+  const tot = totalSemanal(v.actividades);
+  return `
+    <p class="migas"><button class="link" data-volver>‹ Mi perfil médico</button></p>
+    <h2>${esc(s.titulo)} <span class="story">Story C</span></h2>
+    <p class="sub">Contesta solo lo que quieras. «Nunca» también le sirve a tu médico. La app no califica tus respuestas.${ac("C-6", true)}</p>
+    <form class="card" id="form-habitos" style="margin-top:10px" novalidate>
+
+      <div class="habito" style="border:0; margin-top:0; padding-top:0">
+        <span class="lbl">Alcohol${ac("C-1", true)}</span>
+        ${chipsDe("alcohol", ["Nunca","Lo dejé","Actual"], v, "Alcohol")}
+        ${v.alcohol === "Lo dejé" ? `<div class="cuando" style="margin-top:6px">${numH("alcDesde", "¿A qué edad lo dejaste?", v)}</div>` : ""}
+        ${v.alcohol === "Actual" ? `
+          ${subLbl("¿Con qué frecuencia tomas?")}${chipsDe("alcFrec", ALC_FREC, v, "Frecuencia")}
+          <div class="chips"><button data-chip="alcFinde" data-v="Sí" aria-pressed="${v.alcFinde === "Sí"}">Sobre todo fines de semana</button></div>
+          ${subLbl("En un día que tomas, ¿cuántas bebidas?")}${chipsDe("alcTipicas", ALC_TIPICAS, v, "Bebidas en un día típico")}
+          <p class="hint">Una bebida: una cerveza, una copa de vino o un trago de tequila, ron u otro destilado.</p>
+          ${subLbl("¿Cada cuándo tomas 6 o más bebidas en una sola ocasión?")}${chipsDe("alcSeis", ALC_SEIS, v, "6 o más bebidas")}` : ""}
+      </div>
+
+      <div class="habito">
+        <span class="lbl">Tabaco${ac("C-2", true)}</span>
+        ${chipsDe("tabaco", ["Nunca","Antes","Actual"], v, "Tabaco")}
+        ${v.tabaco && v.tabaco !== "Nunca" ? `<div class="cuando" style="margin-top:6px">${numH("cigarros", "Cigarros al día", v)}${numH("tabDesde", "¿A qué edad empezaste?", v)}${v.tabaco === "Antes" ? numH("tabHasta", "¿A qué edad lo dejaste?", v) : ""}</div>` : ""}
+        ${subLbl("Vapeador o cigarro electrónico")}${chipsDe("vape", ["Nunca","Antes","Actual"], v, "Vapeador")}
+      </div>
+
+      <div class="habito">
+        <span class="lbl">Humo de tabaco de otras personas${ac("C-3", true)}</span>
+        <p class="hint">Estar cerca de quien fuma, aunque tú no fumes.</p>
+        <div class="chips" role="group" aria-label="Dónde">${AJENO_DONDE.map(o =>
+          `<button data-multi="ajenoDonde" data-v="${esc(o)}" aria-pressed="${v.ajenoDonde.includes(o)}">${esc(o)}</button>`).join("")}
+          <button data-chip="ajenoNunca" data-v="Sí" aria-pressed="${v.ajenoNunca === "Sí"}">No me expongo</button></div>
+        ${v.ajenoDonde.length ? `<div class="cuando" style="margin-top:6px">${numH("ajenoDias", "Días por semana", v)}</div>` : ""}
+      </div>
+
+      <div class="habito">
+        <span class="lbl">Humo de leña${ac("C-4", true)}</span>
+        <p class="hint">Cocinar o calentar la casa con leña o carbón.</p>
+        ${chipsDe("lena", ["Nunca","Antes","Actual"], v, "Humo de leña")}
+        ${v.lena && v.lena !== "Nunca" ? `<div class="cuando" style="margin-top:6px">${numH("lenaAnios", "¿Cuántos años, aprox.?", v)}</div>` : ""}
+      </div>
+
+      <div class="habito">
+        <span class="lbl">Ejercicio${ac("C-5", true)}</span>
+        ${v.actividades.map((a, i) => `
+          <div class="fila-act">
+            <select id="act-${i}-tipo" data-act="${i}" data-f="tipo" aria-label="Actividad ${i + 1}">
+              <option value="">Elige la actividad</option>${ACTIVIDADES.map(o => `<option ${a.tipo === o ? "selected" : ""}>${o}</option>`).join("")}</select>
+            <input id="act-${i}-dias" data-act="${i}" data-f="dias" inputmode="numeric" placeholder="Días por semana" value="${esc(a.dias || "")}" aria-label="Días por semana">
+            <input id="act-${i}-min" data-act="${i}" data-f="min" inputmode="numeric" placeholder="Minutos por vez" value="${esc(a.min || "")}" aria-label="Minutos por vez">
+            <button class="link danger" data-act-del="${i}" aria-label="Quitar actividad ${i + 1}">Quitar</button>
+          </div>`).join("")}
+        <div class="actions" style="margin:8px 0 0"><button data-act-add>+ Agregar actividad</button>
+          ${v.actividades.length ? `<span class="sub">Total: <strong>${tot}</strong> minutos por semana</span>` : `<span class="sub">Sin actividades = no hago ejercicio</span>`}</div>
+      </div>
+
+      <div class="habito">
+        <span class="lbl">Movimiento en tu día${ac("C-7", true)}</span>
+        <p class="hint">Esto no se suma a tu ejercicio: el médico lo lee aparte.</p>
+        ${subLbl("En tu trabajo o actividad principal, ¿cómo pasas el día?")}
+        ${chipsDe("enTrabajo", ["Casi todo sentado","De pie o caminando","Con esfuerzo físico pesado"], v, "En tu trabajo")}
+        ${subLbl("¿Caminas o vas en bici para ir a algún lado?")}
+        ${chipsDe("desplaza", ["No","Sí"], v, "Desplazamiento activo")}
+        ${v.desplaza === "Sí" ? `<div class="cuando" style="margin-top:6px">${numH("despDias", "Días por semana", v)}</div>` : ""}
+        ${subLbl("Horas sentado al día (trabajo, traslados, pantallas)")}
+        <div class="cuando">${numH("horasSentado", "Horas al día", v)}</div>
+      </div>
+
+      <div class="habito">
+        <span class="lbl">Sueño${ac("C-8", true)}</span>
+        <div class="cuando" style="margin-top:4px">${numH("suenoHoras", "Horas por noche", v)}</div>
+        ${subLbl("¿Te cuesta dormir o te despiertas en la noche?")}
+        ${chipsDe("suenoCuesta", ["Nunca","A veces","Casi siempre"], v, "Dificultad para dormir")}
+      </div>
+
+      <div class="actions"><button class="primary" type="submit">Guardar</button><button type="button" data-volver>Cancelar</button></div>
+    </form>`;
+}
+
+function pintar(){
+  $("#vista").innerHTML = vista.nombre === "perfil" ? pintarPerfil()
+    : vista.nombre === "seccion" ? pintarSeccion()
+    : vista.nombre === "trabajo" ? pintarTrabajo() : pintarForm();
+}
+
+function leerInputs(){
+  document.querySelectorAll("#vista input[data-k], #vista select[data-k]").forEach(i => {
+    const v = i.value.trim();
+    if("cuando" in i.dataset){
+      // La caja vacía no pisa una etapa o «No recuerdo» elegidos con chip
+      const modo = i.dataset.cuando, k = i.dataset.k, actual = vista.borrador[k] || "";
+      if(v) vista.borrador[k] = modo + ":" + v;
+      else if(actual.startsWith(modo + ":")) vista.borrador[k] = "";
+      return;
+    }
+    vista.borrador[i.dataset.k] = v;
+  });
+  document.querySelectorAll("#vista [data-act]").forEach(i => {
+    vista.borrador.actividades[+i.dataset.act][i.dataset.f] = i.value.trim();
+  });
+}
+
+function validar(s, v){
+  const errs = {};
+  for(const c of s.campos){
+    if(c.si && !c.si(v)) { delete v[c.k]; continue; }
+    const val = v[c.k];
+    if(c.req && !val) errs[c.k] = "Escribe o elige cuál fue.";
+    if(c.t === "cuando" && val){
+      const [t, x] = partesCuando(val);
+      if((t === "edad" || t === "anio") && !/^\d+$/.test(x)) errs[c.k] = "Escribe solo el número.";
+      else if(t === "edad" && +x > EDAD) errs[c.k] = `No puede ser mayor que tu edad actual (${EDAD} años).`;
+      else if(t === "anio" && (+x > ANIO || +x < NACIMIENTO)) errs[c.k] = `Escribe un año entre ${NACIMIENTO} (cuando naciste) y ${ANIO}.`;
+    }
+  }
+  const rd = anioAprox(v.desde), rh = anioAprox(v.hasta);
+  if(!errs.hasta && rd && rh && rh[1] < rd[0]) errs.hasta = "No puede ser antes de «desde cuándo».";
+  if(!Object.keys(errs).length && !Object.values(v).some(Boolean)) errs._ = "Llena al menos un dato o cancela.";
+  return errs;
+}
+
+document.addEventListener("click", ev => {
+  const b = ev.target.closest("button"); if(!b) return;
+  const d = b.dataset;
+  if(b.id === "verAc"){
+    const on = document.body.classList.toggle("show-ac"); b.setAttribute("aria-pressed", on);
+    b.textContent = on ? "Ocultar criterios" : "Ver criterios"; return;
+  }
+  if("trabajo" in d) return ir({nombre:"trabajo", borrador:JSON.parse(JSON.stringify(estado.trabajo))});
+  if(d.sec) return ir({nombre:"seccion", sec:d.sec});
+  if("volver" in d) return ir({nombre:"perfil"});
+  const e = estado[vista.sec];
+  if("ninguna" in d){ e.ninguna = true; toast("Listo: sección respondida"); return pintar(); }
+  if("deshacer" in d){ e.ninguna = false; return pintar(); }
+  if(d.grupo){ e.grupo = e.grupo === d.grupo ? null : d.grupo; toast(e.grupo ? `Grupo sanguíneo: ${e.grupo}` : "Grupo sanguíneo borrado"); return pintar(); }
+  if("agregar" in d) return ir({nombre:"form", sec:vista.sec, idx:null, borrador:{}});
+  if(d.editar) return ir({nombre:"form", sec:vista.sec, idx:+d.editar, borrador:{...e.regs[+d.editar]}});
+  if(d.borrar){ vista.borrar = +d.borrar; return pintar(); }
+  if("no" in d){ vista.borrar = null; return pintar(); }
+  if(d.si){ e.regs.splice(+d.si, 1); vista.borrar = null; toast("Registro eliminado"); return pintar(); }
+  if("cancelar" in d) return ir({nombre:"seccion", sec:vista.sec});
+  if(d.multi){
+    ev.preventDefault(); leerInputs();
+    const arr = vista.borrador[d.multi], i = arr.indexOf(d.v);
+    if(i < 0){ arr.push(d.v); vista.borrador.ajenoNunca = ""; vista.borrador.expoNinguna = ""; } else arr.splice(i, 1);
+    return pintar();
+  }
+  if("actAdd" in d){ ev.preventDefault(); leerInputs(); vista.borrador.actividades.push({}); return pintar(); }
+  if(d.actDel){ ev.preventDefault(); leerInputs(); vista.borrador.actividades.splice(+d.actDel, 1); return pintar(); }
+  if(d.modo){
+    ev.preventDefault(); leerInputs();
+    const m = vista.modo || (vista.modo = {});
+    const actual = m[d.modo] || (partesCuando(vista.borrador[d.modo])[0] === "anio" ? "anio" : "edad");
+    m[d.modo] = actual === "edad" ? "anio" : "edad";
+    return pintar();
+  }
+  if(d.chip){
+    ev.preventDefault(); leerInputs();
+    const v = vista.borrador;
+    if(d.v === "__otra"){ vista.otra = vista.otra === d.chip ? null : d.chip; v[d.chip] = ""; }
+    else { v[d.chip] = v[d.chip] === d.v ? "" : d.v; if(vista.otra === d.chip) vista.otra = null; }
+    if(d.chip === "ajenoNunca" && v.ajenoNunca) v.ajenoDonde = [];
+    if(d.chip === "expoNinguna" && v.expoNinguna) v.exposiciones = [];
+    return pintar();
+  }
+});
+
+document.addEventListener("submit", ev => {
+  ev.preventDefault(); leerInputs();
+  if(vista.nombre === "trabajo"){ estado.trabajo = vista.borrador; toast("Trabajo guardado"); return ir({nombre:"perfil"}); }
+  const s = SECCIONES.find(x => x.id === vista.sec), v = vista.borrador;
+  if(s.habitos){
+    v.actividades = v.actividades.filter(a => a.tipo || a.dias || a.min);
+    if(!Object.values(v).some(x => Array.isArray(x) ? x.length : Boolean(x))){ toast("No contestaste nada; no se guardó"); return; }
+    estado.habitos.datos = {...v}; toast("Hábitos guardados"); return ir({nombre:"perfil"});
+  }
+  const errs = validar(s, v);
+  if(Object.keys(errs).length){ vista.errs = errs; pintar(); return; }
+  const e = estado[s.id];
+  const nuevo = Object.fromEntries(Object.entries(v).filter(([, x]) => x));
+  if(vista.idx == null) e.regs.push(nuevo); else e.regs[vista.idx] = nuevo;
+  const quitoNinguna = e.ninguna; e.ninguna = false;
+  toast(quitoNinguna ? "Guardado. La sección ya no dice «ninguna»." : "Guardado");
+  ir({nombre:"seccion", sec:s.id});
+});
+
+let tt;
+function toast(msg){ const t = $("#toast"); t.textContent = msg; t.hidden = false; clearTimeout(tt); tt = setTimeout(() => t.hidden = true, 2400); }
+
+pintar();
+</script>
