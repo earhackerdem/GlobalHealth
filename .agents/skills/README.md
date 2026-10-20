@@ -14,7 +14,7 @@
 | `epe-3-execute` | Execute | implements/produces in increments with demonstrable verification, evidence, validation, journal, PR |
 | `epe-4-review` | Review | adversarial review with independent finders and validators; edits nothing; human gate |
 | `epe-5-apply` | Apply | applies only what was approved; the fixer bounces back, never discards |
-| `epe-6-archive` | Archive | closes the change folder after the merge |
+| `epe-6-archive` | Archive | closes the change folder as the last commit of its PR (fallback: after a merge) |
 | `epe-memory` | cross-cutting | sweeps memory (first what lies, then what is missing) |
 | `session-retro` | cross-cutting | measured retro over the transcript; "nothing to standardize" is a legitimate result |
 | `produce-content` | content flavor | content production core: primary sources, [VERIFIED]/[OPINION], citers, cold reader |

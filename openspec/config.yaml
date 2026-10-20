@@ -54,4 +54,4 @@ operations:
       - "Close with evidence.md, validation.md (non-technical) and a journal entry in memory/journal/; do not push unless asked"
   archive:
     guidance:
-      - "Archive only after the PR is merged or the person you work with confirms; then a CHANGELOG.md entry, refresh docs that asserted the previous state, close inbox rows, clear .epe/active"
+      - "Archive as the last commit of the change's own PR (end of /epe-5-apply, after green and a clean exploratory pass), so one merge carries code, specs and docs; then a CHANGELOG.md entry, refresh docs that asserted the previous state, close inbox rows, point .epe/active at the archived folder. Only a change merged before archiving gets its own archive PR"

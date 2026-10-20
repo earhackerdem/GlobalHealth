@@ -30,7 +30,7 @@ harness rules injected (docs/engines.md).
 | Plan | `/epe-2-plan` | `plan.md` (**one test per criterion**, citers, affected decisions, gate) + `tasks.md` | the human writes **"plan approved"** → `Status: APPROVED` |
 | Execute | `/epe-3-execute` | branch `feat/<slug>`, truly green, `evidence.md`, `validation.md` (non-technical), journal, PR | PR = human gate |
 | Review | `/epe-4-review` → `/epe-5-apply` | findings validated by reproduction, comments on the PR, fixes only for what was approved | a human merges |
-| Archive | `/epe-6-archive` | folder to `_archive/`, CHANGELOG, refreshed docs | — |
+| Archive | `/epe-6-archive` | folder to `_archive/`, CHANGELOG, refreshed docs, as the **last commit of the change's PR** (end of `/epe-5-apply`), so one merge carries it all | the same merge |
 
 **Calibrate, don't ritualize.** A typo, a broken link or a memory entry don't need all three phases in writing.
 The cycle is required when the work touches `code`, a decision, a gate or several chained artifacts. When in doubt,
