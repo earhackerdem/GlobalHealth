@@ -42,12 +42,12 @@ files is `test→impl`; smaller groups are `single`. `make tdd-check` requires o
       `frontend/tests/profile.spec.ts:14,52,280-300` reescrito: crónicas y hábitos siguen sin captura ni enlace y
       con "Sin llenar"; las 4 de eventos ya no se asiertan ahí. Verificación: suite roja contra la app actual;
       commit `test:` solo.
-- [ ] 2.2 Implementer: cliente regenerado (`scripts/generate-client.sh`, ya sin lint), tarjetas con estado y
+- [x] 2.2 Implementer: cliente regenerado (`scripts/generate-client.sh`, ya sin lint), tarjetas con estado y
       enlace en `perfil.tsx`, ruta `routes/_layout/perfil_.$seccion.tsx`, componentes `HistorySection`,
       `HistoryEntryForm`, `WhenField`, `BloodTypePicker` en `components/Profile/`, textos en
       `locales/es-MX/profile.json` (incluye `pending.description` y "Sin llenar"). Verificación: los tests de 2.1
       verdes sin tocarlos + `tsc --noEmit` + lint.
-- [ ] 2.3 Orquestador: `profile-history.spec.ts` al `testMatch` de s26-ultra (`frontend/playwright.config.ts:54`) y
+- [x] 2.3 Orquestador: `profile-history.spec.ts` al `testMatch` de s26-ultra (`frontend/playwright.config.ts:54`) y
       TODA la suite Playwright como CI (ambos proyectos) desde limpio; números a evidence.md § Grupo 2;
       `make tdd-check`.
 

@@ -8,6 +8,9 @@ Date: 2026-10-20 · Branch: `feat/perfil-eventos` · PR: (pendiente, tarea 3.3)
 |---|---|---|---|---|
 | `cd backend && FASTAPI_ENV=development uv run coverage run -m pytest tests/ -q` (grupo 1, re-corrido por el orquestador) | **190 passed, 0 failed** · cobertura total **96 %** | 0 | 0 | ✅ |
 | `cd backend && uv run mypy app` | Success: no issues found in 25 source files | 0 | — | ✅ |
+| Grupo 2: `bunx playwright test tests/profile-history.spec.ts tests/profile.spec.ts --project=chromium` (vs Vite :5173), `tsc --noEmit`, `biome check src/` | **23 passed, 0 failed**; tsc 0 errores; biome "No fixes applied" | 0 | 0 | ✅ |
+| Estabilidad del cambio: `PLAYWRIGHT_BASE_URL=http://localhost:8000 bunx playwright test tests/profile-history.spec.ts tests/profile.spec.ts --repeat-each=5` (chromium + s26-ultra, imagen reconstruida) | **221 passed, 0 failed, 0 flaky** | 0 | 0 | ✅ |
+| Suite Playwright COMPLETA como CI (ambos proyectos, build servido por el backend en :8000), 6 corridas | 4 × **141 passed**; 1 × 140 passed + 1 failed (`reset-password.spec.ts:32`, heredado, sola pasa 49/49 con `--repeat-each=8`); 1 × 139 passed + 2 failed ("toBeVisible"/"element(s) not found", no identificados en esa corrida). Ningún fallo en specs de este cambio | 0 | 0 | 🟡 ver deuda |
 | Tarea 1.0: `TZ=<zona> uv run pytest tests/api/routes/test_profile.py -q` con Asia/Tokyo, UTC y America/Mexico_City | 22 passed en las tres (antes del arreglo: **1 failed** con Asia/Tokyo, el fallo del CI del PR #17) | 0 | 0 | ✅ |
 
 ## Red before green (tasks executed as test→impl)
@@ -15,6 +18,7 @@ Date: 2026-10-20 · Branch: `feat/perfil-eventos` · PR: (pendiente, tarea 3.3)
 | Task | Red run: command → failures | `test:` commit | Green run | `make tdd-check` |
 |---|---|---|---|---|
 | 1.0 (single, solo test) | `TZ=Asia/Tokyo uv run pytest tests/api/routes/test_profile.py -q` → **1 failed, 21 passed** (`'2026-10-20' != '2026-10-21'`, mismo defecto que el CI del PR #17 a las 00:11 UTC) | 79a5cc9 | 22 passed en Tokio/UTC/México | n/a (single) |
+| 2 · frontend | `bunx playwright test tests/profile-history.spec.ts tests/profile.spec.ts --project=chromium` → **17 failed, 6 passed, 0 errores de setup** (testids, URLs y textos inexistentes; el sembrado por API y el setup funcionaron) | 6c7dfca | 23 passed | ✓ red commit 6c7dfca, test paths sin cambios desde entonces |
 | 1 · backend | `uv run pytest tests/api/routes/test_profile_history.py -q` → **22 failed, 0 errors** (404 de rutas inexistentes, `KeyError: blood_type`, 200 donde se espera 422); `test_profile.py` siguió en 22 passed | 90af786 | 44/44 del grupo; suite completa 190 passed | ✓ red commit 90af786, test paths sin cambios desde entonces |
 
 ## Traceability AC → test
@@ -38,7 +42,8 @@ Date: 2026-10-20 · Branch: `feat/perfil-eventos` · PR: (pendiente, tarea 3.3)
 | 22 Ajeno indistinguible | `test_s22_foreign_entry_indistinguishable_from_missing` | ídem | ✅ |
 | 23 Cifrado en reposo | `test_s23_history_none_mark_and_blood_type_encrypted_at_rest` | ídem | ✅ |
 | Humo de consentimiento | `test_consent_history_routes_require_consent` (las 5 rutas) | ídem | ✅ |
-| 1, 2, 2b, 6, 7, 12, 13, 14 | Playwright (grupo 2) | `frontend/tests/profile-history.spec.ts`, `profile.spec.ts` | pendiente |
+| 1, 2, 3, 5, 6, 7, 9, 10, 11, 12, 13, 14, 16, 18, 19, 20 (e2e) | `S01`…`S20` en `profile-history.spec.ts` | `frontend/tests/profile-history.spec.ts` | ✅ chromium + s26-ultra |
+| 2b Secciones listadas sin captura | "Escenario 11 (Secciones listadas sin captura)…" | `frontend/tests/profile.spec.ts` | ✅ chromium + s26-ultra |
 
 ## Visible surface (if applicable)
 
@@ -52,6 +57,11 @@ existe y exige sesión). UI: grupo 2.
 - Suite completa del backend (expediente, recetas, consentimiento, OAuth, migraciones): 190 passed.
 
 ## Declared debt
+
+- **Inestabilidad de la suite completa de Playwright fuera de este cambio:** en 2 de 6 corridas completas cayó
+  algo ajeno a los specs del perfil (una vez `reset-password.spec.ts:32`, que lee Mailpit y sola pasa 49/49; otra
+  vez 2 fallos no identificados). El CI corre con `--fail-on-flaky-tests`: si el PR cae ahí, el diagnóstico
+  empieza por esta línea. Los specs del cambio: 0 fallos en 6 corridas completas + 221/221 en `--repeat-each=5`.
 
 - **Build de la imagen del backend bloqueado por la red del daemon de Docker:** `docker compose build backend` y
   `docker pull ghcr.io/astral-sh/uv:0.9.26` se quedan sin respuesta (`DeadlineExceeded`); Docker Desktop sale
