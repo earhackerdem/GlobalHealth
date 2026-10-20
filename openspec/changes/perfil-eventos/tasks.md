@@ -8,7 +8,7 @@ files is `test→impl`; smaller groups are `single`. `make tdd-check` requires o
 
 ## 0. Base · single
 
-- [ ] 0.1 Con #17, #18 y #19 mergeados: `git rebase origin/main` de `feat/perfil-eventos` (los commits del
+- [x] 0.1 Con #17, #18 y #19 mergeados: `git rebase origin/main` de `feat/perfil-eventos` (los commits del
       discovery ya están en `main` y se descartan solos), `openspec validate perfil-eventos --strict` limpio contra
       la spec base ya archivada, y `make up` (migra con el fix de #19). Verificación: rama sin commits ajenos al
       cambio y validate limpio.

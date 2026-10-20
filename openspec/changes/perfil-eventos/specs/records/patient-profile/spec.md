@@ -17,6 +17,12 @@ Enfermedades crónicas y hábitos SHALL seguir visibles y sin captura hasta sus 
 - **THEN** la tarjeta de enfermedades pasadas dice "2 registros", la de transfusiones "Ninguna", las de cirugías
   y fracturas "Sin llenar", y las de crónicas y hábitos "Sin llenar" sin formulario de captura
 
+#### Scenario: Secciones listadas sin captura
+- **GIVEN** un paciente con un antecedente familiar registrado y nada en el historial
+- **WHEN** abre "Mi perfil médico"
+- **THEN** ve su antecedente contabilizado y las seis secciones del historial listadas con "Sin llenar"; las de
+  crónicas y hábitos no ofrecen formulario, enlace ni botón "Agregar"
+
 #### Scenario: La tarjeta abre la pantalla de su sección
 - **WHEN** el paciente toca la tarjeta "Cirugías y hospitalizaciones"
 - **THEN** llega a la pantalla de esa sección, con su lista de registros y la acción "Agregar"

@@ -9,7 +9,7 @@ sección calcada del prototipo v4.
 
 ## Context
 
-Motivación en proposal.md § Why; requisitos en specs/records/patient-profile/spec.md (1 MODIFIED + 5 ADDED, 23
+Motivación en proposal.md § Why; requisitos en specs/records/patient-profile/spec.md (1 MODIFIED + 5 ADDED, 24
 escenarios); diagnóstico y decisiones del gate en exploration.md (§2 matriz, §8 respuestas de Saúl Pérez).
 Infraestructura existente que se reutiliza, verificada el 2026-10-20:
 - Perfil 1:1 cifrado `PatientProfile` (`backend/app/models.py:411`), su PUT parcial "ausente = no tocar, null
@@ -28,7 +28,7 @@ Infraestructura existente que se reutiliza, verificada el 2026-10-20:
 
 ## Goals / Non-Goals
 
-**Goals:** Story A de US-18 (FR-028): A-1…A-9 de proposal.md, verificados por los 23 escenarios.
+**Goals:** Story A de US-18 (FR-028): A-1…A-9 de proposal.md, verificados por los 24 escenarios.
 
 **Non-Goals:** crónicas (Story B) y hábitos + trabajo (Story C), que siguen sin captura; compartir el historial
 con el médico (E3/E4) y cómo se le muestra "ninguna"; avisos de IA (E5); fechas exactas en los registros;
@@ -146,6 +146,7 @@ resto.
 | # | Spec · scenario | Test | Dónde |
 |---|---|---|---|
 | 1 | Pantalla · Estado de cada sección en su tarjeta (A-1) | 2 pasadas + "ninguna" en transfusiones → las 6 tarjetas con su texto; crónicas/hábitos sin enlace ni inputs | Playwright |
+| 2b | Pantalla · Secciones listadas sin captura (scenario de la spec base, redefinido) | `profile.spec.ts:280-300` reescrito: 6 tarjetas "Sin llenar"; crónicas y hábitos sin inputs, enlace ni "Agregar" | Playwright |
 | 2 | Pantalla · La tarjeta abre la pantalla de su sección | clic en cirugías → `/perfil/cirugias` con "Agregar" | Playwright |
 | 3 | Registros · Enfermedad pasada del catálogo (A-4) | POST past varicella/primary/no → GET la trae; e2e muestra "en la primaria" | pytest + Playwright |
 | 4 | Registros · Enfermedad pasada fuera del catálogo (A-4) | POST `other` + "Chikungunya" → GET; sin `other_text` → 422 | pytest |
