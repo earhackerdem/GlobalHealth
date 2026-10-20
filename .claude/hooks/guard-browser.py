@@ -4,7 +4,7 @@ their open sessions (mail, bank, work). `.claude/settings.json` allows the brows
 exploratory pass of /epe-3-execute and /epe-5-apply can run, and this hook is the fence that makes that safe:
 navigation only goes to local or development hosts.
 
-Allowed: localhost, 127.0.0.1, [::1], *.localhost, *.test, plus `harness.json → browser_hosts` (exact host, or
+Allowed: file:// (local files, e.g. the prototypes), localhost, 127.0.0.1, [::1], *.localhost, *.test, plus `harness.json → browser_hosts` (exact host, or
 ".example.com" for a domain and its subdomains, e.g. a staging host). "back"/"forward" pass. In browser_batch every
 navigate item is checked. It blocks in BOTH profiles: an allowed tool plus a warning would be no gate at all.
 Known limit: it sees URLs typed into navigate, not a link clicked on an allowed page nor `location` set from
@@ -31,6 +31,8 @@ def host_of(url):
 
 def allowed(url, extra):
     if url.strip().lower() in ("back", "forward"):
+        return True
+    if url.strip().lower().startswith("file:"):  # a local file, e.g. a prototype in product/prototipos/
         return True
     host = host_of(url)
     if not host:

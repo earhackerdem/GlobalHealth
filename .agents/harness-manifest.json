@@ -209,7 +209,7 @@
       "src": ".claude/agents/tester.md"
     },
     ".claude/hooks/_config.py": {
-      "sha256": "5bbd2d64dff33c06fd952b3909a4a1ffcceb3c0438898cb82f2c548bb615de4a",
+      "sha256": "ca1900d67add298bf38439c9f33e289c39ea7063654763dbff8992d354eb0e1c",
       "src": ".claude/hooks/_config.py"
     },
     ".claude/hooks/_harness.py": {
@@ -225,11 +225,11 @@
       "src": ".claude/hooks/check-journal.py"
     },
     ".claude/hooks/gate-plan.py": {
-      "sha256": "85e91bf1b7c06bd0c2db733dd32536c61a805378539fc33819d700f537665dc9",
+      "sha256": "ccc9acf956a1e6215d165a77465b0ba4ddc64548e6e6bbd642f3cf47a40766b5",
       "src": ".claude/hooks/gate-plan.py"
     },
     ".claude/hooks/guard-browser.py": {
-      "sha256": "7aa95ea1580db5f83a0a53db1797f4359f780b3a2a55a4059ced5487daf80439",
+      "sha256": "4088a849eaf515604dbb3ea83641bbce221a78a8d8c800df50fbbc7f7a849814",
       "src": ".claude/hooks/guard-browser.py"
     },
     ".claude/hooks/guard-commands.py": {
@@ -313,7 +313,7 @@
       "src": "AGENTS.md"
     },
     "CLAUDE.md": {
-      "sha256": "9b0a98e405551cadc6ae0f0d689867b79f1316af7421f61ae5ddf2df8e30f984",
+      "sha256": "93d57b5120f8515d9d17e1f05740c2037b8ddafb8b0c51ddd8f55dea87327123",
       "src": "CLAUDE.md"
     },
     "Makefile": {
@@ -425,7 +425,7 @@
       "src": "scripts/worktrees.py"
     }
   },
-  "harness_version": "0.3.2",
+  "harness_version": "0.3.3",
   "installed": "2026-10-11",
   "mode": "new",
   "updated": "2026-10-20"
