@@ -37,7 +37,7 @@ files is `test→impl`; smaller groups are `single`. `make tdd-check` requires o
 
 ## 2. Frontend: tarjetas con estado, pantalla por sección y "cuándo" · test→impl
 
-- [ ] 2.1 Tester: `frontend/tests/profile-history.spec.ts` desde los escenarios 1, 2, 3, 5, 6, 7, 9, 10, 11, 12, 13,
+- [x] 2.1 Tester: `frontend/tests/profile-history.spec.ts` desde los escenarios 1, 2, 3, 5, 6, 7, 9, 10, 11, 12, 13,
       14, 16, 18, 19 y 20 (parte Playwright), con los textos es-MX y los `data-testid` del contract; y el citer
       `frontend/tests/profile.spec.ts:14,52,280-300` reescrito: crónicas y hábitos siguen sin captura ni enlace y
       con "Sin llenar"; las 4 de eventos ya no se asiertan ahí. Verificación: suite roja contra la app actual;

@@ -121,6 +121,11 @@ resto.
   O- y "No lo sé".
 - `WhenField`: campo "Edad que tenías" (alterna con "Año" vía el botón "o el año, si lo sabes" / "o la edad que
   tenías"), chips "Antes de la primaria", "En la primaria", "En la secundaria", "En la prepa", "No recuerdo".
+- Etiquetas de los campos del formulario (completado en el rojo del grupo 2): las fija el bloque "Contrato de UI"
+  al inicio de `frontend/tests/profile-history.spec.ts`, tomadas literalmente del texto de la spec ("Nombre",
+  "Motivo", "Hospital o lugar", "Médico", "Material implantado", "Qué hueso o lesión", "Lado", "Qué se
+  transfundió", las preguntas sí/no…); los campos de opción son grupos accesibles (`role="group"`/radiogroup)
+  con su nombre.
 - Resumen de "cuándo": "a los 7 años (≈1997)", "en la primaria (≈1996–2001)", "en 2015", "no recuerda cuándo";
   sin fecha de nacimiento, sin el paréntesis.
 
