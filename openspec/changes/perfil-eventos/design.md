@@ -1,7 +1,7 @@
 # Design
 
-Status: DRAFT   <!-- the harness gate: "plan approved" from the person you work with → `Status: APPROVED` -->
-Approved by: <name (role)> on YYYY-MM-DD
+Status: APPROVED
+Approved by: Saúl Pérez (author) on 2026-10-20 ("plan approved", tras navegar el prototipo v4 y mergear #17, #18 y #19)
 
 **En una frase:** las cuatro secciones de eventos del perfil médico se vuelven llenables (registros cifrados en
 una tabla genérica, estado "ninguna", "cuándo" por edad/etapa/año y grupo sanguíneo), con una pantalla por
