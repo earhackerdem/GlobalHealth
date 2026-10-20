@@ -43,3 +43,12 @@ puntos: son justo los huecos documentados de la captura estructurada en los expe
 - hábitos como **Story C** propia.
 
 Objeción del harness, aceptada: la app no calcula puntajes ni riesgos (C-6, NFR-008).
+
+**Ronda 7 (prototipo v2 → v3):** Saúl Pérez sumó la ocupación ("también te preguntan por tu profesión") y el
+movimiento que implican algunos oficios. La investigación (research.md § ocupación) llevó a tres decisiones:
+- la ocupación va en el Perfil básico, con situación laboral, trabajo de más años, exposiciones y turno;
+- el movimiento del día se captura con la forma del GPAQ (trabajo, desplazamiento, horas sentado), separado del
+  ejercicio y sin sumarse, por la paradoja de la actividad física;
+- el sueño entra en versión mínima (antes estaba fuera).
+
+Los datos de salud personales que Saúl mencionó como ejemplo no se registran en el repo.

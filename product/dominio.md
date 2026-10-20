@@ -214,7 +214,7 @@ nada del compartir (E3/E4).
 | Their word | Meaning here | Never call it |
 |---|---|---|
 | antecedentes familiares | condiciones de salud en la familia directa (AHF) | "heredo-familiares" en la UI (tecnicismo), historia clínica |
-| perfil | los datos básicos del paciente (nacimiento, sexo, peso, estatura, alergias) | ficha de identificación, demographics |
+| perfil | los datos básicos del paciente (nacimiento, sexo, peso, estatura, alergias; y trabajo desde FR-028 Story C) | ficha de identificación, demographics |
 | onboarding | la única vez que la app pregunta el perfil al entrar | wizard, setup |
 
 ## Procesos (who / when / with whom → future FRs)
@@ -300,19 +300,20 @@ las guías de semiología detallan [VERIFIED 2026-10-19, memory/research.md § a
 
 Date: 2026-10-19 · Interviewed: Saúl Pérez (author, con sombrero de stakeholder; pidió "procede con 028" tras
 archivar onboarding-perfil) · Método: borrador 0 desde memory/research.md § anamnesis, corregido en 5 rondas (la
-ronda 5 no añadió nada) + ronda 6 al clickear el prototipo v1: hábitos crece (research.md § hábitos) · Status: **draft — gate pendiente: Saúl Pérez navega el prototipo**
+ronda 5 no añadió nada) + ronda 6 al clickear el prototipo v1: hábitos crece (research.md § hábitos) + ronda 7: ocupación,
+movimiento del día y sueño (research.md § ocupación) · Status: **draft — gate pendiente: Saúl Pérez navega el prototipo**
 Prototipo: **`product/prototipos/perfil-secciones.html`** (https://claude.ai/artifact/TRBywm3SEhDA5ey2duMV8n;
-toggle "Ver criterios" con AC A-n / B-n / C-n; v2 con hábitos ampliados).
+toggle "Ver criterios" con AC A-n / B-n / C-n; v2 con hábitos ampliados; v3 con trabajo, movimiento del día y sueño).
 Alcance: llenar las 6 secciones que el PR #16 dejó visibles y vacías. NO entra: vacunación (catálogo propio,
-futuro), otras sustancias, alimentación/sueño, cuestionarios por especialidad (E4/FR-022), enlaces entre
+futuro), otras sustancias, alimentación, cuestionarios por especialidad (E4/FR-022), enlaces entre
 registros de secciones distintas, enlace tratamiento↔medicinas de receta.
 
 ## Partición en stories (Saúl Pérez, ronda 3; rehecha en la ronda 6)
 - **Story A — eventos:** enfermedades pasadas e infecciosas, cirugías y hospitalizaciones, fracturas y lesiones,
   transfusiones + grupo sanguíneo, y el mecanismo "ninguna" común a todas (4 de las 6 tarjetas cobran vida).
 - **Story B — crónicas:** con enlace opcional al diagnóstico del expediente.
-- **Story C — hábitos:** cuestionario con lista anidada (ejercicio). Se separó de B en la ronda 6 al crecer:
-  no comparte forma con crónicas.
+- **Story C — hábitos + trabajo:** cuestionario con lista anidada (ejercicio), movimiento del día y sueño, más
+  el bloque "Trabajo" del Perfil básico. Se separó de B en la ronda 6 al crecer: no comparte forma con crónicas.
 
 ## Catálogos (en las palabras de Saúl / del borrador que aceptó)
 
@@ -389,17 +390,33 @@ estado, fechas y humo ajeno son lo que los campos estructurados de los expedient
 | humo de leña | nunca / antes / actual + años aprox.; riesgo [VERIFIED] (research.md § humo de leña), forma de captura [ASSUMPTION] |
 | ejercicio | **lista de actividades** (caminar, correr, bicicleta, nadar, pesas o gimnasio, fútbol u otro deporte, yoga o pilates, baile, otra), cada una con días por semana + minutos por vez (forma del Exercise Vital Sign, por actividad); se muestra el total semanal **sin veredicto** contra la OMS. El tipo permite distinguir aeróbico de fuerza (OMS 2020) sin preguntar intensidad |
 
+| movimiento del día | ronda 7, forma del GPAQ (OMS): en el trabajo o actividad principal (casi todo sentado · de pie o caminando · esfuerzo físico pesado), desplazamiento activo (caminar o bici para ir a algún lado: sí/no + días por semana) y horas sentado al día. **No se suma al total de ejercicio** (paradoja de la actividad física, research.md § ocupación) |
+| sueño | ronda 7 (antes fuera): horas por noche + ¿te cuesta dormir o te despiertas? (nunca · a veces · casi siempre). Sin diagnóstico ni puntaje |
+
+### Trabajo — se suma al Perfil básico (Story C)
+Ronda 7 (Saúl Pérez: "también te preguntan por tu profesión… paso mucho tiempo sentado… hay oficios que implican
+movimiento diario"). Las plantillas mexicanas de historia clínica ponen la ocupación en la ficha de
+identificación; NIOSH (Occupational Data for Health) define el mínimo: situación laboral, trabajo actual y el de
+más años (research.md § ocupación). Decisión: va en el **Perfil básico**, no en Hábitos.
+| Attribute | Notes |
+|---|---|
+| situación laboral | trabajo · busco trabajo · jubilado o pensionado · hogar · estudio |
+| a qué te dedicas | texto libre (NIOSH tiene catálogo con traducción al español; codificar queda fuera) |
+| el trabajo de más años | texto libre, si es otro (explica exposiciones antiguas) |
+| exposiciones | polvo · químicos o solventes · ruido fuerte · cargar peso (varias) o "nada de esto" |
+| turno | de día · de noche · rotativo — [ASSUMPTION] su relevancia (sueño); no está en el estándar NIOSH consultado |
+
 - **Regla C-6 (objeción del harness, aceptada por Saúl Pérez):** la app captura con la forma de los
   instrumentos, pero NO calcula puntajes (AUDIT-C), riesgos ni "cumples / no cumples": los cortes varían por fuente
   y es juicio clínico; cualquier interpretación futura es salida de la IA con fuente y leyenda (NFR-008).
 
 - **Relations:** paciente → registro de sección (1→0..N, con tipo de sección) · paciente → estado por sección
-  (ninguna sí/no) · paciente → grupo sanguíneo (1→0..1) · paciente → hábitos (1→0..1) → actividad física (1→0..N) · crónica → diagnóstico
+  (ninguna sí/no) · paciente → grupo sanguíneo (1→0..1) · paciente → hábitos (1→0..1) → actividad física (1→0..N) · perfil → trabajo (1→0..1) · crónica → diagnóstico
   del expediente (N→0..1, opcional; el diagnóstico NO depende de la crónica).
 - **States / lifecycle:** sección `sin llenar → ninguna → con registros` (ver arriba); crónica `activa → ya no la
   tengo` (reversible: el paciente corrige). Los registros de eventos no tienen estado: son pasado.
 - **What they explicitly do NOT want (esta rebanada):** vacunación, otras sustancias, alimentación/sueño
-  (ronda 1: "nada más por ahora"; en la ronda 6 tampoco se pidió sedentarismo, que la OMS 2020 sí incluye); enlaces entre registros de secciones distintas (ronda 3); tratamiento
+  (ronda 1: "nada más por ahora"; el sueño y el sedentarismo entraron en la ronda 7); enlaces entre registros de secciones distintas (ronda 3); tratamiento
   enlazado a recetas (ronda 2).
 
 ## Glosario (se suma al de la rebanada onboarding)

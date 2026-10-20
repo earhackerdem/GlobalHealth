@@ -129,6 +129,9 @@ dd{margin:0; min-width:0; overflow-wrap:anywhere}
     <li><strong>C-4</strong> Humo de leña: nunca/antes/actual y años aproximados.</li>
     <li><strong>C-5</strong> Ejercicio como lista de actividades, cada una con días por semana y minutos por vez; se muestra el total semanal.</li>
     <li><strong>C-6</strong> La app no calcula puntajes ni riesgos con estas respuestas: interpretarlas es del médico (NFR-008).</li>
+    <li><strong>C-7</strong> Movimiento del día, aparte del ejercicio y sin sumarse a su total: cómo pasas el día en tu trabajo (casi todo sentado / de pie o caminando / esfuerzo físico pesado), si caminas o vas en bici para ir a algún lado (días por semana) y horas sentado al día.</li>
+    <li><strong>C-8</strong> Sueño: horas por noche y si te cuesta dormir o te despiertas (nunca / a veces / casi siempre).</li>
+    <li><strong>C-9</strong> El Perfil básico suma «Trabajo»: situación laboral, a qué te dedicas, el trabajo de más años, exposiciones (polvo, químicos o solventes, ruido fuerte, cargar peso) y turno (de día, de noche, rotativo).</li>
   </ol>
   <p class="sub">Origin: product/dominio.md (rebanada perfil médico por secciones, 2026-10-19) · FR-028 / US-18.</p>
 </div>
@@ -212,8 +215,40 @@ const estado = {
     hospital:"Hospital General de Zona", anestesia:"No"}]},
   fracturas:{ninguna:false, regs:[]},
   transfusiones:{ninguna:true, regs:[], grupo:"O+"},
-  habitos:{datos:null}
+  habitos:{datos:null},
+  trabajo:{situacion:"Trabajo", ocupacion:"Diseñador gráfico", masAnios:"", exposiciones:[], expoNinguna:"Sí", turno:"De día"}
 };
+
+function resumenTrabajo(){
+  const t = estado.trabajo;
+  if(!t.situacion && !t.ocupacion) return `<span class="opt">Sin llenar</span>`;
+  const partes = [t.ocupacion || t.situacion, t.turno && t.turno.toLowerCase(),
+    t.masAnios && "antes: " + t.masAnios, t.exposiciones.length && "expuesto a " + t.exposiciones.join(", ").toLowerCase()];
+  return partes.filter(Boolean).map(esc).join(" · ");
+}
+
+const SITUACION = ["Trabajo","Busco trabajo","Jubilado o pensionado","Hogar","Estudio"];
+const EXPOSICIONES = ["Polvo","Químicos o solventes","Ruido fuerte","Cargar peso"];
+function pintarTrabajo(){
+  const v = vista.borrador;
+  return `
+    <p class="migas"><button class="link" data-volver>‹ Mi perfil médico</button></p>
+    <h2>Tu trabajo <span class="story">Story C</span></h2>
+    <p class="sub">El médico lo pregunta porque lo que haces todo el día también es salud.${ac("C-9", true)}</p>
+    <form class="card" id="form-trabajo" style="margin-top:10px" novalidate>
+      <span class="lbl">Hoy…</span>${chipsDe("situacion", SITUACION, v, "Situación laboral")}
+      <div class="campo"><label for="t-ocupacion">¿A qué te dedicas? <span class="opt">(opcional)</span></label>
+        <input id="t-ocupacion" data-k="ocupacion" value="${esc(v.ocupacion || "")}" placeholder="Albañil, maestra, chofer, programador…"></div>
+      <div class="campo"><label for="t-masAnios">El trabajo que más años has tenido, si es otro <span class="opt">(opcional)</span></label>
+        <input id="t-masAnios" data-k="masAnios" value="${esc(v.masAnios || "")}" placeholder="Minero, costurera…"></div>
+      <span class="lbl">En tu trabajo te expones a…</span>
+      <div class="chips" role="group" aria-label="Exposiciones">${EXPOSICIONES.map(o =>
+        `<button data-multi="exposiciones" data-v="${esc(o)}" aria-pressed="${v.exposiciones.includes(o)}">${esc(o)}</button>`).join("")}
+        <button data-chip="expoNinguna" data-v="Sí" aria-pressed="${v.expoNinguna === "Sí"}">Nada de esto</button></div>
+      <span class="lbl" style="margin-top:12px">Turno</span>${chipsDe("turno", ["De día","De noche","Rotativo"], v, "Turno")}
+      <div class="actions"><button class="primary" type="submit">Guardar</button><button type="button" data-volver>Cancelar</button></div>
+    </form>`;
+}
 
 let vista = {nombre:"perfil"};
 function ir(v){ vista = v; pintar(); window.scrollTo({top:0}); }
@@ -231,8 +266,11 @@ function pintarPerfil(){
   <div class="card">
     <h2>Perfil básico</h2>
     <dl><dt>Edad</dt><dd>38 años</dd><dt>Peso</dt><dd>72 kg <span class="opt">(12/10/2026)</span></dd>
-    <dt>Estatura</dt><dd>168 cm</dd><dt>Alergias</dt><dd>Penicilina</dd></dl>
-    <p class="hint">Capturado en el onboarding (PR #16). Aquí no cambia.</p>
+    <dt>Estatura</dt><dd>168 cm</dd><dt>Alergias</dt><dd>Penicilina</dd>
+    <dt>Trabajo${ac("C-9", true)}</dt><dd>${resumenTrabajo()}</dd></dl>
+    <div class="actions" style="margin:8px 0 0"><button class="link" data-trabajo>Editar trabajo</button>
+      <span class="story">Story C</span></div>
+    <p class="hint">Edad, peso, estatura y alergias vienen del onboarding (PR #16).</p>
   </div>
   <h2 style="margin-top:22px">Tu historial</h2>
   <p class="sub">Toca una sección para llenarla o decir que no aplica.${ac("A-1")}</p>
@@ -431,13 +469,33 @@ function pintarHabitos(s){
           ${v.actividades.length ? `<span class="sub">Total: <strong>${tot}</strong> minutos por semana</span>` : `<span class="sub">Sin actividades = no hago ejercicio</span>`}</div>
       </div>
 
+      <div class="habito">
+        <span class="lbl">Movimiento en tu día${ac("C-7", true)}</span>
+        <p class="hint">Esto no se suma a tu ejercicio: el médico lo lee aparte.</p>
+        ${subLbl("En tu trabajo o actividad principal, ¿cómo pasas el día?")}
+        ${chipsDe("enTrabajo", ["Casi todo sentado","De pie o caminando","Con esfuerzo físico pesado"], v, "En tu trabajo")}
+        ${subLbl("¿Caminas o vas en bici para ir a algún lado?")}
+        ${chipsDe("desplaza", ["No","Sí"], v, "Desplazamiento activo")}
+        ${v.desplaza === "Sí" ? `<div class="cuando" style="margin-top:6px">${numH("despDias", "Días por semana", v)}</div>` : ""}
+        ${subLbl("Horas sentado al día (trabajo, traslados, pantallas)")}
+        <div class="cuando">${numH("horasSentado", "Horas al día", v)}</div>
+      </div>
+
+      <div class="habito">
+        <span class="lbl">Sueño${ac("C-8", true)}</span>
+        <div class="cuando" style="margin-top:4px">${numH("suenoHoras", "Horas por noche", v)}</div>
+        ${subLbl("¿Te cuesta dormir o te despiertas en la noche?")}
+        ${chipsDe("suenoCuesta", ["Nunca","A veces","Casi siempre"], v, "Dificultad para dormir")}
+      </div>
+
       <div class="actions"><button class="primary" type="submit">Guardar</button><button type="button" data-volver>Cancelar</button></div>
     </form>`;
 }
 
 function pintar(){
   $("#vista").innerHTML = vista.nombre === "perfil" ? pintarPerfil()
-    : vista.nombre === "seccion" ? pintarSeccion() : pintarForm();
+    : vista.nombre === "seccion" ? pintarSeccion()
+    : vista.nombre === "trabajo" ? pintarTrabajo() : pintarForm();
 }
 
 function leerInputs(){
@@ -479,6 +537,7 @@ document.addEventListener("click", ev => {
     const on = document.body.classList.toggle("show-ac"); b.setAttribute("aria-pressed", on);
     b.textContent = on ? "Ocultar criterios" : "Ver criterios"; return;
   }
+  if("trabajo" in d) return ir({nombre:"trabajo", borrador:JSON.parse(JSON.stringify(estado.trabajo))});
   if(d.sec) return ir({nombre:"seccion", sec:d.sec});
   if("volver" in d) return ir({nombre:"perfil"});
   const e = estado[vista.sec];
@@ -494,7 +553,7 @@ document.addEventListener("click", ev => {
   if(d.multi){
     ev.preventDefault(); leerInputs();
     const arr = vista.borrador[d.multi], i = arr.indexOf(d.v);
-    if(i < 0){ arr.push(d.v); vista.borrador.ajenoNunca = ""; } else arr.splice(i, 1);
+    if(i < 0){ arr.push(d.v); vista.borrador.ajenoNunca = ""; vista.borrador.expoNinguna = ""; } else arr.splice(i, 1);
     return pintar();
   }
   if("actAdd" in d){ ev.preventDefault(); leerInputs(); vista.borrador.actividades.push({}); return pintar(); }
@@ -505,12 +564,14 @@ document.addEventListener("click", ev => {
     if(d.v === "__otra"){ vista.otra = vista.otra === d.chip ? null : d.chip; v[d.chip] = ""; }
     else { v[d.chip] = v[d.chip] === d.v ? "" : d.v; if(vista.otra === d.chip) vista.otra = null; }
     if(d.chip === "ajenoNunca" && v.ajenoNunca) v.ajenoDonde = [];
+    if(d.chip === "expoNinguna" && v.expoNinguna) v.exposiciones = [];
     return pintar();
   }
 });
 
 document.addEventListener("submit", ev => {
   ev.preventDefault(); leerInputs();
+  if(vista.nombre === "trabajo"){ estado.trabajo = vista.borrador; toast("Trabajo guardado"); return ir({nombre:"perfil"}); }
   const s = SECCIONES.find(x => x.id === vista.sec), v = vista.borrador;
   if(s.habitos){
     v.actividades = v.actividades.filter(a => a.tipo || a.dias || a.min);
