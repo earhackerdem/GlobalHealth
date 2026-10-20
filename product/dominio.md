@@ -304,7 +304,7 @@ ronda 5 no añadió nada) + ronda 6 al clickear el prototipo v1: hábitos crece 
 movimiento del día y sueño (research.md § ocupación) · Status: **agreed para la Story A — gate cerrado el 2026-10-20: Saúl Pérez navegó el prototipo en 4
 versiones (rondas 6–8 salieron de clickearlo) y respondió "procede con la story a"**. La pregunta 2 (borrar un
 diagnóstico enlazado) solo toca la Story B y queda abierta hasta entonces
-Prototipo: **`product/prototipos/perfil-secciones.html`** (https://claude.ai/artifact/TRBywm3SEhDA5ey2duMV8n;
+Prototipo: **`product/prototipos/perfil-secciones.html`** (se abre localmente en el navegador, sin copia hospedada;
 toggle "Ver criterios" con AC A-n / B-n / C-n; v2 con hábitos ampliados; v3 con trabajo, movimiento del día y sueño; v4 con "cuándo" por edad o etapa).
 Alcance: llenar las 6 secciones que el PR #16 dejó visibles y vacías. NO entra: vacunación (catálogo propio,
 futuro), otras sustancias, alimentación, cuestionarios por especialidad (E4/FR-022), enlaces entre
