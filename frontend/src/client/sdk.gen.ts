@@ -495,7 +495,9 @@ export class HealthRecordsService {
     /**
      * Delete Health Record
      *
-     * Delete an owned record (cancelación ARCO).
+     * Delete an owned record (cancelación ARCO). A diagnosis is first unlinked
+     * from the chronic entries it backs, in the SAME transaction (perfil-cronicas
+     * Decision 3).
      */
     public static recordsDeleteHealthRecord<ThrowOnError extends boolean = true>(options: Options<healthRecordsDeleteHealthRecordData, ThrowOnError>) {
         return (options.client ?? client).delete<healthRecordsDeleteHealthRecordResponses, healthRecordsDeleteHealthRecordErrors, ThrowOnError>({

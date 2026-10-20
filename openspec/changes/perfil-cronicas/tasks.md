@@ -21,19 +21,19 @@ are `single`. `make tdd-check` requires one `test:` commit per `test→impl` gro
 
   Verificación: Saúl Pérez lo navega antes de "plan approved". Hecho el 2026-10-20 y probado en Chrome (marca
   sensible por defecto y manual, desde/hasta, aviso de B-5).
-- [ ] 0.2 **Base.** Con #24 y #25 mergeados: `git rebase origin/main`, `openspec validate perfil-cronicas --strict`
+- [x] 0.2 **Base.** Con #24 y #25 mergeados: `git rebase origin/main`, `openspec validate perfil-cronicas --strict`
   limpio y `make up`. Verificación: la rama solo tiene commits del cambio.
 
 ## 1. Backend: sección chronic, validación, enlace y desenlace · test→impl
 
-- [ ] 1.1 **Tester.** Escribe `backend/tests/api/routes/test_profile_history.py` (crónicas) y
+- [x] 1.1 **Tester.** Escribe `backend/tests/api/routes/test_profile_history.py` (crónicas) y
   `backend/tests/api/routes/test_health_records.py` (B-5) a partir de dos fuentes: la parte pytest del test plan
   (filas 1, 2, 3, 5, 6, 8, 9, 14, 15, 16 y 17) y el Interface contract.
   - Reescribe el citador `test_s19…` (`:559-565`) con `habits`.
 
   Verificación: la suite queda roja porque falta el comportamiento (422 por sección desconocida, `sensitive`
   ausente, enlace no limpiado), no porque un test esté roto. Commit `test:` solo.
-- [ ] 1.2 **Implementer.**
+- [x] 1.2 **Implementer.**
   - `chronic` en `HistorySection` y en `HISTORY_SECTIONS` (primero), con su contenido, su requerido y el valor por
     defecto de `sensitive`;
   - la validación de `since`/`until` (rango de edad) y de `diagnosis_id` en `backend/app/models.py` y
@@ -41,7 +41,7 @@ are `single`. `make tdd-check` requires one `test:` commit per `test→impl` gro
   - `crud.unlink_diagnosis`, llamado desde el DELETE de `backend/app/api/routes/health_records.py`.
 
   Verificación: los tests de 1.1 verdes sin tocarlos, y mypy limpio.
-- [ ] 1.3 **Orquestador.**
+- [x] 1.3 **Orquestador.**
   - Corre la suite backend completa desde limpio: cero fallos, errores y skips; cobertura ≥ 90 %.
   - Regenera el cliente (`scripts/generate-client.sh`).
   - Escribe los números en evidence.md § Grupo 1 y corre `make tdd-check`.
