@@ -1,5 +1,12 @@
 # CHANGELOG
 
+- 2026-10-20 · perfil-eventos · PR #20 · Historial por secciones (FR-028, Story A): enfermedades pasadas e
+  infecciosas, cirugías y hospitalizaciones, fracturas y lesiones, y transfusiones con grupo sanguíneo ya se pueden
+  llenar. "Cuándo" se contesta como lo pregunta el médico: la edad, la etapa escolar o el año, y la app calcula el año
+  aproximado. Cada sección se puede marcar "No he tenido ninguna", y cada tarjeta de "Mi perfil médico" dice cómo va.
+  Todo cifrado en reposo y aislado por cuenta; accesible con teclado y lector de pantalla, también en celular.
+  Crónicas (Story B) y hábitos (Story C) siguen pendientes.
+
 - 2026-10-19 · onboarding-perfil · PR #16 · Onboarding de perfil médico post-consentimiento: fecha de nacimiento, sexo, peso/estatura con historial, y antecedentes familiares (diabetes, cáncer, etc.) con parentesco distinguido (paterno/materno) y nota por condición. Wizard de 3 pasos con opción de omitir (lleva directo al expediente, no se repite). Perfil completo editable tras el onboarding con 6 secciones adicionales visibles sin captura (crónicas, hepatitis/pasadas, cirugías, fracturas, transfusiones, hábitos). Todo cifrado en reposo, aislado por cuenta, con validaciones es-MX (fechas futuras rechazadas, peso/estatura implausibles con mensaje). Tests: backend 94% cobertura (10 tests de API + 1 de migración), frontend suite completa en escritorio y móvil (384×832 viewport real). Hallazgo lateral: sr-only del SidebarTrigger usa estado de escritorio (anotado en inbox para quirk posterior).
 
 - 2026-10-19 · receta-mexicana · PR #13 · La receta es a la mexicana: varias medicinas por receta (dosis,
