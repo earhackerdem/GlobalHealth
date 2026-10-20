@@ -1,6 +1,6 @@
 # Evidence — perfil-cronicas
 
-Date: 2026-10-20 · Branch: `feat/perfil-cronicas` · PR: (pendiente)
+Date: 2026-10-20 · Branch: `feat/perfil-cronicas` · PR: https://github.com/earhackerdem/GlobalHealth/pull/26
 
 ## Automated tests
 
