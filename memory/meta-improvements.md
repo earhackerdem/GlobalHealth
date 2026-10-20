@@ -41,4 +41,3 @@ Includes rejections: a retro that repeats the previous one's menu manufactures f
   (`backend/app/api/routes/profile.py`, `deps.py`). Es un falso positivo que se ignora en cada edición. Propuesta
   upstream: que `lint.py` use el intérprete del proyecto cuando exista (`uv run python`, `.venv/bin/python`) o
   `harness.json → python`. Visto en perfil-eventos; queda en el inbox del template.
-
