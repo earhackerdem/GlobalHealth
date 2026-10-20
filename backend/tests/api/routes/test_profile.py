@@ -29,8 +29,9 @@ errors carry a STRING detail in es-MX; lists use {"data": [...], "count": N}):
 """
 
 import uuid
-from datetime import date
+from datetime import datetime
 from typing import Any
+from zoneinfo import ZoneInfo
 
 import pytest
 from fastapi.testclient import TestClient
@@ -248,7 +249,9 @@ def test_ac4_new_measurement_keeps_previous_and_updates_latest(
     """POST 72 y 74 kg: quedan las dos (ciphertext en BD), orden por
     measured_on DESC con fechas DISTINTAS y latest_weight.value 74."""
     headers, user_id = consented_user(client, db)
-    today = date.today().isoformat()
+    # Same zone the server stamps measured_on with (routes/profile.py): the
+    # runner's local date (UTC in CI) is a day ahead from 18:00 México time.
+    today = datetime.now(ZoneInfo("America/Mexico_City")).date().isoformat()
 
     r_first = post_measurement(client, headers, "weight", 72)
     assert r_first.status_code == 201, r_first.text

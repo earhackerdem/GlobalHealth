@@ -11,7 +11,10 @@ test.use({ storageState: { cookies: [], origins: [] } })
 //   onboarding-wizard          contenedor del wizard de onboarding (home)
 //   profile-basic-data         sección "Datos básicos" en /perfil
 //   profile-family-history     sección de antecedentes familiares en /perfil
-//   profile-pending-sections   contenedor de las 6 secciones aún sin captura
+//   history-card-<section>     tarjeta de cada sección del historial en
+//     /perfil (perfil-eventos), <section> ∈ chronic · past · surgeries ·
+//     fractures · transfusions · habits; sustituye al antiguo
+//     profile-pending-sections
 // data-testid reutilizados (ya existen): consent-accept-button, email-input,
 //   password-input, user-menu.
 //
@@ -49,19 +52,21 @@ test.use({ storageState: { cookies: [], origins: [] } })
 //     condiciones/parentescos del wizard (checkboxes "Diabetes", "Madre", …);
 //     guardar con botón "Guardar" (exact) cierra el editor y deja el
 //     antecedente visible en la sección.
-//   Secciones sin captura (6, con estado vacío "Sin registros" cada una):
-//     "Enfermedades crónicas", "Enfermedades pasadas e infecciosas",
-//     "Cirugías y hospitalizaciones", "Fracturas y lesiones",
-//     "Transfusiones y grupo sanguíneo", "Hábitos".
+//   Secciones del historial (6 tarjetas, estado "Sin llenar" sin datos;
+//     perfil-eventos): "Enfermedades crónicas", "Enfermedades pasadas e
+//     infecciosas", "Cirugías y hospitalizaciones", "Fracturas y lesiones",
+//     "Transfusiones y grupo sanguíneo", "Hábitos". Crónicas y hábitos siguen
+//     sin captura: sin inputs, sin enlace y sin botón "Agregar". El detalle
+//     de las 4 de eventos vive en profile-history.spec.ts.
 // ---------------------------------------------------------------------------
 
-const PENDING_SECTIONS = [
-  "Enfermedades crónicas",
-  "Enfermedades pasadas e infecciosas",
-  "Cirugías y hospitalizaciones",
-  "Fracturas y lesiones",
-  "Transfusiones y grupo sanguíneo",
-  "Hábitos",
+const HISTORY_SECTIONS = [
+  ["chronic", "Enfermedades crónicas"],
+  ["past", "Enfermedades pasadas e infecciosas"],
+  ["surgeries", "Cirugías y hospitalizaciones"],
+  ["fractures", "Fracturas y lesiones"],
+  ["transfusions", "Transfusiones y grupo sanguíneo"],
+  ["habits", "Hábitos"],
 ] as const
 
 /** Edad cumplida a la fecha `on` para quien nació en `birth`. */
@@ -74,12 +79,18 @@ function ageOn(birth: Date, on: Date): number {
   return age
 }
 
-/** Hoy en dd/mm/aaaa (es-MX), con la fecha LOCAL (no UTC). */
+/**
+ * Hoy en dd/mm/aaaa en America/Mexico_City: el servidor fecha `measured_on`
+ * con el día de México, no con el reloj de Node (el contenedor del CI corre
+ * en UTC; de 00:00 a 06:00 UTC ya es otro día).
+ */
 function todayMx(): string {
-  const now = new Date()
-  const day = String(now.getDate()).padStart(2, "0")
-  const month = String(now.getMonth() + 1).padStart(2, "0")
-  return `${day}/${month}/${now.getFullYear()}`
+  return new Intl.DateTimeFormat("es-MX", {
+    timeZone: "America/Mexico_City",
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+  }).format(new Date())
 }
 
 /**
@@ -255,17 +266,29 @@ test.describe("Perfil médico — onboarding y /perfil", () => {
     await expect(ahfAfter.getByText("Madre")).toBeVisible()
   })
 
-  test("Escenario 11: /perfil lista las 6 secciones adicionales vacías y ninguna ofrece formulario de captura", async ({
+  test("Escenario 11 (Secciones listadas sin captura): con un antecedente registrado, se ve contabilizado y las 6 tarjetas del historial dicen 'Sin llenar'; crónicas y hábitos sin inputs, enlace ni 'Agregar'", async ({
     page,
+    request,
   }) => {
-    // Nota (M29): el GIVEN del escenario 11 del spec pide "un antecedente
-    // registrado"; aquí la cuenta omite el onboarding porque lo que se asierta
-    // (las 6 secciones pendientes, sin captura) no depende de él. La
-    // visibilidad de /perfil CON antecedentes registrados la cubren los
-    // escenarios 10, 13 y el de dos antecedentes (G3/M30).
-    // Cuenta con el onboarding ya cerrado (omitido).
-    await freshUserWithConsent(page)
+    // GIVEN del escenario: un antecedente familiar registrado (Diabetes /
+    // Madre, sembrado por el API) y nada en el historial. Cuenta con el
+    // onboarding ya cerrado (omitido).
+    const { email, password } = await freshUserWithConsent(page)
     await skipOnboardingToExpediente(page)
+    const login = await request.post(
+      `${process.env.VITE_API_URL}/api/v1/login/access-token`,
+      { form: { username: email, password } },
+    )
+    expect(login.ok()).toBeTruthy()
+    const { access_token } = await login.json()
+    const seeded = await request.post(
+      `${process.env.VITE_API_URL}/api/v1/profile/family-history`,
+      {
+        headers: { Authorization: `Bearer ${access_token}` },
+        data: { condition: "diabetes", relatives: ["mother"] },
+      },
+    )
+    expect(seeded.status()).toBe(201)
 
     // La navegación tiene la entrada "Mi perfil médico" y lleva a /perfil
     // (en móvil, tras abrir el menú colapsado).
@@ -277,27 +300,34 @@ test.describe("Perfil médico — onboarding y /perfil", () => {
       page.getByRole("heading", { name: "Mi perfil médico" }),
     ).toBeVisible()
 
-    const sections = page.getByTestId("profile-pending-sections")
-    await expect(sections).toBeVisible()
+    // Su antecedente aparece contabilizado en la sección de antecedentes.
+    const ahf = page.getByTestId("profile-family-history")
+    await expect(ahf.getByText("Diabetes")).toBeVisible()
+    await expect(ahf.getByText("Madre", { exact: true })).toBeVisible()
+    await expect(ahf.getByText("Sin registros")).toHaveCount(0)
 
-    // Las seis secciones listadas, cada una como vacía.
-    for (const name of PENDING_SECTIONS) {
-      await expect(sections.getByText(name)).toBeVisible()
+    // Las seis secciones del historial listadas, cada una "Sin llenar".
+    for (const [key, name] of HISTORY_SECTIONS) {
+      const card = page.getByTestId(`history-card-${key}`)
+      await expect(card).toBeVisible()
+      await expect(card).toContainText(name)
+      await expect(card).toContainText("Sin llenar")
     }
-    await expect(sections.getByText("Sin registros")).toHaveCount(6)
 
-    // Sin captura: ni inputs ni botón de guardar dentro de las secciones.
-    await expect(sections.locator("input, textarea, select")).toHaveCount(0)
-    await expect(sections.getByRole("button", { name: /Guardar/ })).toHaveCount(
-      0,
-    )
-
-    // (M27) Tampoco hay botones "Añadir"/"Agregar": el contrato es de solo
-    // lectura, así que la aserción es directa (el bucle condicional anterior
-    // no ejecutaba ninguna aserción al no existir botones).
-    await expect(
-      sections.getByRole("button", { name: /Añadir|Agregar/ }),
-    ).toHaveCount(0)
+    // Crónicas y hábitos siguen sin captura: ni inputs, ni enlace, ni botón
+    // "Agregar"/"Añadir" (M27: aserciones directas, no condicionales).
+    for (const key of ["chronic", "habits"]) {
+      const card = page.getByTestId(`history-card-${key}`)
+      await expect(card.locator("input, textarea, select")).toHaveCount(0)
+      await expect(card.getByRole("link")).toHaveCount(0)
+      await expect(
+        card.getByRole("button", { name: /Añadir|Agregar/ }),
+      ).toHaveCount(0)
+      const isLink = await card.evaluate(
+        (el) => el.closest("a") !== null || el.getAttribute("role") === "link",
+      )
+      expect(isLink).toBe(false)
+    }
   })
 
   test("Escenario 13 (feedback): agregar antecedentes desde /perfil tras omitir todo el onboarding", async ({

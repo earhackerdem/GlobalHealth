@@ -71,3 +71,19 @@ task: if the person you work with doesn't mention it, it is not started.
 - [2026-10-19] `formatDateMx` (frontend/src/components/Profile/format.ts) duplica lógica y comentario-razón de
   `Records/RecordDialogs.tsx formatDate` (G20 del review de onboarding-perfil; extraer a un helper compartido
   excedía el scope del apply porque toca Records). Tercera copia en camino si no se extrae.
+
+- [2026-10-20] `validate_birth_date` (backend/app/models.py) compara con `date.today()` del servidor, no con la
+  fecha de México: entre las 18:00 y las 24:00 de México el "hoy" del servidor en UTC ya es mañana, y una fecha de
+  nacimiento de "mañana" en México pasaría. Mismo tipo de defecto que la tarea 1.0 de perfil-eventos arregló en el
+  test de mediciones (visto por el implementer del grupo 1). Candidato: un helper `today_mx()` compartido.
+- [2026-10-20] El daemon de Docker Desktop de la máquina de Saúl no logra bajar imágenes base (ghcr.io/astral-sh/uv,
+  python:3.14: `DeadlineExceeded` vía el proxy `http.docker.internal:3128`), aunque el host sí llega a ghcr.io. Sin
+  rebuild, `make migrate` aplica migraciones que el contenedor no trae. Revisar la configuración de proxy de Docker
+  Desktop; mientras tanto, `docker compose cp backend/app backend:/app/backend/` o `docker compose watch`.
+- [2026-10-20] Nombres de tabla sin convención: `oauthidentity`, `consentgrant`, `healthrecord`,
+  `healthrecordmedicine` y `healthrecordattachment` salen del default de SQLModel (`cls.__name__.lower()`,
+  sqlmodel/main.py:907), y desde onboarding-perfil las tablas nuevas declaran `__tablename__` en snake_case
+  (`patient_profile`, `medical_history_entry`). Lo detectó Saúl Pérez explorando la BD. Decidir con un ADR:
+  renombrar (cambio propio `fix/tablas-snake-case`: `__tablename__` + migración nueva con `op.rename_table`, FKs a
+  `healthrecord.id`, índices y constraints, y 4 tests con nombres crudos) o fijar la convención solo para tablas
+  nuevas. Editar las migraciones viejas no sirve: no corren otra vez en las BD existentes.

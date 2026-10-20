@@ -1,5 +1,6 @@
 import { useSuspenseQuery } from "@tanstack/react-query"
-import { createFileRoute } from "@tanstack/react-router"
+import { createFileRoute, Link } from "@tanstack/react-router"
+import { ChevronRight } from "lucide-react"
 import { Suspense } from "react"
 import { useTranslation } from "react-i18next"
 
@@ -9,18 +10,18 @@ import AddMeasurement from "@/components/Profile/AddMeasurement"
 import EditBasicData from "@/components/Profile/EditBasicData"
 import EditFamilyHistory from "@/components/Profile/EditFamilyHistory"
 import { ageFrom, formatDateMx } from "@/components/Profile/format"
-import { getProfileQueryOptions } from "@/components/Profile/queries"
+import {
+  HISTORY_CARD_KEYS,
+  isHistorySection,
+  SECTION_SLUGS,
+  sectionStatus,
+} from "@/components/Profile/history"
+import {
+  getHistoryQueryOptions,
+  getProfileQueryOptions,
+} from "@/components/Profile/queries"
 import { Badge } from "@/components/ui/badge"
 import i18n from "@/i18n"
-
-const PENDING_SECTION_KEYS = [
-  "chronic",
-  "past",
-  "surgeries",
-  "fractures",
-  "transfusions",
-  "habits",
-] as const
 
 export const Route = createFileRoute("/_layout/perfil")({
   component: ProfilePage,
@@ -50,6 +51,7 @@ function ProfileContent() {
     queryKey: ["family-history"],
     queryFn: async () => (await ProfileService.readFamilyHistory()).data,
   })
+  const { data: history } = useSuspenseQuery(getHistoryQueryOptions())
 
   const birthDateValue = profile.birth_date
     ? `${formatDateMx(profile.birth_date)} · ${t("age", {
@@ -145,18 +147,53 @@ function ProfileContent() {
             {t("pending.description")}
           </p>
         </div>
-        {/* Read-only by design (FR-027): the six remaining sections are
-            listed without any capture form — no inputs, no save button. */}
-        <div
-          data-testid="profile-pending-sections"
-          className="grid gap-4 sm:grid-cols-2"
-        >
-          {PENDING_SECTION_KEYS.map((key) => (
-            <div key={key} className="rounded-lg border p-4">
+        {/* The four event sections (FR-028, Story A) open their own screen;
+            chronic and habits (Stories B and C) stay listed without capture:
+            no link, no inputs, no "Agregar". */}
+        <div className="grid gap-4 sm:grid-cols-2">
+          {HISTORY_CARD_KEYS.map((key) => {
+            const title = (
               <h3 className="font-medium">{t(`pending.sections.${key}`)}</h3>
-              <p className="text-sm text-muted-foreground">{t("noEntries")}</p>
-            </div>
-          ))}
+            )
+            if (!isHistorySection(key)) {
+              return (
+                <div
+                  key={key}
+                  data-testid={`history-card-${key}`}
+                  className="flex flex-col gap-2 rounded-lg border p-4"
+                >
+                  {title}
+                  <Badge variant="outline">{t("history.status.empty")}</Badge>
+                </div>
+              )
+            }
+            const count = history.data.filter(
+              (entry) => entry.section === key,
+            ).length
+            const none = profile.sections_none.includes(key)
+            return (
+              <Link
+                key={key}
+                to="/perfil/$seccion"
+                params={{ seccion: SECTION_SLUGS[key] }}
+                data-testid={`history-card-${key}`}
+                className="flex flex-col gap-2 rounded-lg border p-4 transition-colors hover:bg-accent focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
+              >
+                {/* The chevron marks, on touch too, the 4 cards that open a
+                    screen (decorative: the link's name stays the text). */}
+                <div className="flex items-start justify-between gap-2">
+                  {title}
+                  <ChevronRight
+                    aria-hidden="true"
+                    className="size-5 shrink-0 text-muted-foreground"
+                  />
+                </div>
+                <Badge variant={count || none ? "secondary" : "outline"}>
+                  {sectionStatus(count, none, t)}
+                </Badge>
+              </Link>
+            )
+          })}
         </div>
       </section>
     </div>

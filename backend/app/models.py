@@ -1,9 +1,9 @@
 import uuid
 from collections.abc import Sequence
 from datetime import UTC, date, datetime
-from typing import Any, Literal
+from typing import Annotated, Any, Literal
 
-from pydantic import EmailStr
+from pydantic import Discriminator, EmailStr
 from sqlalchemy import Column
 from sqlmodel import Field, Relationship, SQLModel
 
@@ -427,6 +427,15 @@ class PatientProfile(SQLModel, table=True):
     )
     onboarding_outcome: str = Field(default="pending", max_length=16)
     onboarding_closed_at: datetime | None = Field(default=None)
+    # perfil-eventos Decision 3: both 1:1 with the profile and encrypted.
+    blood_type: str | None = Field(
+        default=None, sa_column=Column(EncryptedString(), nullable=True)
+    )
+    # JSON list of the sections marked "ninguna", serialized INSIDE the
+    # encrypted field (null = no marks).
+    sections_none: str | None = Field(
+        default=None, sa_column=Column(EncryptedString(), nullable=True)
+    )
 
 
 # One row per capture, never UPDATE of the value (Decision 2: history is
@@ -468,11 +477,251 @@ class FamilyHistory(SQLModel, table=True):
     created_at: datetime = Field(default_factory=get_datetime_utc)
 
 
+# --- Medical history event sections (perfil-eventos design.md) --------------
+#
+# Decision 1: ONE generic table; the whole entry (its section included) is a
+# JSON document inside a single encrypted column, validated by one pydantic
+# schema per section. Decision 2: nothing in the clear but id, user_id and
+# created_at; the server groups/filters in memory after decrypting the
+# owner's rows (tens per patient).
+
+HistorySection = Literal["past", "surgeries", "fractures", "transfusions"]
+HISTORY_SECTIONS: tuple[HistorySection, ...] = (
+    "past",
+    "surgeries",
+    "fractures",
+    "transfusions",
+)
+BloodType = Literal["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-", "unknown"]
+YesNoUnknown = Literal["yes", "no", "unknown"]
+
+HISTORY_TEXT_MAX = 2000
+HISTORY_NAME_MAX = 200
+HISTORY_MAX_AGE = 130
+HISTORY_MIN_YEAR = PROFILE_MIN_BIRTH_DATE.year
+
+
+class MedicalHistoryEntry(SQLModel, table=True):
+    __tablename__ = "medical_history_entry"
+
+    id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
+    user_id: uuid.UUID = Field(
+        foreign_key="user.id", nullable=False, ondelete="CASCADE"
+    )
+    # JSON of the entry WITH its section, encrypted (Decision 2).
+    content: str = Field(sa_column=Column(EncryptedString(), nullable=False))
+    created_at: datetime = Field(default_factory=get_datetime_utc)
+
+
+# "Cuándo", stored as answered (Decision 4); the approximate year is the
+# frontend's job.
+class WhenAge(SQLModel):
+    kind: Literal["age"]
+    value: int
+
+
+class WhenStage(SQLModel):
+    kind: Literal["stage"]
+    value: Literal["before_primary", "primary", "secondary", "high_school"]
+
+
+class WhenYear(SQLModel):
+    kind: Literal["year"]
+    value: int
+
+
+class WhenUnknown(SQLModel):
+    kind: Literal["unknown"]
+
+
+When = Annotated[WhenAge | WhenStage | WhenYear | WhenUnknown, Discriminator("kind")]
+
+
+# Content per section. Every field is optional AT THE SCHEMA LEVEL (also the
+# section's required one) so that a missing required field reaches
+# validate_history_content and gets a STRING es-MX 422, and so stored entries
+# tolerate absent fields on read (Risks: defaults None). Enums and lengths
+# are still enforced by pydantic.
+class PastHistoryContent(SQLModel):
+    section: Literal["past"]
+    condition: (
+        Literal[
+            "varicella",
+            "measles",
+            "mumps",
+            "rubella",
+            "hepatitis_a",
+            "hepatitis_b",
+            "hepatitis_c",
+            "severe_covid19",
+            "dengue",
+            "tuberculosis",
+            "other",
+        ]
+        | None
+    ) = None
+    other_text: str | None = Field(default=None, max_length=HISTORY_TEXT_MAX)
+    when: When | None = None
+    hospitalized: YesNoUnknown | None = None
+    sequelae: str | None = Field(default=None, max_length=HISTORY_TEXT_MAX)
+    note: str | None = Field(default=None, max_length=HISTORY_TEXT_MAX)
+
+
+class SurgeryHistoryContent(SQLModel):
+    section: Literal["surgeries"]
+    kind: Literal["surgery", "hospitalization"] | None = None
+    name: str | None = Field(default=None, max_length=HISTORY_NAME_MAX)
+    when: When | None = None
+    reason: str | None = Field(default=None, max_length=HISTORY_TEXT_MAX)
+    place: str | None = Field(default=None, max_length=HISTORY_TEXT_MAX)
+    physician: str | None = Field(default=None, max_length=HISTORY_TEXT_MAX)
+    complications: str | None = Field(default=None, max_length=HISTORY_TEXT_MAX)
+    anesthesia_reaction: YesNoUnknown | None = None
+    anesthesia_reaction_detail: str | None = Field(
+        default=None, max_length=HISTORY_TEXT_MAX
+    )
+    implant: str | None = Field(default=None, max_length=HISTORY_TEXT_MAX)
+
+
+class FractureHistoryContent(SQLModel):
+    section: Literal["fractures"]
+    what: str | None = Field(default=None, max_length=HISTORY_NAME_MAX)
+    side: Literal["left", "right", "both", "not_applicable"] | None = None
+    when: When | None = None
+    required_surgery: YesNoUnknown | None = None
+    implant: str | None = Field(default=None, max_length=HISTORY_TEXT_MAX)
+    sequelae: str | None = Field(default=None, max_length=HISTORY_TEXT_MAX)
+
+
+class TransfusionHistoryContent(SQLModel):
+    section: Literal["transfusions"]
+    when: When | None = None
+    reason: str | None = Field(default=None, max_length=HISTORY_TEXT_MAX)
+    component: Literal["blood", "platelets", "plasma", "unknown"] | None = None
+    place: str | None = Field(default=None, max_length=HISTORY_TEXT_MAX)
+    reaction: YesNoUnknown | None = None
+    reaction_detail: str | None = Field(default=None, max_length=HISTORY_TEXT_MAX)
+
+
+HistoryContentModel = (
+    PastHistoryContent
+    | SurgeryHistoryContent
+    | FractureHistoryContent
+    | TransfusionHistoryContent
+)
+# Request body of POST/PUT /profile/history: discriminated by `section`.
+HistoryContent = Annotated[HistoryContentModel, Discriminator("section")]
+
+
+class PastHistoryEntry(PastHistoryContent):
+    id: uuid.UUID
+    created_at: datetime
+
+
+class SurgeryHistoryEntry(SurgeryHistoryContent):
+    id: uuid.UUID
+    created_at: datetime
+
+
+class FractureHistoryEntry(FractureHistoryContent):
+    id: uuid.UUID
+    created_at: datetime
+
+
+class TransfusionHistoryEntry(TransfusionHistoryContent):
+    id: uuid.UUID
+    created_at: datetime
+
+
+# HistoryEntry = {id, section, created_at, ...fields of its section}.
+HistoryEntry = Annotated[
+    PastHistoryEntry
+    | SurgeryHistoryEntry
+    | FractureHistoryEntry
+    | TransfusionHistoryEntry,
+    Discriminator("section"),
+]
+
+
+class HistoryEntriesPublic(SQLModel):
+    data: list[HistoryEntry]
+    count: int
+
+
+class HistorySectionNone(SQLModel):
+    none: bool
+
+
+# Required field per section and its es-MX message (Interface contract).
+HISTORY_REQUIRED: dict[str, tuple[str, str]] = {
+    "past": ("condition", "Elige la condición o escribe cuál fue"),
+    "surgeries": ("name", "Escribe qué cirugía u hospitalización fue"),
+    "fractures": ("what", "Escribe qué hueso o lesión fue"),
+}
+
+
+def _is_filled(value: Any) -> bool:
+    if value is None:
+        return False
+    if isinstance(value, str):
+        return bool(value.strip())
+    return True
+
+
+def _age_on(birth_date: date, today: date) -> int:
+    return (
+        today.year
+        - birth_date.year
+        - ((today.month, today.day) < (birth_date.month, birth_date.day))
+    )
+
+
+def validate_when(
+    when: WhenAge | WhenStage | WhenYear | WhenUnknown | None,
+    birth_date: date | None,
+    today: date,
+) -> None:
+    """es-MX ValueError when `when` is impossible (Decision 4: the server only
+    rejects impossibles). `today` is Mexico City's today."""
+    if isinstance(when, WhenAge):
+        if birth_date is not None and when.value > _age_on(birth_date, today):
+            raise ValueError("La edad no puede ser mayor que tu edad actual")
+        if not (0 <= when.value <= HISTORY_MAX_AGE):
+            raise ValueError(f"La edad debe estar entre 0 y {HISTORY_MAX_AGE} años")
+    elif isinstance(when, WhenYear):
+        if birth_date is not None and when.value < birth_date.year:
+            raise ValueError("El año no puede ser anterior a tu nacimiento")
+        if when.value < HISTORY_MIN_YEAR:
+            raise ValueError(f"El año no puede ser anterior a {HISTORY_MIN_YEAR}")
+        if when.value > today.year:
+            raise ValueError("El año no puede ser futuro")
+
+
+def validate_history_content(
+    content: HistoryContentModel, birth_date: date | None, today: date
+) -> None:
+    """es-MX ValueError for an empty entry, a missing required field or an
+    impossible `when`; runs BEFORE anything is encrypted or persisted."""
+    values = content.model_dump(exclude={"section"})
+    if not any(_is_filled(value) for value in values.values()):
+        raise ValueError("Llena al menos un dato")
+    required = HISTORY_REQUIRED.get(content.section)
+    if required is not None:
+        field, message = required
+        if not _is_filled(values.get(field)):
+            raise ValueError(message)
+        if isinstance(content, PastHistoryContent) and content.condition == "other":
+            if not _is_filled(content.other_text):
+                raise ValueError(message)
+    validate_when(content.when, birth_date, today)
+
+
 # Partial update: absent = "do not touch", explicit null clears the field.
 class PatientProfileUpdate(SQLModel):
     birth_date: date | None = None
     sex: Literal["female", "male", "unspecified"] | None = None
     allergies: str | None = Field(default=None, max_length=2000)
+    blood_type: BloodType | None = None
 
 
 class BodyMeasurementLatest(SQLModel):
@@ -488,6 +737,8 @@ class PatientProfilePublic(SQLModel):
     onboarding: str
     latest_weight: BodyMeasurementLatest | None
     latest_height: BodyMeasurementLatest | None
+    blood_type: BloodType | None
+    sections_none: list[HistorySection]
 
 
 class OnboardingClose(SQLModel):

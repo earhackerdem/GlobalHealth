@@ -2,7 +2,7 @@
 
 import { type Client, formDataBodySerializer, type Options as Options2, type TDataShape, urlSearchParamsBodySerializer } from './client';
 import { client } from './client.gen';
-import type { consentGrantConsentData, consentGrantConsentErrors, consentGrantConsentResponses, consentReadConsentData, consentReadConsentResponses, consentReadConsentTextData, consentReadConsentTextResponses, healthRecordsCreateHealthRecordAttachmentData, healthRecordsCreateHealthRecordAttachmentErrors, healthRecordsCreateHealthRecordAttachmentResponses, healthRecordsCreateHealthRecordData, healthRecordsCreateHealthRecordErrors, healthRecordsCreateHealthRecordResponses, healthRecordsDeleteHealthRecordAttachmentData, healthRecordsDeleteHealthRecordAttachmentErrors, healthRecordsDeleteHealthRecordAttachmentResponses, healthRecordsDeleteHealthRecordData, healthRecordsDeleteHealthRecordErrors, healthRecordsDeleteHealthRecordResponses, healthRecordsDownloadHealthRecordAttachmentData, healthRecordsDownloadHealthRecordAttachmentErrors, healthRecordsDownloadHealthRecordAttachmentResponses, healthRecordsReadHealthRecordAttachmentsData, healthRecordsReadHealthRecordAttachmentsErrors, healthRecordsReadHealthRecordAttachmentsResponses, healthRecordsReadHealthRecordData, healthRecordsReadHealthRecordErrors, healthRecordsReadHealthRecordResponses, healthRecordsReadHealthRecordsData, healthRecordsReadHealthRecordsErrors, healthRecordsReadHealthRecordsResponses, healthRecordsUpdateHealthRecordData, healthRecordsUpdateHealthRecordErrors, healthRecordsUpdateHealthRecordResponses, itemsCreateItemData, itemsCreateItemErrors, itemsCreateItemResponses, itemsDeleteItemData, itemsDeleteItemErrors, itemsDeleteItemResponses, itemsReadItemData, itemsReadItemErrors, itemsReadItemResponses, itemsReadItemsData, itemsReadItemsErrors, itemsReadItemsResponses, itemsUpdateItemData, itemsUpdateItemErrors, itemsUpdateItemResponses, loginLoginAccessTokenData, loginLoginAccessTokenErrors, loginLoginAccessTokenResponses, loginLoginGoogleCallbackData, loginLoginGoogleCallbackErrors, loginLoginGoogleCallbackResponses, loginLoginGoogleData, loginLoginGoogleResponses, loginRecoverPasswordData, loginRecoverPasswordErrors, loginRecoverPasswordHtmlContentData, loginRecoverPasswordHtmlContentErrors, loginRecoverPasswordHtmlContentResponses, loginRecoverPasswordResponses, loginResetPasswordData, loginResetPasswordErrors, loginResetPasswordResponses, loginTestTokenData, loginTestTokenResponses, privateCreateUserData, privateCreateUserErrors, privateCreateUserResponses, profileCloseOnboardingData, profileCloseOnboardingErrors, profileCloseOnboardingResponses, profileCreateFamilyHistoryData, profileCreateFamilyHistoryErrors, profileCreateFamilyHistoryResponses, profileCreateMeasurementData, profileCreateMeasurementErrors, profileCreateMeasurementResponses, profileDeleteFamilyHistoryData, profileDeleteFamilyHistoryErrors, profileDeleteFamilyHistoryResponses, profileReadFamilyHistoryData, profileReadFamilyHistoryErrors, profileReadFamilyHistoryResponses, profileReadMeasurementsData, profileReadMeasurementsErrors, profileReadMeasurementsResponses, profileReadProfileData, profileReadProfileResponses, profileUpdateFamilyHistoryData, profileUpdateFamilyHistoryErrors, profileUpdateFamilyHistoryResponses, profileUpdateProfileData, profileUpdateProfileErrors, profileUpdateProfileResponses, usersCreateUserData, usersCreateUserErrors, usersCreateUserResponses, usersDeleteUserData, usersDeleteUserErrors, usersDeleteUserMeData, usersDeleteUserMeResponses, usersDeleteUserResponses, usersReadUserByIdData, usersReadUserByIdErrors, usersReadUserByIdResponses, usersReadUserMeData, usersReadUserMeResponses, usersReadUsersData, usersReadUsersErrors, usersReadUsersResponses, usersRegisterUserData, usersRegisterUserErrors, usersRegisterUserResponses, usersUpdatePasswordMeData, usersUpdatePasswordMeErrors, usersUpdatePasswordMeResponses, usersUpdateUserData, usersUpdateUserErrors, usersUpdateUserMeData, usersUpdateUserMeErrors, usersUpdateUserMeResponses, usersUpdateUserResponses, utilsHealthCheckData, utilsHealthCheckResponses, utilsTestEmailData, utilsTestEmailErrors, utilsTestEmailResponses } from './types.gen';
+import type { consentGrantConsentData, consentGrantConsentErrors, consentGrantConsentResponses, consentReadConsentData, consentReadConsentResponses, consentReadConsentTextData, consentReadConsentTextResponses, healthRecordsCreateHealthRecordAttachmentData, healthRecordsCreateHealthRecordAttachmentErrors, healthRecordsCreateHealthRecordAttachmentResponses, healthRecordsCreateHealthRecordData, healthRecordsCreateHealthRecordErrors, healthRecordsCreateHealthRecordResponses, healthRecordsDeleteHealthRecordAttachmentData, healthRecordsDeleteHealthRecordAttachmentErrors, healthRecordsDeleteHealthRecordAttachmentResponses, healthRecordsDeleteHealthRecordData, healthRecordsDeleteHealthRecordErrors, healthRecordsDeleteHealthRecordResponses, healthRecordsDownloadHealthRecordAttachmentData, healthRecordsDownloadHealthRecordAttachmentErrors, healthRecordsDownloadHealthRecordAttachmentResponses, healthRecordsReadHealthRecordAttachmentsData, healthRecordsReadHealthRecordAttachmentsErrors, healthRecordsReadHealthRecordAttachmentsResponses, healthRecordsReadHealthRecordData, healthRecordsReadHealthRecordErrors, healthRecordsReadHealthRecordResponses, healthRecordsReadHealthRecordsData, healthRecordsReadHealthRecordsErrors, healthRecordsReadHealthRecordsResponses, healthRecordsUpdateHealthRecordData, healthRecordsUpdateHealthRecordErrors, healthRecordsUpdateHealthRecordResponses, itemsCreateItemData, itemsCreateItemErrors, itemsCreateItemResponses, itemsDeleteItemData, itemsDeleteItemErrors, itemsDeleteItemResponses, itemsReadItemData, itemsReadItemErrors, itemsReadItemResponses, itemsReadItemsData, itemsReadItemsErrors, itemsReadItemsResponses, itemsUpdateItemData, itemsUpdateItemErrors, itemsUpdateItemResponses, loginLoginAccessTokenData, loginLoginAccessTokenErrors, loginLoginAccessTokenResponses, loginLoginGoogleCallbackData, loginLoginGoogleCallbackErrors, loginLoginGoogleCallbackResponses, loginLoginGoogleData, loginLoginGoogleResponses, loginRecoverPasswordData, loginRecoverPasswordErrors, loginRecoverPasswordHtmlContentData, loginRecoverPasswordHtmlContentErrors, loginRecoverPasswordHtmlContentResponses, loginRecoverPasswordResponses, loginResetPasswordData, loginResetPasswordErrors, loginResetPasswordResponses, loginTestTokenData, loginTestTokenResponses, privateCreateUserData, privateCreateUserErrors, privateCreateUserResponses, profileCloseOnboardingData, profileCloseOnboardingErrors, profileCloseOnboardingResponses, profileCreateFamilyHistoryData, profileCreateFamilyHistoryErrors, profileCreateFamilyHistoryResponses, profileCreateHistoryEntryData, profileCreateHistoryEntryErrors, profileCreateHistoryEntryResponses, profileCreateMeasurementData, profileCreateMeasurementErrors, profileCreateMeasurementResponses, profileDeleteFamilyHistoryData, profileDeleteFamilyHistoryErrors, profileDeleteFamilyHistoryResponses, profileDeleteHistoryEntryData, profileDeleteHistoryEntryErrors, profileDeleteHistoryEntryResponses, profileReadFamilyHistoryData, profileReadFamilyHistoryErrors, profileReadFamilyHistoryResponses, profileReadHistoryData, profileReadHistoryResponses, profileReadMeasurementsData, profileReadMeasurementsErrors, profileReadMeasurementsResponses, profileReadProfileData, profileReadProfileResponses, profileSetHistorySectionNoneData, profileSetHistorySectionNoneErrors, profileSetHistorySectionNoneResponses, profileUpdateFamilyHistoryData, profileUpdateFamilyHistoryErrors, profileUpdateFamilyHistoryResponses, profileUpdateHistoryEntryData, profileUpdateHistoryEntryErrors, profileUpdateHistoryEntryResponses, profileUpdateProfileData, profileUpdateProfileErrors, profileUpdateProfileResponses, usersCreateUserData, usersCreateUserErrors, usersCreateUserResponses, usersDeleteUserData, usersDeleteUserErrors, usersDeleteUserMeData, usersDeleteUserMeResponses, usersDeleteUserResponses, usersReadUserByIdData, usersReadUserByIdErrors, usersReadUserByIdResponses, usersReadUserMeData, usersReadUserMeResponses, usersReadUsersData, usersReadUsersErrors, usersReadUsersResponses, usersRegisterUserData, usersRegisterUserErrors, usersRegisterUserResponses, usersUpdatePasswordMeData, usersUpdatePasswordMeErrors, usersUpdatePasswordMeResponses, usersUpdateUserData, usersUpdateUserErrors, usersUpdateUserMeData, usersUpdateUserMeErrors, usersUpdateUserMeResponses, usersUpdateUserResponses, utilsHealthCheckData, utilsHealthCheckResponses, utilsTestEmailData, utilsTestEmailErrors, utilsTestEmailResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
     /**
@@ -778,6 +778,91 @@ export class ProfileService {
             responseType: 'json',
             security: [{ scheme: 'bearer', type: 'http' }],
             url: '/api/v1/profile/family-history/{id}',
+            ...options,
+            headers: {
+                'Content-Type': 'application/json',
+                ...options.headers
+            }
+        });
+    }
+    
+    /**
+     * Read History
+     *
+     * ONLY the session user's entries of every section, oldest first.
+     */
+    public static readHistory<ThrowOnError extends boolean = true>(options?: Options<profileReadHistoryData, ThrowOnError>) {
+        return (options?.client ?? client).get<profileReadHistoryResponses, unknown, ThrowOnError>({
+            responseType: 'json',
+            security: [{ scheme: 'bearer', type: 'http' }],
+            url: '/api/v1/profile/history',
+            ...options
+        });
+    }
+    
+    /**
+     * Create History Entry
+     *
+     * Persist one entry (its section travels inside the encrypted JSON) and,
+     * in the SAME transaction, drop that section from the "ninguna" marks
+     * (Decision 3). No dedupe (Decision 6).
+     */
+    public static createHistoryEntry<ThrowOnError extends boolean = true>(options: Options<profileCreateHistoryEntryData, ThrowOnError>) {
+        return (options.client ?? client).post<profileCreateHistoryEntryResponses, profileCreateHistoryEntryErrors, ThrowOnError>({
+            responseType: 'json',
+            security: [{ scheme: 'bearer', type: 'http' }],
+            url: '/api/v1/profile/history',
+            ...options,
+            headers: {
+                'Content-Type': 'application/json',
+                ...options.headers
+            }
+        });
+    }
+    
+    /**
+     * Delete History Entry
+     *
+     * Delete an owned entry (same 404 for missing and foreign).
+     */
+    public static deleteHistoryEntry<ThrowOnError extends boolean = true>(options: Options<profileDeleteHistoryEntryData, ThrowOnError>) {
+        return (options.client ?? client).delete<profileDeleteHistoryEntryResponses, profileDeleteHistoryEntryErrors, ThrowOnError>({
+            responseType: 'json',
+            security: [{ scheme: 'bearer', type: 'http' }],
+            url: '/api/v1/profile/history/{id}',
+            ...options
+        });
+    }
+    
+    /**
+     * Update History Entry
+     *
+     * Full update of an owned entry; its section cannot change (422).
+     */
+    public static updateHistoryEntry<ThrowOnError extends boolean = true>(options: Options<profileUpdateHistoryEntryData, ThrowOnError>) {
+        return (options.client ?? client).put<profileUpdateHistoryEntryResponses, profileUpdateHistoryEntryErrors, ThrowOnError>({
+            responseType: 'json',
+            security: [{ scheme: 'bearer', type: 'http' }],
+            url: '/api/v1/profile/history/{id}',
+            ...options,
+            headers: {
+                'Content-Type': 'application/json',
+                ...options.headers
+            }
+        });
+    }
+    
+    /**
+     * Set History Section None
+     *
+     * Mark (or unmark) a section as "ninguna". Marking a section that has
+     * entries is a 409 and the marks do not change (Decision 3).
+     */
+    public static setHistorySectionNone<ThrowOnError extends boolean = true>(options: Options<profileSetHistorySectionNoneData, ThrowOnError>) {
+        return (options.client ?? client).put<profileSetHistorySectionNoneResponses, profileSetHistorySectionNoneErrors, ThrowOnError>({
+            responseType: 'json',
+            security: [{ scheme: 'bearer', type: 'http' }],
+            url: '/api/v1/profile/history/sections/{section}/none',
             ...options,
             headers: {
                 'Content-Type': 'application/json',

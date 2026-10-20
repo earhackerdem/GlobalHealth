@@ -8,19 +8,27 @@ in es-MX (Decision 4); per-owner isolation with the SAME 404 for a
 nonexistent family-history id and a foreign one; sensitive values encrypted
 at rest by the models (EncryptedString, NFR-001); lists use the template
 envelope ``{"data": [...], "count": N}``.
+
+The medical-history event sections (``/profile/history``) follow
+openspec/changes/perfil-eventos/design.md §Interface contract with the same
+rules: one encrypted JSON per entry, its section included (Decisions 1-2).
 """
 
 import json
+import logging
 import uuid
 from datetime import date, datetime
-from typing import Any, Literal
+from typing import Any, Literal, cast
 from zoneinfo import ZoneInfo
 
 from fastapi import APIRouter, HTTPException, Query
+from pydantic import ConfigDict, TypeAdapter, ValidationError
 from sqlmodel import col, func, select
 
 from app.api.deps import ConsentedUser, SessionDep
 from app.models import (
+    HISTORY_SECTIONS,
+    BloodType,
     BodyMeasurement,
     BodyMeasurementCreate,
     BodyMeasurementLatest,
@@ -30,6 +38,13 @@ from app.models import (
     FamilyHistory,
     FamilyHistoryCreate,
     FamilyHistoryPublic,
+    HistoryContent,
+    HistoryContentModel,
+    HistoryEntriesPublic,
+    HistoryEntry,
+    HistorySection,
+    HistorySectionNone,
+    MedicalHistoryEntry,
     Message,
     OnboardingClose,
     PatientProfile,
@@ -38,10 +53,21 @@ from app.models import (
     get_datetime_utc,
     normalize_relatives,
     validate_birth_date,
+    validate_history_content,
     validate_measurement_value,
 )
 
 router = APIRouter(prefix="/profile", tags=["profile"])
+
+logger = logging.getLogger(__name__)
+
+MEXICO_CITY = ZoneInfo("America/Mexico_City")
+# hide_input_in_errors: a ValidationError must never carry decrypted content
+# (it lives on the adapter: the outermost validator's config is the one that
+# applies, a model_config on the HistoryEntry schemas does not).
+_HISTORY_ENTRY: TypeAdapter[HistoryEntry] = TypeAdapter(
+    HistoryEntry, config=ConfigDict(hide_input_in_errors=True)
+)
 
 
 def _get_or_create_profile(
@@ -90,7 +116,84 @@ def _profile_public(
         onboarding=profile.onboarding_outcome,
         latest_weight=_latest_measurement(session, current_user.id, "weight"),
         latest_height=_latest_measurement(session, current_user.id, "height"),
+        # Only values of the enum get written (PatientProfileUpdate).
+        blood_type=cast(BloodType | None, profile.blood_type),
+        sections_none=_sections_none(profile),
     )
+
+
+def _sections_none(profile: PatientProfile) -> list[HistorySection]:
+    """The decrypted "ninguna" marks, in the canonical section order."""
+    marks = set(json.loads(profile.sections_none)) if profile.sections_none else set()
+    return [section for section in HISTORY_SECTIONS if section in marks]
+
+
+def _store_sections_none(profile: PatientProfile, marks: list[HistorySection]) -> None:
+    ordered = [section for section in HISTORY_SECTIONS if section in marks]
+    profile.sections_none = json.dumps(ordered) if ordered else None
+
+
+def _lock_profile(session: SessionDep, current_user: ConsentedUser) -> PatientProfile:
+    """The profile re-read FOR UPDATE: "mark ninguna" and "create an entry"
+    serialize on it, so neither acts on a stale view of the other (design.md
+    Risks: two tabs)."""
+    _get_or_create_profile(session, current_user)
+    return session.exec(
+        select(PatientProfile)
+        .where(PatientProfile.user_id == current_user.id)
+        .with_for_update()
+        .execution_options(populate_existing=True)
+    ).one()
+
+
+def _profile_birth_date(profile: PatientProfile) -> date | None:
+    return date.fromisoformat(profile.birth_date) if profile.birth_date else None
+
+
+def _validate_history(content_in: HistoryContentModel, profile: PatientProfile) -> None:
+    """es-MX 422 BEFORE encrypting; "today" is Mexico City's today (G8)."""
+    try:
+        validate_history_content(
+            content_in, _profile_birth_date(profile), datetime.now(MEXICO_CITY).date()
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=422, detail=str(e)) from e
+
+
+def _history_public(entry: MedicalHistoryEntry) -> HistoryEntry:
+    return _HISTORY_ENTRY.validate_python(
+        {**json.loads(entry.content), "id": entry.id, "created_at": entry.created_at}
+    )
+
+
+def _owned_history(
+    session: SessionDep, current_user: ConsentedUser
+) -> list[HistoryEntry]:
+    """ONLY the session user's entries, decrypted, by created_at ascending
+    (Decision 2: grouping/filtering by section happens here, in memory)."""
+    rows = session.exec(
+        select(MedicalHistoryEntry)
+        .where(MedicalHistoryEntry.user_id == current_user.id)
+        .order_by(col(MedicalHistoryEntry.created_at).asc())
+    ).all()
+    entries: list[HistoryEntry] = []
+    for row in rows:
+        try:
+            entries.append(_history_public(row))
+        except json.JSONDecodeError, ValidationError:
+            # Unreadable row (review S4): left out of the list, only its id logged.
+            logger.warning("Skipped unreadable medical history entry %s", row.id)
+    return entries
+
+
+def _get_owned_history_entry(
+    session: SessionDep, current_user: ConsentedUser, id: uuid.UUID
+) -> MedicalHistoryEntry:
+    """Same 404 (status and body) for a missing entry and a foreign one."""
+    entry = session.get(MedicalHistoryEntry, id)
+    if not entry or entry.user_id != current_user.id:
+        raise HTTPException(status_code=404, detail="Registro no encontrado")
+    return entry
 
 
 def _measurement_public(measurement: BodyMeasurement) -> BodyMeasurementPublic:
@@ -201,7 +304,7 @@ def create_measurement(
         value=str(measurement_in.value),
         # Single-market es-MX product: "today" is Mexico City's today, not the
         # server's UTC date (review G8).
-        measured_on=datetime.now(ZoneInfo("America/Mexico_City")).date(),
+        measured_on=datetime.now(MEXICO_CITY).date(),
     )
     session.add(measurement)
     session.commit()
@@ -365,3 +468,99 @@ def delete_family_history(
     session.delete(entry)
     session.commit()
     return Message(message="Antecedente eliminado")
+
+
+# --- Medical history event sections (perfil-eventos design.md) --------------
+
+
+@router.get("/history", response_model=HistoryEntriesPublic)
+def read_history(session: SessionDep, current_user: ConsentedUser) -> Any:
+    """ONLY the session user's entries of every section, oldest first."""
+    entries = _owned_history(session, current_user)
+    return HistoryEntriesPublic(data=entries, count=len(entries))
+
+
+@router.post("/history", response_model=HistoryEntry, status_code=201)
+def create_history_entry(
+    *,
+    session: SessionDep,
+    current_user: ConsentedUser,
+    entry_in: HistoryContent,
+) -> Any:
+    """Persist one entry (its section travels inside the encrypted JSON) and,
+    in the SAME transaction, drop that section from the "ninguna" marks
+    (Decision 3). No dedupe (Decision 6)."""
+    profile = _lock_profile(session, current_user)
+    _validate_history(entry_in, profile)
+    _store_sections_none(
+        profile,
+        [s for s in _sections_none(profile) if s != entry_in.section],
+    )
+    entry = MedicalHistoryEntry(
+        user_id=current_user.id, content=json.dumps(entry_in.model_dump(mode="json"))
+    )
+    session.add(profile)
+    session.add(entry)
+    session.commit()
+    session.refresh(entry)
+    return _history_public(entry)
+
+
+@router.put("/history/{id}", response_model=HistoryEntry)
+def update_history_entry(
+    *,
+    session: SessionDep,
+    current_user: ConsentedUser,
+    id: uuid.UUID,
+    entry_in: HistoryContent,
+) -> Any:
+    """Full update of an owned entry; its section cannot change (422)."""
+    profile = _get_or_create_profile(session, current_user)
+    _validate_history(entry_in, profile)
+    entry = _get_owned_history_entry(session, current_user, id)
+    if json.loads(entry.content)["section"] != entry_in.section:
+        raise HTTPException(
+            status_code=422, detail="No se puede cambiar la sección de un registro"
+        )
+    entry.content = json.dumps(entry_in.model_dump(mode="json"))
+    session.add(entry)
+    session.commit()
+    session.refresh(entry)
+    return _history_public(entry)
+
+
+@router.delete("/history/{id}")
+def delete_history_entry(
+    session: SessionDep, current_user: ConsentedUser, id: uuid.UUID
+) -> Message:
+    """Delete an owned entry (same 404 for missing and foreign)."""
+    entry = _get_owned_history_entry(session, current_user, id)
+    session.delete(entry)
+    session.commit()
+    return Message(message="Registro eliminado")
+
+
+@router.put("/history/sections/{section}/none", response_model=PatientProfilePublic)
+def set_history_section_none(
+    *,
+    session: SessionDep,
+    current_user: ConsentedUser,
+    section: HistorySection,
+    none_in: HistorySectionNone,
+) -> Any:
+    """Mark (or unmark) a section as "ninguna". Marking a section that has
+    entries is a 409 and the marks do not change (Decision 3)."""
+    profile = _lock_profile(session, current_user)
+    marks = [s for s in _sections_none(profile) if s != section]
+    if none_in.none:
+        if any(e.section == section for e in _owned_history(session, current_user)):
+            raise HTTPException(
+                status_code=409,
+                detail="No puedes marcar «ninguna» si la sección tiene registros",
+            )
+        marks.append(section)
+    _store_sections_none(profile, marks)
+    session.add(profile)
+    session.commit()
+    session.refresh(profile)
+    return _profile_public(session, current_user, profile)

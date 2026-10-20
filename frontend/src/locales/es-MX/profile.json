@@ -75,8 +75,8 @@
     "savedToast": "Antecedentes guardados"
   },
   "pending": {
-    "heading": "Más secciones de tu historial",
-    "description": "Estas secciones se podrán capturar próximamente.",
+    "heading": "Tu historial",
+    "description": "Llénalas a tu ritmo; todo es opcional. Crónicas y hábitos llegan pronto.",
     "sections": {
       "chronic": "Enfermedades crónicas",
       "past": "Enfermedades pasadas e infecciosas",
@@ -84,6 +84,189 @@
       "fractures": "Fracturas y lesiones",
       "transfusions": "Transfusiones y grupo sanguíneo",
       "habits": "Hábitos"
+    }
+  },
+  "history": {
+    "status": {
+      "empty": "Sin llenar",
+      "none": "Ninguna",
+      "count_one": "{{count}} registro",
+      "count_many": "{{count}} registros",
+      "count_other": "{{count}} registros"
+    },
+    "back": "‹ Mi perfil médico",
+    "add": "Agregar",
+    "edit": "Editar",
+    "editEntry": "Editar {{title}}",
+    "delete": "Eliminar",
+    "deleteEntry": "Eliminar {{title}}",
+    "confirmDelete": "¿Eliminar este registro?",
+    "confirmDeleteYes": "Sí, eliminar",
+    "cancel": "Cancelar",
+    "save": "Guardar",
+    "emptySection": "Aún no has llenado esta sección.",
+    "noneButton": {
+      "default": "No he tenido ninguna",
+      "transfusions": "Nunca me han transfundido"
+    },
+    "noneMarked": {
+      "default": "Marcaste: no he tenido ninguna.",
+      "transfusions": "Marcaste: nunca me han transfundido."
+    },
+    "noneHint": "Queda registrado que lo respondiste.",
+    "undo": "Deshacer",
+    "noneToast": "Sección respondida",
+    "undoToast": "La sección vuelve a estar sin llenar",
+    "savedToast": "Guardado",
+    "savedClearedNoneToast": "Guardado. La sección ya no dice «ninguna».",
+    "deletedToast": "Registro eliminado",
+    "formTitleAdd": "Agregar · {{section}}",
+    "formTitleEdit": "Editar · {{section}}",
+    "requiredHint": "Todo es opcional salvo lo marcado con *.",
+    "noMoreData": "Sin más datos",
+    "transfusionTitle": "Transfusión",
+    "transfusionTitleWithReason": "Transfusión · {{reason}}",
+    "fields": {
+      "condition": "Condición",
+      "otherText": "¿Cuál fue?",
+      "hospitalized": "¿Requirió hospitalización?",
+      "sequelae": "Secuelas",
+      "note": "Nota",
+      "kind": "Tipo",
+      "name": "Nombre",
+      "reason": "Motivo",
+      "place": "Hospital o lugar",
+      "physician": "Médico que te operó o atendió",
+      "complications": "Complicaciones",
+      "anesthesiaReaction": "¿Reacción a la anestesia?",
+      "reactionDetail": "Detalle de la reacción",
+      "implant": "Material implantado",
+      "what": "Qué hueso o lesión",
+      "side": "Lado",
+      "requiredSurgery": "¿Requirió cirugía?",
+      "component": "Qué se transfundió",
+      "reaction": "¿Hubo reacción?"
+    },
+    "options": {
+      "condition": {
+        "varicella": "Varicela",
+        "measles": "Sarampión",
+        "mumps": "Paperas",
+        "rubella": "Rubéola",
+        "hepatitis_a": "Hepatitis A",
+        "hepatitis_b": "Hepatitis B",
+        "hepatitis_c": "Hepatitis C",
+        "severe_covid19": "COVID-19 grave",
+        "dengue": "Dengue",
+        "tuberculosis": "Tuberculosis",
+        "other": "Otra"
+      },
+      "kind": {
+        "surgery": "Cirugía",
+        "hospitalization": "Hospitalización sin cirugía"
+      },
+      "side": {
+        "left": "Izquierdo",
+        "right": "Derecho",
+        "both": "Ambos",
+        "not_applicable": "No aplica"
+      },
+      "component": {
+        "blood": "Sangre",
+        "platelets": "Plaquetas",
+        "plasma": "Plasma",
+        "unknown": "No sé"
+      },
+      "yesNo": {
+        "yes": "Sí",
+        "no": "No",
+        "unknown": "No sé"
+      }
+    },
+    "summary": {
+      "side": {
+        "left": "izquierdo",
+        "right": "derecho",
+        "both": "ambos lados"
+      },
+      "kind": {
+        "surgery": "cirugía",
+        "hospitalization": "hospitalización"
+      },
+      "component": {
+        "blood": "sangre",
+        "platelets": "plaquetas",
+        "plasma": "plasma",
+        "unknown": "no sabe qué se transfundió"
+      },
+      "hospitalized": "hospitalizado",
+      "requiredSurgery": "requirió cirugía",
+      "implant": "implante: {{implant}}",
+      "reaction": "hubo reacción"
+    },
+    "when": {
+      "legend": "¿Cuándo?",
+      "age": "Edad que tenías",
+      "year": "Año",
+      "ageUnit": "años",
+      "toYear": "o el año, si lo sabes",
+      "toAge": "o la edad que tenías",
+      "stagesLabel": "Etapa o no recuerdo",
+      "stages": {
+        "before_primary": "Antes de la primaria",
+        "primary": "En la primaria",
+        "secondary": "En la secundaria",
+        "high_school": "En la prepa"
+      },
+      "unknown": "No recuerdo",
+      "approxHint": "Año aproximado: {{range}}, calculado con tu fecha de nacimiento.",
+      "onlyNumber": "Escribe solo el número.",
+      "summary": {
+        "age": "a los {{value}} años",
+        "year": "en {{value}}",
+        "unknown": "no recuerda cuándo",
+        "approx": "{{text}} (≈{{range}})",
+        "stages": {
+          "before_primary": "antes de la primaria",
+          "primary": "en la primaria",
+          "secondary": "en la secundaria",
+          "high_school": "en la prepa"
+        }
+      }
+    },
+    "bloodType": {
+      "label": "Grupo sanguíneo",
+      "hint": "Un solo dato. Toca otro para corregirlo, o el mismo para borrarlo.",
+      "options": {
+        "A+": "A+",
+        "A-": "A-",
+        "B+": "B+",
+        "B-": "B-",
+        "AB+": "AB+",
+        "AB-": "AB-",
+        "O+": "O+",
+        "O-": "O-",
+        "unknown": "No lo sé"
+      },
+      "spoken": {
+        "A+": "A positivo",
+        "A-": "A negativo",
+        "B+": "B positivo",
+        "B-": "B negativo",
+        "AB+": "AB positivo",
+        "AB-": "AB negativo",
+        "O+": "O positivo",
+        "O-": "O negativo",
+        "unknown": "No lo sé"
+      },
+      "savedToast": "Grupo sanguíneo guardado",
+      "clearedToast": "Grupo sanguíneo borrado"
+    },
+    "validation": {
+      "empty": "Llena al menos un dato",
+      "past": "Elige la condición o escribe cuál fue",
+      "surgeries": "Escribe qué cirugía u hospitalización fue",
+      "fractures": "Escribe qué hueso o lesión fue"
     }
   },
   "validation": {
