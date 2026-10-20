@@ -209,7 +209,7 @@
       "src": ".claude/agents/tester.md"
     },
     ".claude/hooks/_config.py": {
-      "sha256": "5bbd2d64dff33c06fd952b3909a4a1ffcceb3c0438898cb82f2c548bb615de4a",
+      "sha256": "ca1900d67add298bf38439c9f33e289c39ea7063654763dbff8992d354eb0e1c",
       "src": ".claude/hooks/_config.py"
     },
     ".claude/hooks/_harness.py": {
@@ -225,7 +225,7 @@
       "src": ".claude/hooks/check-journal.py"
     },
     ".claude/hooks/gate-plan.py": {
-      "sha256": "85e91bf1b7c06bd0c2db733dd32536c61a805378539fc33819d700f537665dc9",
+      "sha256": "ccc9acf956a1e6215d165a77465b0ba4ddc64548e6e6bbd642f3cf47a40766b5",
       "src": ".claude/hooks/gate-plan.py"
     },
     ".claude/hooks/guard-browser.py": {
@@ -425,7 +425,7 @@
       "src": "scripts/worktrees.py"
     }
   },
-  "harness_version": "0.3.2",
+  "harness_version": "0.3.3",
   "installed": "2026-10-11",
   "mode": "new",
   "updated": "2026-10-20"

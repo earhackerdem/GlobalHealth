@@ -15,19 +15,27 @@ import sys
 import tempfile
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from _config import is_code, load, relative, root  # noqa: E402
+from _config import is_code, load, relative, root, worktree  # noqa: E402
 from _harness import file_path, read, respond  # noqa: E402
 from _profile import blocks, read_profile  # noqa: E402
 
 
-def plan_approved(base, plan_file="plan.md"):
-    active = os.path.join(base, ".epe", "active")
-    try:
-        change = open(active, encoding="utf-8").read().strip()
-    except FileNotFoundError:
+def plan_approved(bases, plan_file="plan.md"):
+    """`bases`: the worktree of the edited file first, then the main one. `.epe/active` is per worktree (it is
+    git-ignored); the first one found wins, and its plan is looked for in the same order (the change folder lives
+    on the branch checked out in the file's worktree)."""
+    bases = list(dict.fromkeys(b for b in bases if b))
+    change = None
+    for base in bases:
+        try:
+            change = open(os.path.join(base, ".epe", "active"), encoding="utf-8").read().strip()
+            break
+        except FileNotFoundError:
+            continue
+    if not change:
         return False, "there is no active change (.epe/active does not exist; `make epe-new SLUG=<slug>`)"
-    plan = os.path.join(base, change, plan_file)
-    if not os.path.isfile(plan):
+    plan = next((p for p in (os.path.join(b, change, plan_file) for b in bases) if os.path.isfile(p)), None)
+    if not plan:
         return False, f"the active change \"{change}\" has no {plan_file}"
     if not re.search(r"^Status:\s*APPROVED", open(plan, encoding="utf-8").read(), re.M):
         return False, f"{change}/{plan_file} has no line `Status: APPROVED`"
@@ -45,7 +53,7 @@ def main():
     rel = relative(fp, ev["cwd"])
     if not rel or not is_code(rel, cfg):
         return 0
-    ok, detail = plan_approved(root(ev["cwd"]), cfg.get("plan_file") or "plan.md")
+    ok, detail = plan_approved([worktree(fp, ev["cwd"]), root(ev["cwd"])], cfg.get("plan_file") or "plan.md")
     if ok:
         return 0
     msg = (f"EPE gate: you are about to edit code ({rel}) but {detail}.\n"

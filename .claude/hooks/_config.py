@@ -30,6 +30,7 @@ Keys:
                      127.0.0.1, [::1], *.localhost and *.test; "host" exact or ".domain" with its subdomains
 """
 import fnmatch
+import functools
 import json
 import os
 import subprocess
@@ -89,14 +90,53 @@ def load(cwd):
     return cfg
 
 
-def relative(path, cwd):
-    """Path relative to the project root, with / separators. None if outside the project."""
+@functools.lru_cache(maxsize=64)
+def _git_paths(directory):
+    """(toplevel, common dir) of the git worktree holding `directory`, absolute; ("", "") without git."""
+    try:
+        out = subprocess.run(
+            ["git", "rev-parse", "--path-format=absolute", "--show-toplevel", "--git-common-dir"],
+            cwd=directory, capture_output=True, text=True, timeout=5,
+        ).stdout.split("\n")
+        if len(out) >= 2 and out[0].strip() and out[1].strip():
+            return out[0].strip(), out[1].strip()
+    except Exception:
+        pass
+    return "", ""
+
+
+def worktree(path, cwd):
+    """Top level of the worktree of THIS project that holds `path`: the main one or a secondary one
+    (`git worktree add`, also outside the main folder). None if the path belongs to no worktree of the project.
+    Measured in GlobalHealth 2026-10-20: measuring only against the main worktree left every file of a secondary
+    worktree "outside the project", and the plan gate let it through in silence."""
     if not path:
         return None
     base = os.path.realpath(root(cwd))
-    absolute = path if os.path.isabs(path) else os.path.join(cwd, path)
+    absolute = os.path.realpath(path if os.path.isabs(path) else os.path.join(cwd, path))
+    folder = absolute if os.path.isdir(absolute) else os.path.dirname(absolute)
+    while folder and not os.path.isdir(folder):  # a file about to be created in a folder that does not exist yet
+        parent = os.path.dirname(folder)
+        folder = "" if parent == folder else parent
+    top, common = _git_paths(folder) if folder else ("", "")
+    if top and common and os.path.realpath(os.path.dirname(common)) == base:
+        return os.path.realpath(top)
     try:
-        rel = os.path.relpath(os.path.realpath(absolute), base)
+        inside = not os.path.relpath(absolute, base).startswith("..")
+    except ValueError:
+        inside = False
+    return base if inside else None
+
+
+def relative(path, cwd):
+    """Path relative to the worktree that holds it (main or secondary), with / separators. None if outside
+    the project."""
+    top = worktree(path, cwd)
+    if not top:
+        return None
+    absolute = os.path.realpath(path if os.path.isabs(path) else os.path.join(cwd, path))
+    try:
+        rel = os.path.relpath(absolute, top)
     except ValueError:
         return None
     if rel.startswith(".."):
