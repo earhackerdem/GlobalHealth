@@ -103,4 +103,3 @@ responder de forma indistinguible ante un recurso inexistente y uno ajeno.
 - **WHEN** A consulta, modifica o elimina por identificador un antecedente familiar de B y uno que no existe
   (las mediciones no exponen operaciones por identificador; su no-fuga se verifica por el listado aislado)
 - **THEN** ambas respuestas son indistinguibles entre sí (mismo status y mismo cuerpo) y no revelan datos de B
-
