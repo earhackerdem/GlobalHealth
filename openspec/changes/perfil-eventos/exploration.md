@@ -9,7 +9,7 @@ Date: 2026-10-20 · Base branch: `feat/perfil-eventos` (sale de `docs/discovery-
 | Check | Result |
 |---|---|
 | As/I want/so that story with a concrete role | ✅ "Como paciente, quiero registrar mis enfermedades pasadas, cirugías, fracturas y transfusiones (o decir que no he tenido ninguna)…" (proposal.md § User story) |
-| Every AC in Given/When/Then with concrete data | 🟡 A-1…A-9 son observables y traen los datos concretos (listas, valores, mensajes) del prototipo v4, pero aún no están en forma GWT. Con `engine: openspec` se escriben como scenarios en `specs/records/patient-profile/spec.md` dentro de `/epe-2-plan`; no bloquea |
+| Every AC in Given/When/Then with concrete data | ✅ (resuelto en el plan: 23 scenarios GWT en `specs/records/patient-profile/spec.md`) · antes 🟡: A-1…A-9 son observables y traen los datos concretos (listas, valores, mensajes) del prototipo v4, pero aún no están en forma GWT. Con `engine: openspec` se escriben como scenarios en `specs/records/patient-profile/spec.md` dentro de `/epe-2-plan`; no bloquea |
 | No imposed technical solution | ✅ Ninguno dicta tecnología. A-9 (cifrado) es el NFR-001 heredado, no una solución impuesta |
 
 ## 2. Coverage matrix per criterion

@@ -12,3 +12,13 @@ rama sale de la del discovery y se rebasa sobre `main` antes del PR. Exploració
 - **Dependencia:** el archive necesita el PR #17.
 - **Preguntas al gate:** modelo genérico o tipado, qué va en claro, pantalla o diálogo, y los dos tropiezos del
   inbox (Alembic y el reformateo de tests).
+
+**Gate de la exploración y plan:** Saúl Pérez aceptó la matriz eligiendo las 4 recomendaciones:
+- tabla genérica;
+- nada en claro;
+- una pantalla por sección;
+- un PR `fix/` antes (PR #19).
+
+Con eso quedó el plan en DRAFT: spec delta (1 MODIFIED + 5 ADDED, 23 scenarios), design con el Interface contract
+y los citers (`profile.spec.ts:14,52,280-300`, `perfil.tsx:148`, `profile.json:79`) y tasks en grupos 0 (rebase),
+1 (backend, test→impl), 2 (frontend, test→impl) y 3 (cierre). `openspec validate --strict` limpio.
