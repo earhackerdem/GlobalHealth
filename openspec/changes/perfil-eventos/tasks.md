@@ -22,17 +22,17 @@ files is `test→impl`; smaller groups are `single`. `make tdd-check` requires o
       Reabre con evidencia la fila diferida de `memory/closed.md` 2026-10-19 ("flake de medianoche… ventana de
       ms"): la ventana es de 6 h diarias en CI. Verificación: el test pasa con el reloj del proceso en UTC
       00:30 (`faketime` o monkeypatch) y en hora normal; commit `test:`.
-- [ ] 1.1 Tester: `backend/tests/api/routes/test_profile_history.py` desde los escenarios 3, 4, 5, 8, 9, 10, 11, 15,
+- [x] 1.1 Tester: `backend/tests/api/routes/test_profile_history.py` desde los escenarios 3, 4, 5, 8, 9, 10, 11, 15,
       16, 17, 18, 19, 20, 21, 22 y 23 (parte pytest del test plan) y el Interface contract del design: round-trip
       por sección, requeridos y vacío con el `detail` es-MX exacto, imposibles de `when` con y sin fecha de
       nacimiento, 409 de "ninguna", la marca que se quita al crear, `blood_type` válido/nulo/inválido, 404
       idéntico ajeno/inexistente, ciphertext por SQL crudo y humo sin consentimiento. Verificación: suite roja por
       comportamiento ausente (404/422 de rutas o columnas inexistentes), no por tests rotos; commit `test:` solo.
-- [ ] 1.2 Implementer: tabla `medical_history_entry` y columnas `blood_type`/`sections_none` en
+- [x] 1.2 Implementer: tabla `medical_history_entry` y columnas `blood_type`/`sections_none` en
       `backend/app/models.py` (EncryptedString, esquemas pydantic por sección como unión discriminada, `When`),
       migración Alembic solo aditiva, rutas en `backend/app/api/routes/profile.py` detrás de `ConsentedUser`.
       Verificación: los tests de 1.1 verdes sin tocarlos + mypy limpio.
-- [ ] 1.3 Orquestador: `make migrate`, suite backend completa desde limpio (cero fallos/errores/skips, cobertura
+- [x] 1.3 Orquestador: `make migrate`, suite backend completa desde limpio (cero fallos/errores/skips, cobertura
       ≥ 90 %), números a evidence.md § Grupo 1, `make tdd-check`.
 
 ## 2. Frontend: tarjetas con estado, pantalla por sección y "cuándo" · test→impl
