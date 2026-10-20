@@ -53,7 +53,7 @@ files is `test→impl`; smaller groups are `single`. `make tdd-check` requires o
 
 ## 3. Verificación final y entrega · single
 
-- [ ] 3.1 Exploración real con Claude in Chrome sobre la app corriendo: las 4 secciones (llenar, editar, eliminar
+- [x] 3.1 Exploración real con Claude in Chrome sobre la app corriendo: las 4 secciones (llenar, editar, eliminar
       y cancelar, "ninguna" y deshacer, edad/etapa/año, grupo sanguíneo), datos raros (edad 0, año del
       nacimiento, textos largos), cambio de pestaña, doble submit y 384 px; hallazgos a evidence.md.
 - [ ] 3.2 evidence.md (escenario → test → ancla → estado, rojo antes del verde por grupo) y validation.md no técnico

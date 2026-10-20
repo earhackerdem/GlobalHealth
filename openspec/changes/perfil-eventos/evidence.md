@@ -50,6 +50,29 @@ Date: 2026-10-20 · Branch: `feat/perfil-eventos` · PR: (pendiente, tarea 3.3)
 Grupo 1: BD de desarrollo migrada a `2c7fa6505d5c (head)`; `GET /api/v1/profile/history` sin token → 401 (la ruta
 existe y exige sesión). UI: grupo 2.
 
+### Exploración real con Claude in Chrome (tarea 3.1, 2026-10-20)
+
+Sobre el build servido por el backend (`http://localhost:8000`, imagen reconstruida), con un usuario de prueba
+local creado para la exploración (consentimiento aceptado, onboarding omitido):
+
+| Prueba | Visto |
+|---|---|
+| "Mi perfil médico" recién estrenado | "Tu historial", "Llénalas a tu ritmo; todo es opcional. Crónicas y hábitos llegan pronto." y las 6 tarjetas en "Sin llenar" ✅ |
+| Fractura con edad **200** sin fecha de nacimiento | Rechazada: "La edad debe estar entre 0 y 130 años" ✅ (el mensaje sale al pie del formulario, no junto al campo: cosmético) |
+| Edad **"diez"** | Rechazada en el campo: "Escribe solo el número." ✅ |
+| **Doble clic** en "Guardar" | Un solo registro ("1 registro") ✅ |
+| Sin fecha de nacimiento → registrar 1990-03-15 en "Editar datos básicos" | "izquierdo · a los 10 años" pasa a "a los 10 años (≈2000)" ✅ |
+| "Nunca me han transfundido" | Sección y título en "Ninguna", "Deshacer" visible ✅ |
+| Transfusión en el año **1985** (antes del nacimiento) | Rechazada: "El año no puede ser anterior a tu nacimiento"; la sección sigue en "Ninguna" ✅ |
+| Corregida a 2015 | "Transfusión · Parto · en 2015", "1 registro", aviso "Guardado. La sección ya no dice «ninguna»." ✅ |
+| URL a mano `/perfil/cronicas` y `/perfil/xyz` | 404 de la app en es-MX ✅ |
+| 384 px | La ventana del navegador no bajó del ancho de escritorio; lo cubre el proyecto Playwright s26-ultra (384×832), verde |
+
+Hallazgos para el review (no se tocaron: fuera del plan):
+- El aviso al marcar "ninguna" repite "Listo": título "¡Listo!" y texto "Listo: sección respondida".
+- "El médico verá que lo respondiste, no que falta." (texto del prototipo) promete algo que llega con E3/E4
+  (compartir); hoy nadie más ve el perfil.
+
 ## Cross regression
 
 - `tests/api/routes/test_profile.py` (perfil, mediciones, AHF, onboarding): 22 passed en todo momento, también
