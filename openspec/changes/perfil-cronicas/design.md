@@ -1,6 +1,7 @@
 # Design
 
-Status: DRAFT
+Status: APPROVED
+Approved by: Saúl Pérez (author) on 2026-10-20, después de navegar el prototipo
 
 **En una frase:** "Enfermedades crónicas" se vuelve llenable como una sección más del historial de la Story A, con
 estado Activa / Ya no la tengo, "desde" y "hasta", la marca "Sensible" que decide el paciente y un enlace cifrado a
