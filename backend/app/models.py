@@ -498,7 +498,7 @@ YesNoUnknown = Literal["yes", "no", "unknown"]
 HISTORY_TEXT_MAX = 2000
 HISTORY_NAME_MAX = 200
 HISTORY_MAX_AGE = 130
-HISTORY_MIN_YEAR = 1900
+HISTORY_MIN_YEAR = PROFILE_MIN_BIRTH_DATE.year
 
 
 class MedicalHistoryEntry(SQLModel, table=True):
@@ -687,12 +687,12 @@ def validate_when(
         if birth_date is not None and when.value > _age_on(birth_date, today):
             raise ValueError("La edad no puede ser mayor que tu edad actual")
         if not (0 <= when.value <= HISTORY_MAX_AGE):
-            raise ValueError("La edad debe estar entre 0 y 130 años")
+            raise ValueError(f"La edad debe estar entre 0 y {HISTORY_MAX_AGE} años")
     elif isinstance(when, WhenYear):
         if birth_date is not None and when.value < birth_date.year:
             raise ValueError("El año no puede ser anterior a tu nacimiento")
         if when.value < HISTORY_MIN_YEAR:
-            raise ValueError("El año no puede ser anterior a 1900")
+            raise ValueError(f"El año no puede ser anterior a {HISTORY_MIN_YEAR}")
         if when.value > today.year:
             raise ValueError("El año no puede ser futuro")
 

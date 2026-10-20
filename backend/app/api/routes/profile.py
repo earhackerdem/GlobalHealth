@@ -15,13 +15,14 @@ rules: one encrypted JSON per entry, its section included (Decisions 1-2).
 """
 
 import json
+import logging
 import uuid
 from datetime import date, datetime
 from typing import Any, Literal, cast
 from zoneinfo import ZoneInfo
 
 from fastapi import APIRouter, HTTPException, Query
-from pydantic import TypeAdapter
+from pydantic import ConfigDict, TypeAdapter, ValidationError
 from sqlmodel import col, func, select
 
 from app.api.deps import ConsentedUser, SessionDep
@@ -58,8 +59,15 @@ from app.models import (
 
 router = APIRouter(prefix="/profile", tags=["profile"])
 
+logger = logging.getLogger(__name__)
+
 MEXICO_CITY = ZoneInfo("America/Mexico_City")
-_HISTORY_ENTRY: TypeAdapter[HistoryEntry] = TypeAdapter(HistoryEntry)
+# hide_input_in_errors: a ValidationError must never carry decrypted content
+# (it lives on the adapter: the outermost validator's config is the one that
+# applies, a model_config on the HistoryEntry schemas does not).
+_HISTORY_ENTRY: TypeAdapter[HistoryEntry] = TypeAdapter(
+    HistoryEntry, config=ConfigDict(hide_input_in_errors=True)
+)
 
 
 def _get_or_create_profile(
@@ -168,7 +176,14 @@ def _owned_history(
         .where(MedicalHistoryEntry.user_id == current_user.id)
         .order_by(col(MedicalHistoryEntry.created_at).asc())
     ).all()
-    return [_history_public(row) for row in rows]
+    entries: list[HistoryEntry] = []
+    for row in rows:
+        try:
+            entries.append(_history_public(row))
+        except json.JSONDecodeError, ValidationError:
+            # Unreadable row (review S4): left out of the list, only its id logged.
+            logger.warning("Skipped unreadable medical history entry %s", row.id)
+    return entries
 
 
 def _get_owned_history_entry(
@@ -289,7 +304,7 @@ def create_measurement(
         value=str(measurement_in.value),
         # Single-market es-MX product: "today" is Mexico City's today, not the
         # server's UTC date (review G8).
-        measured_on=datetime.now(ZoneInfo("America/Mexico_City")).date(),
+        measured_on=datetime.now(MEXICO_CITY).date(),
     )
     session.add(measurement)
     session.commit()
