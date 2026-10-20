@@ -5,7 +5,7 @@
       "src": ".agents/rules/epe.md"
     },
     ".agents/skills/README.md": {
-      "sha256": "d5149ef121286fed35654b5873091d3bccc4476d0882248e5026c710f656877d",
+      "sha256": "f39c219de711eb2a89db7cd0c97d558c841906986e96c8205be3f9ff1ffda4e5",
       "src": ".agents/skills/README.md"
     },
     ".agents/skills/codebase-context/SKILL.md": {
@@ -17,7 +17,7 @@
       "src": ".agents/skills/epe-0-new/SKILL.md"
     },
     ".agents/skills/epe-0-new/templates/common/changes-README.md": {
-      "sha256": "8d65fe3309e8d8bc83af70d8ec49c66c68887803a9a8af5c9a8eb575cfdcf389",
+      "sha256": "c621c82dc30a47f6f881760a2c2390e859ef5a21ca01fb255b1a0a99e234145c",
       "src": ".agents/skills/epe-0-new/templates/common/changes-README.md"
     },
     ".agents/skills/epe-0-new/templates/common/closed.md": {
@@ -101,7 +101,7 @@
       "src": ".agents/skills/epe-0-new/templates/development/validation.md"
     },
     ".agents/skills/epe-0-new/templates/openspec/config-rules.yaml": {
-      "sha256": "be4fcd10195f3a109bbde3f9ae03cb6be821f041b29facbb51741c219d3c637b",
+      "sha256": "b22b583075ed252136da23b5426ba247dadecfeec4da84cb223b5f8331303bc7",
       "src": ".agents/skills/epe-0-new/templates/openspec/config-rules.yaml"
     },
     ".agents/skills/epe-0-new/templates/openspec/design.md": {
@@ -121,7 +121,7 @@
       "src": ".agents/skills/epe-2-plan/SKILL.md"
     },
     ".agents/skills/epe-3-execute/SKILL.md": {
-      "sha256": "6537ecd48d84440a1d1ce3418f084b7b8a03b20d08c4f663c8dbce7991a4aea4",
+      "sha256": "6314dbe604d669896a93776f01a32aa0476c9532fb7605ba3c312b1b605c8c3c",
       "src": ".agents/skills/epe-3-execute/SKILL.md"
     },
     ".agents/skills/epe-4-review/SKILL.md": {
@@ -129,11 +129,11 @@
       "src": ".agents/skills/epe-4-review/SKILL.md"
     },
     ".agents/skills/epe-5-apply/SKILL.md": {
-      "sha256": "8af4d3a88b9f29a07c6c56596357be8ef67c9b03eaec9128adc6baef2409f0fb",
+      "sha256": "9f879b2476aa06df490837571ba108f199c542f6518ca1756ef8a36abb4af407",
       "src": ".agents/skills/epe-5-apply/SKILL.md"
     },
     ".agents/skills/epe-6-archive/SKILL.md": {
-      "sha256": "352107a2ebf96db01185279b10d5697aef0585e888b24576e9070ae2f24103fd",
+      "sha256": "000a80e820d3145f52738d7840d1a6375a22132fcaeecd1271535c6c0a13d1f1",
       "src": ".agents/skills/epe-6-archive/SKILL.md"
     },
     ".agents/skills/epe-memory/SKILL.md": {
@@ -209,7 +209,7 @@
       "src": ".claude/agents/tester.md"
     },
     ".claude/hooks/_config.py": {
-      "sha256": "ad4262cef3c2ab360240e27a0e06686743ae33932e1ac4b5cc18b970e9fb40ce",
+      "sha256": "5bbd2d64dff33c06fd952b3909a4a1ffcceb3c0438898cb82f2c548bb615de4a",
       "src": ".claude/hooks/_config.py"
     },
     ".claude/hooks/_harness.py": {
@@ -227,6 +227,10 @@
     ".claude/hooks/gate-plan.py": {
       "sha256": "85e91bf1b7c06bd0c2db733dd32536c61a805378539fc33819d700f537665dc9",
       "src": ".claude/hooks/gate-plan.py"
+    },
+    ".claude/hooks/guard-browser.py": {
+      "sha256": "7aa95ea1580db5f83a0a53db1797f4359f780b3a2a55a4059ced5487daf80439",
+      "src": ".claude/hooks/guard-browser.py"
     },
     ".claude/hooks/guard-commands.py": {
       "sha256": "6ed17922c1811bcc07f3abc362d2a598f804459a18cc237e2a0eede35f9d3b9a",
@@ -273,7 +277,7 @@
       "src": ".claude/profile.env.example"
     },
     ".claude/settings.json": {
-      "sha256": "d2d09e3fea9c359668f61e2326024b9047b2767e8c41a0af6d478e602486a1d6",
+      "sha256": "9c6f85a0299470ba57777592273490f7ae6ac00a120ac7229b916bf2ea39ee10",
       "src": ".claude/settings.json"
     },
     ".cursor/hooks.json": {
@@ -305,11 +309,11 @@
       "src": ".vscode/settings.json"
     },
     "AGENTS.md": {
-      "sha256": "2becc4105ed11a232aecb7d49a2010f9b2e15029e7e321636d5a8ba8292fee4d",
+      "sha256": "97139366ca44f940be2896148c45ec06a85d5284f5ab1a6cec230c4c537f1022",
       "src": "AGENTS.md"
     },
     "CLAUDE.md": {
-      "sha256": "2db504fe13abce143dc3cc8f40a64567d84161dfa333a8d23f34cec4230f68c4",
+      "sha256": "9b0a98e405551cadc6ae0f0d689867b79f1316af7421f61ae5ddf2df8e30f984",
       "src": "CLAUDE.md"
     },
     "Makefile": {
@@ -329,7 +333,7 @@
       "src": "docs/engines.md"
     },
     "docs/epe-cycle.md": {
-      "sha256": "cdf63e233acf175571f99e59e79091ad701c9b2834531fdd790517a2f031132a",
+      "sha256": "6f1f383009e07ac80cb897ba80fd6fcda57bc08595f720bb13e70e642b7e41ca",
       "src": "docs/epe-cycle.md"
     },
     "docs/flavors.md": {
@@ -421,7 +425,7 @@
       "src": "scripts/worktrees.py"
     }
   },
-  "harness_version": "0.3.1",
+  "harness_version": "0.3.2",
   "installed": "2026-10-11",
   "mode": "new",
   "updated": "2026-10-20"

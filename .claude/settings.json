@@ -7,7 +7,8 @@
       "Bash(wc *)", "Bash(head *)", "Bash(tail *)", "Bash(sed -n *)",
       "Bash(python3 scripts/*)", "Bash(python3 .claude/hooks/*)",
       "Bash(gh pr view *)", "Bash(gh pr list *)", "Bash(gh issue view *)",
-      "WebSearch"
+      "WebSearch",
+      "mcp__claude-in-chrome__*"
     ]
   },
   "hooks": {
@@ -48,6 +49,12 @@
         "matcher": "Agent|Task",
         "hooks": [
           { "type": "command", "command": "python3 \"${CLAUDE_PROJECT_DIR:-.}/.claude/hooks/guard-review-brief.py\"" }
+        ]
+      },
+      {
+        "matcher": "mcp__claude-in-chrome__navigate|mcp__claude-in-chrome__browser_batch",
+        "hooks": [
+          { "type": "command", "command": "python3 \"${CLAUDE_PROJECT_DIR:-.}/.claude/hooks/guard-browser.py\"" }
         ]
       }
     ],

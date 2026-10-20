@@ -25,7 +25,10 @@ want to touch, so they do not decide what counts.
    rewrite) with applied / bounced / debt. Update `evidence.md` if a test changed.
 5. **PR**: idempotent `<!-- review-agent: fixer -->` comment with applied (finding → change → file:line), bounced
    (with argument) and deferred, closing with the commit. If the PR scope changed, `gh pr edit --body`.
-6. **Return** to the human: applied, bounced, debt, test results, exploratory pass. **Do not merge.**
+6. **Archive** (`/epe-6-archive`, default path): last commit of the same PR, so the merge carries code, specs,
+   CHANGELOG and docs together.
+7. **Return** to the human: applied, bounced, debt, test results, exploratory pass, where `validation.md` now
+   lives. **Do not merge.**
 
 ## Resuming from another machine
 `gh pr checkout <n>`; read the FINDER/VALIDATOR comments on the PR; **redo the human gate here** (approval does not
@@ -34,4 +37,5 @@ reproduces, bounce it).
 
 ## Antipatterns
 The fixer discards on its own · fixing things "while at it" outside the findings · reintroducing debt · merging or
-deploying after applying · returning to the human without walking the visible surface again.
+deploying after applying · returning to the human without walking the visible surface again · leaving the archive
+for a separate PR after the merge.

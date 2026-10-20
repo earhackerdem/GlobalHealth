@@ -30,8 +30,10 @@ inherits). Stories carry an `Origin:` line. Existing codebases enter with `/code
    `parallel` (below).
 5. **Review** (another person or session, `/epe-4-review`): finders per lens, validators that reproduce, human
    gate; `/epe-5-apply` applies only what was approved.
-6. **Validate**: whoever approves follows `validation.md` and comments on the PR per criterion.
-7. **Archive** (`/epe-6-archive`) after the merge.
+6. **Archive** (`/epe-6-archive`) as the last commit of the same PR, at the end of `/epe-5-apply`: the merge
+   carries code, specs, CHANGELOG and docs together. Only a change merged before archiving gets its own archive PR.
+7. **Validate**: whoever approves follows `validation.md` (now in the archived folder) and comments on the PR per
+   criterion; small fixes go on top in the same PR. Then a human merges.
 
 ## Guardrails (they don't depend on anyone remembering)
 - `supervised` profile (`make profile`): without an approved plan, `code` isn't edited; push to protected branches,

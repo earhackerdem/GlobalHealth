@@ -67,7 +67,7 @@ Other harnesses (Cursor, Copilot): the roles run as two turns or sessions with `
 `/opsx:apply <id>` (or `openspec instructions apply --change <id>`) walks `tasks.md`; the roles above still apply per
 group's Execution tag, the orchestrator still re-runs red and green and commits, `make tdd-check` still verifies one
 red per `test→impl` group. `evidence.md`, `validation.md` and the journal entry are the harness's, written in the
-change folder. Do not archive here.
+change folder. Do not archive here: archiving is the last step of `/epe-5-apply`, in this same PR.
 
 ## Final verification (not delegable)
 1. Full suite of the touched area, from clean.
@@ -100,4 +100,5 @@ change folder. Do not archive here.
 - 3 failed attempts with the same approach → stop, summarize what you tried and ask.
 
 ## Chat wrap-up
-Done / evidence (numbers) / exploratory pass / debt / next step (`/epe-4-review` by another person or session).
+Done / evidence (numbers) / exploratory pass / debt / next step (`/epe-4-review` by another person or session; if
+the person says there will be no review, `/epe-6-archive` in this PR before handing it over).
