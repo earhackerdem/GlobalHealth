@@ -501,6 +501,9 @@ function HistoryEntryForm({
         <span className="text-sm font-medium" aria-hidden="true">
           {label} <span className="text-destructive">*</span>
         </span>
+        {/* Nothing chosen: the error sits under the label, where the focus lands,
+            not 13 options below (off-screen on a phone). With "Otra", under its text. */}
+        {values.condition !== "other" && fieldError("condition")}
         {/* aria-label keeps the group's name the clean label (as ChipGroup). */}
         <fieldset
           aria-label={label}
@@ -523,7 +526,7 @@ function HistoryEntryForm({
         </fieldset>
         {values.condition === "other" &&
           textField("other_text", t("history.fields.chronicOtherText"))}
-        {fieldError("condition")}
+        {values.condition === "other" && fieldError("condition")}
       </div>
     )
   }
