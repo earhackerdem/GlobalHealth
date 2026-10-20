@@ -17,12 +17,15 @@ want to touch, so they do not decide what counts.
    "Apply each approved finding. If you believe one is a false positive or the fix introduces a new problem, do NOT
    apply it and do NOT discard it: return it with your argument. You have no authority to dismiss a finding."
    Surgical edits, no extra rewrites.
-3. **No regression**: tests of the touched area until truly green; project gates; citer inventory.
+3. **No regression**: tests of the touched area until truly green; project gates; citer inventory. If the fixes
+   touch a visible surface, re-run the **exploratory pass** of `/epe-3-execute` (Final verification, step 2) over
+   what changed, with the same gate: defects are fixed or escalated before returning, and the human validates only
+   after the agent has walked it clean.
 4. **Trace**: new entry in `memory/journal/` (append-only; if a previous entry was wrong, inline correction, not a
    rewrite) with applied / bounced / debt. Update `evidence.md` if a test changed.
 5. **PR**: idempotent `<!-- review-agent: fixer -->` comment with applied (finding → change → file:line), bounced
    (with argument) and deferred, closing with the commit. If the PR scope changed, `gh pr edit --body`.
-6. **Return** to the human: applied, bounced, debt, test results. **Do not merge.**
+6. **Return** to the human: applied, bounced, debt, test results, exploratory pass. **Do not merge.**
 
 ## Resuming from another machine
 `gh pr checkout <n>`; read the FINDER/VALIDATOR comments on the PR; **redo the human gate here** (approval does not
@@ -31,4 +34,4 @@ reproduces, bounce it).
 
 ## Antipatterns
 The fixer discards on its own · fixing things "while at it" outside the findings · reintroducing debt · merging or
-deploying after applying.
+deploying after applying · returning to the human without walking the visible surface again.

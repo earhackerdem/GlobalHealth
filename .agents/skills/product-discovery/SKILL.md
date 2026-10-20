@@ -35,10 +35,16 @@ until two consecutive rounds add no new entity, attribute, relation or state. Th
    (template-roles-permisos.md). Create `product/` with `make product-init` if missing.
 6. **Prototype gate.** Build a navigable mock of the whole product from the catalogs and processes: mock data from
    the glossary, screens per role, every actionable element labeled with the acceptance-criterion id it will
-   satisfy (a toggleable `AC-n` badge). Ship it as a clickable page (or, if the person prefers an external tool,
-   emit a ready prompt for Claude Design / v0 / Stitch). **The human gate is navigating it**: the stakeholder
-   clicks, corrects, and approves flows — they are never asked to read delta specs. When interaction is genuinely
-   uncertain, two cheap variants beat one debate: let them choose.
+   satisfy (a toggleable `AC-n` badge), and the user story verbatim at the top of the criteria legend — the badges
+   tell *where*, the story tells *why*. Ship it as a clickable page (or, if the person prefers an external tool,
+   emit a ready prompt for Claude Design / v0 / Stitch). **The mock's HTML is committed to the repo**
+   (`product/prototipos/<slug>.html`) and opened locally: mock data only, never real data. **No hosted copy
+   unless the person asks for one** (an artifact link, v0, etc.): it is bound to one account and its sharing
+   permissions, so another person, or the same person on another account, may not be able to open it. The repo
+   file is the source of truth and outlives accounts and sessions.
+   **The human gate is navigating it**: the stakeholder clicks, corrects, and approves flows — they are never
+   asked to read delta specs. When interaction is genuinely uncertain, two cheap variants beat one debate: let
+   them choose.
 7. Close: write what changed during the interview back into the artifacts, note open questions (max 4), and hand
    off to `/product-brief` (which now interviews only what discovery did not answer).
 

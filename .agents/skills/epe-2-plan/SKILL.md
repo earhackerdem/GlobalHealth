@@ -10,6 +10,8 @@ argument-hint: [change path; defaults to .epe/active] · "plan approved" to open
 - `exploration.md` exists and its §1 is all ✅. If not, go back to `/epe-1-explore`.
 - Read `memory/decisions.md`: the plan does not contradict a current ADR; if it needs to change one, the plan says so
   and the ADR is touched **in the same change**, not later.
+- Load every skill listed in `harness.json → phase_skills.plan` (the project's domain skills: how this stack is
+  tested, its house conventions and templates). The test plan's levels and the ticket types come from them.
 
 ## Two modes
 1. **`/epe-2-plan`**: write/update `plan.md` with `Status: DRAFT` and `tasks.md`. Finish by asking for the textual
@@ -45,7 +47,9 @@ The person approving often will not read the plan's prose, and never the delta s
 GlobalHealth 2026-10-12, a whole cycle built on a wrong model that a mock exposed in minutes). So, when the change
 touches screens, the plan ships with a **navigable mock**: mock data drawn from `product/dominio.md`'s glossary
 when it exists, every actionable element labeled with the id of the acceptance criterion it satisfies (toggleable
-`AC-n` badges). The textual approval then means "I navigated the prototype and this is what I want" — ask for
+`AC-n` badges) and the story's text verbatim at the top of the criteria legend. The mock's HTML is committed to
+the repo next to the change (or `product/prototipos/`) and opened locally; no hosted copy (artifact, v0) unless the
+person asks, since it is bound to one account and its sharing permissions. The repo file is the source of truth. The textual approval then means "I navigated the prototype and this is what I want" — ask for
 exactly that. The AC ids travel the whole chain: prototype badge → scenario → test name → validation.md. The specs
 do not disappear: they remain the contract the tests are written from, and they alone cover errors, limits and
 regulations (the mock only shows happy paths). If the person prefers an external tool, emit a ready prompt for

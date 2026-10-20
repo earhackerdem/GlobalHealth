@@ -124,6 +124,11 @@ If you discover a rule, template or gate that would improve the next sessions, *
 (rejections too). When closing a substantial session, `/session-retro`; "nothing to standardize" is a legitimate
 result. A rule that gets skipped isn't fixed by writing it again: it's fixed with a gate.
 
+**Harness first.** A better harness improves every change that comes after it, so a harness improvement goes
+before the next product task: an accepted proposal in `memory/meta-improvements.md`, a pending
+`make harness-update`, or a rule the person just asked for. Found mid-change: finish the current step, record it,
+and do the improvement upstream and bring it in before the next phase or story. Merging still belongs to a human.
+
 ## Repo map
 ```
 harness.json          configuration: harness_version, flavor, engine (epe | openspec), plan_file, code (gated paths), tests (barrier paths), protected branches, blocked commands, skill hints

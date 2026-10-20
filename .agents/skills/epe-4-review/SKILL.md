@@ -15,6 +15,8 @@ DoD → finders (parallel, one lens each) → merge+dedupe → validators (paral
 
 ## 0. Before launching anything (you, cheap)
 - Locate the change and read `story.md`, `plan.md`, `evidence.md`.
+- Load every skill listed in `harness.json → phase_skills.review`: the project's domain lenses (house style guide,
+  security checklist, platform constraints) travel literally in the finders' briefs, next to `closed.md`.
 - **Walk the /epe-3-execute DoD**: one row per criterion in evidence? truly green with numbers? validation.md?
   journal? Each ✗ is a high-signal lead. Measured at origin: 14 of 21 findings fell on an unhonored DoD item.
 - Deterministic layer: project gates, lint, `git diff <base>...<branch> --stat`.
