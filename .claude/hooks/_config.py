@@ -16,8 +16,12 @@ Keys:
                      scripts/tdd-check.py. Empty = the barrier is off.
   roles              auto (default: tester/implementer only for tickets with 3+ criteria or 2+ implementation
                      files) | always | never. Read by the plan skill; tdd-check verifies commits either way.
-  exempt             prefixes that never require a plan (memory/, docs/, product/, the agentic layer, changes_dir).
-                     README* and CHANGELOG* are always exempt.
+  exempt             prefixes or globs that never require a plan (memory/, docs/, product/, the agentic layer,
+                     changes_dir; "vendor/*/docs/" exempts that folder inside every vendored repo). README* and
+                     CHANGELOG* are always exempt. `code` accepts the same prefixes or globs.
+  phase_skills       {"explore": [skill…], "plan": […], "execute": […], "review": […]}: the project's domain
+                     skills (platform catalogs, stack conventions, house templates) that the EPE skills load in
+                     their Phase 0. The generic cycle learns the stack from them instead of being forked.
   protected_branches branch names that never receive a direct push
   blocked_commands   [{"pattern": regex, "reason": text}] added by guard-commands to the base rules
   skill_hints        [{"skill": name, "pattern": regex, "only_without_active"?: bool}] for the skill-nudge hook
@@ -43,6 +47,7 @@ DEFAULTS = {
     "protected_branches": ["main", "master", "release", "production", "prod"],
     "blocked_commands": [],
     "skill_hints": [],
+    "phase_skills": {},
     "lint": True,
 }
 
@@ -96,18 +101,32 @@ def relative(path, cwd):
     return rel.replace("\\", "/")
 
 
+def matches(rel, patterns):
+    """Prefix ("src/") or glob ("vendor/*/docs/") match of a relative path against a list."""
+    for p in patterns or []:
+        p = (p or "").strip("/")
+        if not p:
+            continue
+        if any(ch in p for ch in "*?["):
+            if fnmatch.fnmatch(rel, p) or fnmatch.fnmatch(rel, p + "/*"):
+                return True
+        elif rel.startswith(p + "/") or rel == p:
+            return True
+    return False
+
+
 def is_exempt(rel, cfg):
     name = os.path.basename(rel)
     if name.startswith("README") or name.startswith("CHANGELOG"):
         return True
-    return any(rel.startswith(p.strip("/") + "/") or rel == p.strip("/") for p in cfg["exempt"])
+    return matches(rel, cfg["exempt"])
 
 
 def is_code(rel, cfg):
-    """Does this path require an approved plan? `code` prefixes minus the exempt ones."""
+    """Does this path require an approved plan? `code` prefixes or globs minus the exempt ones."""
     if not rel or is_exempt(rel, cfg):
         return False
-    return any(rel.startswith(p.strip("/") + "/") or rel == p.strip("/") for p in cfg["code"])
+    return matches(rel, cfg["code"])
 
 
 def is_test(rel, cfg):

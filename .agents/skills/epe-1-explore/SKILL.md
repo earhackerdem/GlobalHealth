@@ -19,6 +19,9 @@ exploration, no plan.
    them, and the stack is not re-litigated) and the epic the story's `Origin:` line points to in `product/prd.md` (the
    FR/NFR ids it must cover). A story without `Origin:` in a project with a PRD is a question for the author, not a
    blocker.
+5. Load with the Skill tool every skill listed in `harness.json → phase_skills.explore` (the project's domain
+   skills: platform catalogs, stack conventions, where "what already exists" lives in this stack). They say *where to
+   look and how to cite*; this skill says the order and the gate.
 
 ## With `engine: openspec`
 The input is `proposal.md` plus the scenarios under `specs/` (or the request, if `/opsx:propose` has not run yet).

@@ -113,23 +113,23 @@
       "src": ".agents/skills/epe-0-new/templates/openspec/tasks.md"
     },
     ".agents/skills/epe-1-explore/SKILL.md": {
-      "sha256": "0c4c2b8faf6f5adda8cc380138c135f397b307a3d2b1c7f563da2ae9e3aa04a9",
+      "sha256": "9fd0c341d590676e3419984ff299b45a3b87366b337aac2b56bb4a9bea138b15",
       "src": ".agents/skills/epe-1-explore/SKILL.md"
     },
     ".agents/skills/epe-2-plan/SKILL.md": {
-      "sha256": "ca0249059c91dcf339c11df78629c6111d0670999cf75a7b9105402f46a93400",
+      "sha256": "3ec51134a88dd10d136cfd8f0168d5a7a077ed589aa48c6b91e68b5b0eabf5db",
       "src": ".agents/skills/epe-2-plan/SKILL.md"
     },
     ".agents/skills/epe-3-execute/SKILL.md": {
-      "sha256": "752861aaf02c24f513516fa3184af0c912740deea0ffe1950cc14f2b0d6bcdff",
+      "sha256": "6537ecd48d84440a1d1ce3418f084b7b8a03b20d08c4f663c8dbce7991a4aea4",
       "src": ".agents/skills/epe-3-execute/SKILL.md"
     },
     ".agents/skills/epe-4-review/SKILL.md": {
-      "sha256": "dd497e5f02e62955ae8286a55bda48bb1c3c213fc31bc4bc264222f9f75095d2",
+      "sha256": "9c7e4b10dc73b00bc33f6fed794c5881d208ccc7ad5c1e60a2d08c264f451321",
       "src": ".agents/skills/epe-4-review/SKILL.md"
     },
     ".agents/skills/epe-5-apply/SKILL.md": {
-      "sha256": "52277ace6a34e665bf27b92882fb66c55e570caf212db61bd3829a26f2fd5658",
+      "sha256": "8af4d3a88b9f29a07c6c56596357be8ef67c9b03eaec9128adc6baef2409f0fb",
       "src": ".agents/skills/epe-5-apply/SKILL.md"
     },
     ".agents/skills/epe-6-archive/SKILL.md": {
@@ -157,7 +157,7 @@
       "src": ".agents/skills/product-brief/template.md"
     },
     ".agents/skills/product-discovery/SKILL.md": {
-      "sha256": "21cf3d0e24e4e3dff61f71b27b7fecc4c4be3d7ce8bc504e1efccdeb3b8fe059",
+      "sha256": "c56facf136455ae25a5725215aeeaaf98b17598c38d129e50e8fe935186fe64d",
       "src": ".agents/skills/product-discovery/SKILL.md"
     },
     ".agents/skills/product-discovery/template-dominio.md": {
@@ -209,7 +209,7 @@
       "src": ".claude/agents/tester.md"
     },
     ".claude/hooks/_config.py": {
-      "sha256": "abe1e2683635e09a1f655ce04a08ee6259cfc47807802aeb66601d653cc22f96",
+      "sha256": "ad4262cef3c2ab360240e27a0e06686743ae33932e1ac4b5cc18b970e9fb40ce",
       "src": ".claude/hooks/_config.py"
     },
     ".claude/hooks/_harness.py": {
@@ -305,7 +305,7 @@
       "src": ".vscode/settings.json"
     },
     "AGENTS.md": {
-      "sha256": "c3fad2db8caccc22285dfeca634b288071c68c43784ad322be64b18aa891201d",
+      "sha256": "2becc4105ed11a232aecb7d49a2010f9b2e15029e7e321636d5a8ba8292fee4d",
       "src": "AGENTS.md"
     },
     "CLAUDE.md": {
@@ -421,8 +421,8 @@
       "src": "scripts/worktrees.py"
     }
   },
-  "harness_version": "0.2.0",
+  "harness_version": "0.3.1",
   "installed": "2026-10-11",
   "mode": "new",
-  "updated": "2026-10-18"
+  "updated": "2026-10-20"
 }

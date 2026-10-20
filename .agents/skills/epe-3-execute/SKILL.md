@@ -9,6 +9,8 @@ argument-hint: [change path; defaults to .epe/active] [phase N to run a single p
 ## Preconditions (verify, do not assume)
 - `plan.md` with `Status: APPROVED`. If not, stop and send to `/epe-2-plan`.
 - In the content flavor load `Skill(produce-content)`.
+- Load every skill listed in `harness.json → phase_skills.execute` (the project's domain skills: dev loop, how to
+  run and verify in this stack, house rules). Their recipes replace the generic "run the suite" below.
 - Git anchor: `git status` and `git log --oneline -5`. If there is someone else's WIP, do not touch or commit it.
   Create `feat|fix|docs/<slug>` from the agreed base branch (if unclear, ask).
 
@@ -68,10 +70,18 @@ red per `test→impl` group. `evidence.md`, `validation.md` and the journal entr
 change folder. Do not archive here.
 
 ## Final verification (not delegable)
-1. Full suite of the touched area, from clean. If there is a visible surface, exercise it for real and leave the
-   output in `evidence.md`.
-2. Cross regression over what the plan flagged as risks.
-3. Re-run the project gates (`make` whatever applies).
+1. Full suite of the touched area, from clean.
+2. **Exploratory pass, the agent first** (any visible surface). With a browser tool (Claude in Chrome or the IDE's
+   equivalent), against a local or dev URL only, use the app as a real user and try to break it: odd data (emoji,
+   maximum lengths), double submit, back/forward, switching tabs mid-form, phone width, console errors. Use test
+   accounts and mock data only. Record in `evidence.md` one row per attempt (what was tried → what happened), plus
+   the console. **Gate order: the agent walks it before the human validates.** No defects: hand `validation.md` to
+   the human. A defect inside the plan: fix it and explore again. A defect that needs human judgment (scope,
+   product, a decision): stop and ask. The human never gets a validation script the agent has not walked first.
+   No browser tool at hand: say so in `evidence.md` and in the wrap-up, never skip it silently. (Measured in
+   GlobalHealth, 2026-10-20: skipped after an apply because it lived in the inbox, not in this list.)
+3. Cross regression over what the plan flagged as risks.
+4. Re-run the project gates (`make` whatever applies).
 
 ## Deliverables (all mandatory)
 - `evidence.md` (template) with a criterion → test → anchor → status table.
@@ -90,4 +100,4 @@ change folder. Do not archive here.
 - 3 failed attempts with the same approach → stop, summarize what you tried and ask.
 
 ## Chat wrap-up
-Done / evidence (numbers) / debt / next step (`/epe-4-review` by another person or session).
+Done / evidence (numbers) / exploratory pass / debt / next step (`/epe-4-review` by another person or session).
