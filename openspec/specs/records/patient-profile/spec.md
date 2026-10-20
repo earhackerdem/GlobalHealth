@@ -252,4 +252,3 @@ de cada registro (incluida su sección), la marca "ninguna" y el grupo sanguíne
 - **GIVEN** un paciente con una cirugía "Apendicectomía", fracturas marcada como "ninguna" y grupo "O+"
 - **WHEN** se lee el almacenamiento directamente, sin pasar por la app
 - **THEN** ni "Apendicectomía", ni el nombre de la sección, ni la marca "ninguna", ni "O+" aparecen en claro
-
