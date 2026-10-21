@@ -574,8 +574,18 @@ function HabitsForm() {
       screenOf(draftRef.current) !== opening,
     [opening, openingToken],
   )
+  // Where the focus was when the leave dialog opened: "Seguir editando"
+  // brings it back there (Radix has no trigger to return to).
+  const focusBefore = useRef<HTMLElement | null>(null)
+  const blockAndRemember = useCallback(() => {
+    const ask = mustAsk()
+    if (ask && document.activeElement instanceof HTMLElement) {
+      focusBefore.current = document.activeElement
+    }
+    return ask
+  }, [mustAsk])
   const blocker = useBlocker({
-    shouldBlockFn: mustAsk,
+    shouldBlockFn: blockAndRemember,
     enableBeforeUnload: mustAsk,
     withResolver: true,
   })
@@ -1036,6 +1046,12 @@ function HabitsForm() {
           onOpenAutoFocus={(event) => {
             event.preventDefault()
             stayRef.current?.focus()
+          }}
+          onCloseAutoFocus={(event) => {
+            event.preventDefault()
+            const before = focusBefore.current
+            focusBefore.current = null
+            if (before?.isConnected) before.focus()
           }}
         >
           <DialogHeader>
