@@ -11,7 +11,11 @@
 | R1 en s26-ultra tras endurecer la conexión de los e2e: `-g "R1 otro paciente" --project=s26-ultra --repeat-each=10` | 11 passed (setup + 10) | 0 | 0 | ✅ |
 | `bunx tsc -p tsconfig.build.json --noEmit` · `bunx biome check src/ tests/` | 0 errores · 105 archivos, sin cambios | 0 | — | ✅ |
 | Límites escritos a mano: `grep -nE "\b(130\|100\|30\|24\|7)\b" frontend/src/components/Profile/HabitsForm.tsx` | solo `className="w-24"` (ancho, no límite); las escalas salen de `zod.gen.ts` | — | — | ✅ |
-| Suite Playwright COMPLETA como CI (`PLAYWRIGHT_BASE_URL=http://localhost:8000`, imagen reconstruida con esta rama), 2 corridas | **239 passed** · 238 passed + 1 failed: `login.spec.ts:87`, el heredado del saludo contra el redirect de la home (en el inbox de deudas) | 1 corrida con el heredado | 0 | 🟡 inestabilidad heredada |
+| **Revisión ronda 1 (grupos 4 y 5).** Grupo 5, re-corrido por el orquestador: `cd backend && FASTAPI_ENV=development uv run coverage run -m pytest tests -q` · `uv run mypy app` | **345 passed, 0 failed** (hábitos 95) · cobertura **96 %** · mypy limpio (25 archivos) | 0 (los UserWarning de configuración dev de siempre) | 0 | ✅ |
+| Grupo 4 y el arreglo del foco, re-corridos por el orquestador: `bunx playwright test tests/profile-habits.spec.ts tests/profile.spec.ts tests/profile-history.spec.ts` (chromium + s26-ultra) | **141 passed, 0 failed** (antes del arreglo del foco); después, `profile-habits.spec.ts` **65 passed, 0 failed** | 0 | 0 | ✅ |
+| `bunx tsc -p tsconfig.build.json --noEmit` · `bunx biome check src/ tests/` · grep de límites en `HabitsForm.tsx` | 0 errores · 104 archivos sin cambios · solo `className="w-24"` | 0 | — | ✅ |
+| Suite Playwright COMPLETA como CI tras el grupo 4 (`PLAYWRIGHT_BASE_URL=http://localhost:8000`, imagen reconstruida) | **243 passed, 0 failed**; tras el arreglo del foco (imagen reconstruida otra vez) **245 passed, 0 failed** | 0 | 0 | ✅ |
+| Suite Playwright COMPLETA como CI (primera entrega) (`PLAYWRIGHT_BASE_URL=http://localhost:8000`, imagen reconstruida con esta rama), 2 corridas | **239 passed** · 238 passed + 1 failed: `login.spec.ts:87`, el heredado del saludo contra el redirect de la home (en el inbox de deudas) | 1 corrida con el heredado | 0 | 🟡 inestabilidad heredada |
 
 ## Red before green
 
@@ -19,6 +23,10 @@
 |---|---|---|---|---|
 | 1 · backend | `uv run pytest tests/api/routes/test_profile_habits.py -q` → **77 failed, 15 passed, 0 errors**: el modelo viejo rechaza el vapeador como objeto y los campos nuevos (`extra_forbidden`), falta `upgrade_stored_habits` (ImportError dentro de 6 tests) y la fila con la forma anterior se lee vacía | 97074f1 | 92/92 del archivo; suite completa 342 passed | ✓ red 97074f1, tests sin cambios hasta el verde 7e9b05b |
 | 2 · frontend | `bunx playwright test tests/profile-habits.spec.ts` → **32 failed, 27 passed** (16 + 13 por proyecto, 0 errores de setup): faltan las preguntas nuevas, el estado, el guardado automático y D20; el vapeador sembrado como objeto no se ve elegido | 1cfa5ce | 59/59 (verde 7b56610) | ✓ red 1cfa5ce, tests sin cambios hasta el verde 7b56610. Después, un `test:` propio (1facd80): formato de biome y `Connection: close` en la API de los e2e (un `socket hang up` de R1 en s26-ultra, sin aserción cambiada). Después hubo otro `test:` (a985310, formato de ruff en un caso fuera de escala), y `make tdd-check` ancló en a985310, no en 1facd80 (*corrección, revisión ronda 1, D1*; deuda T6 conocida: pasa en vacío para ese commit) |
+
+| 4 · frontend sin guardado automático | `bunx playwright test tests/profile-habits.spec.ts` → **7 failed, 25 passed por proyecto**: faltan el texto, el diálogo y `beforeunload`, `aria-disabled`, "nada se manda hasta Guardar", el aviso de Cancelar y la marca que sigue (A3). Filas 18 y 23 ya pasaban (sin diálogo hoy; el formulario ya validaba al salir) | d1c4ab7 | 32/32 por proyecto (verde 50e28b5) | ✓ tests sin cambios desde d1c4ab7 hasta 50e28b5 |
+| 5 · backend B1 | `uv run pytest tests/api/routes/test_profile_habits.py -k unreadable_habits_json` → **1 failed, 2 passed**: `RecursionError` en el anidado de 100 000 niveles (500) | d5f668f | 95/95 del archivo; suite completa 345 passed (verde 5c800bb) | ✓ red d5f668f |
+| Foco tras "Seguir editando" (defecto de la exploración) | `-g "fila 17"` → **1 failed por proyecto** (fila 17b: foco en `<body>` tras "Seguir editando" y Escape) | 02c1d04 | 33/33 por proyecto (verde 6d43be9) | ✓ red 02c1d04, tests sin cambios hasta el verde |
 
 ## Criterio → prueba
 
@@ -38,15 +46,40 @@
 | Respuestas fuera de su escala | `test_c_out_of_scale_answers_rejected_habits_unchanged` (días 0/31, horas 0/25, vapeador como texto, `years` en el PUT) | ✅ |
 | Lo guardado antes se sigue leyendo | `test_legacy_stored_habits_still_read`, `test_upgrade_stored_habits_unit` | ✅ |
 | C-6 Sin puntaje ni índice | `test_c6_no_score_or_risk_in_the_response` · e2e fila 15 ("horas-año") | ✅ |
-| C-13 Una respuesta se guarda al elegirla | e2e fila 16 | ✅ |
-| C-13 Un número se guarda al salir de su campo | e2e fila 17 | ✅ |
-| C-13/C-14 Con un error no se guarda nada | e2e fila 18 | ✅ |
-| C-13/D20 Botones desactivados mientras guarda | e2e fila 19 | ✅ |
-| C-13 Cancelar deja todo como al abrir | e2e fila 20 | ✅ |
-| C-14 Fuera de escala al salir del campo | e2e fila 21 + grep de límites | ✅ |
+| C-13 Se guarda al tocar "Guardar" | e2e fila 16 | ✅ |
+| C-13 Aviso al salir con cambios sin guardar (y el foco vuelve) | e2e filas 17 y 17b | ✅ |
+| C-13 Sin cambios no hay aviso | e2e fila 18 | ✅ |
+| C-13 Aviso del navegador al recargar | e2e fila 19 (`page.reload()` → diálogo `beforeunload`) | ✅ |
+| C-13 Sin aviso cuando la sesión cambió | e2e fila 20 (cierre de sesión en otra pestaña) | ✅ |
+| C-13/D20 Botones no disponibles mientras guarda | e2e fila 21 (`aria-disabled`, foco en "Guardar", un solo `PUT`) | ✅ |
+| C-13 Cancelar descarta | e2e fila 22 | ✅ |
+| C-14 Fuera de escala al salir del campo | e2e fila 23 (horas, edad mayor que la actual, inicio > fin en vapeador y leña, "12a"; 0 `PUT`) + grep de límites | ✅ |
+| C-14 La marca sigue mientras el campo está a la vista | e2e fila 24 | ✅ |
+| Lo guardado antes se sigue leyendo · filas ilegibles (B1) | `test_unreadable_habits_json_read_as_null_not_500[…]` (JSON inválido, lista, anidado 100 000) | ✅ |
 | Aislados y cifrados | `test_c_habits_isolated_and_encrypted_at_rest` (también `some_days` y `days_last_30` en claro) | ✅ |
 
 ## Exploración en Chrome (agente, antes de la validación humana)
+
+### Tras la revisión ronda 1, sin guardado automático
+
+Imagen reconstruida con el grupo 4 en `localhost:8000` (y el arreglo del foco en Vite `localhost:5173`), la misma cuenta
+de prueba (36 años, tabaco "Nunca" sembrado). La ventana no baja de 580 px de ancho (el mínimo de Chrome en este
+equipo): el ancho de 384 px lo cubre s26-ultra. Los `PUT` se contaron con el lector de red del navegador.
+
+| Intento | Qué pasó |
+|---|---|
+| Abrir "Hábitos" | "Tus respuestas se guardan cuando tocas «Guardar»." debajo de la introducción |
+| Tabaco "Actual", 12 sin salir del campo, "‹ Mi perfil médico" | "¿Salir sin guardar?" con el foco en "Seguir editando" |
+| "Seguir editando" y Escape | El diálogo se cierra con "Actual" y 12. **Defecto:** el foco caía a `<body>` → rojo 02c1d04, arreglo 6d43be9; vuelto a probar: foco al enlace (Enter en "Seguir editando") y al campo con su 8 (atrás + Escape) |
+| "Salir sin guardar" | `/perfil`; 0 `PUT`; el GET trae tabaco "Nunca" |
+| Leña "Actual" y atrás del navegador | Diálogo; mientras pregunta, la barra de direcciones ya dice `/perfil` (así bloquea TanStack Router); con "Seguir editando" vuelve a `/perfil/habitos` con la leña elegida |
+| `beforeunload` con un cambio | El evento queda prevenido (el navegador pregunta); la fila 19 lo prueba con una recarga real |
+| Triple clic en "Guardar" | 1 solo `PUT`, un aviso "Hábitos guardados", `/perfil`, sin diálogo |
+| Alcohol "Lo dejé" y doble clic en "Cancelar" | 0 `PUT`, un aviso "Se descartaron los cambios", sin diálogo; el GET trae alcohol vacío y la leña guardada |
+| Alcohol "Actual" sin guardar y otra pestaña quita la sesión (lo que hace "Cerrar sesión") | Esta pestaña llega a `/login` sin diálogo ni aviso del navegador; 0 `PUT` |
+| Ancho y consola | Sin scroll horizontal a 580 px; en consola solo el error de una extensión de Chrome ajena a la app |
+
+Sin defectos pendientes dentro del plan.
 
 ### Primera versión, con guardado automático (retirado por la Decision 8; queda como historia)
 
@@ -78,8 +111,14 @@ Sin defectos dentro del plan.
 ## Deuda
 
 - **Doble clic en el resto de la app (D20):** fila en la tarea de deudas; aquí solo se aplica a hábitos.
-- **Un error que no es 422 al tocar "Guardar" o "Cancelar"** se avisa solo en la línea de estado ("No se pudo
-  guardar"), sin aviso emergente (lo señaló el implementer; el contrato solo habla del estado).
+- **`ui/loading-button.tsx` pone `disabled` nativo**, que rompe D20 (pierde el foco); hábitos arma su propio botón.
+  Darle un modo `aria-disabled` va con la fila de D20 de la tarea de deudas.
+- **Un 422 en un grupo de chips que sigue a la vista** (incluido el que se acaba de contestar) se queda hasta el
+  siguiente "Guardar"; así lo lee el contrato (A3: solo se borran los errores de lo que se oculta).
+- **Atrás del navegador con el diálogo abierto** deja ver `/perfil` en la barra de direcciones mientras pregunta
+  (TanStack Router); al elegir "Seguir editando" vuelve a `/perfil/habitos`.
+- **Sin guardado automático** (Decision 8): en el celular, si el navegador cierra la pestaña en segundo plano, lo no
+  guardado se pierde sin aviso.
 - **Flake heredado** `login.spec.ts:87` (en el inbox de deudas).
 - **`make tdd-check` ancla en el `test:` más nuevo** (T6, ya ⏸️): para el grupo 2 la medición real es 1cfa5ce → 7b56610.
 - **`lint.py` del harness** compila con el Python 3.9 del sistema y marca el `except A, B:` (PEP 758) de

@@ -68,16 +68,16 @@ are `single`. `make tdd-check` requires one `test:` commit per `test→impl` gro
 
 ## 4. Frontend: "Guardar" con aviso al salir, y los hallazgos A1 y A3 · test→impl
 
-- [ ] 4.1 **Tester.** Reescribe en `frontend/tests/profile-habits.spec.ts` las filas del guardado automático a partir
+- [x] 4.1 **Tester.** Reescribe en `frontend/tests/profile-habits.spec.ts` las filas del guardado automático a partir
   de dos fuentes: las filas 16–24 del test plan y el Interface contract (Frontend). Ajusta las demás filas que dependían
   del guardado automático (esperar "Guardado", recargar sin "Guardar") para que guarden con "Guardar". Verificación:
   rojo porque faltan el texto, los avisos y `aria-disabled`, no porque un test esté roto. Commit `test:` solo.
-- [ ] 4.2 **Implementer.** `HabitsForm.tsx` sin guardado automático: "Guardar" por `useMutation`, "Cancelar" sin `PUT`,
+- [x] 4.2 **Implementer.** `HabitsForm.tsx` sin guardado automático: "Guardar" por `useMutation`, "Cancelar" sin `PUT`,
   `aria-disabled` (D20), cambios sin guardar con `useBlocker` y `beforeunload`, la condición de la sesión, y los errores
   que se borran solo al ocultar su pregunta. Se borra `useAutosave.ts`; `profile.json` sin `habits.autosave.*` y con
   los textos nuevos. Verificación: los tests de 4.1 verdes sin tocarlos (chromium y s26-ultra); `tsc` y `biome`
   limpios; `grep` sin límites literales en `HabitsForm.tsx`.
-- [ ] 4.3 **Orquestador.** Rojo y verde de nuevo, `make tdd-check`, números en evidence.md § Grupo 4.
+- [x] 4.3 **Orquestador.** Rojo y verde de nuevo, `make tdd-check`, números en evidence.md § Grupo 4.
 
 ## 5. Backend: filas ilegibles (hallazgo B1) · single
 
@@ -87,7 +87,7 @@ are `single`. `make tdd-check` requires one `test:` commit per `test→impl` gro
 
 ## 6. Documentos, decisiones y verificación · single
 
-- [ ] 6.1 **D20 revisada** (`aria-disabled`, no `disabled`). **Documentos del cambio:** evidence (ancla de `tdd-check`,
+- [x] 6.1 **D20 revisada** (`aria-disabled`, no `disabled`). **Documentos del cambio:** evidence (ancla de `tdd-check`,
   grupos 4 y 5), validation.md para el nuevo C-13, journal, design.md (ubicación de textos). **Investigación:**
   etiquetas de `memory/research/habitos.md` y `humo-lena.md` (hallazgos D4, D5). **Producto:** la pantalla de hábitos de
   `product/prototipos/perfil-secciones.html` (D3). Las afirmaciones de la exploración en Chrome (D6).

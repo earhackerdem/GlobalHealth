@@ -53,3 +53,15 @@ Ver evidence.md § Deuda.
 - Plan revisado a DRAFT: spec (C-13 nuevo), design (contrato, decisiones 5, 7 y 8, filas 16–24), tasks (grupos 4–6) y
   el prototipo, recorrido por el agente en Chrome antes de pedir la aprobación. Cerrados: A2, A4–A9, T2, T4 (sin
   objeto) y D11 (falso positivo).
+
+## Aplicación de la ronda 1 (2026-10-21)
+- Saúl Pérez escribió "plan approved" sobre el prototipo revisado.
+- Grupo 4 (tester → implementer): "Guardar" por `useMutation`, "Cancelar" sin `PUT`, `aria-disabled` (D20 revisada),
+  aviso al salir con `useBlocker` y `beforeunload`, sin aviso si la sesión cambió (A5), errores que solo se van con su
+  pregunta (A3). Se borró `useAutosave.ts`. Grupo 5: `pydantic_core.from_json` para las filas ilegibles (B1).
+- La exploración en Chrome encontró un defecto dentro del plan: el foco caía a `<body>` tras "Seguir editando"; rojo
+  (fila 17b) y arreglo, vuelto a probar en Chrome.
+- Documentos: D20, investigación (D4, D5), prototipo del producto (D3), evidence (D1), afirmaciones del recorrido (D6).
+- Verificación: backend 345 passed (96 %); e2e de hábitos 65 passed; suite completa como CI 245 passed.
+- Sorpresa: `ui/loading-button.tsx` pone `disabled` nativo; hábitos arma su botón y el modo `aria-disabled` queda en
+  la fila de D20 de la tarea de deudas. La ventana de Chrome no baja de 580 px aquí: 384 px lo cubre s26-ultra.

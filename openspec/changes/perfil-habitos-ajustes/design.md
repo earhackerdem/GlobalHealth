@@ -111,8 +111,9 @@ aplica al JSON descifrado antes de validarlo; NO se aplica al cuerpo del `PUT`, 
 - **"Cancelar":** no manda nada. Si hay cambios sin guardar, vuelve con el aviso "Se descartaron los cambios"; si no,
   solo vuelve. Nunca abre el diálogo de salida.
 - **No disponibles mientras guarda (D20):** "Guardar" y "Cancelar" con `aria-disabled="true"` mientras el `PUT` está en
-  curso; un clic o Enter en ellos no hace nada, y el foco se queda donde estaba. "Guardar" muestra que está guardando
-  como el resto de los formularios (`LoadingButton`).
+  curso; un clic o Enter en ellos no hace nada, y el foco se queda donde estaba. "Guardar" muestra el mismo indicador de
+  carga que el resto de los formularios, armado en `HabitsForm.tsx`: `ui/loading-button.tsx` pone `disabled` nativo y
+  no se toca aquí (su modo `aria-disabled` va a la fila de D20 de la tarea de deudas).
 - **Cambios sin guardar:** hay cambios si lo que está en pantalla (incluido un número escrito sin salir del campo)
   difiere de lo que había al abrir. Elegir una opción y volver a la de antes no cuenta como cambio.
 - **Aviso al salir dentro de la app** (menú, "‹ Mi perfil médico", atrás del navegador), con `useBlocker` de TanStack
@@ -190,7 +191,7 @@ aplica al JSON descifrado antes de validarlo; NO se aplica al cuerpo del `PUT`, 
 - **Accesibilidad:** errores junto al campo (R5); nombres distintos (R7); el diálogo de salida con el foco en "Seguir
   editando" y Escape como "Seguir editando"; `aria-disabled` en vez de `disabled` (fila 21).
 - **Red:** un `PUT` por "Guardar".
-- **Móvil 384 px:** la exploración en Chrome y s26-ultra recorren la pantalla con las preguntas nuevas.
+- **Móvil 384 px:** s26-ultra recorre la pantalla con las preguntas nuevas; la exploración en Chrome, a 580 px (el mínimo de la ventana en este equipo).
 - **es-MX (D15):** todos los textos en `profile.json`.
 
 ## Risks / Trade-offs
