@@ -11,7 +11,7 @@ are `single`. `make tdd-check` requires one `test:` commit per `test→impl` gro
 
 ## 0. Base · single
 
-- [ ] 0.1 **Prototipo** `openspec/changes/perfil-habitos-ajustes/prototipo.html`, local y navegable:
+- [x] 0.1 **Prototipo** `openspec/changes/perfil-habitos-ajustes/prototipo.html`, local y navegable:
   - la pantalla de hábitos con las preguntas nuevas, el estado del guardado y "Guardar"/"Cancelar" desactivados
     mientras guarda;
   - "Cancelar" que restaura;

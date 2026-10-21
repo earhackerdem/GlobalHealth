@@ -1,7 +1,7 @@
 # Design
 
-Status: DRAFT
-Approved by: <name (role)> on YYYY-MM-DD
+Status: APPROVED
+Approved by: Saúl Pérez (author) on 2026-10-21, sobre el prototipo navegable (`prototipo.html`, C-10…C-14)
 
 **En una frase:** los hábitos ganan la edad de inicio del alcohol, un vapeador con frecuencia y edades, y la leña
 como rango de edades con horas al día; la pantalla guarda sola, valida al salir de cada campo con los límites del
