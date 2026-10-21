@@ -58,7 +58,7 @@ are `single`. `make tdd-check` requires one `test:` commit per `test→impl` gro
   envío, números raros, ancho de 384 px, volver atrás sin guardar). Verificación: tabla en evidence.md; si hay
   defectos, se arreglan o se escalan.
 - [x] 3.2 **Entregables.** `evidence.md`, `validation.md` (no técnico, para Saúl Pérez), el journal y el PR.
-- [ ] 3.3 **Archivo como último commit del PR** (`epe-6-archive`):
+- [x] 3.3 **Archivo como último commit del PR** (`epe-6-archive`):
   - `openspec archive perfil-habitos`;
   - el fragmento en `changelog.d/` (sin generar `CHANGELOG.md`);
   - `product/dominio.md` y `product/prd.md`, con la Story C1 entregada;

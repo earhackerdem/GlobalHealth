@@ -317,8 +317,9 @@ registros de secciones distintas, enlace tratamiento↔medicinas de receta.
 - **Story C — hábitos + trabajo:** cuestionario con lista anidada (ejercicio), movimiento del día y sueño, más
   el bloque "Trabajo" del Perfil básico. Se separó de B en la ronda 6 al crecer: no comparte forma con crónicas.
   Saúl Pérez la partió en dos el 2026-10-20 (exploración de perfil-habitos): **C1 — sustancias y humo** (alcohol,
-  tabaco y vapeador, humo ajeno, leña; C-1…C-4, C-6), en `openspec/changes/perfil-habitos/`, y **C2 — cuerpo,
-  descanso y trabajo** (ejercicio, movimiento del día, sueño y Trabajo; C-5, C-7, C-8, C-9), después.
+  tabaco y vapeador, humo ajeno, leña; C-1…C-4, C-6), **✅ entregada en el PR #30 (2026-10-21); spec en
+  `openspec/specs/records/patient-profile/spec.md`**, y **C2 — cuerpo, descanso y trabajo** (ejercicio, movimiento
+  del día, sueño y Trabajo; C-5, C-7, C-8, C-9), después.
 
 ## Catálogos (en las palabras de Saúl / del borrador que aceptó)
 
