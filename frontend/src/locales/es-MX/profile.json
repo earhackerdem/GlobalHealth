@@ -340,6 +340,7 @@
       "filled": "Con datos"
     },
     "saveHint": "Tus respuestas se guardan cuando tocas «Guardar».",
+    "saving": "Guardando…",
     "savedToast": "Hábitos guardados",
     "discardedToast": "Se descartaron los cambios",
     "leave": {

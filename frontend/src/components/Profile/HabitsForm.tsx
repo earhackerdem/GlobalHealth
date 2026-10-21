@@ -13,6 +13,7 @@ import {
   useCallback,
   useEffect,
   useId,
+  useLayoutEffect,
   useRef,
   useState,
 } from "react"
@@ -522,7 +523,10 @@ function buildBody(
  * Frontend): four blocks, each question only when it applies. Nothing is
  * sent until "Guardar" (Decision 8): one PUT through the mutation, so the
  * 401/403 handling of main.tsx applies. "Guardar" and "Cancelar" are
- * aria-disabled while that PUT is in flight (D20). Leaving a box checks it
+ * aria-disabled while that PUT is in flight (D20), "Guardar" reads
+ * "Guardando…" (R2-5) and the questions take no changes (R2-3); leaving
+ * meanwhile does not ask, and its end only touches the screen and the session
+ * that sent it (R2-1, R2-2). Leaving a box checks it
  * and its block's start ≤ end without moving the focus; "Guardar" checks
  * everything and moves the focus to the first error (review R5). Leaving the
  * screen with unsaved changes asks first, in the app (useBlocker) and on
@@ -557,6 +561,16 @@ function HabitsForm() {
   // "Guardar" succeeded or "Cancelar" was pressed: the screen is leaving on
   // purpose, without asking.
   const leaving = useRef(false)
+  // The screen is still open: a PUT that ends after leaving it only refreshes
+  // the cache (R2-1, R2-2).
+  const mounted = useRef(false)
+  useEffect(() => {
+    mounted.current = true
+    return () => {
+      mounted.current = false
+    }
+  }, [])
+  const titleRef = useRef<HTMLHeadingElement>(null)
 
   const build = (from: Draft = draftRef.current) =>
     buildBody(from, profile.birth_date, t)
@@ -566,10 +580,12 @@ function HabitsForm() {
   const backToProfile = () => navigate({ to: "/perfil" })
 
   // Only refs and the opening values: stable, so the blocker is registered
-  // once.
+  // once. Never while the PUT is in flight (R2-2): leaving then lets it end
+  // on its own.
   const mustAsk = useCallback(
     () =>
       !leaving.current &&
+      !sending.current &&
       currentToken() === openingToken &&
       screenOf(draftRef.current) !== opening,
     [opening, openingToken],
@@ -593,7 +609,15 @@ function HabitsForm() {
   const mutation = useMutation({
     mutationFn: async (body: Habits) =>
       (await ProfileService.updateHabits({ body })).data,
+    // Only for the screen and the session that sent it (R2-1, R2-2): after
+    // leaving or a change of session the answer is not written into the
+    // cache (it could be another account's); ["habits"] is asked again with
+    // the session of that moment, without a toast or a navigation.
     onSuccess: (saved) => {
+      if (!mounted.current || currentToken() !== openingToken) {
+        queryClient.invalidateQueries({ queryKey: ["habits"] })
+        return
+      }
       leaving.current = true
       queryClient.setQueryData(["habits"], saved)
       showSuccessToast(t("habits.savedToast"))
@@ -630,6 +654,19 @@ function HabitsForm() {
     setDraft(next)
   }
 
+  // While saving the chips say they take no changes (R2-3; `choose` ignores
+  // the press). ChipGroup has no such prop and stays untouched (design.md,
+  // what is not touched): the attribute is set on its buttons from here, and
+  // React leaves it alone because it never renders it.
+  useLayoutEffect(() => {
+    const buttons =
+      formRef.current?.querySelectorAll<HTMLButtonElement>("fieldset button")
+    for (const button of buttons ?? []) {
+      if (busy) button.setAttribute("aria-disabled", "true")
+      else button.removeAttribute("aria-disabled")
+    }
+  }, [busy])
+
   /**
    * A chip answer, kept on screen until "Guardar". Only the errors of the
    * questions it hides go away (hallazgo A3): a box still on screen keeps its
@@ -637,6 +674,8 @@ function HabitsForm() {
    * which is about that question (review R12).
    */
   const choose = <K extends keyof Draft>(key: K, value: Draft[K]) => {
+    // While saving the answers stay as sent (R2-3).
+    if (sending.current) return
     const next = { ...draftRef.current, [key]: value }
     update(next)
     const shown = new Set<string>([
@@ -767,15 +806,18 @@ function HabitsForm() {
           autoComplete="off"
           className="w-24"
           value={draft[field.draft]}
+          // While saving the box keeps what was sent (R2-3).
+          readOnly={busy}
           aria-invalid={!!errors[key] || undefined}
           aria-describedby={
             [hintId, errors[key] ? errorId(key) : undefined]
               .filter(Boolean)
               .join(" ") || undefined
           }
-          onChange={(e) =>
+          onChange={(e) => {
+            if (sending.current) return
             update({ ...draftRef.current, [field.draft]: e.target.value })
-          }
+          }}
           onBlur={() => leave(key)}
         />
         {fieldError(key)}
@@ -849,7 +891,13 @@ function HabitsForm() {
       className="flex flex-col gap-4"
     >
       <div className="grid gap-1">
-        <h1 className="text-2xl font-bold tracking-tight">
+        {/* Focusable by script only: where "Seguir editando" leaves the focus
+            when its element is gone (R2-4). */}
+        <h1
+          ref={titleRef}
+          tabIndex={-1}
+          className="text-2xl font-bold tracking-tight"
+        >
           {t("habits.title")}
         </h1>
         <p className="text-muted-foreground">{t("habits.intro")}</p>
@@ -1027,7 +1075,7 @@ function HabitsForm() {
           className="aria-disabled:opacity-50"
         >
           {busy && <Loader2 className="mr-2 h-5 w-5 animate-spin" />}
-          {t("history.save")}
+          {busy ? t("habits.saving") : t("history.save")}
         </Button>
         <Button
           type="button"
@@ -1051,7 +1099,10 @@ function HabitsForm() {
             event.preventDefault()
             const before = focusBefore.current
             focusBefore.current = null
+            // The side menu or the user menu closed meanwhile: the title
+            // (R2-4).
             if (before?.isConnected) before.focus()
+            else titleRef.current?.focus()
           }}
         >
           <DialogHeader>
