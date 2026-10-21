@@ -102,9 +102,9 @@ are `single`. `make tdd-check` requires one `test:` commit per `test→impl` gro
 Aprobada por Saúl Pérez el 2026-10-21 ("procede con tu recomendación"): R2-1…R2-4, R2-7, el texto "Guardando…" (R2-5)
 y los documentos (R2-6, R2-8, R2-9).
 
-- [ ] 7.1 **Tester.** Filas 21 (texto "Guardando…"), 26–29 del test plan en `frontend/tests/profile-habits.spec.ts`.
+- [x] 7.1 **Tester.** Filas 21 (texto "Guardando…"), 26–29 del test plan en `frontend/tests/profile-habits.spec.ts`.
   Commit `test:` solo.
-- [ ] 7.2 **Implementer.** `HabitsForm.tsx`: efectos del guardado solo con la pantalla abierta y el mismo token (si no,
+- [x] 7.2 **Implementer.** `HabitsForm.tsx`: efectos del guardado solo con la pantalla abierta y el mismo token (si no,
   invalidar), sin diálogo mientras guarda, preguntas bloqueadas mientras guarda, foco al título como respaldo,
   "Guardando…". Verificación: el archivo completo verde en chromium y s26-ultra; `tsc` y `biome`.
 - [ ] 7.3 **Orquestador.** Rojo y verde de nuevo, `make tdd-check`, documentos (R2-6, R2-8, R2-9), exploración en Chrome

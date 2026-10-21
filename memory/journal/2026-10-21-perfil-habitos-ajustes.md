@@ -65,3 +65,13 @@ Ver evidence.md § Deuda.
 - Verificación: backend 345 passed (96 %); e2e de hábitos 65 passed; suite completa como CI 245 passed.
 - Sorpresa: `ui/loading-button.tsx` pone `disabled` nativo; hábitos arma su botón y el modo `aria-disabled` queda en
   la fila de D20 de la tarea de deudas. La ventana de Chrome no baja de 580 px aquí: 384 px lo cubre s26-ultra.
+
+## Ronda 2 de la revisión (2026-10-21)
+- 2 finders y 2 validadores sobre 05579b7..27c7b16: 7 confirmados, 1 parcial, 1 sin violar el contrato. El alto (R2-1):
+  un "Guardar" en camino sobrevivía a cerrar sesión y entrar con otra cuenta en la misma pestaña, y su respuesta
+  llegaba a la caché de la otra cuenta. La reescritura había perdido la guarda que tenía la versión anterior.
+- Saúl Pérez aprobó la recomendación ("procede con tu recomendación"): R2-1…R2-4, R2-7, "Guardando…" (R2-5) y los
+  documentos. Contrato y test plan ampliados (filas 26–29), rojo 97ab624, verde 8de47e1, exploración en Chrome por el
+  menú lateral sin defectos.
+- Deuda nueva: los chips no tienen una propiedad para quedar no disponibles; un error del `PUT` con la pantalla
+  cerrada aún muestra el aviso genérico.
