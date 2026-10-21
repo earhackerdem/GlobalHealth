@@ -20,16 +20,16 @@ test.use({ storageState: { cookies: [], origins: [] } })
 //   /perfil/habitos; insignia "Sin llenar" o "Con datos".
 // Pantalla /perfil/habitos: heading "Hábitos"; "Guardar" (exact) hace el PUT,
 //   avisa "Hábitos guardados" y vuelve a /perfil.
-// Grupos (role "group" = fieldset, nombre exacto = su legend); cada chip es un
-//   botón con aria-pressed. Los chips de estado de un bloque van ANTES (en el
-//   DOM) que sus preguntas anidadas:
+// Grupos (role "group" = fieldset, nombre exacto = su aria-label); cada chip
+//   es un botón con aria-pressed. Los chips de estado de un bloque van ANTES
+//   (en el DOM) que sus preguntas anidadas:
 //   "Alcohol": "Nunca" · "Lo dejé" · "Actual".
 //   "¿Con qué frecuencia tomas?": "2 a 3 veces por semana",
 //     "4 o más veces por semana", …
 //   "En un día que tomas, ¿cuántas bebidas?": "3 o 4", "10 o más", …
 //   "¿Cada cuándo tomas 6 o más bebidas en una sola ocasión?": "Cada mes",
 //     "A diario o casi", …
-//   Casilla (role checkbox) "Sobre todo fines de semana".
+//   "Sobre todo fines de semana": "Sí" · "No" (tocar el elegido lo quita).
 //   "Tabaco": "Nunca" · "Antes" · "Actual".
 //   "Vapeador o cigarro electrónico": "Nunca" · "Antes" · "Actual".
 //   "¿Dónde?" (selección múltiple): "Casa" · "Trabajo o escuela" ·
@@ -95,6 +95,15 @@ async function freshPatient(
     .click()
   await page.waitForURL(/\/expediente/)
 
+  return apiSession(request, email, password)
+}
+
+/** Cliente del API autenticado como ese paciente. */
+async function apiSession(
+  request: APIRequestContext,
+  email: string,
+  password: string,
+): Promise<Api> {
   const login = await request.post(`${API}/login/access-token`, {
     form: { username: email, password },
   })
@@ -170,10 +179,23 @@ async function reopen(page: Page) {
   ).toBeVisible()
 }
 
-/** "Guardar" con éxito: aviso "Hábitos guardados" y de vuelta en /perfil. */
+/**
+ * "Guardar" con éxito: aviso "Hábitos guardados" y de vuelta en /perfil. El
+ * aviso de un guardado anterior puede seguir en pantalla (~4 s, y sonner lo
+ * pausa mientras el puntero está encima): los que ya hay se marcan antes de
+ * guardar y se verifica solo el NUEVO (review R4).
+ */
 async function saveOk(page: Page) {
+  const toasts = page.locator("[data-sonner-toast]")
+  await toasts.evaluateAll((shown) => {
+    for (const toast of shown) toast.setAttribute("data-seen", "")
+  })
   await page.getByRole("button", { name: "Guardar", exact: true }).click()
-  await expect(page.getByText("Hábitos guardados")).toBeVisible()
+  await expect(
+    page
+      .locator("[data-sonner-toast]:not([data-seen])")
+      .filter({ hasText: "Hábitos guardados" }),
+  ).toBeVisible()
   await page.waitForURL(PROFILE_URL)
 }
 
@@ -216,6 +238,28 @@ async function expectFieldError(page: Page, field: Locator, message: string) {
   expect(texts).toContain(message)
 }
 
+/**
+ * En móvil (s26-ultra) la navegación y el menú de usuario viven detrás del
+ * trigger del sidebar (como profile.spec.ts): lo abre solo si `target` no está
+ * ya visible.
+ */
+async function revealInSidebar(page: Page, target: Locator) {
+  if (await target.isVisible().catch(() => false)) return
+  await page.getByRole("button", { name: /barra lateral/ }).click()
+  await expect(target).toBeVisible()
+}
+
+/** Login por el formulario de /login ya abierto, sin recargar la página. */
+async function inAppLogin(page: Page, email: string, password: string) {
+  await page.getByTestId("email-input").fill(email)
+  await page.getByTestId("password-input").fill(password)
+  await page.getByRole("button", { name: "Iniciar sesión" }).click()
+  await page.waitForURL((url) => new URL(url).pathname === "/")
+}
+
+/** Errores de envío fuera de los campos (el pie del formulario). */
+const formAlert = (page: Page) => page.locator("form").getByRole("alert")
+
 test.describe("Perfil médico — hábitos (perfil-habitos, grupo 2)", () => {
   test("fila 1 (C-1) alcohol actual con las preguntas del AUDIT-C: tarjeta 'Con datos' y al reabrir siguen elegidas", async ({
     page,
@@ -228,7 +272,7 @@ test.describe("Perfil médico — hábitos (perfil-habitos, grupo 2)", () => {
     await chip(page, FREQUENCY, "2 a 3 veces por semana").click()
     await chip(page, DRINKS, "3 o 4").click()
     await chip(page, SIX_OR_MORE, "Cada mes").click()
-    await page.getByRole("checkbox", { name: WEEKENDS }).check()
+    await chip(page, WEEKENDS, "Sí").click()
     await saveOk(page)
 
     await expect(card(page)).toContainText("Con datos")
@@ -238,7 +282,7 @@ test.describe("Perfil médico — hábitos (perfil-habitos, grupo 2)", () => {
     await expectPressed(chip(page, FREQUENCY, "2 a 3 veces por semana"), true)
     await expectPressed(chip(page, DRINKS, "3 o 4"), true)
     await expectPressed(chip(page, SIX_OR_MORE, "Cada mes"), true)
-    await expect(page.getByRole("checkbox", { name: WEEKENDS })).toBeChecked()
+    await expectPressed(chip(page, WEEKENDS, "Sí"), true)
   })
 
   test("fila 2 (C-1) lo dejó a los 30: al reabrir 'Lo dejé' con 30 y ninguna pregunta del AUDIT-C", async ({
@@ -259,7 +303,7 @@ test.describe("Perfil médico — hábitos (perfil-habitos, grupo 2)", () => {
     await expect(page.getByRole("group", { name: FREQUENCY })).toHaveCount(0)
     await expect(page.getByRole("group", { name: DRINKS })).toHaveCount(0)
     await expect(page.getByRole("group", { name: SIX_OR_MORE })).toHaveCount(0)
-    await expect(page.getByRole("checkbox", { name: WEEKENDS })).toHaveCount(0)
+    await expect(page.getByRole("group", { name: WEEKENDS })).toHaveCount(0)
   })
 
   test("fila 3 (C-1, C-2) una edad mayor que la actual: 40 con 36 años, error junto al campo con el foco y nada guardado", async ({
@@ -506,5 +550,224 @@ test.describe("Perfil médico — hábitos (perfil-habitos, grupo 2)", () => {
     await expect(
       page.getByRole("button", { name: "Guardar", exact: true }),
     ).toBeVisible()
+  })
+
+  test("R1 otro paciente entra sin recargar tras 'Cerrar sesión': no ve ni guarda los hábitos del anterior", async ({
+    page,
+    request,
+  }) => {
+    const apiA = await freshPatient(page, request)
+    await seedHabits(apiA, {
+      tobacco: { status: "current", cigarettes_per_day: 20 },
+      vaping: "current",
+    })
+    await openHabitsFromProfile(page)
+    await expect(numberField(page, CIGARETTES)).toHaveValue("20")
+
+    // B ya dio su consentimiento (por API) y entra directo a la app.
+    const b = { email: randomEmail(), password: randomPassword() }
+    await createUser(b)
+    const apiB = await apiSession(request, b.email, b.password)
+    const text = await request.get(`${API}/consent/text`, {
+      headers: apiB.headers,
+    })
+    const consent = await request.post(`${API}/consent/`, {
+      headers: apiB.headers,
+      data: { version: (await text.json()).version },
+    })
+    expect(consent.ok()).toBeTruthy()
+
+    // A cierra sesión desde el menú; B entra por el formulario sin recargar,
+    // con su GET de hábitos retrasado 2 s (lo que tarde no debe dejar ver los
+    // de A).
+    const userMenu = page.getByTestId("user-menu")
+    await revealInSidebar(page, userMenu)
+    await userMenu.click()
+    await page.getByRole("menuitem", { name: "Cerrar sesión" }).click()
+    await page.waitForURL(/\/login/)
+    await page.route("**/api/v1/profile/habits", async (route) => {
+      if (route.request().method() === "GET") {
+        await new Promise((resolve) => setTimeout(resolve, 2000))
+      }
+      await route.continue()
+    })
+    await inAppLogin(page, b.email, b.password)
+
+    const perfilLink = page.getByRole("link", { name: "Mi perfil médico" })
+    await revealInSidebar(page, perfilLink)
+    await perfilLink.click()
+    await page.waitForURL(PROFILE_URL)
+    await reopen(page)
+    await expectPressed(chip(page, TOBACCO, "Actual"), false)
+    await expectPressed(chip(page, VAPING, "Actual"), false)
+    await expect(numberField(page, CIGARETTES)).toHaveCount(0)
+
+    await saveOk(page)
+    const saved = await getHabits(apiB)
+    expect(saved.tobacco ?? null).toBeNull()
+    expect(saved.vaping ?? null).toBeNull()
+  })
+
+  test("R9 un 422 del servidor va junto a SU campo: la fecha de nacimiento llegó después de abrir el cuestionario", async ({
+    page,
+    request,
+  }) => {
+    const api = await freshPatient(page, request)
+    await openHabitsFromProfile(page)
+    // Cargó sin fecha de nacimiento: el cliente no puede comparar la edad y
+    // solo el servidor rechaza 40 con 36 años.
+    await setAge36(api)
+
+    await chip(page, ALCOHOL, "Lo dejé").click()
+    const quitAge = numberField(page, ALCOHOL_QUIT_AGE)
+    await quitAge.fill("40")
+    const put = page.waitForResponse(
+      (res) =>
+        res.url().endsWith("/profile/habits") &&
+        res.request().method() === "PUT",
+    )
+    await page.getByRole("button", { name: "Guardar", exact: true }).click()
+    expect((await put).status()).toBe(422)
+
+    await expectFieldError(
+      page,
+      quitAge,
+      "La edad no puede ser mayor que tu edad actual",
+    )
+    await expect(formAlert(page)).toHaveCount(0)
+    await expect(page).toHaveURL(HABITS_URL)
+    const saved = await getHabits(api)
+    expect(saved.alcohol ?? null).toBeNull()
+  })
+
+  test("R10b 'Cancelar' vuelve a /perfil sin guardar: lo guardado sigue igual", async ({
+    page,
+    request,
+  }) => {
+    const api = await freshPatient(page, request)
+    await seedHabits(api, { vaping: "never" })
+    await openHabitsFromProfile(page)
+    const puts: string[] = []
+    page.on("request", (req) => {
+      if (req.method() === "PUT" && req.url().endsWith("/profile/habits")) {
+        puts.push(req.url())
+      }
+    })
+
+    await chip(page, VAPING, "Actual").click()
+    await expectPressed(chip(page, VAPING, "Actual"), true)
+    await page.getByRole("button", { name: "Cancelar", exact: true }).click()
+    await page.waitForURL(PROFILE_URL)
+
+    expect(puts).toEqual([])
+    const saved = await getHabits(api)
+    expect(saved.vaping).toBe("never")
+  })
+
+  test("R12 un error no sobrevive a su pregunta: de 'Antes' a 'Actual' se va el de 'empezó después de dejarlo'", async ({
+    page,
+    request,
+  }) => {
+    await freshPatient(page, request)
+    await openHabitsFromProfile(page)
+
+    await chip(page, TOBACCO, "Antes").click()
+    const start = numberField(page, TOBACCO_START)
+    await start.fill("30")
+    await numberField(page, TOBACCO_QUIT).fill("18")
+    await page.getByRole("button", { name: "Guardar", exact: true }).click()
+    const message = "No puede ser mayor que la edad en que lo dejaste"
+    await expectFieldError(page, start, message)
+
+    await chip(page, TOBACCO, "Actual").click()
+    await expect(numberField(page, TOBACCO_QUIT)).toHaveCount(0)
+    await expect(start).not.toHaveAttribute("aria-invalid", "true")
+    await expect(page.getByText(message)).toHaveCount(0)
+  })
+
+  test("R13 las ayudas de 'Humo de tabaco de otras personas' y 'Humo de leña' describen sus grupos", async ({
+    page,
+    request,
+  }) => {
+    await freshPatient(page, request)
+    await openHabitsFromProfile(page)
+
+    await expect(group(page, WHERE)).toHaveAccessibleDescription(
+      "Estar cerca de quien fuma, aunque tú no fumes.",
+    )
+    await expect(group(page, WOOD)).toHaveAccessibleDescription(
+      "Cocinar o calentar la casa con leña o carbón.",
+    )
+  })
+
+  test("R14 'Sobre todo fines de semana' con chips 'Sí' / 'No': tocar 'Sí' otra vez lo deja sin contestar", async ({
+    page,
+    request,
+  }) => {
+    const api = await freshPatient(page, request)
+    await openHabitsFromProfile(page)
+
+    await chip(page, ALCOHOL, "Actual").click()
+    await chip(page, WEEKENDS, "Sí").click()
+    await saveOk(page)
+    expect((await getHabits(api)).alcohol?.mostly_weekends).toBe(true)
+
+    await reopen(page)
+    await expectPressed(chip(page, WEEKENDS, "Sí"), true)
+    await chip(page, WEEKENDS, "Sí").click()
+    await expectPressed(chip(page, WEEKENDS, "Sí"), false)
+    await expectPressed(chip(page, WEEKENDS, "No"), false)
+    await saveOk(page)
+
+    const saved = await getHabits(api)
+    expect(saved.alcohol?.status).toBe("current")
+    expect(saved.alcohol?.mostly_weekends ?? null).toBeNull()
+  })
+
+  test("R18 un 422 en una pregunta de chips va bajo SU grupo (servidor simulado: la UI no puede provocarlo)", async ({
+    page,
+    request,
+  }) => {
+    await freshPatient(page, request)
+    await openHabitsFromProfile(page)
+    await chip(page, ALCOHOL, "Actual").click()
+    await chip(page, FREQUENCY, "2 a 3 veces por semana").click()
+    await page.route("**/api/v1/profile/habits", async (route) => {
+      if (route.request().method() !== "PUT") return route.continue()
+      await route.fulfill({
+        status: 422,
+        headers: {
+          "access-control-allow-origin":
+            route.request().headers().origin ?? "*",
+        },
+        json: {
+          detail: [
+            {
+              loc: ["body", "alcohol", "frequency"],
+              msg: "Elige una frecuencia de la lista",
+              type: "literal_error",
+            },
+            {
+              loc: ["body", "alcohol", "mostly_weekends"],
+              msg: "Elige «Sí» o «No»",
+              type: "bool_type",
+            },
+          ],
+        },
+      })
+    })
+    await page.getByRole("button", { name: "Guardar", exact: true }).click()
+
+    await expect(group(page, FREQUENCY)).toHaveAttribute("data-invalid", "true")
+    await expect(group(page, FREQUENCY)).toHaveAccessibleDescription(
+      "Elige una frecuencia de la lista",
+    )
+    await expect(group(page, WEEKENDS)).toHaveAccessibleDescription(
+      "Elige «Sí» o «No»",
+    )
+    await expect(chip(page, FREQUENCY, "Una vez al mes o menos")).toBeFocused()
+    await expect(group(page, ALCOHOL)).not.toHaveAttribute("data-invalid")
+    await expect(formAlert(page)).toHaveCount(0)
+    await expect(page).toHaveURL(HABITS_URL)
   })
 })

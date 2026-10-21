@@ -24,7 +24,6 @@ import {
   type TobaccoHabit,
 } from "@/client"
 import { Button } from "@/components/ui/button"
-import { Checkbox } from "@/components/ui/checkbox"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { LoadingButton } from "@/components/ui/loading-button"
@@ -67,6 +66,7 @@ const SIX_OR_MORE: readonly SixOrMore[] = [
   "daily",
 ]
 const PLACES: readonly Place[] = ["home", "work_school", "other"]
+const YES_NO = ["yes", "no"] as const
 
 /** What the screen holds while editing; numbers stay text until submit. */
 type Draft = {
@@ -206,15 +206,32 @@ const BLOCK_ANCHOR: Record<string, string> = {
 
 const ANCHOR_KEYS = new Set(Object.values(BLOCK_ANCHOR))
 
+/** The chip questions asked only while drinking now (C-1), keyed by `loc`. */
+const DRINKING_CHIPS = [
+  "alcohol.frequency",
+  "alcohol.typical_drinks",
+  "alcohol.six_or_more",
+  "alcohol.mostly_weekends",
+] as const
+
+/** Every control on screen with its own error slot, besides the anchors. */
+function visibleFields(draft: Draft): string[] {
+  const fields: string[] = visibleNumbers(draft)
+  if (draft.alcoholStatus === "current") fields.push(...DRINKING_CHIPS)
+  return fields
+}
+
 /**
  * A 422 placed by its `loc`, never by its text (design.md, Decision 4; review
- * R20): ["body", block, field] goes to that field, ["body", block] (or a
- * field without its own control) to the block's anchor, anything else under
- * the form. Null when the error is not a 422 with a `detail` list.
+ * R20): ["body", block, field] goes to that field when it is on screen
+ * (`fields`: a number box or a chip group, review R18), ["body", block] or a
+ * field that is hidden or has no control of its own (`exposed`) to the
+ * block's anchor, anything else under the form. Null when the error is not a
+ * 422 with a `detail` list.
  */
 function serverErrors(
   err: unknown,
-  numbers: readonly NumberKey[],
+  fields: readonly string[],
 ): Record<string, string> | null {
   if (!(err instanceof AxiosError) || err.response?.status !== 422) return null
   const detail = (err.response.data as { detail?: unknown } | undefined)?.detail
@@ -225,7 +242,7 @@ function serverErrors(
     const loc = (item.loc ?? []).map(String)
     const key = loc.slice(1, 3).join(".")
     let target = "_form"
-    if ((numbers as readonly string[]).includes(key) || ANCHOR_KEYS.has(key)) {
+    if (fields.includes(key) || ANCHOR_KEYS.has(key)) {
       target = key
     } else if (loc[0] === "body" && BLOCK_ANCHOR[loc[1]]) {
       target = BLOCK_ANCHOR[loc[1]]
@@ -377,7 +394,7 @@ function HabitsForm() {
       backToProfile()
     },
     onError: (err) => {
-      const placed = serverErrors(err, visibleNumbers(draft))
+      const placed = serverErrors(err, visibleFields(draft))
       if (placed) fail(placed)
       else handleError.call(showErrorToast, err as Error)
     },
@@ -385,6 +402,23 @@ function HabitsForm() {
 
   const set = <K extends keyof Draft>(key: K, value: Draft[K]) =>
     setDraft((prev) => ({ ...prev, [key]: value }))
+
+  /**
+   * An answer that shows or hides a block's questions: the block's errors
+   * go with it, so none outlives the question it was about (review R12).
+   */
+  const setStatus = <K extends keyof Draft>(
+    blockKey: string,
+    key: K,
+    value: Draft[K],
+  ) => {
+    set(key, value)
+    setErrors((prev) =>
+      Object.fromEntries(
+        Object.entries(prev).filter(([k]) => !k.startsWith(`${blockKey}.`)),
+      ),
+    )
+  }
 
   const handleSubmit = (event: FormEvent) => {
     event.preventDefault()
@@ -460,18 +494,32 @@ function HabitsForm() {
     </div>
   )
 
-  const block = (title: string, hint: string | null, children: ReactNode) => (
+  /** `hint`: the block's help, linked to its first group by `id` (review R13). */
+  const block = (
+    title: string,
+    hint: { id: string; text: string } | null,
+    children: ReactNode,
+  ) => (
     <section className="grid gap-4 rounded-lg border p-4">
       <div className="grid gap-1">
         <h2 className="text-lg font-semibold">{title}</h2>
-        {hint && <p className="text-sm text-muted-foreground">{hint}</p>}
+        {hint && (
+          <p id={hint.id} className="text-sm text-muted-foreground">
+            {hint.text}
+          </p>
+        )}
       </div>
       {children}
     </section>
   )
 
   const drinksHintId = `${idPrefix}-drinks-hint`
-  const weekendsId = `${idPrefix}-weekends`
+  const secondhandHintId = `${idPrefix}-secondhand-hint`
+  const woodHintId = `${idPrefix}-wood-hint`
+  // "Sobre todo fines de semana" is true | false | null: Sí / No chips, so a
+  // second tap on the chosen one takes the answer back (D18; review R14).
+  const weekends =
+    draft.mostlyWeekends === null ? null : draft.mostlyWeekends ? "yes" : "no"
 
   return (
     <form
@@ -499,7 +547,7 @@ function HabitsForm() {
             ALCOHOL_STATUSES,
             "alcoholStatus",
             draft.alcoholStatus,
-            (next) => set("alcoholStatus", next),
+            (next) => setStatus("alcohol", "alcoholStatus", next),
             { showLabel: false },
           )}
           {numberField("alcohol.quit_age")}
@@ -513,18 +561,15 @@ function HabitsForm() {
                 draft.frequency,
                 (next) => set("frequency", next),
               )}
-              <div className="flex items-center gap-2">
-                <Checkbox
-                  id={weekendsId}
-                  checked={draft.mostlyWeekends === true}
-                  onCheckedChange={(checked) =>
-                    set("mostlyWeekends", checked === true)
-                  }
-                />
-                <Label htmlFor={weekendsId}>
-                  {t("habits.fields.mostlyWeekends")}
-                </Label>
-              </div>
+              {chips(
+                "alcohol.mostly_weekends",
+                t("habits.fields.mostlyWeekends"),
+                YES_NO,
+                "yesNo",
+                weekends,
+                (next) =>
+                  set("mostlyWeekends", next === null ? null : next === "yes"),
+              )}
               <p id={drinksHintId} className="text-sm text-muted-foreground">
                 {t("habits.fields.typicalDrinksHint")}
               </p>
@@ -560,7 +605,7 @@ function HabitsForm() {
             SMOKE_STATUSES,
             "smokeStatus",
             draft.tobaccoStatus,
-            (next) => set("tobaccoStatus", next),
+            (next) => setStatus("tobacco", "tobaccoStatus", next),
             { showLabel: false },
           )}
           {numberField("tobacco.cigarettes_per_day")}
@@ -579,7 +624,7 @@ function HabitsForm() {
 
       {block(
         t("habits.blocks.secondhand"),
-        t("habits.fields.secondhandHint"),
+        { id: secondhandHintId, text: t("habits.fields.secondhandHint") },
         <>
           <div className="grid gap-2">
             <ChipMultiGroup
@@ -593,13 +638,16 @@ function HabitsForm() {
                 label: t("habits.options.places.none"),
               }}
               values={draft.places}
-              onChange={(next) => set("places", next)}
+              onChange={(next) => setStatus("secondhand_smoke", "places", next)}
               invalid={!!errors["secondhand_smoke.places"]}
-              describedBy={
+              describedBy={[
+                secondhandHintId,
                 errors["secondhand_smoke.places"]
                   ? errorId("secondhand_smoke.places")
-                  : undefined
-              }
+                  : undefined,
+              ]
+                .filter(Boolean)
+                .join(" ")}
             />
             {fieldError("secondhand_smoke.places")}
           </div>
@@ -609,7 +657,7 @@ function HabitsForm() {
 
       {block(
         t("habits.blocks.wood"),
-        t("habits.fields.woodHint"),
+        { id: woodHintId, text: t("habits.fields.woodHint") },
         <>
           {chips(
             "wood_smoke.status",
@@ -617,8 +665,8 @@ function HabitsForm() {
             SMOKE_STATUSES,
             "smokeStatus",
             draft.woodStatus,
-            (next) => set("woodStatus", next),
-            { showLabel: false },
+            (next) => setStatus("wood_smoke", "woodStatus", next),
+            { showLabel: false, hintId: woodHintId },
           )}
           {numberField("wood_smoke.years")}
         </>,
