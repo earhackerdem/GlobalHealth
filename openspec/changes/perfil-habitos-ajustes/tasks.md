@@ -19,12 +19,12 @@ are `single`. `make tdd-check` requires one `test:` commit per `test→impl` gro
 
   El agente lo recorre primero en Chrome (`file://`). Verificación: "plan approved" significa "navegué el prototipo y
   esto es lo que quiero".
-- [ ] 0.2 **Base.** `make up` con la rama al día con `origin/main`; `openspec validate perfil-habitos-ajustes --strict`
+- [x] 0.2 **Base.** `make up` con la rama al día con `origin/main`; `openspec validate perfil-habitos-ajustes --strict`
   limpio.
 
 ## 1. Backend: alcohol, vapeador, leña y lo guardado antes · test→impl
 
-- [ ] 1.1 **Tester.** Actualiza y amplía `backend/tests/api/routes/test_profile_habits.py` a partir de dos fuentes:
+- [x] 1.1 **Tester.** Actualiza y amplía `backend/tests/api/routes/test_profile_habits.py` a partir de dos fuentes:
   la parte pytest del test plan (filas 2–5, 8, 9, 11, 13, 14, 15, 22) y el Interface contract. Ajusta los citadores
   (vapeador como texto, `years` de leña). Verificación: rojo porque faltan los campos, la conversión y las reglas, no
   porque un test esté roto. Commit `test:` solo.
