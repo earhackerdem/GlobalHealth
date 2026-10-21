@@ -47,7 +47,7 @@ are `single`. `make tdd-check` requires one `test:` commit per `test→impl` gro
 - [x] 2.2 **Implementer.** `HabitsForm.tsx` (preguntas nuevas, validación al salir de cada campo con `zod.gen.ts`,
   guardado automático, estado, "Guardar"/"Cancelar" con D20) y `profile.json`. Verificación: los tests de 2.1 verdes
   sin tocarlos (chromium y s26-ultra); `tsc` y `biome` limpios; `grep` sin límites literales en `HabitsForm.tsx`.
-- [ ] 2.3 **Orquestador.** Corre de nuevo el rojo y el verde, `make tdd-check`, y anota los números en evidence.md
+- [x] 2.3 **Orquestador.** Corre de nuevo el rojo y el verde, `make tdd-check`, y anota los números en evidence.md
   § Grupo 2.
 
 ## 3. Verificación final, decisiones y entrega · single
@@ -57,10 +57,10 @@ are `single`. `make tdd-check` requires one `test:` commit per `test→impl` gro
   - Una fila en `memory/inbox/2026-10-21-atender-todas-las-deudas-antes-de-la-investigacion-ux.md`: revisar el doble
     clic en el resto de la app.
   - `product/dominio.md` § Hábitos: vapeador y leña.
-- [ ] 3.2 **Exploración en Chrome por el agente.** Recorrer el cuestionario completo: guardado al elegir y al salir de
+- [x] 3.2 **Exploración en Chrome por el agente.** Recorrer el cuestionario completo: guardado al elegir y al salir de
   campos, doble y triple clic en "Guardar" y "Cancelar", salir a media escritura por el menú, recargar, cambiar de
   cuenta en otra pestaña, 384 px. Verificación: tabla en evidence.md; los defectos dentro del plan se arreglan.
-- [ ] 3.3 **Entregables.** `evidence.md`, `validation.md` (no técnico, para Saúl Pérez), el journal y el PR.
+- [x] 3.3 **Entregables.** `evidence.md`, `validation.md` (no técnico, para Saúl Pérez), el journal y el PR.
 - [ ] 3.4 **Revisión y archivo** (`/epe-4-review` → `/epe-5-apply` → `/epe-6-archive` como último commit del PR):
   `openspec archive perfil-habitos-ajustes`, fragmento en `changelog.d/`, `.epe/active` a la carpeta archivada.
   Verificación: `openspec validate --specs` limpio.
