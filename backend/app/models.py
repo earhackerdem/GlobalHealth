@@ -850,8 +850,9 @@ HabitAge = Annotated[int, Field(ge=0, le=HISTORY_MAX_AGE)]
 
 class _ClosedSchema(SQLModel):
     # sqlmodel types model_config as its private SQLModelConfig (not exported);
-    # a ConfigDict merges into it the same way at runtime.
-    model_config = ConfigDict(extra="forbid")  # type: ignore[assignment]  # ty: ignore[invalid-assignment]
+    # a ConfigDict merges into it the same way at runtime. hide_input_in_errors:
+    # a ValidationError of a stored row never carries decrypted answers (R2).
+    model_config = ConfigDict(extra="forbid", hide_input_in_errors=True)  # type: ignore[assignment]  # ty: ignore[invalid-assignment]
 
 
 class AlcoholHabit(_ClosedSchema):
@@ -941,7 +942,7 @@ def _normalize_wood(wood: WoodSmokeHabit) -> WoodSmokeHabit:
 def normalize_habits(habits: Habits) -> Habits:
     """What gets stored: whatever does not apply to the chosen answer is
     dropped (perfil-habitos Decision 3, like chronic `until`), and `places`
-    deduped in contract order. Runs BEFORE validate_habits."""
+    deduped in contract order. Runs BEFORE habits_errors."""
     updates: dict[str, Any] = {}
     if habits.alcohol is not None:
         updates["alcohol"] = _normalize_alcohol(habits.alcohol)

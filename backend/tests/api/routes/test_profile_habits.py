@@ -37,14 +37,19 @@ behind a current consent; field names and values in English):
 """
 
 import json
+import logging
+import uuid
 from datetime import datetime
 from typing import Any
 
 import pytest
 from fastapi.testclient import TestClient
-from sqlmodel import Session
+from pydantic import ValidationError
+from sqlmodel import Session, select
 
+from app.api.routes import profile as profile_routes
 from app.core.encrypted import decrypt_str
+from app.models import Habits, PatientProfile
 from tests.api.routes.test_profile import (
     PROFILE_URL,
     consented_user,
@@ -288,6 +293,93 @@ def test_c1_c2_age_without_birth_date_accepted(
     assert stored_habits(client, headers)[block][field] == 40
 
 
+# Review R7: "mayor que" is strict; an age equal to the current one, or a start
+# equal to the quit, is possible.
+AGE_AT_LIMIT_CASES = [
+    pytest.param(
+        {"alcohol": {"status": "quit", "quit_age": 36}},
+        habits(alcohol=alcohol(status="quit", quit_age=36)),
+        id="alcohol-quit_age-equals-current",
+    ),
+    pytest.param(
+        {"tobacco": {"status": "current", "cigarettes_per_day": 5, "start_age": 36}},
+        habits(tobacco=tobacco(status="current", cigarettes_per_day=5, start_age=36)),
+        id="tobacco-start_age-equals-current",
+    ),
+    pytest.param(
+        {
+            "tobacco": {
+                "status": "former",
+                "cigarettes_per_day": 5,
+                "start_age": 18,
+                "quit_age": 36,
+            }
+        },
+        habits(
+            tobacco=tobacco(
+                status="former", cigarettes_per_day=5, start_age=18, quit_age=36
+            )
+        ),
+        id="tobacco-quit_age-equals-current",
+    ),
+    pytest.param(
+        {
+            "tobacco": {
+                "status": "former",
+                "cigarettes_per_day": 5,
+                "start_age": 20,
+                "quit_age": 20,
+            }
+        },
+        habits(
+            tobacco=tobacco(
+                status="former", cigarettes_per_day=5, start_age=20, quit_age=20
+            )
+        ),
+        id="tobacco-start_age-equals-quit_age",
+    ),
+]
+
+
+@pytest.mark.parametrize(("body", "expected"), AGE_AT_LIMIT_CASES)
+def test_c1_c2_age_at_the_limit_accepted(
+    client: TestClient,
+    db: Session,
+    monkeypatch: pytest.MonkeyPatch,
+    body: dict[str, Any],
+    expected: dict[str, Any],
+) -> None:
+    """Nacido 1990-03-15, hoy 36: una edad de 36, o empezó y dejó a la misma
+    edad -> se acepta y se guarda."""
+    headers, _ = consented_user(client, db)
+    born_1990_frozen(client, headers, monkeypatch)
+
+    saved = save(client, headers, body)
+
+    assert saved == expected
+    assert stored_habits(client, headers) == expected
+
+
+def test_c1_mexico_day_decides_the_current_age(
+    client: TestClient, db: Session, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Nacido 1990-03-15; ahora 2026-03-14 21:00 en México = 2026-03-15 03:00
+    UTC: en México aún tiene 35 (en UTC ya 36). quit_age 36 -> 422 y nada se
+    guarda; quit_age 35 -> se guarda (review R8)."""
+    headers, _ = consented_user(client, db)
+    r_profile = put_profile(client, headers, {"birth_date": BIRTH_DATE})
+    assert r_profile.status_code == 200, r_profile.text
+    freeze_routes_clock(monkeypatch, datetime(2026, 3, 14, 21, 0))
+    save(client, headers, SEED)
+
+    r = put_habits(client, headers, {"alcohol": {"status": "quit", "quit_age": 36}})
+
+    assert_single_error(r, ["body", "alcohol", "quit_age"], AGE_ABOVE_CURRENT)
+    assert stored_habits(client, headers) == SEED_STORED
+    saved = save(client, headers, {"alcohol": {"status": "quit", "quit_age": 35}})
+    assert saved == habits(alcohol=alcohol(status="quit", quit_age=35))
+
+
 # --- Row 4: Lo que no aplica se descarta (C-1) ------------------------------------
 
 AUDIT_C = {
@@ -494,6 +586,32 @@ def test_c3_secondhand_places_then_not_exposed(client: TestClient, db: Session) 
     assert stored_habits(client, headers) == expected
 
 
+def test_c3_places_deduped_in_contract_order(client: TestClient, db: Session) -> None:
+    """places desordenados y repetidos (other, home, other) -> PUT y GET con
+    home, other: sin repetidos y en el orden del contrato (review R6)."""
+    headers, _ = consented_user(client, db)
+    expected = habits(
+        secondhand_smoke=secondhand(
+            exposed=True, places=["home", "other"], days_per_week=2
+        )
+    )
+
+    saved = save(
+        client,
+        headers,
+        {
+            "secondhand_smoke": {
+                "exposed": True,
+                "places": ["other", "home", "other"],
+                "days_per_week": 2,
+            }
+        },
+    )
+
+    assert saved == expected
+    assert stored_habits(client, headers) == expected
+
+
 def test_c3_exposed_without_places_rejected(client: TestClient, db: Session) -> None:
     """exposed true sin lugares -> 422 en places con el texto exacto; nada se
     guarda."""
@@ -541,6 +659,38 @@ def test_c_only_vaping_answered_rest_stays_null(
     assert stored_habits(client, headers) == expected
 
 
+def test_c_all_null_put_stores_null(client: TestClient, db: Session) -> None:
+    """Con hábitos guardados, un PUT todo null -> 200 todo null y la columna
+    queda NULL (la tarjeta vuelve a "Sin llenar"; review R10)."""
+    headers, user_id = consented_user(client, db)
+    save(client, headers, SEED)
+
+    saved = save(client, headers, empty_habits())
+
+    assert saved == empty_habits()
+    assert stored_habits(client, headers) == empty_habits()
+    rows = raw_rows(
+        "SELECT habits FROM patient_profile WHERE user_id = CAST(:uid AS uuid)",
+        {"uid": user_id},
+    )
+    assert len(rows) == 1, rows
+    assert rows[0]["habits"] is None, rows
+
+
+def test_c_get_does_not_create_the_profile(client: TestClient, db: Session) -> None:
+    """Un usuario sin perfil: GET /profile/habits -> 200 todo null y no aparece
+    fila en patient_profile (review R10)."""
+    headers, user_id = consented_user(client, db)
+
+    assert stored_habits(client, headers) == empty_habits()
+
+    rows = raw_rows(
+        "SELECT id FROM patient_profile WHERE user_id = CAST(:uid AS uuid)",
+        {"uid": user_id},
+    )
+    assert rows == [], rows
+
+
 # --- Row 10: Respuestas fuera de su escala ----------------------------------------
 
 OUT_OF_SCALE_CASES = [
@@ -562,6 +712,21 @@ OUT_OF_SCALE_CASES = [
         id="start_age-131",
     ),
     pytest.param({"wood_smoke": {"status": "former", "years": 131}}, id="years-131"),
+    # Review R7: the lower bounds.
+    pytest.param({"alcohol": {"status": "quit", "quit_age": -1}}, id="age--1"),
+    pytest.param(
+        {"tobacco": {"status": "current", "cigarettes_per_day": 5, "start_age": -1}},
+        id="start_age--1",
+    ),
+    pytest.param(
+        {"tobacco": {"status": "former", "cigarettes_per_day": 5, "quit_age": -1}},
+        id="tobacco-quit_age--1",
+    ),
+    pytest.param({"wood_smoke": {"status": "former", "years": -1}}, id="years--1"),
+    pytest.param(
+        {"secondhand_smoke": {"exposed": True, "places": ["home"], "days_per_week": 0}},
+        id="secondhand-0-days",
+    ),
     pytest.param({"vaping": "sometimes"}, id="vaping-outside-enum"),
     pytest.param(
         {"alcohol": {"status": "sometimes"}}, id="alcohol-status-outside-enum"
@@ -667,11 +832,45 @@ def test_c_habits_isolated_and_encrypted_at_rest(
 
     raw = raw_habits(user_a)
     assert raw.startswith("gAAAA"), raw
-    for plain in ("current", "home", "alcohol", "quit_age"):
+    for plain in ("current", "home", "alcohol", "monthly_or_less"):
         assert plain not in raw, plain
     decrypted = decrypt_str(raw)
     assert decrypted is not None
     assert without_nulls(json.loads(decrypted)) == without_nulls(saved_a)
+
+
+# --- Review R2: hábitos guardados ilegibles ---------------------------------------
+
+
+def test_unreadable_habits_read_as_null_and_logged_by_id(
+    client: TestClient, db: Session, caplog: pytest.LogCaptureFixture
+) -> None:
+    """Una fila cifrada cuyos hábitos ya no validan (una llave desconocida, p. ej.
+    de un C2 revertido): GET -> 200 todo null, el log trae solo el id del
+    perfil, nunca las respuestas, y el error de validación tampoco las trae."""
+    headers, user_id = consented_user(client, db)
+    save(client, headers, SEED)
+    profile = db.exec(
+        select(PatientProfile).where(PatientProfile.user_id == uuid.UUID(user_id))
+    ).one()
+    unreadable = json.dumps({"vaping": "current", "physical_activity": "sedentary"})
+    profile.habits = unreadable
+    db.add(profile)
+    db.commit()
+    db.refresh(profile)
+    assert raw_habits(user_id).startswith("gAAAA")
+
+    with caplog.at_level(logging.WARNING, logger=profile_routes.__name__):
+        r = get_habits(client, headers)
+
+    assert r.status_code == 200, r.text
+    assert r.json() == empty_habits()
+    assert str(profile.id) in caplog.text
+    for answer in ("current", "physical_activity", "sedentary"):
+        assert answer not in caplog.text, answer
+    with pytest.raises(ValidationError) as exc_info:
+        Habits.model_validate_json(unreadable)
+    assert "sedentary" not in str(exc_info.value)
 
 
 @pytest.mark.parametrize(

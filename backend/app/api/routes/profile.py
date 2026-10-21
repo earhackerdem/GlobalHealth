@@ -617,7 +617,13 @@ def _stored_habits(profile: PatientProfile | None) -> Habits:
     """The decrypted questionnaire; all null when nothing is stored."""
     if profile is None or profile.habits is None:
         return Habits()
-    return Habits.model_validate_json(profile.habits)
+    try:
+        return Habits.model_validate_json(profile.habits)
+    except ValidationError:
+        # Unreadable row (review R2, like the history's S4): read as all null,
+        # only the profile id logged.
+        logger.warning("Unreadable habits of patient profile %s", profile.id)
+        return Habits()
 
 
 def _validate_habits(habits_in: Habits, profile: PatientProfile) -> None:
