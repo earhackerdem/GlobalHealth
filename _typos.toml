@@ -51,4 +51,5 @@ extend-exclude = [
     "AGENTS.md",
     "CLAUDE.md",
     "CHANGELOG.md",
+    "changelog.d/",
 ]
