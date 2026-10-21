@@ -11,10 +11,10 @@ are `single`. `make tdd-check` requires one `test:` commit per `test→impl` gro
 
 ## 0. Base · single
 
-- [ ] 0.1 **Prototipo.** Ya cubre C-1…C-4 y C-6 (`product/prototipos/perfil-secciones.html`, `pintarHabitos`, v4),
+- [x] 0.1 **Prototipo.** Ya cubre C-1…C-4 y C-6 (`product/prototipos/perfil-secciones.html`, `pintarHabitos`, v4),
   validado por Saúl Pérez en las rondas 6–8. No cambia. Verificación: "plan approved" significa "navegué el
   prototipo y esto es lo que quiero" para los bloques de la C1.
-- [ ] 0.2 **Base.** `make up` con la rama al día con `origin/main`, y `openspec validate perfil-habitos --strict`
+- [x] 0.2 **Base.** `make up` con la rama al día con `origin/main`, y `openspec validate perfil-habitos --strict`
   limpio. `product/dominio.md` § Partición en stories registra la partición C1/C2.
 
 ## 1. Backend: hábitos, normalización, validación y cifrado · test→impl

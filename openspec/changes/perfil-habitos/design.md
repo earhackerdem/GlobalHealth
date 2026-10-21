@@ -1,6 +1,7 @@
 # Design
 
-Status: DRAFT
+Status: APPROVED
+Approved by: Saúl Pérez (author) on 2026-10-20, sobre el prototipo v4 ya navegado (bloques de hábitos C-1…C-4, C-6)
 
 **En una frase:** la tarjeta "Hábitos" abre un cuestionario de cuatro bloques (alcohol con el AUDIT-C, tabaco y
 vapeador, humo de otras personas, humo de leña) que se guarda con un solo "Guardar" en un dato cifrado del perfil,
