@@ -11,8 +11,9 @@ exploration, no plan.
 
 ## Phase 0 — load
 1. Read `story.md` (argument or `.epe/active`). If it does not exist, send to `/epe-0-new`.
-2. Read the **headings** of `memory/decisions.md` (`grep '^## D'`) and `memory/closed.md`; open only the entries the
-   story's `Origin:` or criteria touch. `memory/research.md` only when a criterion carries a number or an external claim.
+2. Read the **titles** of `memory/decisions/` (`ls`, or `grep -h '^## D' memory/decisions/*.md`) and `make closed`; open
+   only the entries the story's `Origin:` or criteria touch. `memory/research/` only when a criterion carries a number or
+   an external claim.
    Do not re-litigate or re-research what is already decided or on record.
 3. In the content flavor also load `Skill(produce-content)` (stance and sources).
 4. If `product/` exists, read `product/technical-brief.md` (the NFR budget and the stack are **given**: §4 starts from

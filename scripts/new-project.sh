@@ -15,7 +15,7 @@ T="$ROOT/.agents/skills/epe-0-new/templates/common"; TODAY="$(date +%F)"
 # 1. Agentic layer (no memory, no changes, no local state, no git)
 rsync -a --exclude '.git' --exclude 'memory' --exclude 'changes' --exclude '.epe' --exclude '.claude/profile.env' \
   --exclude '.claude/settings.local.json' --exclude '.claude/skills' --exclude '__pycache__' --exclude '.DS_Store' \
-  --exclude '/README.md' --exclude '/harness.json' --exclude '/VERSION' --exclude '/CHANGELOG.md' "$ROOT/" "$DEST/"
+  --exclude '/README.md' --exclude '/harness.json' --exclude '/VERSION' --exclude '/CHANGELOG.md' --exclude '/changelog.d' "$ROOT/" "$DEST/"
 bash "$DEST/scripts/skills-link.sh" >/dev/null
 
 # 1b. Starter project.mk (project-owned recipes; harness-update never touches it)
@@ -65,16 +65,15 @@ with open(f"{dest}/harness.json", "w") as f:
 PY
 
 # 3. Seeded memory
-mkdir -p "$DEST/memory/journal" "$DEST/changes"
-cp "$T/memory-README.md" "$DEST/memory/README.md"; cp "$T/research.md" "$DEST/memory/research.md"
-cp "$T/inbox.md" "$DEST/memory/inbox.md"; cp "$T/closed.md" "$DEST/memory/closed.md"
-cp "$T/meta-improvements.md" "$DEST/memory/meta-improvements.md"; cp "$T/journal-README.md" "$DEST/memory/journal/README.md"
+mkdir -p "$DEST/changes"
+cp -R "$T/memory" "$DEST/memory"; cp -R "$T/changelog.d" "$DEST/changelog.d"
 cp "$T/changes-README.md" "$DEST/changes/README.md"; cp "$T/pull_request_template.md" "$DEST/.github/pull_request_template.md"
-cat > "$DEST/memory/decisions.md" <<MD
-# Project decisions (lightweight ADR)
-
-States: Accepted · Revised · Proposed · Discarded. Never deleted; when they change, mark them Revised with a date and
-link the new one. Order: from most structural to most tactical.
+cat > "$DEST/memory/decisions/D1-origin-owner-and-identity.md" <<MD
+---
+id: D1
+date: ${TODAY}
+status: accepted
+---
 
 ## D1 — Origin, owner and identity of the project
 - **Status:** Accepted · ${TODAY} · decided by: ${AUTHOR}

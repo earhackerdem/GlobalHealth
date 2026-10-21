@@ -28,6 +28,6 @@ message. It is derived and git-ignored; regenerate it whenever you want it fresh
 visibility for an outsider; the board gives it from the repo.
 
 ## What it is not
-Not a live monitor of agents (that would be a hook writing events, see `memory/inbox.md`), not a place to edit (the
+Not a live monitor of agents (that would be a hook writing events, see `memory/inbox/`), not a place to edit (the
 cycle edits the files), not a runtime a non-developer drives (claude.ai/code shared sessions do that on a repo with
-this harness; `memory/research.md#gui`).
+this harness; `memory/research/gui.md`).

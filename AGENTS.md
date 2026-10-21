@@ -5,8 +5,8 @@ This file is the **single source of rules**. `CLAUDE.md`, `.cursor/rules/`, `.gi
 lives in **`harness.json`**; read it before assuming anything.
 
 ## First thing, at the start of any session
-1. Read `harness.json`, `memory/README.md`, `memory/decisions.md` and `memory/inbox.md`. If
-   `memory/research.md` exists, read it before stating anything that carries a number or a source.
+1. Read `harness.json`, `memory/README.md`, the decisions in `memory/decisions/` and the inbox (`make inbox`). Read
+   `memory/research/` before stating anything that carries a number or a source.
 2. The startup hook tells you **who you work with** (`.claude/profile.env`: NAME, ROLE, PROFILE). Attribute
    decisions **by name and role**, never "the user". Without a profile, ask and attribute neutrally.
 3. The whole command surface is **`make`** (bare `make` lists the recipes).
@@ -68,7 +68,7 @@ the source of names everywhere else; the matrix is inherited by every change lik
 (technology-agnostic, `FR-###`/`NFR-###`, epics with their stories); **`technical-brief.md`**, which decides *with what*
 and *how well*: it asks **first** whether a team exists and what stack it already uses (an existing stack wins), proposes
 candidates only otherwise, and fixes the **NFR budget** as measurable statements that every change's exploration
-inherits. Stack and platform choices land as ADRs in `memory/decisions.md`. Stories carry an `Origin:` line. Existing
+inherits. Stack and platform choices land as ADRs in `memory/decisions/`. Stories carry an `Origin:` line. Existing
 codebases enter with `/codebase-context`: verify conventions into the block below, never document the system
 (`docs/brownfield.md`).
 
@@ -84,7 +84,7 @@ act, or ask if the difference between paths really changes the outcome.
 
 **Substantive** (always questioned): building what already exists; a criterion that imposes a technology; scope
 changes mid-cycle; touching security, deleting or renaming with data; contradicting a decision in
-`memory/decisions.md` or a verdict in `closed.md`; claims nobody has verified ("X can't…").
+`memory/decisions/` or a verdict in `memory/closed/`; claims nobody has verified ("X can't…").
 **Trivial** (just do it): typos, names, formatting, what's already decided, what the person reaffirms after hearing
 your objection. **One objection per request, in one or two sentences, with the alternative next to it.** If they
 reaffirm, it's their decision: say so in one line, record it in the journal with the why, and execute in full. This
@@ -100,9 +100,11 @@ is not permission to refuse or to moralize.
   doesn't retarget the one on top); `make check-prs` before merging. Selective staging: never `git add -A` with
   someone else's work in the tree (there's a hook). Straight to `main` only for trivial things and memory entries,
   announcing it.
-- **Memory in the repo, not in your head**: decisions → `memory/decisions.md`; verified facts →
-  `memory/research.md`; work → `memory/journal/YYYY-MM-DD-slug.md` (one file per entry; the Stop hook reminds
-  you); half-formed ideas → `memory/inbox.md`; verdicts → `memory/closed.md`. The agent's private memory only
+- **Memory in the repo, not in your head**, one file per record so parallel branches never conflict on it:
+  decisions → `memory/decisions/D<n>-slug.md` (`make decision-next`); verified facts → `memory/research/<topic>.md`;
+  work → `memory/journal/YYYY-MM-DD-slug.md` (the Stop hook reminds you); half-formed ideas →
+  `memory/inbox/YYYY-MM-DD-slug.md`; verdicts → `memory/closed/YYYY-MM-DD-slug.md`; changelog →
+  `changelog.d/YYYY-MM-DD-slug.md` (`docs/memory.md`). The agent's private memory only
   keeps how to work with this repo and this person; **when in doubt, the repo**.
 - **Concurrent sessions**: one branch per session; real parallelism = your own worktree; if the tree has changes you
   didn't make, stop. Worktrees whose branch is already merged are garbage, not concurrency (`make worktrees`).
@@ -115,17 +117,17 @@ is not permission to refuse or to moralize.
 The agentic layer in a project is a **vendored dependency**: `.agents/harness-manifest.json` records what the harness
 placed and `make harness-update SRC=<template>` brings a newer version in, overwriting only untouched files, keeping
 and listing forks, preserving the `harness:context` block (docs/updating.md). So, in a project, **harness-owned files
-are not edited in place**: an improvement goes to `memory/meta-improvements.md`, upstream to the template, and comes
+are not edited in place**: an improvement goes to `memory/meta-improvements/`, upstream to the template, and comes
 back with the next update. A fork is a deliberate, listed state, not an accident.
 
 ## Meta-improvement of the harness itself
 If you discover a rule, template or gate that would improve the next sessions, **don't apply it silently**: branch
-`improve/<slug>`, change in the skill, hook or this file, PR, and verdict recorded in `memory/meta-improvements.md`
+`improve/<slug>`, change in the skill, hook or this file, PR, and verdict recorded in `memory/meta-improvements/`
 (rejections too). When closing a substantial session, `/session-retro`; "nothing to standardize" is a legitimate
 result. A rule that gets skipped isn't fixed by writing it again: it's fixed with a gate.
 
 **Harness first.** A better harness improves every change that comes after it, so a harness improvement goes
-before the next product task: an accepted proposal in `memory/meta-improvements.md`, a pending
+before the next product task: an accepted proposal in `memory/meta-improvements/`, a pending
 `make harness-update`, or a rule the person just asked for. Found mid-change: finish the current step, record it,
 and do the improvement upstream and bring it in before the next phase or story. Merging still belongs to a human.
 
@@ -133,12 +135,12 @@ and do the improvement upstream and bring it in before the next phase or story. 
 ```
 harness.json          configuration: harness_version, flavor, engine (epe | openspec), plan_file, code (gated paths), tests (barrier paths), protected branches, blocked commands, skill hints
 AGENTS.md             these rules (single source) · CLAUDE.md, .cursor/, .github/, .agents/rules/: per-IDE bridges (docs/ides.md)
-Makefile              recipes: doctor · profile · epe-new · epe-status · tdd-check · inbox · memory-check · retro · check-prs · worktrees · new · adopt · engine-openspec · harness-status · harness-update · harness-harvest · install-hooks · board
+Makefile              recipes: doctor · profile · epe-new · epe-status · tdd-check · inbox · closed · changelog · decision-next · memory-migrate · memory-check · retro · check-prs · worktrees · new · adopt · engine-openspec · harness-status · harness-update · harness-harvest · install-hooks · board
 .agents/skills/       ALL the skills (agentskills.io standard): triage · epe-0…6 · epe-memory · session-retro · produce-content · product-* · codebase-context
 .claude/skills/       only symlinks to .agents/skills/* (make skills-link)
 .claude/hooks/        profile · session-guard · inbox · gate-plan · guard-tests · guard-commands · guard-git-add · guard-review-brief · lint · check-journal · memory-compaction · skill-nudge
 .claude/agents/       cold-reader (where a reader without context stumbles) · dod-checker (checklist against artifact) · tester · implementer (development tasks, see epe-3-execute)
-memory/               README · decisions · research · inbox · closed · meta-improvements · journal/
+memory/               README · decisions/ · research/ · inbox/ · closed/ · meta-improvements/ · journal/ (one file per record)
 changes/              one change folder per change (story → exploration → plan → tasks → evidence → validation)
 product/              optional: brief · prd · technical-brief (stack, NFR budget); make product-init
 docs/                 epe-cycle · memory · ides · flavors · engines · brownfield · updating · board

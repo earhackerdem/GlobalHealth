@@ -15,7 +15,7 @@ Approved by: <name (role)> on YYYY-MM-DD
 can work in parallel on these files. Empty = sequence (red → green). Nothing here is "to be decided while coding". -->
 
 ## Decisions
-<!-- Key technical choices with rationale and the alternatives considered. A decision that changes memory/decisions.md
+<!-- Key technical choices with rationale and the alternatives considered. A decision that changes one in memory/decisions/
 is touched in this same change. -->
 
 ## Test plan (one row per scenario, mandatory)

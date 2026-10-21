@@ -1,6 +1,6 @@
 ---
 name: epe-6-archive
-description: Closes an EPE change as the LAST commit of its own PR, so code, specs, CHANGELOG and docs land in one merge. Moves the change folder to <changes_dir>/_archive/ (with engine openspec, `openspec archive` merges the delta specs), records the entry in CHANGELOG.md, refreshes the skills and docs that asserted the previous state, closes related inbox items and points .epe/active at the archived folder. Fallback for a change merged before it was archived. Use when the user says "/epe-6-archive", "archive the change", "close it", and at the end of /epe-5-apply.
+description: Closes an EPE change as the LAST commit of its own PR, so code, specs, CHANGELOG and docs land in one merge. Moves the change folder to <changes_dir>/_archive/ (with engine openspec, `openspec archive` merges the delta specs), writes the changelog.d/ fragment, refreshes the skills and docs that asserted the previous state, closes related inbox items and points .epe/active at the archived folder. Fallback for a change merged before it was archived. Use when the user says "/epe-6-archive", "archive the change", "close it", and at the end of /epe-5-apply.
 argument-hint: [change path; defaults to .epe/active]
 ---
 
@@ -21,10 +21,12 @@ the folder to `openspec/changes/archive/<date>-<id>/`); the other steps are unch
    archive earlier: every later fix would edit the archived folder and the merged specs. Fallback: verify the merge
    (`gh pr view <n> --json state`). It can be paused: leave the change where it is and delete `.epe/active`.
 2. `git mv <changes_dir>/<slug> <changes_dir>/_archive/<slug>`.
-3. `CHANGELOG.md`: one entry "YYYY-MM-DD · <slug> · PR #n · what changed for the user".
+3. Changelog: one fragment `changelog.d/YYYY-MM-DD-<slug>.md` holding "- YYYY-MM-DD · <slug> · PR #n · what changed
+   for the user". Do not render `CHANGELOG.md` here (`make changelog` runs on main or in a release PR): two change PRs
+   that both render it conflict.
 4. **Truth refresh**: search `.agents/skills/`, `docs/` and the README for what asserted the previous state
    (`grep -rn "<name|path|rule>"`) and update it. A skill that lies with confidence is debt.
-5. `memory/inbox.md`: close the rows this change resolved (✅ with an anchor to the PR).
+5. `memory/inbox/`: close the items this change resolved (`status: done` and a `**Closure:**` line with the PR).
 6. `.epe/active`. Default: point it at the archived folder, whose plan is still `Status: APPROVED`, so a fix that
    comes out of the human's validation can still edit code. The next `/epe-0-new` overwrites it. Fallback: delete
    it. Closing journal entry (one line is enough if there were no surprises).

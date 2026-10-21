@@ -26,7 +26,7 @@ as real folders in `.claude/skills/`; `skills-check` lists them as foreign, not 
 `config.yaml` are project-owned: `harness-update` never touches them.
 
 ## Why the rules travel through the schema
-The blog lab (`memory/research.md#lab-blog-5x`) showed OpenSpec producing a contract ~3× larger and more tests at the
+The blog lab (`memory/research/lab-blog-5x.md`) showed OpenSpec producing a contract ~3× larger and more tests at the
 same cost, but two of five runs collapsed every test into one red commit: OpenSpec's `tasks.md` carries no Execution
 field. The schema fork injects it (template + instruction + config rule) and `make tdd-check` enforces one red commit
 per `test→impl` group, so granularity is checked by git, not remembered.

@@ -47,7 +47,7 @@ Date: YYYY-MM-DD · Author: <name (role)> · Status: draft | agreed · Source: p
 ## 5. Decisions recorded
 | ADR | Decision | File |
 |---|---|---|
-| D<n> | <stack / platform / database> | memory/decisions.md |
+| D<n> | <stack / platform / database> | memory/decisions/D<n>-slug.md |
 
 ## 6. Consequences for the harness
 - `harness.json` → `code`: <folders> · `blocked_commands`: <deploy, drop db…> · skills to add: <stack skills>

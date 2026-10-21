@@ -15,14 +15,14 @@ substantive, name the assumption, verify it and offer an alternative. It's the r
 |---|---|---|
 | SessionStart | `profile.py` | who you work with and their PROFILE (supervised blocks / autonomous warns) |
 | SessionStart | `session-guard.py` | branch, live/zombie worktrees, dirty tree from someone else (snapshot for `guard-git-add`) |
-| SessionStart | `inbox.py` | up to 3 open items from `memory/inbox.md` |
+| SessionStart | `inbox.py` | up to 3 open items from `memory/inbox/` |
 | SessionStart | `memory-compaction.py notify` | unswept compactions (`/epe-memory`) |
 | UserPromptSubmit | `skill-nudge.py` | suggests the skill for the topic (`harness.json` → `skill_hints`), once per session |
 | PreToolUse Bash | `guard-commands.py` | push to protected branches, force, merge, reset --hard, rm -rf, plus `blocked_commands` |
 | PreToolUse Bash | `guard-git-add.py` | blocks `git add -A`/`commit -a` if you started with someone else's changes |
 | PreToolUse Edit/Write | `gate-plan.py` | editing `code` requires `.epe/active` + `plan.md` with `Status: APPROVED` |
 | PreToolUse Edit/Write | `guard-tests.py` | inside a `tester` subagent, only `tests` paths; inside an `implementer`, never `tests` (role = `agent_type`, or `HARNESS_ROLE`) |
-| PreToolUse Agent | `guard-review-brief.py` | an adversarial-review subagent must carry `memory/closed.md` in its prompt |
+| PreToolUse Agent | `guard-review-brief.py` | an adversarial-review subagent must carry the closed index (`make closed`) in its prompt |
 | PreToolUse Chrome | `guard-browser.py` | the browser tools are allowed without a prompt (exploratory pass), and navigation is fenced to local files (`file://`), localhost, `*.localhost`, `*.test` and `harness.json → browser_hosts`; blocks in both profiles |
 | PostToolUse Edit/Write | `lint.py` | py_compile · json · xml · bash -n over `code` and the agentic layer |
 | Stop | `check-journal.py` | if you wrote work but no journal entry, blocks the close once |

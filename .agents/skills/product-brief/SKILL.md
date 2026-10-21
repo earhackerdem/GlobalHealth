@@ -11,7 +11,7 @@ the brief fixes intent once so stories carry an `Origin:` and nobody re-litigate
 is **one page**: if it grows, you need a PRD, not a longer brief.
 
 ## Procedure
-1. Read `memory/decisions.md` and `memory/research.md` if they exist (do not contradict them). If `product/brief.md`
+1. Read `memory/decisions/` and `memory/research/` if they exist (do not contradict them). If `product/brief.md`
    exists, you are updating it: say what changes.
 2. **Interview in one round** (ask only what the notes don't answer): the problem and who has it today; who the user
    is and what they can do after; what "done" looks like in 3-5 measurable outcomes; hard constraints (deadline, budget,

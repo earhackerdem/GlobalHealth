@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-"""PreToolUse hook (Agent|Task): an adversarial-review subagent must carry memory/closed.md INSIDE its
-prompt (subagents don't inherit context; if the index doesn't travel, they re-litigate what was already
-decided). Checks presence, not judgement. Narrow trigger: only prompts that declare themselves a review
+"""PreToolUse hook (Agent|Task): an adversarial-review subagent must carry the closed-verdicts index
+(`make closed`, rendered from memory/closed/) INSIDE its prompt: subagents don't inherit context, and if the
+index doesn't travel they re-litigate what was already decided. Checks presence, not judgement. Narrow trigger: only prompts that declare themselves a review
 (adversarial/finder/validator/epe-4-review). The fixer of /epe-5-apply is exempt.
 Escape: "NO-CLOSED: <reason>" in the prompt. Limitation: doesn't see agent() inside a Workflow.
 Blocks via exit 2. Exit 0 on error.
@@ -12,25 +12,12 @@ import re
 import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import _memory  # noqa: E402
 from _config import root  # noqa: E402
 
 REVIEW = re.compile(r"adversarial|\bfinders?\b|\bvalidators?\b|epe-4-review|\blens (F-|of )", re.I)
 APPLYING = re.compile(r"epe-5-apply|\bfixer\b|apply (each|the|these)\s+(approved\s+)?findings?", re.I)
 ESCAPE = "NO-CLOSED:"
-
-
-def markers(closed_path):
-    marks = []
-    with open(closed_path, encoding="utf-8") as fh:
-        for line in fh:
-            if not marks and line.startswith("# "):
-                marks.append(line[2:].strip())
-            elif "🔒" in line and line.lstrip().startswith("|"):
-                cells = [c.strip() for c in line.split("|") if c.strip()]
-                if cells:
-                    marks.append(cells[0])
-                break
-    return [m for m in marks if m]
 
 
 def main():
@@ -46,15 +33,12 @@ def main():
     if not REVIEW.search(prompt) or ESCAPE in prompt or APPLYING.search(prompt):
         return 0
     cwd = data.get("cwd") or os.environ.get("CLAUDE_PROJECT_DIR") or os.getcwd()
-    closed = os.path.join(root(cwd), "memory", "closed.md")
-    if not os.path.exists(closed):
-        return 0
-    marks = markers(closed)
+    marks = _memory.closed_markers(root(cwd))
     if not marks or any(m in prompt for m in marks):
         return 0
     sys.stderr.write(
         "🔒 Adversarial-review subagent WITHOUT the closed-verdicts index.\n"
-        "The prompt does not contain memory/closed.md. Paste it LITERALLY (it is short on purpose) with the rule: "
+        "The prompt does not contain the output of `make closed` (memory/closed/). Paste it LITERALLY with the rule: "
         "🔒 don't report · ↩️ only with new evidence · ⏸️ goes to debt · 🧩 only the missing instances.\n"
         f'If this subagent doesn\'t need it, write "{ESCAPE} <reason>" in the prompt.\n')
     return 2

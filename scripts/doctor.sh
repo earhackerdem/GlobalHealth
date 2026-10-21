@@ -57,8 +57,16 @@ reg=$(grep -o 'hooks/[a-z_-]*\.py' .claude/settings.json | sort -u | wc -l | tr 
 for h in .claude/hooks/[a-z]*.py; do b=$(basename "$h"); grep -q "$b" .claude/settings.json || warn "$b exists but is not registered in settings.json"; done
 
 echo "== Memory"
-for f in memory/README.md memory/decisions.md memory/inbox.md memory/closed.md; do [ -f "$f" ] && ok "$f" || bad "missing $f"; done
-[ -d memory/journal ] && ok "memory/journal/" || bad "missing memory/journal/"
+[ -f memory/README.md ] && ok "memory/README.md" || bad "missing memory/README.md"
+for k in decisions inbox closed research meta-improvements journal; do
+  if [ -f "memory/$k.md" ]; then warn "memory/$k.md is one file for every entry, so parallel branches conflict on it: make memory-migrate"
+  elif [ -d "memory/$k" ]; then ok "memory/$k/ ($(find "memory/$k" -maxdepth 1 -name '*.md' ! -name README.md | wc -l | tr -d ' ') entries)"
+  else bad "missing memory/$k/"; fi
+done
+[ -f CHANGELOG.md ] && [ ! -d changelog.d ] && warn "CHANGELOG.md without changelog.d/: make memory-migrate (fragments + make changelog)"
+python3 -c 'import sys; sys.path.insert(0, ".claude/hooks"); import _memory
+for w, m in _memory.problems("."):
+    "old single file" in m or print(f"  \033[1;33m⚠️ \033[0m {w}: {m}")' 2>/dev/null || true
 
 echo "== Profile"; bash scripts/profile.sh check | sed 's/^/  /'
 

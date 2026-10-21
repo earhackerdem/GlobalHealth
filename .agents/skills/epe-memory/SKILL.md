@@ -12,7 +12,7 @@ memories were lying and were injected at every startup.
 | | repo `memory/` | agent's private memory |
 |---|---|---|
 | seen by the team / other sessions / the PR diff | yes | no |
-| what goes there | decisions (`decisions.md`), verified facts (`research.md`), verdicts (`closed.md`), ideas (`inbox.md`), what was done (`journal/`) | how to work with this repo and this person, corrected beliefs, open state to resume |
+| what goes there | one file per record: decisions (`decisions/`), verified facts (`research/`), verdicts (`closed/`), ideas (`inbox/`), what was done (`journal/`) | how to work with this repo and this person, corrected beliefs, open state to resume |
 When in doubt, the repo.
 
 ## Procedure
@@ -20,9 +20,9 @@ When in doubt, the repo.
    points to: compacting does not delete the transcript.
 1. **Sweep what is stale**: `make memory-check` gives mechanical leads (broken links, nonexistent paths, closed PRs
    treated as live). Then, for each private memory: is it still true? Verify against the repo. Correct or delete.
-   Same with `memory/inbox.md` (close what is done) and `decisions.md` (mark Revised if it changed).
-2. **Write what is new**, routed: decision → `decisions.md`; fact with source → `research.md`; idea → `inbox.md`;
-   work → `journal/`; way of working or corrected belief → private (one file per fact, with frontmatter and a line in
+   Same with `memory/inbox/` (close what is done: `status: done`) and `memory/decisions/` (mark Revised if it changed).
+2. **Write what is new**, routed, one file each: decision → `decisions/D<n>-slug.md` (`make decision-next`); fact with
+   source → `research/<topic>.md`; idea → `inbox/YYYY-MM-DD-slug.md`; work → `journal/`; way of working or corrected belief → private (one file per fact, with frontmatter and a line in
    `MEMORY.md`).
 3. `make memory-swept` to record the sweep.
 4. Finish with the count: corrected / deleted / new, and where each one ended up. If there are more files and none

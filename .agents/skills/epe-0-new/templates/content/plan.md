@@ -22,7 +22,7 @@ Date: YYYY-MM-DD · Approved by: <name (role)> on YYYY-MM-DD
 | File | What changes | Who cites it |
 |---|---|---|
 
-## Affected decisions in `memory/decisions.md`
+## Affected decisions in `memory/decisions/`
 <Which one and how it is touched in this same change; or "none".>
 
 ## Test plan (one row per AC, mandatory)

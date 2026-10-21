@@ -23,7 +23,7 @@ during implementation".>
 | File | What changes | Anchor | Who cites it |
 |---|---|---|---|
 
-## Affected decisions in `memory/decisions.md`
+## Affected decisions in `memory/decisions/`
 <Which one and how it is touched in this same change; or "none".>
 
 ## Tickets
