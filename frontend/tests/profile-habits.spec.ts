@@ -136,6 +136,13 @@ async function freshPatient(
   return apiSession(request, email, password)
 }
 
+/**
+ * Sin keep-alive: el backend cierra las conexiones inactivas a los 5 s y un
+ * test que espera a la UI más que eso reusaría un socket a medio cerrar
+ * ("socket hang up"). Con "Connection: close" cada llamada abre el suyo.
+ */
+const NO_KEEP_ALIVE = { Connection: "close" }
+
 /** Cliente del API autenticado como ese paciente. */
 async function apiSession(
   request: APIRequestContext,
@@ -143,11 +150,15 @@ async function apiSession(
   password: string,
 ): Promise<Api> {
   const login = await request.post(`${API}/login/access-token`, {
+    headers: NO_KEEP_ALIVE,
     form: { username: email, password },
   })
   expect(login.ok()).toBeTruthy()
   const { access_token } = await login.json()
-  return { request, headers: { Authorization: `Bearer ${access_token}` } }
+  return {
+    request,
+    headers: { ...NO_KEEP_ALIVE, Authorization: `Bearer ${access_token}` },
+  }
 }
 
 /**
@@ -644,9 +655,9 @@ test.describe("Perfil médico — hábitos (perfil-habitos, grupo 2)", () => {
     await expect(numberField(page, VAPING_DAYS)).toHaveCount(0)
 
     await chip(page, VAPING, "Antes").click()
-    await expect(page.getByRole("group", { name: VAPING_FREQUENCY })).toHaveCount(
-      0,
-    )
+    await expect(
+      page.getByRole("group", { name: VAPING_FREQUENCY }),
+    ).toHaveCount(0)
     await numberField(page, VAPING_START).fill("25")
     await numberField(page, VAPING_QUIT).fill("28")
     await saveOk(page)
@@ -655,9 +666,9 @@ test.describe("Perfil médico — hábitos (perfil-habitos, grupo 2)", () => {
     await expectPressed(chip(page, VAPING, "Antes"), true)
     await expect(numberField(page, VAPING_START)).toHaveValue("25")
     await expect(numberField(page, VAPING_QUIT)).toHaveValue("28")
-    await expect(page.getByRole("group", { name: VAPING_FREQUENCY })).toHaveCount(
-      0,
-    )
+    await expect(
+      page.getByRole("group", { name: VAPING_FREQUENCY }),
+    ).toHaveCount(0)
     await expect(numberField(page, VAPING_DAYS)).toHaveCount(0)
 
     const saved = await getHabits(api)
@@ -750,9 +761,9 @@ test.describe("Perfil médico — hábitos (perfil-habitos, grupo 2)", () => {
 
     await chip(page, VAPING, "Nunca").click()
     await expect(numberField(page, VAPING_START)).toHaveCount(0)
-    await expect(page.getByRole("group", { name: VAPING_FREQUENCY })).toHaveCount(
-      0,
-    )
+    await expect(
+      page.getByRole("group", { name: VAPING_FREQUENCY }),
+    ).toHaveCount(0)
     await saveOk(page)
 
     await expect(card(page)).toContainText("Con datos")
@@ -978,7 +989,9 @@ test.describe("Perfil médico — hábitos (perfil-habitos, grupo 2)", () => {
     await expect
       .poll(async () => (await getHabits(api)).tobacco?.status)
       .toBe("never")
-    expect((await getHabits(api)).tobacco?.cigarettes_per_day ?? null).toBeNull()
+    expect(
+      (await getHabits(api)).tobacco?.cigarettes_per_day ?? null,
+    ).toBeNull()
 
     await reopen(page)
     await expectPressed(chip(page, TOBACCO, "Nunca"), true)
