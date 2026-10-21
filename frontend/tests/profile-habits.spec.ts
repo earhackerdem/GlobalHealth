@@ -19,15 +19,27 @@ test.use({ storageState: { cookies: [], origins: [] } })
 //
 // Tarjeta: data-testid history-card-habits en /perfil, enlace a
 //   /perfil/habitos; insignia "Sin llenar" o "Con datos".
-// Pantalla /perfil/habitos: heading "Hábitos"; "Guardar" (exact) manda lo
-//   pendiente (si hay), avisa "Hábitos guardados" y vuelve a /perfil;
-//   "Cancelar" (exact) deja lo guardado como al abrir (si cambió, avisa "Se
-//   descartaron los cambios") y vuelve a /perfil.
-// Guardado automático: un chip guarda al elegirlo, un número al salir de su
-//   campo (600 ms sin cambios), solo si todo el cuestionario es válido; un
-//   PUT a la vez. Estado role="status": "Guardando…", "Guardado",
-//   "Sin guardar: corrige el campo marcado", "No se pudo guardar".
-//   "Guardar" y "Cancelar" con disabled mientras hay un PUT en curso (D20).
+// Pantalla /perfil/habitos: heading "Hábitos"; debajo de la introducción,
+//   "Tus respuestas se guardan cuando tocas «Guardar»." Sin guardado
+//   automático: nada sale (ningún PUT /profile/habits) hasta "Guardar".
+// "Guardar" (exact): valida todo; con errores, foco al primero y no manda
+//   nada; si no, UN PUT, avisa "Hábitos guardados" y vuelve a /perfil.
+// "Cancelar" (exact): nunca manda nada ni abre el diálogo de salida; con
+//   cambios sin guardar vuelve a /perfil con "Se descartaron los cambios";
+//   sin cambios, solo vuelve.
+// Mientras el PUT está en curso (D20): "Guardar" y "Cancelar" con
+//   aria-disabled="true" (NO disabled nativo); clic o Enter no hacen nada y
+//   el foco sigue en "Guardar".
+// Cambios sin guardar = lo que está en pantalla (incluido un número escrito
+//   sin salir del campo) difiere de lo que había al abrir; elegir una opción
+//   y volver a la de antes no cuenta.
+// Salir dentro de la app (menú, enlace "‹ Mi perfil médico", atrás del
+//   navegador) con cambios: diálogo "¿Salir sin guardar?" con "Los cambios que
+//   hiciste en Hábitos se van a perder.", botones "Seguir editando" (con el
+//   foco al abrir; deja la pantalla como estaba) y "Salir sin guardar" (sigue
+//   a donde iba). Recargar o cerrar la pestaña con cambios: aviso
+//   beforeunload del navegador; sin cambios, ninguno. Si la sesión terminó o
+//   cambió (otro token en localStorage), ni diálogo ni beforeunload.
 // Grupos (role "group" = fieldset, nombre exacto = su aria-label); cada chip
 //   es un botón con aria-pressed. Los chips de estado de un bloque van ANTES
 //   (en el DOM) que sus preguntas anidadas:
@@ -63,7 +75,10 @@ test.use({ storageState: { cookies: [], origins: [] } })
 //   campo el error aparece sin mover el foco; al tocar "Guardar" el foco va al
 //   primer error. Mensajes: "La edad no puede ser mayor que tu edad actual";
 //   "No puede ser mayor que la edad en que lo dejaste" (en la edad de inicio);
-//   "Debe estar entre {min} y {max}" (escala del esquema generado).
+//   "Debe estar entre {min} y {max}" (escala del esquema generado);
+//   "No puede ser mayor que la edad en que terminó" (leña); "Escribe solo el
+//   número.". Al elegir una opción se borran solo los errores de las
+//   preguntas que se ocultan; un campo que sigue a la vista conserva su marca.
 // ---------------------------------------------------------------------------
 
 const API = `${process.env.VITE_API_URL}/api/v1`
@@ -95,11 +110,11 @@ const WOOD_HOURS = "¿Cuántas horas al día, en promedio?"
 /** Pregunta de la C1 que este cambio quita. */
 const OLD_WOOD_YEARS = "Años con humo de leña, aprox."
 
-const SAVING = "Guardando…"
-const SAVED = "Guardado"
-const BLOCKED = "Sin guardar: corrige el campo marcado"
+const SAVE_HINT = "Tus respuestas se guardan cuando tocas «Guardar»."
+const LEAVE_TITLE = "¿Salir sin guardar?"
+const LEAVE_TEXT = "Los cambios que hiciste en Hábitos se van a perder."
 
-/** Margen para afirmar que NO salió un PUT (el guardado espera 600 ms). */
+/** Margen para afirmar que NO salió un PUT (ni un aviso que no debe salir). */
 const NO_PUT_WINDOW_MS = 1500
 
 type Api = {
@@ -326,12 +341,37 @@ async function expectFieldError(
     .toContain(message)
 }
 
-/** Mensaje de estado (role="status") con exactamente ese texto. */
-function saveStatus(page: Page, text: string): Locator {
-  const escaped = text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
+/** El diálogo de la app al salir con cambios sin guardar. */
+function leaveDialog(page: Page): Locator {
+  return page.getByRole("dialog", { name: LEAVE_TITLE })
+}
+
+/** Ningún diálogo de salida de la app a la vista. */
+async function expectNoLeaveDialog(page: Page) {
+  await expect(page.getByText(LEAVE_TITLE)).toHaveCount(0)
+}
+
+/**
+ * El enlace "‹ Mi perfil médico" de la pantalla (no la entrada del menú, que
+ * se llama exactamente "Mi perfil médico" y no lleva "‹").
+ */
+function backLink(page: Page): Locator {
   return page
-    .getByRole("status")
-    .filter({ hasText: new RegExp(`^\\s*${escaped}\\s*$`) })
+    .getByRole("link", { name: /Mi perfil médico/ })
+    .filter({ hasText: "‹" })
+}
+
+/**
+ * Tipos de los diálogos del navegador (beforeunload, alert…) que la página
+ * abre desde ahora; cada uno se acepta para que la navegación siga.
+ */
+function trackBrowserDialogs(page: Page): string[] {
+  const types: string[] = []
+  page.on("dialog", async (dialog) => {
+    types.push(dialog.type())
+    await dialog.accept()
+  })
+  return types
 }
 
 /** Cuerpos de cada PUT /profile/habits que la página manda desde ahora. */
@@ -391,7 +431,7 @@ async function inAppLogin(page: Page, email: string, password: string) {
 const formAlert = (page: Page) => page.locator("form").getByRole("alert")
 
 test.describe("Perfil médico — hábitos (perfil-habitos, grupo 2)", () => {
-  test("fila 1 (C-1) alcohol actual con las preguntas del AUDIT-C: se guarda solo, tarjeta 'Con datos' y al reabrir siguen elegidas", async ({
+  test("fila 1 (C-1) alcohol actual con las preguntas del AUDIT-C: con 'Guardar', tarjeta 'Con datos' y al reabrir siguen elegidas", async ({
     page,
     request,
   }) => {
@@ -405,8 +445,7 @@ test.describe("Perfil médico — hábitos (perfil-habitos, grupo 2)", () => {
     await chip(page, DRINKS, "3 o 4").click()
     await chip(page, SIX_OR_MORE, "Cada mes").click()
     await chip(page, WEEKENDS, "Sí").click()
-    await expect(saveStatus(page, SAVED)).toBeVisible()
-    await backToProfileViaMenu(page)
+    await saveOk(page)
 
     await expect(card(page)).toContainText("Con datos")
 
@@ -468,7 +507,6 @@ test.describe("Perfil médico — hábitos (perfil-habitos, grupo 2)", () => {
       "No puede ser mayor que la edad en que lo dejaste",
       { focused: false },
     )
-    await expect(saveStatus(page, BLOCKED)).toBeVisible()
     const putsAtError = puts.length
     await page.waitForTimeout(NO_PUT_WINDOW_MS)
     expect(puts.length).toBe(putsAtError)
@@ -503,7 +541,6 @@ test.describe("Perfil médico — hábitos (perfil-habitos, grupo 2)", () => {
       "La edad no puede ser mayor que tu edad actual",
     )
     await expect(page).toHaveURL(HABITS_URL)
-    // El chip "Lo dejé" pudo guardarse solo; el 40 no.
     const saved = await getHabits(api)
     expect(saved.alcohol?.quit_age ?? null).toBeNull()
   })
@@ -597,7 +634,6 @@ test.describe("Perfil médico — hábitos (perfil-habitos, grupo 2)", () => {
       "No puede ser mayor que la edad en que lo dejaste",
     )
     await expect(page).toHaveURL(HABITS_URL)
-    // El chip "Antes" pudo guardarse solo; la edad en que lo dejó, no.
     const saved = await getHabits(api)
     expect(saved.tobacco?.quit_age ?? null).toBeNull()
   })
@@ -834,86 +870,167 @@ test.describe("Perfil médico — hábitos (perfil-habitos, grupo 2)", () => {
     expect(JSON.stringify(saved)).not.toMatch(forbidden)
   })
 
-  test("fila 16 (C-13) una respuesta se guarda al elegirla: tabaco 'Nunca' y de vuelta por el menú, sin 'Guardar' → 'Con datos' y al abrir ve 'Nunca'", async ({
+  test("fila 16 (C-13) se guarda al tocar 'Guardar': el texto lo dice; tabaco 'Nunca' no manda nada hasta 'Guardar', que manda un PUT, avisa 'Hábitos guardados', tarjeta 'Con datos' y al reabrir ve 'Nunca'", async ({
     page,
     request,
   }) => {
     const api = await freshPatient(page, request)
     await openHabitsFromProfile(page)
+    await expect(page.getByText(SAVE_HINT, { exact: true })).toBeVisible()
+    const puts = trackHabitPuts(page)
 
     await chip(page, TOBACCO, "Nunca").click()
     await expectPressed(chip(page, TOBACCO, "Nunca"), true)
-    await backToProfileViaMenu(page)
+    await page.waitForTimeout(NO_PUT_WINDOW_MS)
+    expect(puts).toEqual([])
+    expect((await getHabits(api)).tobacco ?? null).toBeNull()
 
+    await saveOk(page)
+    expect(puts).toHaveLength(1)
     await expect(card(page)).toContainText("Con datos")
+
     await reopen(page)
     await expectPressed(chip(page, TOBACCO, "Nunca"), true)
     expect((await getHabits(api)).tobacco?.status).toBe("never")
   })
 
-  test("fila 17 (C-13) un número se guarda al salir de su campo: 12 cigarros y Tab → estado 'Guardado'; al recargar ve 12", async ({
+  test("fila 17 (C-13) aviso al salir con cambios sin guardar: de 'Nunca' a 'Actual' con 12 sin salir del campo, '‹ Mi perfil médico' → '¿Salir sin guardar?'; 'Seguir editando' deja 'Actual' y 12; atrás del navegador → diálogo; 'Salir sin guardar' → /perfil, ningún PUT, sigue 'Nunca'", async ({
     page,
     request,
   }) => {
     const api = await freshPatient(page, request)
-    await seedHabits(api, { tobacco: { status: "current" } })
+    await seedHabits(api, { tobacco: { status: "never" } })
     await openHabitsFromProfile(page)
-    await expectPressed(chip(page, TOBACCO, "Actual"), true)
-
-    const cigarettes = numberField(page, CIGARETTES)
-    await cigarettes.fill("12")
-    await cigarettes.press("Tab")
-    await expect(saveStatus(page, SAVED)).toBeVisible()
-    await expect(page).toHaveURL(HABITS_URL)
-
-    await page.reload()
-    await expect(numberField(page, CIGARETTES)).toHaveValue("12")
-    expect((await getHabits(api)).tobacco?.cigarettes_per_day).toBe(12)
-  })
-
-  test("fila 18 (C-13, C-14) con un error no se guarda nada: 101 cigarros y luego vapeador 'Actual' → error, 'Sin guardar…', ningún PUT; al recargar sigue 'Nunca'", async ({
-    page,
-    request,
-  }) => {
-    const api = await freshPatient(page, request)
-    await setAge36(api)
-    await seedHabits(api, {
-      tobacco: { status: "current" },
-      vaping: { status: "never" },
-    })
-    await openHabitsFromProfile(page)
-    await expectPressed(chip(page, VAPING, "Nunca"), true)
+    await expectPressed(chip(page, TOBACCO, "Nunca"), true)
     const puts = trackHabitPuts(page)
 
-    const cigarettes = numberField(page, CIGARETTES)
-    await cigarettes.fill("101")
-    await cigarettes.press("Tab")
-    await expectFieldError(page, cigarettes, "Debe estar entre 1 y 100", {
-      focused: false,
-    })
-    await expect(saveStatus(page, BLOCKED)).toBeVisible()
+    await chip(page, TOBACCO, "Actual").click()
+    await numberField(page, CIGARETTES).fill("12")
+    await backLink(page).click()
 
-    await chip(page, VAPING, "Actual").click()
-    await expectPressed(chip(page, VAPING, "Actual"), true)
-    await expect(saveStatus(page, BLOCKED)).toBeVisible()
+    const dialog = leaveDialog(page)
+    await expect(dialog).toBeVisible()
+    await expect(dialog).toContainText(LEAVE_TEXT)
+    await expect(
+      dialog.getByRole("button", { name: "Seguir editando", exact: true }),
+    ).toBeFocused()
+    await expect(
+      dialog.getByRole("button", { name: "Salir sin guardar", exact: true }),
+    ).toBeVisible()
+
+    await dialog
+      .getByRole("button", { name: "Seguir editando", exact: true })
+      .click()
+    await expect(dialog).toHaveCount(0)
+    await expect(page).toHaveURL(HABITS_URL)
+    await expectPressed(chip(page, TOBACCO, "Actual"), true)
+    await expect(numberField(page, CIGARETTES)).toHaveValue("12")
+
+    // Atrás del navegador (la entrada anterior es /perfil).
+    await page.evaluate(() => window.history.back())
+    await expect(dialog).toBeVisible()
+    await dialog
+      .getByRole("button", { name: "Salir sin guardar", exact: true })
+      .click()
+    await page.waitForURL(PROFILE_URL)
+
     await page.waitForTimeout(NO_PUT_WINDOW_MS)
     expect(puts).toEqual([])
-
-    await page.reload()
-    await expectPressed(chip(page, VAPING, "Nunca"), true)
-    await expectPressed(chip(page, VAPING, "Actual"), false)
-    expect(puts).toEqual([])
     const saved = await getHabits(api)
-    expect(saved.vaping?.status).toBe("never")
+    expect(saved.tobacco?.status).toBe("never")
     expect(saved.tobacco?.cigarettes_per_day ?? null).toBeNull()
+    await reopen(page)
+    await expectPressed(chip(page, TOBACCO, "Nunca"), true)
   })
 
-  test("fila 19 (C-13, D20) 'Guardar' y 'Cancelar' desactivados mientras guarda; un doble clic sobre 'Guardar' manda un solo guardado más y vuelve", async ({
+  test("fila 18 (C-13) sin cambios no hay aviso: abrir y volver sin tocar → sin diálogo; elegir 'Actual' y volver a 'Nunca' → sin diálogo (y nada enviado)", async ({
     page,
     request,
   }) => {
     const api = await freshPatient(page, request)
-    await seedHabits(api, { tobacco: { status: "current" } })
+    await seedHabits(api, { tobacco: { status: "never" } })
+    await openHabitsFromProfile(page)
+    const puts = trackHabitPuts(page)
+
+    // Por el menú, sin tocar nada.
+    await backToProfileViaMenu(page)
+    await expectNoLeaveDialog(page)
+
+    await reopen(page)
+    await chip(page, TOBACCO, "Actual").click()
+    await expectPressed(chip(page, TOBACCO, "Actual"), true)
+    await chip(page, TOBACCO, "Nunca").click()
+    await expectPressed(chip(page, TOBACCO, "Nunca"), true)
+    await backLink(page).click()
+    await page.waitForURL(PROFILE_URL)
+    await expectNoLeaveDialog(page)
+
+    await page.waitForTimeout(NO_PUT_WINDOW_MS)
+    expect(puts).toEqual([])
+    expect((await getHabits(api)).tobacco?.status).toBe("never")
+  })
+
+  test("fila 19 (C-13) aviso del navegador al recargar: con un cambio, recargar → diálogo 'beforeunload'; sin cambios, ninguno", async ({
+    page,
+    request,
+  }) => {
+    await freshPatient(page, request)
+    await openHabitsFromProfile(page)
+    const dialogs = trackBrowserDialogs(page)
+
+    // Sin cambios (con un clic real en la página, que Chrome exige para
+    // mostrar el aviso): recargar no pregunta.
+    await page.getByRole("heading", { name: "Hábitos", exact: true }).click()
+    await page.reload()
+    await expect(
+      page.getByRole("button", { name: "Guardar", exact: true }),
+    ).toBeVisible()
+    expect(dialogs).toEqual([])
+
+    // Con un cambio sin guardar: recargar pide el aviso del navegador.
+    await chip(page, TOBACCO, "Nunca").click()
+    await expectPressed(chip(page, TOBACCO, "Nunca"), true)
+    await page.reload()
+    await expect(
+      page.getByRole("button", { name: "Guardar", exact: true }),
+    ).toBeVisible()
+    expect(dialogs).toContain("beforeunload")
+  })
+
+  test("fila 20 (C-13, N1) sin aviso cuando la sesión cambió: con un cambio, otra pestaña cierra sesión → esta llega a /login sin diálogo de la app ni 'beforeunload', ningún PUT", async ({
+    page,
+    request,
+  }) => {
+    const api = await freshPatient(page, request)
+    await openHabitsFromProfile(page)
+    const puts = trackHabitPuts(page)
+    const dialogs = trackBrowserDialogs(page)
+
+    await chip(page, TOBACCO, "Nunca").click()
+    await expectPressed(chip(page, TOBACCO, "Nunca"), true)
+
+    // Pestaña 2 del mismo navegador (comparte localStorage): cierra sesión.
+    const other = await page.context().newPage()
+    await other.goto("/perfil")
+    const otherMenu = other.getByTestId("user-menu")
+    await revealInSidebar(other, otherMenu)
+    await otherMenu.click()
+    await other.getByRole("menuitem", { name: "Cerrar sesión" }).click()
+    await other.waitForURL(/\/login/)
+
+    await expect(page).toHaveURL(/\/login/)
+    await expectNoLeaveDialog(page)
+    await page.waitForTimeout(NO_PUT_WINDOW_MS)
+    expect(dialogs).toEqual([])
+    expect(puts).toEqual([])
+    expect((await getHabits(api)).tobacco ?? null).toBeNull()
+  })
+
+  test("fila 21 (C-13, D20) no disponibles mientras guarda: con el PUT retenido, 'Guardar' y 'Cancelar' con aria-disabled, el foco sigue en 'Guardar'; Enter y otro clic → un solo PUT; al soltarlo, /perfil", async ({
+    page,
+    request,
+  }) => {
+    const api = await freshPatient(page, request)
     await openHabitsFromProfile(page)
     const puts = trackHabitPuts(page)
 
@@ -932,38 +1049,37 @@ test.describe("Perfil médico — hábitos (perfil-habitos, grupo 2)", () => {
     const cancel = page.getByRole("button", { name: "Cancelar", exact: true })
 
     await chip(page, VAPING, "Nunca").click()
-    await expect(saveStatus(page, SAVING)).toBeVisible()
-    await expect(save).toBeDisabled()
-    await expect(cancel).toBeDisabled()
+    await markShownToasts(page)
+    await save.click()
+
+    await expect(save).toHaveAttribute("aria-disabled", "true")
+    await expect(cancel).toHaveAttribute("aria-disabled", "true")
+    // aria-disabled, no disabled nativo: no pierde el foco.
+    await expect(save).not.toHaveAttribute("disabled")
+    await expect(cancel).not.toHaveAttribute("disabled")
+    await expect(save).toBeFocused()
     expect(puts).toHaveLength(1)
 
-    // Mientras sigue en curso, ni el doble clic ni "Cancelar" hacen nada.
-    await save.dblclick({ force: true })
+    // Mientras sigue en curso: Enter y otro clic en "Guardar", y "Cancelar",
+    // no hacen nada.
+    await page.keyboard.press("Enter")
+    await expect(save).toBeFocused()
+    await save.click({ force: true })
+    await expect(save).toBeFocused()
     await cancel.click({ force: true })
+    await page.waitForTimeout(NO_PUT_WINDOW_MS)
     await expect(page).toHaveURL(HABITS_URL)
     expect(puts).toHaveLength(1)
 
     release()
-    await expect(saveStatus(page, SAVED)).toBeVisible()
-    await expect(save).toBeEnabled()
-    await expect(cancel).toBeEnabled()
-
-    // Un número escrito sin salir del campo queda pendiente: el doble clic
-    // sobre "Guardar" lo manda UNA vez y vuelve.
-    await numberField(page, CIGARETTES).fill("12")
-    await markShownToasts(page)
-    await save.dblclick({ force: true })
     await page.waitForURL(PROFILE_URL)
     await expect(newToast(page, "Hábitos guardados")).toBeVisible()
     await page.waitForTimeout(NO_PUT_WINDOW_MS)
-    expect(puts).toHaveLength(2)
-
-    const saved = await getHabits(api)
-    expect(saved.vaping?.status).toBe("never")
-    expect(saved.tobacco?.cigarettes_per_day).toBe(12)
+    expect(puts).toHaveLength(1)
+    expect((await getHabits(api)).vaping?.status).toBe("never")
   })
 
-  test("fila 20 (C-13) 'Cancelar' deja todo como al abrir: de tabaco 'Nunca' a 'Actual' con 5 (ya guardado solo), 'Cancelar' → aviso, /perfil y tabaco 'Nunca'", async ({
+  test("fila 22 (C-13) 'Cancelar' descarta: de tabaco 'Nunca' a 'Actual' con 5, 'Cancelar' → /perfil con 'Se descartaron los cambios', sin diálogo, ningún PUT y sigue 'Nunca'; sin cambios, 'Cancelar' vuelve sin ese aviso", async ({
     page,
     request,
   }) => {
@@ -971,38 +1087,42 @@ test.describe("Perfil médico — hábitos (perfil-habitos, grupo 2)", () => {
     await seedHabits(api, { tobacco: { status: "never" } })
     await openHabitsFromProfile(page)
     await expectPressed(chip(page, TOBACCO, "Nunca"), true)
+    const puts = trackHabitPuts(page)
 
     await chip(page, TOBACCO, "Actual").click()
-    const cigarettes = numberField(page, CIGARETTES)
-    await cigarettes.fill("5")
-    await cigarettes.press("Tab")
-    await expect(saveStatus(page, SAVED)).toBeVisible()
-    await expect
-      .poll(async () => (await getHabits(api)).tobacco?.cigarettes_per_day)
-      .toBe(5)
-
+    await numberField(page, CIGARETTES).fill("5")
     await markShownToasts(page)
     await page.getByRole("button", { name: "Cancelar", exact: true }).click()
-    await expect(newToast(page, "Se descartaron los cambios")).toBeVisible()
     await page.waitForURL(PROFILE_URL)
+    await expect(newToast(page, "Se descartaron los cambios")).toBeVisible()
+    await expectNoLeaveDialog(page)
 
-    await expect
-      .poll(async () => (await getHabits(api)).tobacco?.status)
-      .toBe("never")
-    expect(
-      (await getHabits(api)).tobacco?.cigarettes_per_day ?? null,
-    ).toBeNull()
+    await page.waitForTimeout(NO_PUT_WINDOW_MS)
+    expect(puts).toEqual([])
+    const saved = await getHabits(api)
+    expect(saved.tobacco?.status).toBe("never")
+    expect(saved.tobacco?.cigarettes_per_day ?? null).toBeNull()
 
     await reopen(page)
     await expectPressed(chip(page, TOBACCO, "Nunca"), true)
     await expect(numberField(page, CIGARETTES)).toHaveCount(0)
+
+    // Sin cambios: vuelve, sin el aviso.
+    await markShownToasts(page)
+    await page.getByRole("button", { name: "Cancelar", exact: true }).click()
+    await page.waitForURL(PROFILE_URL)
+    await expectNoLeaveDialog(page)
+    await page.waitForTimeout(NO_PUT_WINDOW_MS)
+    await expect(newToast(page, "Se descartaron los cambios")).toHaveCount(0)
+    expect(puts).toEqual([])
   })
 
-  test("fila 21 (C-14) fuera de escala al salir del campo: leña 'Actual' con 25 horas y Tab → 'Debe estar entre 1 y 24' junto al campo, inválido y ningún PUT", async ({
+  test("fila 23 (C-14) errores al salir del campo, sin ningún PUT: 25 horas de leña ('Debe estar entre 1 y 24'), 40 en una edad con 36 años, inicio 30 y fin 18 en vapeador y en leña, y '12a' ('Escribe solo el número.')", async ({
     page,
     request,
   }) => {
     const api = await freshPatient(page, request)
+    await setAge36(api)
     await seedHabits(api, { wood_smoke: { status: "current" } })
     await openHabitsFromProfile(page)
     await expectPressed(chip(page, WOOD, "Actual"), true)
@@ -1012,16 +1132,99 @@ test.describe("Perfil médico — hábitos (perfil-habitos, grupo 2)", () => {
     await expect(numberField(page, OLD_WOOD_YEARS)).toHaveCount(0)
     const puts = trackHabitPuts(page)
 
+    // Fuera de escala.
     const hours = numberField(page, WOOD_HOURS)
     await hours.fill("25")
     await hours.press("Tab")
-
     await expectFieldError(page, hours, "Debe estar entre 1 y 24", {
       focused: false,
     })
     await page.waitForTimeout(NO_PUT_WINDOW_MS)
     expect(puts).toEqual([])
     expect((await getHabits(api)).wood_smoke?.hours_per_day ?? null).toBeNull()
+
+    // Una edad mayor que la actual (36).
+    const woodStart = numberField(page, WOOD_START)
+    await woodStart.fill("40")
+    await woodStart.press("Tab")
+    await expectFieldError(
+      page,
+      woodStart,
+      "La edad no puede ser mayor que tu edad actual",
+      { focused: false },
+    )
+    await page.waitForTimeout(NO_PUT_WINDOW_MS)
+    expect(puts).toEqual([])
+
+    // Vapeador: empezó a los 30 y lo dejó a los 18.
+    await chip(page, VAPING, "Antes").click()
+    const vapingStart = numberField(page, VAPING_START)
+    await vapingStart.fill("30")
+    await numberField(page, VAPING_QUIT).fill("18")
+    await numberField(page, VAPING_QUIT).press("Tab")
+    await expectFieldError(
+      page,
+      vapingStart,
+      "No puede ser mayor que la edad en que lo dejaste",
+      { focused: false },
+    )
+    await page.waitForTimeout(NO_PUT_WINDOW_MS)
+    expect(puts).toEqual([])
+
+    // Leña: empezó a los 30 y terminó a los 18.
+    await chip(page, WOOD, "Antes").click()
+    await woodStart.fill("30")
+    await numberField(page, WOOD_QUIT).fill("18")
+    await numberField(page, WOOD_QUIT).press("Tab")
+    await expectFieldError(
+      page,
+      woodStart,
+      "No puede ser mayor que la edad en que terminó",
+      { focused: false },
+    )
+    await page.waitForTimeout(NO_PUT_WINDOW_MS)
+    expect(puts).toEqual([])
+
+    // Algo que no es un número.
+    await chip(page, TOBACCO, "Actual").click()
+    const cigarettes = numberField(page, CIGARETTES)
+    await cigarettes.fill("12a")
+    await cigarettes.press("Tab")
+    await expectFieldError(page, cigarettes, "Escribe solo el número.", {
+      focused: false,
+    })
+    await page.waitForTimeout(NO_PUT_WINDOW_MS)
+    expect(puts).toEqual([])
+
+    const saved = await getHabits(api)
+    expect(saved.wood_smoke?.status).toBe("current")
+    expect(saved.vaping ?? null).toBeNull()
+    expect(saved.tobacco ?? null).toBeNull()
+  })
+
+  test("fila 24 (C-14) la marca sigue mientras el campo está a la vista: tabaco 'Actual' con 101 cigarros y Tab → error; con 'Antes' el error y aria-invalid siguen junto a los cigarros", async ({
+    page,
+    request,
+  }) => {
+    const api = await freshPatient(page, request)
+    await seedHabits(api, { tobacco: { status: "current" } })
+    await openHabitsFromProfile(page)
+    await expectPressed(chip(page, TOBACCO, "Actual"), true)
+
+    const cigarettes = numberField(page, CIGARETTES)
+    await cigarettes.fill("101")
+    await cigarettes.press("Tab")
+    await expectFieldError(page, cigarettes, "Debe estar entre 1 y 100", {
+      focused: false,
+    })
+
+    await chip(page, TOBACCO, "Antes").click()
+    await expectPressed(chip(page, TOBACCO, "Antes"), true)
+    await expect(cigarettes).toBeVisible()
+    await expect(cigarettes).toHaveValue("101")
+    await expectFieldError(page, cigarettes, "Debe estar entre 1 y 100", {
+      focused: false,
+    })
   })
 
   test("fila 14 la tarjeta 'Hábitos' abre /perfil/habitos con el cuestionario y 'Guardar'", async ({
@@ -1158,7 +1361,7 @@ test.describe("Perfil médico — hábitos (perfil-habitos, grupo 2)", () => {
     await chip(page, ALCOHOL, "Lo dejé").click()
     const quitAge = numberField(page, ALCOHOL_QUIT_AGE)
     await quitAge.fill("40")
-    // El chip pudo guardarse solo antes: se espera el PUT que lleva el 40.
+    // Se espera el PUT de "Guardar", el que lleva el 40.
     const put = page.waitForResponse(
       (res) =>
         res.url().endsWith("/profile/habits") &&
@@ -1177,24 +1380,6 @@ test.describe("Perfil médico — hábitos (perfil-habitos, grupo 2)", () => {
     await expect(page).toHaveURL(HABITS_URL)
     const saved = await getHabits(api)
     expect(saved.alcohol?.quit_age ?? null).toBeNull()
-  })
-
-  test("R10b 'Cancelar' vuelve a /perfil y lo guardado sigue como al abrir", async ({
-    page,
-    request,
-  }) => {
-    const api = await freshPatient(page, request)
-    await seedHabits(api, { vaping: { status: "never" } })
-    await openHabitsFromProfile(page)
-
-    await chip(page, VAPING, "Actual").click()
-    await expectPressed(chip(page, VAPING, "Actual"), true)
-    await page.getByRole("button", { name: "Cancelar", exact: true }).click()
-    await page.waitForURL(PROFILE_URL)
-
-    await expect
-      .poll(async () => (await getHabits(api)).vaping?.status)
-      .toBe("never")
   })
 
   test("R12 un error no sobrevive a su pregunta: de 'Antes' a 'Actual' se va el de 'empezó después de dejarlo'", async ({
