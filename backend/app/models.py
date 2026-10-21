@@ -540,7 +540,9 @@ class WhenUnknown(SQLModel):
 When = Annotated[WhenAge | WhenStage | WhenYear | WhenUnknown, Discriminator("kind")]
 
 # Typical ages per school stage in Mexico, [first, last] inclusive; the same
-# ranges as frontend/src/components/Profile/history.ts (STAGE_AGE_RANGES).
+# ranges as frontend/src/components/Profile/history.ts (STAGE_AGE_RANGES),
+# which shows the approximate year. Here they decide a 422 (chronic "hasta"
+# before "desde"): change both together.
 STAGE_AGE_RANGES: dict[str, tuple[int, int]] = {
     "before_primary": (0, 5),
     "primary": (6, 11),
@@ -758,14 +760,15 @@ def _when_age_range(
     birth_date: date | None,
 ) -> tuple[int, int] | None:
     """`when` as an inclusive age range, or None when it cannot be compared
-    (unknown, absent, or a year without a birth date)."""
+    (unknown, absent, or a year without a birth date). A year is two ages:
+    before and after that year's birthday (review R11)."""
     if isinstance(when, WhenAge):
         return (when.value, when.value)
     if isinstance(when, WhenStage):
         return STAGE_AGE_RANGES[when.value]
     if isinstance(when, WhenYear) and birth_date is not None:
         age = when.value - birth_date.year
-        return (age, age)
+        return (max(age - 1, 0), max(age, 0))
     return None
 
 
@@ -774,10 +777,15 @@ def _validate_chronic_dates(
 ) -> None:
     """since/until with Story A's rules; until only counts when resolved
     (Decision 5) and is rejected only when it surely precedes since
-    (Decision 6: max(until) < min(since))."""
+    (Decision 6: max(until) < min(since)). Year against year compares the
+    years themselves, with or without a birth date (review R13)."""
     until = content.until if content.status == "resolved" else None
     validate_when(content.since, birth_date, today)
     validate_when(until, birth_date, today)
+    if isinstance(content.since, WhenYear) and isinstance(until, WhenYear):
+        if until.value < content.since.value:
+            raise ValueError("No puede ser antes de «desde cuándo»")
+        return
     since_range = _when_age_range(content.since, birth_date)
     until_range = _when_age_range(until, birth_date)
     if since_range and until_range and until_range[1] < since_range[0]:

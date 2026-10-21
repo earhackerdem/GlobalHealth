@@ -4,7 +4,7 @@
 
 ### Requirement: Registros de enfermedades crónicas
 El sistema SHALL permitir al paciente con consentimiento vigente agregar, editar y eliminar registros en la sección
-de enfermedades crónicas, con: condición (catálogo de once — diabetes tipo 2, hipertensión, asma, hipotiroidismo,
+de enfermedades crónicas, con: condición (catálogo de doce — diabetes tipo 2, hipertensión, asma, hipotiroidismo,
 colesterol alto, EPOC, artritis, epilepsia, depresión, ansiedad, trastorno bipolar, consumo de alcohol u otras
 sustancias — u "otra" con texto; **requerida**); marca **"Sensible"**; estado (*Activa* o *Ya no la tengo*); desde
 cuándo y, solo si ya no la tiene, hasta cuándo, ambos con la mecánica de "cuándo"; tratamiento actual; diagnóstico

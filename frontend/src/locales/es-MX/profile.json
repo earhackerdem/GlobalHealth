@@ -257,6 +257,11 @@
       "unknown": "No recuerdo",
       "approxHint": "Año aproximado: {{range}}, calculado con tu fecha de nacimiento.",
       "onlyNumber": "Escribe solo el número.",
+      "ageOverCurrent": "La edad no puede ser mayor que tu edad actual",
+      "ageOutOfRange": "La edad debe estar entre 0 y {{max}} años",
+      "yearBeforeBirth": "El año no puede ser anterior a tu nacimiento",
+      "yearTooOld": "El año no puede ser anterior a {{min}}",
+      "yearFuture": "El año no puede ser futuro",
       "summary": {
         "age": "a los {{value}} años",
         "year": "en {{value}}",

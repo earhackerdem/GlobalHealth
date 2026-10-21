@@ -26,6 +26,7 @@ import {
   draftToWhen,
   type HistoryEntry,
   type HistorySection,
+  impossibleWhen,
   sensitiveByDefault,
   type When,
   type WhenDraft,
@@ -51,7 +52,8 @@ const NO_DIAGNOSIS = "none"
  * spec). `text` = a textbox; `choice` = single-choice chips; `yesNo` = Sí /
  * No / No sé chips, optionally with a detail box shown on "Sí"; `when` = the
  * WhenField (`legend` names it when it is not "¿Cuándo?"). Chronic only:
- * `chronicCondition` = the "¿Cuál?" radios; `sensitive` = the "Sensible"
+ * `chronicCondition` = the "¿Cuál?" chips, with the sensitive subgroup;
+ * `sensitive` = the "Sensible"
  * checkbox; `diagnosis` = the select of the patient's diagnoses.
  */
 type FieldDef =
@@ -335,10 +337,10 @@ function HistoryEntryForm({
   useEffect(() => {
     if (!failedAttempt) return
     // First invalid field in document order: a box (aria-invalid) or the
-    // first chip / radio of an invalid group (a fieldset is not focusable).
+    // first chip of an invalid group (a fieldset is not focusable).
     formRef.current
       ?.querySelector<HTMLElement>(
-        '[aria-invalid="true"], fieldset[data-invalid] button, fieldset[data-invalid] input',
+        '[aria-invalid="true"], fieldset[data-invalid] button',
       )
       ?.focus()
   }, [failedAttempt])
@@ -394,6 +396,11 @@ function HistoryEntryForm({
       const parsed = draftToWhen(whens[key])
       if (parsed === "invalid") {
         fail({ [key]: t("history.when.onlyNumber") })
+        return
+      }
+      const impossible = parsed && impossibleWhen(parsed, birthDate, t)
+      if (impossible) {
+        fail({ [key]: impossible })
         return
       }
       if (parsed) body[key] = parsed
@@ -470,32 +477,14 @@ function HistoryEntryForm({
 
   const visibleWhens = whenKeys(section, values)
 
-  /** "¿Cuál?": one radio per condition, the sensitive ones under their subtitle. */
-  const conditionRadios = () => {
+  /** "¿Cuál?": one chip per condition, the sensitive ones under their subtitle. */
+  const conditionChips = () => {
     const label = t("history.fields.chronicCondition")
-    const name = `${idPrefix}-condition`
     const invalid = !!errors.condition
-    const radio = (option: string) => {
-      const id = `${name}-${option}`
-      return (
-        <label
-          key={option}
-          htmlFor={id}
-          className="flex items-center gap-2 rounded-md border px-3 py-2 text-sm has-checked:border-primary has-checked:bg-accent"
-        >
-          <input
-            id={id}
-            type="radio"
-            name={name}
-            value={option}
-            checked={values.condition === option}
-            onChange={() => set("condition", option)}
-            className="size-4 shrink-0 accent-primary"
-          />
-          {t(`history.options.chronicCondition.${option}`)}
-        </label>
-      )
-    }
+    const option = (condition: string) => ({
+      value: condition,
+      label: t(`history.options.chronicCondition.${condition}`),
+    })
     return (
       <div key="condition" className="grid gap-2">
         <span className="text-sm font-medium" aria-hidden="true">
@@ -504,26 +493,22 @@ function HistoryEntryForm({
         {/* Nothing chosen: the error sits under the label, where the focus lands,
             not 13 options below (off-screen on a phone). With "Otra", under its text. */}
         {values.condition !== "other" && fieldError("condition")}
-        {/* aria-label keeps the group's name the clean label (as ChipGroup). */}
-        <fieldset
-          aria-label={label}
-          aria-describedby={invalid ? errorId("condition") : undefined}
-          data-invalid={invalid || undefined}
-          className="m-0 grid min-w-0 gap-3 border-0 p-0"
-        >
-          <div className="grid gap-2 sm:grid-cols-2">
-            {CHRONIC_CONDITIONS.map(radio)}
-          </div>
-          <fieldset className="m-0 grid min-w-0 gap-2 border-0 p-0">
-            <legend className="mb-2 text-sm text-muted-foreground">
-              {t("history.fields.mentalHealth")}
-            </legend>
-            <div className="grid gap-2 sm:grid-cols-2">
-              {CHRONIC_SENSITIVE_CONDITIONS.map(radio)}
-            </div>
-          </fieldset>
-          <div className="grid gap-2 sm:grid-cols-2">{radio("other")}</div>
-        </fieldset>
+        <ChipGroup
+          label={label}
+          showLabel={false}
+          options={[
+            ...CHRONIC_CONDITIONS.map(option),
+            {
+              label: t("history.fields.mentalHealth"),
+              options: CHRONIC_SENSITIVE_CONDITIONS.map(option),
+            },
+            option("other"),
+          ]}
+          value={values.condition || null}
+          onChange={(next) => set("condition", next)}
+          invalid={invalid}
+          describedBy={invalid ? errorId("condition") : undefined}
+        />
         {values.condition === "other" &&
           textField("other_text", t("history.fields.chronicOtherText"))}
         {values.condition === "other" && fieldError("condition")}
@@ -635,7 +620,7 @@ function HistoryEntryForm({
             />
           )
         }
-        if (field.kind === "chronicCondition") return conditionRadios()
+        if (field.kind === "chronicCondition") return conditionChips()
         if (field.kind === "sensitive") return sensitiveField()
         if (field.kind === "diagnosis") return diagnosisField()
         const label = t(`history.fields.${field.label}`)

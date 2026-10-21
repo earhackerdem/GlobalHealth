@@ -137,9 +137,9 @@ def _store_sections_none(profile: PatientProfile, marks: list[HistorySection]) -
 
 
 def _lock_profile(session: SessionDep, current_user: ConsentedUser) -> PatientProfile:
-    """The profile re-read FOR UPDATE: "mark ninguna" and "create an entry"
-    serialize on it, so neither acts on a stale view of the other (design.md
-    Risks: two tabs)."""
+    """The profile re-read FOR UPDATE: "mark ninguna", "create / update an
+    entry" and "delete a diagnosis" (health_records.py) serialize on it, so
+    none acts on a stale view of another (design.md Risks: two tabs)."""
     _get_or_create_profile(session, current_user)
     return session.exec(
         select(PatientProfile)
@@ -547,8 +547,10 @@ def update_history_entry(
     id: uuid.UUID,
     entry_in: HistoryContent,
 ) -> Any:
-    """Full update of an owned entry; its section cannot change (422)."""
-    profile = _get_or_create_profile(session, current_user)
+    """Full update of an owned entry; its section cannot change (422). Takes
+    the profile lock, like the POST and the diagnosis DELETE (review R1), so a
+    save and an unlink never act on a stale view of each other."""
+    profile = _lock_profile(session, current_user)
     _validate_history(entry_in, profile)
     entry = _get_owned_history_entry(session, current_user, id)
     if json.loads(entry.content)["section"] != entry_in.section:

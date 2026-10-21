@@ -74,9 +74,11 @@ Story A, ampliado.
 - Requerido: "Elige la condición o escribe cuál es". Registro vacío: "Llena al menos un dato", como en la Story A.
 - `since` y `until` pasan por `validate_when`, con las mismas reglas y mensajes de la Story A.
 - `until` antes de `since` → 422 "No puede ser antes de «desde cuándo»". Se compara por rango de edad: una edad es
-  `[v, v]`, una etapa es su rango de `STAGE_AGE_RANGES` y un año es `año − año de nacimiento`, solo si hay fecha de
-  nacimiento. `unknown`, o un año sin fecha de nacimiento, no se compara. Se rechaza solo si el máximo de `until` es
-  menor que el mínimo de `since`.
+  `[v, v]`, una etapa es su rango de `STAGE_AGE_RANGES` y un año es `[año − año de nacimiento − 1, año − año de
+  nacimiento]` (mínimo 0), solo si hay fecha de nacimiento. Año contra año se compara directo (`until` < `since`),
+  haya o no fecha de nacimiento. `unknown`, o un año sin fecha de nacimiento contra edad o etapa, no se compara. Se
+  rechaza solo si el máximo de `until` es menor que el mínimo de `since`. Revisado en el apply de la review,
+  aprobado por Saúl Pérez 2026-10-20 (R11: un año es dos edades; R13: año contra año).
 - `diagnosis_id` que no sea un `HealthRecord` con `record_type="diagnosis"` del mismo paciente → 422 "Ese
   diagnóstico no está en tu expediente". Es el mismo mensaje para uno ajeno, una receta o un id inexistente.
 
@@ -112,7 +114,7 @@ Story A, ampliado.
 - **"Ninguna" en crónicas:** "No tengo ninguna".
 - **`DeleteRecord` de un diagnóstico:** si respalda crónicas, la descripción agrega "Respalda tu crónica
   «Hipotiroidismo». La crónica se queda, sin respaldo." (con varias: «A», «B»). Al terminar invalida
-  `["profile", "history"]`.
+  `["history"]`.
 
 ## Decisions
 

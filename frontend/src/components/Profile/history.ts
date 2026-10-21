@@ -106,9 +106,10 @@ export const STAGES: readonly Stage[] = [
 
 /**
  * Typical ages per school stage in Mexico, [first, last] inclusive.
- * [ASSUMPTION] of the domain (design.md, Decision 4): they only estimate the
- * approximate year on screen, so correcting them never touches stored data.
- * The ONE place these ranges live.
+ * [ASSUMPTION] of the domain (design.md, Decision 4). Here they estimate the
+ * approximate year on screen; the same ranges live in the backend
+ * (backend/app/models.py STAGE_AGE_RANGES), where they decide the chronic 422
+ * "hasta antes de desde": change both together. Stored data never changes.
  */
 export const STAGE_AGE_RANGES: Record<Stage, readonly [number, number]> = {
   before_primary: [0, 5],
@@ -154,6 +155,50 @@ export function approxYears(
   if (when.kind === "stage") {
     const [from, to] = STAGE_AGE_RANGES[when.value]
     return [birthYear + from, birthYear + to]
+  }
+  return null
+}
+
+/** The API's limits for a "cuándo" (backend/app/models.py HISTORY_MAX_AGE, HISTORY_MIN_YEAR). */
+const MAX_AGE = 130
+const MIN_YEAR = 1900
+
+/** Age today from an ISO "aaaa-mm-dd" birth date (no `new Date(iso)`). */
+function ageToday(birthDate: string, today: Date): number | null {
+  const [year, month, day] = birthDate.split("-").map(Number)
+  if (![year, month, day].every(Number.isFinite)) return null
+  const beforeBirthday =
+    today.getMonth() + 1 < month ||
+    (today.getMonth() + 1 === month && today.getDate() < day)
+  return today.getFullYear() - year - (beforeBirthday ? 1 : 0)
+}
+
+/**
+ * The es-MX message of an impossible age or year, or null: the same checks
+ * and texts as the API's validate_when (backend/app/models.py), run before
+ * submit so the error shows next to its own "cuándo" even when two are sent
+ * (review R5). The server still decides anything this misses.
+ */
+export function impossibleWhen(
+  when: When,
+  birthDate: string | null | undefined,
+  t: TFunction,
+  today: Date = new Date(),
+): string | null {
+  if (when.kind === "age") {
+    const current = birthDate ? ageToday(birthDate, today) : null
+    if (current !== null && when.value > current)
+      return t("profile:history.when.ageOverCurrent")
+    if (when.value > MAX_AGE)
+      return t("profile:history.when.ageOutOfRange", { max: MAX_AGE })
+  } else if (when.kind === "year") {
+    const birthYear = birthYearOf(birthDate)
+    if (birthYear !== null && when.value < birthYear)
+      return t("profile:history.when.yearBeforeBirth")
+    if (when.value < MIN_YEAR)
+      return t("profile:history.when.yearTooOld", { min: MIN_YEAR })
+    if (when.value > today.getFullYear())
+      return t("profile:history.when.yearFuture")
   }
   return null
 }

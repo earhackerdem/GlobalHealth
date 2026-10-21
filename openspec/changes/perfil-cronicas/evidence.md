@@ -70,7 +70,7 @@ usuario y luego responde 500 (validación de la respuesta). Es del template (sol
 ## Notas del grupo 1
 
 - **Rangos de etapa escolar.** El backend no tenía `STAGE_AGE_RANGES`; el implementer lo creó en
-  `backend/app/models.py` con los mismos rangos del front (`frontend/src/components/Profile/history.ts:65-70`).
+  `backend/app/models.py` con los mismos rangos del front (`frontend/src/components/Profile/history.ts:114-119`).
 - **"Ninguna" con registros da 409**, no 422: es el comportamiento de la Story A, y el brief del tester lo decía mal.
 - **Cliente regenerado** (`scripts/generate-client.sh`). Deja `tsc` rojo en el front (6 errores: `when` no existe en
   `chronic`) hasta el grupo 2; ningún push ocurre antes.
