@@ -40,7 +40,7 @@ are `single`. `make tdd-check` requires one `test:` commit per `test→impl` gro
 
 ## 2. Frontend: preguntas nuevas, guardado automático y validación al momento · test→impl
 
-- [ ] 2.1 **Tester.** Actualiza y amplía `frontend/tests/profile-habits.spec.ts` a partir de dos fuentes: la parte
+- [x] 2.1 **Tester.** Actualiza y amplía `frontend/tests/profile-habits.spec.ts` a partir de dos fuentes: la parte
   Playwright del test plan (filas 1–4, 8, 9, 11, 12, 15–21) y el Interface contract. Ajusta los e2e de la C1 que tocan
   "Guardar" para el guardado automático. Verificación: rojo por las preguntas y el guardado que faltan. Commit `test:`
   solo.
