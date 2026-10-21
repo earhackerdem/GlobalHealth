@@ -29,7 +29,13 @@ test.use({ storageState: { cookies: [], origins: [] } })
 //   sin cambios, solo vuelve.
 // Mientras el PUT está en curso (D20): "Guardar" y "Cancelar" con
 //   aria-disabled="true" (NO disabled nativo); clic o Enter no hacen nada y
-//   el foco sigue en "Guardar".
+//   el foco sigue en "Guardar", que dice "Guardando…" (R2-5). Las preguntas
+//   tampoco cambian: chips con aria-disabled="true" que ignoran el clic y
+//   números de solo lectura (R2-3). Salir entonces no pregunta, y al terminar
+//   el PUT no hay aviso ni regreso a /perfil si la pantalla ya no está
+//   abierta o el token cambió (R2-1, R2-2).
+// "Seguir editando" devuelve el foco adonde estaba; si ese elemento ya no
+//   existe (el menú lateral del celular se cerró), al título "Hábitos" (R2-4).
 // Cambios sin guardar = lo que está en pantalla (incluido un número escrito
 //   sin salir del campo) difiere de lo que había al abrir; elegir una opción
 //   y volver a la de antes no cuenta.
@@ -113,6 +119,9 @@ const OLD_WOOD_YEARS = "Años con humo de leña, aprox."
 const SAVE_HINT = "Tus respuestas se guardan cuando tocas «Guardar»."
 const LEAVE_TITLE = "¿Salir sin guardar?"
 const LEAVE_TEXT = "Los cambios que hiciste en Hábitos se van a perder."
+
+/** El botón "Guardar", que mientras guarda dice "Guardando…" (R2-5). */
+const SAVE_BUTTON = /^Guardar$|Guardando…/
 
 /** Margen para afirmar que NO salió un PUT (ni un aviso que no debe salir). */
 const NO_PUT_WINDOW_MS = 1500
@@ -425,6 +434,33 @@ async function inAppLogin(page: Page, email: string, password: string) {
   await page.getByTestId("password-input").fill(password)
   await page.getByRole("button", { name: "Iniciar sesión" }).click()
   await page.waitForURL((url) => new URL(url).pathname === "/")
+}
+
+/**
+ * Retiene el primer PUT /profile/habits; los demás pasan. `releaseAndWait`
+ * lo suelta y devuelve su respuesta (ese PUT termina en el servidor).
+ */
+async function holdFirstHabitsPut(page: Page) {
+  let release = () => {}
+  const held = new Promise<void>((resolve) => {
+    release = resolve
+  })
+  let routed = 0
+  await page.route("**/api/v1/profile/habits", async (route) => {
+    if (route.request().method() === "PUT" && routed++ === 0) await held
+    await route.continue()
+  })
+  return {
+    async releaseAndWait() {
+      const response = page.waitForResponse(
+        (res) =>
+          new URL(res.url()).pathname.endsWith("/profile/habits") &&
+          res.request().method() === "PUT",
+      )
+      release()
+      return response
+    },
+  }
 }
 
 /** Errores de envío fuera de los campos (el pie del formulario). */
@@ -1069,7 +1105,7 @@ test.describe("Perfil médico — hábitos (perfil-habitos, grupo 2)", () => {
     expect((await getHabits(api)).tobacco ?? null).toBeNull()
   })
 
-  test("fila 21 (C-13, D20) no disponibles mientras guarda: con el PUT retenido, 'Guardar' y 'Cancelar' con aria-disabled, el foco sigue en 'Guardar'; Enter y otro clic → un solo PUT; al soltarlo, /perfil", async ({
+  test("fila 21 (C-13, D20; R2-5) no disponibles mientras guarda: con el PUT retenido, 'Guardar' (que dice 'Guardando…') y 'Cancelar' con aria-disabled, el foco sigue en 'Guardar'; Enter y otro clic → un solo PUT; al soltarlo, /perfil", async ({
     page,
     request,
   }) => {
@@ -1088,13 +1124,16 @@ test.describe("Perfil médico — hábitos (perfil-habitos, grupo 2)", () => {
       await route.continue()
     })
 
-    const save = page.getByRole("button", { name: "Guardar", exact: true })
+    // Mientras guarda, el botón "Guardar" dice "Guardando…" (R2-5): el
+    // localizador acepta los dos nombres.
+    const save = page.getByRole("button", { name: SAVE_BUTTON })
     const cancel = page.getByRole("button", { name: "Cancelar", exact: true })
 
     await chip(page, VAPING, "Nunca").click()
     await markShownToasts(page)
     await save.click()
 
+    await expect(save).toHaveAccessibleName(/Guardando…/)
     await expect(save).toHaveAttribute("aria-disabled", "true")
     await expect(cancel).toHaveAttribute("aria-disabled", "true")
     // aria-disabled, no disabled nativo: no pierde el foco.
@@ -1268,6 +1307,187 @@ test.describe("Perfil médico — hábitos (perfil-habitos, grupo 2)", () => {
     await expectFieldError(page, cigarettes, "Debe estar entre 1 y 100", {
       focused: false,
     })
+  })
+
+  test("fila 26 (C-13; R2-7) solo un número cambia: tabaco 'Actual' con 12 guardado, 20 en 'Cigarros al día' sin salir del campo ni tocar chips → '‹ Mi perfil médico' pregunta; 'Cancelar' avisa 'Se descartaron los cambios'; recargar pide 'beforeunload'", async ({
+    page,
+    request,
+  }) => {
+    const api = await freshPatient(page, request)
+    await seedHabits(api, {
+      tobacco: { status: "current", cigarettes_per_day: 12 },
+    })
+    await openHabitsFromProfile(page)
+    await expectPressed(chip(page, TOBACCO, "Actual"), true)
+    const cigarettes = numberField(page, CIGARETTES)
+    await expect(cigarettes).toHaveValue("12")
+
+    // 1. "‹ Mi perfil médico" pregunta.
+    await cigarettes.fill("20")
+    await expect(cigarettes).toBeFocused()
+    await backLink(page).click()
+    const dialog = leaveDialog(page)
+    await expect(dialog).toBeVisible()
+    await dialog
+      .getByRole("button", { name: "Salir sin guardar", exact: true })
+      .click()
+    await page.waitForURL(PROFILE_URL)
+
+    // 2. "Cancelar" avisa que descartó.
+    await reopen(page)
+    await expect(cigarettes).toHaveValue("12")
+    await cigarettes.fill("20")
+    await expect(cigarettes).toBeFocused()
+    await markShownToasts(page)
+    await page.getByRole("button", { name: "Cancelar", exact: true }).click()
+    await page.waitForURL(PROFILE_URL)
+    await expect(newToast(page, "Se descartaron los cambios")).toBeVisible()
+
+    // 3. Recargar pide el aviso del navegador.
+    await reopen(page)
+    await expect(cigarettes).toHaveValue("12")
+    const dialogs = trackBrowserDialogs(page)
+    await cigarettes.fill("20")
+    await expect(cigarettes).toBeFocused()
+    await page.reload()
+    await expect(
+      page.getByRole("button", { name: "Guardar", exact: true }),
+    ).toBeVisible()
+    expect(dialogs).toContain("beforeunload")
+  })
+
+  test("fila 27 (C-13; R2-1) un guardado en camino no cruza de cuenta en la misma pestaña: A elige tabaco 'Actual' con 20 y 'Guardar' (PUT retenido); 'Cerrar sesión'; B entra por el formulario; al soltar el PUT, B no es llevado a /perfil ni ve 'Hábitos guardados'; B abre 'Hábitos' sin 'Actual' ni 20 y su GET sigue vacío", async ({
+    page,
+    request,
+  }) => {
+    await freshPatient(page, request)
+    const b = await consentedPatient(request)
+    await openHabitsFromProfile(page)
+    const puts = trackHabitPuts(page)
+    const hold = await holdFirstHabitsPut(page)
+
+    // A: tabaco "Actual" con 20 y "Guardar", que queda en curso.
+    await chip(page, TOBACCO, "Actual").click()
+    await numberField(page, CIGARETTES).fill("20")
+    await page.getByRole("button", { name: "Guardar", exact: true }).click()
+    await expect.poll(() => puts.length).toBe(1)
+
+    // A cierra sesión por el menú de usuario real.
+    const userMenu = page.getByTestId("user-menu")
+    await revealInSidebar(page, userMenu)
+    await userMenu.click()
+    await page.getByRole("menuitem", { name: "Cerrar sesión" }).click()
+    await page.waitForURL(/\/login/)
+
+    // B entra por el formulario de la misma pestaña.
+    await inAppLogin(page, b.email, b.password)
+
+    // Se suelta el PUT de A: termina, pero no le toca a B.
+    await markShownToasts(page)
+    const putResponse = await hold.releaseAndWait()
+    expect(putResponse.status()).toBe(200)
+    await page.waitForTimeout(NO_PUT_WINDOW_MS)
+    await expect(page).not.toHaveURL(PROFILE_URL)
+    await expect(page).not.toHaveURL(HABITS_URL)
+    await expect(newToast(page, "Hábitos guardados")).toHaveCount(0)
+    expect(puts).toHaveLength(1)
+
+    // B abre sus hábitos sin recargar: nada de A.
+    await backToProfileViaMenu(page)
+    await reopen(page)
+    await expectPressed(chip(page, TOBACCO, "Actual"), false)
+    await expect(numberField(page, CIGARETTES)).toHaveCount(0)
+    expect((await getHabits(b.api)).tobacco ?? null).toBeNull()
+  })
+
+  test("fila 28 (C-13; R2-2, R2-3) mientras guarda no se cambia nada ni se pregunta al salir: con el PUT retenido, el chip 'Actual' de leña con aria-disabled y su clic no cambia nada; 'Cigarros al día' de solo lectura; '‹ Mi perfil médico' llega a /perfil sin diálogo; ir a 'Expediente'; al soltar sigue en /expediente y el GET trae lo guardado", async ({
+    page,
+    request,
+  }) => {
+    const api = await freshPatient(page, request)
+    await openHabitsFromProfile(page)
+    const puts = trackHabitPuts(page)
+    const hold = await holdFirstHabitsPut(page)
+
+    await chip(page, TOBACCO, "Actual").click()
+    const cigarettes = numberField(page, CIGARETTES)
+    await cigarettes.fill("20")
+    await page.getByRole("button", { name: "Guardar", exact: true }).click()
+    await expect.poll(() => puts.length).toBe(1)
+
+    // Las preguntas no aceptan cambios mientras guarda.
+    const woodCurrent = chip(page, WOOD, "Actual")
+    await expect(woodCurrent).toHaveAttribute("aria-disabled", "true")
+    await expectPressed(woodCurrent, false)
+    await woodCurrent.click({ force: true })
+    await page.waitForTimeout(300)
+    await expectPressed(woodCurrent, false)
+    await expect(numberField(page, WOOD_START)).toHaveCount(0)
+    await expect(cigarettes).toBeVisible()
+    await expect(cigarettes).not.toBeEditable()
+    await expect(cigarettes).toHaveValue("20")
+
+    // Salir no pregunta.
+    const dialogs = trackBrowserDialogs(page)
+    await backLink(page).click()
+    await page.waitForURL(PROFILE_URL)
+    await expectNoLeaveDialog(page)
+
+    // Al "Expediente" por la navegación de la app.
+    const expedienteLink = page.getByRole("link", {
+      name: "Expediente",
+      exact: true,
+    })
+    await revealInSidebar(page, expedienteLink)
+    await expedienteLink.click()
+    await page.waitForURL(/\/expediente/)
+
+    // Al soltar el PUT sigue en el "Expediente" y lo guardado llegó.
+    const putResponse = await hold.releaseAndWait()
+    expect(putResponse.status()).toBe(200)
+    await page.waitForTimeout(NO_PUT_WINDOW_MS)
+    await expect(page).toHaveURL(/\/expediente/)
+    expect(dialogs).toEqual([])
+    expect(puts).toHaveLength(1)
+    const saved = await getHabits(api)
+    expect(saved.tobacco?.status).toBe("current")
+    expect(saved.tobacco?.cigarettes_per_day).toBe(20)
+    expect(saved.wood_smoke ?? null).toBeNull()
+  })
+
+  test("fila 29 (C-13; R2-4) el foco vuelve al título si su elemento ya no existe: a 384 px, con un cambio, menú lateral → 'Mi perfil médico' → diálogo → 'Seguir editando' → foco en el título 'Hábitos'", async ({
+    page,
+    request,
+  }) => {
+    // El menú lateral del celular (s26-ultra): el mismo ancho en los dos
+    // proyectos.
+    await page.setViewportSize({ width: 384, height: 832 })
+    await freshPatient(page, request)
+    await openHabitsFromProfile(page)
+
+    await chip(page, TOBACCO, "Nunca").click()
+    await expectPressed(chip(page, TOBACCO, "Nunca"), true)
+
+    const perfilLink = page.getByRole("link", {
+      name: "Mi perfil médico",
+      exact: true,
+    })
+    await expect(perfilLink).toBeHidden()
+    await page.getByRole("button", { name: /barra lateral/ }).click()
+    await expect(perfilLink).toBeVisible()
+    await perfilLink.click()
+
+    const dialog = leaveDialog(page)
+    await expect(dialog).toBeVisible()
+    await dialog
+      .getByRole("button", { name: "Seguir editando", exact: true })
+      .click()
+    await expect(dialog).toHaveCount(0)
+    await expect(page).toHaveURL(HABITS_URL)
+    await expectPressed(chip(page, TOBACCO, "Nunca"), true)
+    await expect(
+      page.getByRole("heading", { name: "Hábitos", exact: true }),
+    ).toBeFocused()
   })
 
   test("fila 14 la tarjeta 'Hábitos' abre /perfil/habitos con el cuestionario y 'Guardar'", async ({
