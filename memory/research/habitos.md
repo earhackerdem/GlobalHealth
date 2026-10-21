@@ -39,3 +39,26 @@
   https://www.paho.org/es/noticias/26-11-2020-cada-movimiento-cuenta-para-mejorar-salud-dice-oms · consulted 2026-10-19
 - **Confidence:** [VERIFIED]. La comparación del EVS contra acelerómetro (Kuntz 2021, PMC8154650) no se leyó.
 - **Re-check if:** se diseña un aviso FR-021 sobre hábitos (ahí fijar fuentes y cortes) o se agrega sedentarismo.
+
+## Vapeador y edad de inicio del alcohol (verificado 2026-10-21) <a id="vapeo-inicio"></a>
+- **Fact (vapeador):** no hay una medida validada de "vapeadores o pods por semana" (los dispositivos varían:
+  desechables, pods, recargables). El estudio poblacional PATH (EE. UU.) clasifica el uso actual por "todos los días /
+  algunos días" y, en quien usa algunos días, por **días usados de los últimos 30** (infrecuente 0–2, moderado >2 sin
+  ser diario, diario; otros análisis llaman frecuente a ≥20 de 30). El autorreporte "veces al día" (una vez ≈ 15
+  caladas o ~10 min) predice las caladas de un contador automático con r = .58, y los usuarios tienen dificultad para
+  reportarlo. En México, la ENCODAT 2025 mide el uso de cigarro electrónico en el último mes (2.6 % de 12 a 65 años).
+- **Source:** Yingst J et al., Nicotine Tob Res 2020;22(5):699-704, PMID 30365024 (Europe PMC) · PATH Wave 1,
+  https://pmc.ncbi.nlm.nih.gov/articles/PMC6693501 (captcha; categorías vía buscador) · ENCODAT 2025, resumen ejecutivo,
+  https://encuestas.insp.mx/repositorio/encuestas/ENCODAT2025/doctos/informes/251223_ENCODAT__ResumenEjecutivo.pdf
+  (vía buscador) · consulted 2026-10-21
+- **Confidence:** [VERIFIED] Yingst (resumen); NOT VERIFIED en texto completo las categorías de PATH y la cifra de
+  ENCODAT (coinciden en buscador).
+- **Fact (alcohol, edad de inicio):** el ítem estándar es la edad del **primer** consumo, sin contar probaditas: LOINC
+  63634-0 (PhenX) "About how old were you when you first started drinking, not counting small tastes or sips of
+  alcohol", en años; el protocolo vigente PhenX 30202 viene de la NSDUH 2015, se pregunta solo a quien ha bebido, y
+  PhenX lo marca como información sensible. No se encontró pregunta estándar de "edad en que empezó a beber con
+  regularidad" ni validación mexicana.
+- **Source:** https://www.findacode.com/loinc/63634-0--alc-first-use-age-phenx.html · https://phenxtoolkit.org/protocols/view/30202
+  (vía buscador) · consulted 2026-10-21
+- **Confidence:** [VERIFIED] el texto LOINC; [VERIFIED vía buscador] el origen NSDUH de PhenX 30202.
+- **Re-check if:** se diseña un aviso FR-021 sobre vapeo o alcohol, o aparece un instrumento mexicano validado.
