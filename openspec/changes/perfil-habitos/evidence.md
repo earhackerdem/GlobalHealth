@@ -19,10 +19,22 @@
 | Mutantes con un plugin fuera del repo (`MUT=nosort`, `ge`, `utc`) sobre `test_profile_habits.py` | 1, 5 y 1 fallos: los tres mueren (antes sobrevivían) | — | 0 | ✅ |
 | `uv run mypy app` · `ruff check` · `ruff format --check` | limpios | 0 | — | ✅ |
 | `bunx playwright test tests/profile-habits.spec.ts tests/profile.spec.ts tests/profile-history.spec.ts` (chromium + s26-ultra) | **115 passed, 0 failed** | 0 | 0 | ✅ |
-| R1 sin el fix (`useAuth.ts` de HEAD) → con el fix, `-g "R1 otro paciente" --project=chromium` | 1 failed (B ve "Actual" marcado) → 2 passed | — | 0 | ✅ |
+| R1 sin el fix (`useAuth.ts` de `43f08be`) → con el fix, `-g "R1 otro paciente" --project=chromium` | 1 failed (B ve "Actual" marcado) → 2 passed | — | 0 | ✅ |
 | Fila 7 (R4) `--repeat-each=5` en chromium; fila 7 y R14 en s26-ultra | 6 passed · 11 passed | 0 | 0 | ✅ |
 | `bunx tsc -p tsconfig.build.json --noEmit` · `bunx biome check src/ tests/` | 0 errores · 104 archivos, sin cambios | 0 | — | ✅ |
 | Suite Playwright COMPLETA como CI, imagen reconstruida, 3 corridas | 217 passed · 216 + 1 failed (`reset-password.spec.ts:90`) · 215 + 2 failed (ese y `login.spec.ts:87`); los dos specs solos `--repeat-each=10`: 151 passed | 2 corridas con fallos heredados | 0 | 🟡 inestabilidad heredada (misma tasa que antes del apply), ver deuda |
+
+### Tras el apply de la revisión (ronda 2)
+
+| Command | Result (numbers) | Errors in log | Skipped | Truly-green verdict |
+|---|---|---|---|---|
+| `cd backend && FASTAPI_ENV=development uv run coverage run -m pytest tests/ -q` | **304 passed, 0 failed** (hábitos 54: + "No" guarda `False`, N3) · cobertura **96 %** | 0 | 0 | ✅ |
+| `bunx playwright test tests/profile-habits.spec.ts tests/profile.spec.ts tests/profile-history.spec.ts` (chromium + s26-ultra), corrida del fixer | **119 passed, 0 failed** | 0 | 0 | ✅ |
+| N1 sin el fix (`main.tsx` de `7872cdf`) → con el fix, `-g "R2 \(N1\)" --project=chromium` | 1 failed (la pestaña 1 sigue en `/perfil/habitos` con los datos de A) → 2 passed | — | 0 | ✅ |
+| N2: R1 con un fix estrecho (`removeQueries(["habits"])`) | 2 failed (el menú de B muestra el correo de A) → con `clear()`, verde | — | 0 | ✅ |
+| Sondas del validador de la ronda 2, después del fix | ya no pueden guardar: la pestaña 1 sale de la pantalla de hábitos (y del diálogo "Editar datos básicos") en cuanto la otra cambia la sesión | — | — | ✅ |
+| `bunx tsc -p tsconfig.build.json --noEmit` · `bunx biome check src/ tests/` | 0 errores · 104 archivos, sin cambios | 0 | — | ✅ |
+| Suite Playwright COMPLETA como CI, imagen reconstruida, 3 corridas | 221 passed · 221 passed · 220 + 1 failed (`reset-password.spec.ts:90`, heredado) | 1 corrida con el fallo heredado | 0 | 🟡 inestabilidad heredada, ver deuda |
 
 ## Red before green
 
@@ -44,7 +56,7 @@
 | C-3 Humo ajeno y "No me expongo" | `test_c3_secondhand_places_then_not_exposed`, `test_c3_exposed_without_places_rejected` · e2e fila 7 | ✅ |
 | C-4 Humo de leña | `test_c4_former_wood_smoke_round_trip` · e2e fila 8 | ✅ |
 | Contesta solo una cosa | `test_c_only_vaping_answered_rest_stays_null` · e2e fila 9 | ✅ |
-| Fuera de escala | `test_c_out_of_scale_answers_rejected_habits_unchanged` (12 casos) | ✅ |
+| Fuera de escala | `test_c_out_of_scale_answers_rejected_habits_unchanged` (17 casos: 12 del grupo 1 y 5 cotas inferiores de la revisión, R7) | ✅ |
 | C-6 Sin puntaje ni riesgo | `test_c6_no_score_or_risk_in_the_response` · e2e fila 11 | ✅ |
 | A-1 / sin captura / la tarjeta abre su pantalla | `profile-history.spec.ts` S01, `profile.spec.ts` escenario 11, e2e fila 14 | ✅ |
 | Hábitos solo del paciente y cifrados | `test_c_habits_isolated_and_encrypted_at_rest`, `test_c_habits_require_consent` | ✅ |
@@ -76,6 +88,11 @@ Vite :5173 contra el backend del árbol, cuenta de prueba local nueva (nacida el
 Sin defectos dentro del plan.
 
 ## Entorno
+
+- 2026-10-21, ronda 2: Saúl Pérez sospechó que el paso de datos entre cuentas (N1) venía de tener dos instancias y
+  pidió apagar la que no era de la sesión. Se detuvo el `fastapi dev` PID 1076 (y su worker) con TERM; desde entonces
+  `:8000` es solo el contenedor. N1 se reprodujo igual con un solo backend: el fallo está en el navegador (token
+  compartido entre pestañas y datos en memoria), no en el servidor.
 
 - Dos backends en `:8000`: el `fastapi dev` de larga duración (PID 1076, que recarga este árbol) en `127.0.0.1` y el
   contenedor en `*:8000`. `localhost` resuelve a `::1`, así que el navegador hablaba con el contenedor viejo y la BD

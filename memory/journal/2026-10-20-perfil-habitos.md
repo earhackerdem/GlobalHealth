@@ -47,5 +47,14 @@ Ver evidence.md § Deuda.
 - Verificación tras el apply: backend 303 passed (cobertura 96 %); e2e del cambio 115 passed; suite completa en 3
   corridas: 217, 216 + 1 (`reset-password.spec.ts:90`) y 215 + 2 (ese y `login.spec.ts:87`). El de login falla al
   esperar el saludo, antes del cierre de sesión, con la misma tasa que antes del fix (1 de 3), y pasa 10/10 solo.
+- **Ronda 2** (sobre lo que cambió el apply, 2026-10-21): 3 finders y un validador distinto. Sin regresiones; 7
+  hallazgos confirmados. N1 (medio): el fix de R1 solo vaciaba la pestaña que cerraba o iniciaba sesión, y otra
+  pestaña abierta guardaba los datos de A con el token de B; también pasaba antes, en `main`, con "Editar datos
+  básicos". Saúl Pérez pensó que podía venir de las dos instancias en `:8000` y pidió apagar la ajena (PID 1076):
+  se apagó y N1 se reprodujo igual. Saúl eligió arreglarlo en este PR (opción a), aunque toca `main.tsx`: ahora un
+  listener de `storage` vacía la caché y lleva a `/login` cuando otra pestaña cambia el token. N2 (la prueba de R1
+  ahora también vigila el correo del menú), N3 («No» guarda `false`, e2e y backend) y D1–D4 (textos que el apply dejó
+  viejos, incluido `product/dominio.md`). Verificación: backend 304 passed, e2e del cambio 119 passed, suite completa
+  221 · 221 · 220 + el heredado `reset-password.spec.ts:90`.
 - El hook `lint.py` volvió a marcar el `except A, B:` (PEP 758) de `profile.py:220` con el Python 3.9 del sistema;
   ya está en el inbox del template.

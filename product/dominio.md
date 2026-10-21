@@ -394,7 +394,7 @@ estado, fechas y humo ajeno son lo que los campos estructurados de los expedient
 
 | Hábito | Respuesta |
 |---|---|
-| alcohol | **nunca / lo dejé (a qué edad; ronda 8) / actual**. Si actual, las 3 preguntas del **AUDIT-C** con su escala: frecuencia (una vez al mes o menos · 2–4 al mes · 2–3 por semana · 4+ por semana), bebidas en un día típico (1–2 · 3–4 · 5–6 · 7–9 · 10+), frecuencia de 6 o más en una ocasión (nunca · menos de una vez al mes · cada mes · cada semana · diario o casi) + marca "sobre todo fines de semana". **Sin puntaje** (C-6) |
+| alcohol | **nunca / lo dejé (a qué edad; ronda 8) / actual**. Si actual, las 3 preguntas del **AUDIT-C** con su escala: frecuencia (una vez al mes o menos · 2–4 al mes · 2–3 por semana · 4+ por semana), bebidas en un día típico (1–2 · 3–4 · 5–6 · 7–9 · 10+), frecuencia de 6 o más en una ocasión (nunca · menos de una vez al mes · cada mes · cada semana · diario o casi) + "sobre todo fines de semana" (Sí · No). **Sin puntaje** (C-6) |
 | tabaco | nunca / antes / actual + cigarros al día + a qué edad empezó + a qué edad lo dejó (si "antes") — ronda 8: edad, no año |
 | vapeador | nunca / antes / actual |
 | humo de tabaco ajeno | **hábito propio** (ronda 6): dónde (casa · trabajo o escuela · otro lugar, varios) + días por semana, o "no me expongo" |

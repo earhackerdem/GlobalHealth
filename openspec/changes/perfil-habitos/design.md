@@ -38,7 +38,10 @@ familiares de checkboxes a chips.
 
 **Ampliación aprobada en la revisión** (Saúl Pérez, 2026-10-20): `frontend/src/hooks/useAuth.ts`, para que cerrar e
 iniciar sesión vacíen la caché de consultas (R1: sin eso, otra cuenta en el mismo navegador veía y podía guardar los
-hábitos de la anterior). También `frontend/playwright.config.ts`: el `testMatch` de s26-ultra incluye
+hábitos de la anterior). En la ronda 2 (Saúl Pérez, 2026-10-21), `frontend/src/main.tsx`: cuando otra pestaña del
+mismo navegador cambia la sesión, esta también vacía la caché y se recarga (N1: la otra pestaña seguía mostrando y
+guardando los datos de la cuenta anterior con el token de la nueva; pasaba también, desde antes, en "Editar datos
+básicos"). También `frontend/playwright.config.ts`: el `testMatch` de s26-ultra incluye
 `profile-habits`, y entró en el commit verde c2b3d32 sin estar listado aquí (R24).
 
 **Decisión afectada:** ninguna ADR cambia. D13 (cifrado) y D18 (chips) se aplican; D18 se extiende a la selección
@@ -172,7 +175,7 @@ Alembic que solo agrega la columna.
 | 13 | Pantalla · Secciones listadas sin captura | e2e: las seis tarjetas "Sin llenar", cada una enlace (citador actualizado) | Playwright |
 | 14 | Pantalla · La tarjeta abre la pantalla de su sección | e2e: clic en "Hábitos" → `/perfil/habitos` con "Guardar" | Playwright |
 | 15 | Aislados y cifrados · A-8, A-9, B-6 | sin cambios: suites de A y B en verde | pytest |
-| 16 | Aislados y cifrados · Hábitos solo del paciente y cifrados | pytest: B pide sus hábitos → todo null; SQL directo sobre `patient_profile.habits`: ni `current`, ni `home`, ni `alcohol`, ni `quit_age` en claro; GET y PUT sin consentimiento → 403 | pytest |
+| 16 | Aislados y cifrados · Hábitos solo del paciente y cifrados | pytest: B pide sus hábitos → todo null; SQL directo sobre `patient_profile.habits`: ni `current`, ni `home`, ni `alcohol`, ni `monthly_or_less` en claro (era `quit_age`, que A no guarda y por eso no podía fallar; R26); GET y PUT sin consentimiento → 403 | pytest |
 
 ## Non-functional constraints addressed
 
