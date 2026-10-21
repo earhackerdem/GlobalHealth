@@ -423,4 +423,3 @@ mostrar puntajes (AUDIT-C u otros), niveles de riesgo ni veredictos sobre ellas:
 - **WHEN** guarda y vuelve a abrir la pantalla, y cuando la app pide sus hábitos
 - **THEN** ni la pantalla ni la respuesta del sistema contienen un puntaje, un nivel de riesgo, ni palabras como
   "riesgo", "puntaje" o "AUDIT"
-
