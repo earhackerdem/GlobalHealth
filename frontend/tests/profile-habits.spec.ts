@@ -943,6 +943,49 @@ test.describe("Perfil médico — hábitos (perfil-habitos, grupo 2)", () => {
     await expectPressed(chip(page, TOBACCO, "Nunca"), true)
   })
 
+  test("fila 17b (C-13) 'Seguir editando' devuelve el foco adonde estaba: clic en '‹ Mi perfil médico' → 'Seguir editando' deja el foco en ese enlace; con el foco en 'Cigarros al día', atrás del navegador → Escape deja /perfil/habitos y el foco en ese campo con 12", async ({
+    page,
+    request,
+  }) => {
+    const api = await freshPatient(page, request)
+    await seedHabits(api, { tobacco: { status: "never" } })
+    await openHabitsFromProfile(page)
+    await expectPressed(chip(page, TOBACCO, "Nunca"), true)
+
+    await chip(page, TOBACCO, "Actual").click()
+    const cigarettes = numberField(page, CIGARETTES)
+    await cigarettes.fill("12")
+    await expect(cigarettes).toBeFocused()
+
+    // 1. Clic en el enlace: el enlace tiene el foco justo antes del diálogo.
+    // (En Chromium, de escritorio y móvil, el clic enfoca el enlace.)
+    await backLink(page).click()
+    const dialog = leaveDialog(page)
+    const keepEditing = dialog.getByRole("button", {
+      name: "Seguir editando",
+      exact: true,
+    })
+    await expect(dialog).toBeVisible()
+    await expect(keepEditing).toBeFocused()
+    await keepEditing.click()
+    await expect(dialog).toHaveCount(0)
+    await expect(page).toHaveURL(HABITS_URL)
+    // Suave: si falla, la parte 2 también se comprueba en la misma corrida.
+    await expect.soft(backLink(page)).toBeFocused()
+
+    // 2. Foco en 'Cigarros al día' (recién escrito) y atrás del navegador.
+    await cigarettes.fill("12")
+    await expect(cigarettes).toBeFocused()
+    await page.goBack()
+    await expect(dialog).toBeVisible()
+    await expect(keepEditing).toBeFocused()
+    await page.keyboard.press("Escape")
+    await expect(dialog).toHaveCount(0)
+    await expect(page).toHaveURL(HABITS_URL)
+    await expect(cigarettes).toHaveValue("12")
+    await expect(cigarettes).toBeFocused()
+  })
+
   test("fila 18 (C-13) sin cambios no hay aviso: abrir y volver sin tocar → sin diálogo; elegir 'Actual' y volver a 'Nunca' → sin diálogo (y nada enviado)", async ({
     page,
     request,
