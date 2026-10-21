@@ -79,7 +79,9 @@ la UI.
 - leña `never` → `years` a null.
 - `exposed: false` → `places: []` y `days_per_week` a null.
 
-**Validación (servidor, después de normalizar)**, con "hoy" de México y la fecha de nacimiento del perfil:
+**Validación (servidor, después de normalizar)**, con "hoy" de México y la fecha de nacimiento del perfil. "Hoy"
+es `datetime.now(MEXICO_CITY).date()` dentro de `app.api.routes.profile`, como en el historial, así que los tests lo
+congelan con `freeze_routes_clock` (`backend/tests/api/routes/test_profile_history.py:81`):
 - `alcohol.quit_age`, `tobacco.start_age`, `tobacco.quit_age` mayores que la edad actual → "La edad no puede ser
   mayor que tu edad actual" (el mismo texto de la Story A). Sin fecha de nacimiento no se compara.
 - `tobacco.start_age` > `tobacco.quit_age` → "No puede ser mayor que la edad en que lo dejaste", en `start_age`.
