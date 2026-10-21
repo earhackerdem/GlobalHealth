@@ -1305,6 +1305,37 @@ def test_unreadable_habits_read_as_null_and_logged_by_id(
 
 
 @pytest.mark.parametrize(
+    "unreadable",
+    [
+        '{"tobacco": ',
+        json.dumps([{"status": "never"}]),
+        # json.loads raises RecursionError (not a ValueError) at this depth.
+        "[" * 100_000 + "]" * 100_000,
+    ],
+    ids=["JSON inválido", "una lista", "anidado 100 000 niveles"],
+)
+def test_unreadable_habits_json_read_as_null_not_500(
+    client: TestClient,
+    db: Session,
+    caplog: pytest.LogCaptureFixture,
+    unreadable: str,
+) -> None:
+    """Review B1 (perfil-habitos-ajustes, fila 14): an encrypted row that is not
+    a readable JSON object is read as all null with the unreadable-row warning,
+    never a 500."""
+    headers, user_id = consented_user(client, db)
+    save(client, headers, SEED)
+    profile = store_raw_habits_json(db, user_id, unreadable)
+
+    with caplog.at_level(logging.WARNING, logger=profile_routes.__name__):
+        r = get_habits(client, headers)
+
+    assert r.status_code == 200, r.text
+    assert r.json() == empty_habits()
+    assert f"Unreadable habits of patient profile {profile.id}" in caplog.text
+
+
+@pytest.mark.parametrize(
     ("method", "json_body"),
     [("GET", None), ("PUT", {"vaping": {"status": "never"}})],
     ids=["GET /profile/habits", "PUT /profile/habits"],
