@@ -28,7 +28,9 @@ lists use {"data": [...], "count": N}):
 
 import json
 import logging
+import threading
 import uuid
+from collections.abc import Callable
 from datetime import date, datetime, tzinfo
 from typing import Any
 from zoneinfo import ZoneInfo
@@ -45,6 +47,7 @@ from app.models import MedicalHistoryEntry
 from tests.api.routes.test_health_records import (
     diagnosis_payload,
     prescription_payload,
+    record_url,
 )
 from tests.api.routes.test_health_records import (
     post_record as post_health_record,
@@ -1153,6 +1156,54 @@ def test_b2_year_vs_year_without_birth_date(
         assert entry["until"] == until
 
 
+def test_b2_until_year_is_an_age_range_with_birth_date(
+    client: TestClient, db: Session
+) -> None:
+    """Review R11, del lado de «hasta»: nacido 1990-12-01, en 2022 tuvo 31 y 32;
+    desde {age: 32} hasta {year: 2022} es posible (el tope del rango) -> 201."""
+    headers, _ = consented_user(client, db)
+    r_profile = put_profile(client, headers, {"birth_date": "1990-12-01"})
+    assert r_profile.status_code == 200, r_profile.text
+    since = {"kind": "age", "value": 32}
+    until = {"kind": "year", "value": 2022}
+
+    r = post_entry(
+        client,
+        headers,
+        chronic(condition="asthma", status="resolved", since=since, until=until),
+    )
+
+    assert r.status_code == 201, r.text
+    entry = only_entry(client, headers)
+    assert entry["since"] == since
+    assert entry["until"] == until
+
+
+def test_b2_year_vs_year_with_birth_date_rejected(
+    client: TestClient, db: Session
+) -> None:
+    """Review R13 con fecha de nacimiento: nacido 1990-03-15, desde {year: 2015}
+    hasta {year: 2014} -> 422 (los rangos de edad se traslapan, los años no)."""
+    headers, _ = consented_user(client, db)
+    r_profile = put_profile(client, headers, {"birth_date": BIRTH_DATE})
+    assert r_profile.status_code == 200, r_profile.text
+
+    r = post_entry(
+        client,
+        headers,
+        chronic(
+            condition="asthma",
+            status="resolved",
+            since={"kind": "year", "value": 2015},
+            until={"kind": "year", "value": 2014},
+        ),
+    )
+
+    assert r.status_code == 422, r.text
+    assert r.json()["detail"] == UNTIL_BEFORE_SINCE
+    assert_history_empty(client, headers)
+
+
 def test_b2_since_until_use_story_a_when_validation(
     client: TestClient, db: Session
 ) -> None:
@@ -1514,3 +1565,114 @@ def test_b6_chronic_encrypted_at_rest(client: TestClient, db: Session) -> None:
     assert stored["sensitive"] is True
     assert stored["treatment"] == "Sertralina 50 mg"
     assert str(stored["diagnosis_id"]) == diag_id
+
+
+# --- Review R1: las escrituras del historial toman el candado del perfil ----------
+
+# How long a request must stay blocked behind a held lock to count as waiting,
+# and the ceiling for it to finish once released (never hangs the suite).
+LOCK_WAIT_S = 1.0
+LOCK_RELEASE_TIMEOUT_S = 15.0
+
+
+def assert_waits_for_profile_lock(user_id: str, call: Callable[[], Any]) -> Any:
+    """Hold `SELECT … FROM patient_profile … FOR UPDATE` on a separate
+    connection, fire `call` in a thread, assert it is still blocked after
+    LOCK_WAIT_S, release, and return its response once it finishes."""
+    result: dict[str, Any] = {}
+
+    def run() -> None:
+        try:
+            result["response"] = call()
+        except BaseException as e:  # surfaced in the main thread below
+            result["error"] = e
+
+    worker = threading.Thread(target=run, daemon=True)
+    with engine.connect() as holder:
+        locked = holder.execute(
+            text(
+                "SELECT id FROM patient_profile "
+                "WHERE user_id = CAST(:uid AS uuid) FOR UPDATE"
+            ),
+            {"uid": user_id},
+        ).all()
+        assert len(locked) == 1, "the profile must exist to hold its lock"
+        worker.start()
+        worker.join(timeout=LOCK_WAIT_S)
+        still_waiting = worker.is_alive()
+        holder.rollback()  # releases the lock
+    worker.join(timeout=LOCK_RELEASE_TIMEOUT_S)
+    assert not worker.is_alive(), "the request did not finish after the release"
+    assert still_waiting, "the request did not wait for the profile lock"
+    if "error" in result:
+        raise result["error"]
+    return result["response"]
+
+
+def test_r1_put_history_entry_waits_for_profile_lock(
+    client: TestClient, db: Session
+) -> None:
+    """PUT /profile/history/{id} espera el candado del perfil y luego guarda."""
+    headers, user_id = consented_user(client, db)
+    r = post_entry(client, headers, HYPOTHYROIDISM_ACTIVE)
+    assert r.status_code == 201, r.text
+    entry_id = r.json()["id"]
+    updated = {**HYPOTHYROIDISM_ACTIVE, "treatment": "Levotiroxina 75 mcg"}
+
+    r_put = assert_waits_for_profile_lock(
+        user_id, lambda: client.put(entry_url(entry_id), headers=headers, json=updated)
+    )
+
+    assert r_put.status_code == 200, r_put.text
+    assert only_entry(client, headers)["treatment"] == "Levotiroxina 75 mcg"
+
+
+def test_r1_delete_diagnosis_waits_for_profile_lock(
+    client: TestClient, db: Session
+) -> None:
+    """DELETE /health-records/{id} de un diagnóstico espera el candado del
+    perfil y luego desvincula la crónica que respaldaba."""
+    headers, user_id = consented_user(client, db)
+    diag_id = create_diagnosis(client, headers)
+    r = post_entry(client, headers, {**HYPOTHYROIDISM_ACTIVE, "diagnosis_id": diag_id})
+    assert r.status_code == 201, r.text
+
+    r_delete = assert_waits_for_profile_lock(
+        user_id, lambda: client.delete(record_url(diag_id), headers=headers)
+    )
+
+    assert r_delete.status_code == 200, r_delete.text
+    assert only_entry(client, headers).get("diagnosis_id") is None
+
+
+def test_r1_delete_history_entry_waits_for_profile_lock(
+    client: TestClient, db: Session
+) -> None:
+    """DELETE /profile/history/{id} espera el candado del perfil y luego borra."""
+    headers, user_id = consented_user(client, db)
+    r = post_entry(client, headers, HYPOTHYROIDISM_ACTIVE)
+    assert r.status_code == 201, r.text
+    entry_id = r.json()["id"]
+
+    r_delete = assert_waits_for_profile_lock(
+        user_id, lambda: client.delete(entry_url(entry_id), headers=headers)
+    )
+
+    assert r_delete.status_code == 200, r_delete.text
+    assert_history_empty(client, headers)
+
+
+def test_r1_delete_diagnosis_does_not_create_profile(
+    client: TestClient, db: Session
+) -> None:
+    """Sin perfil no hay crónicas que desvincular: borrar un diagnóstico -> 200
+    y el perfil sigue sin existir (crud.lock_profile no lo crea)."""
+    headers, user_id = consented_user(client, db)
+    diag_id = create_diagnosis(client, headers)
+    profile_sql = "SELECT id FROM patient_profile WHERE user_id = CAST(:uid AS uuid)"
+    assert raw_rows(profile_sql, {"uid": user_id}) == []
+
+    r = client.delete(record_url(diag_id), headers=headers)
+
+    assert r.status_code == 200, r.text
+    assert raw_rows(profile_sql, {"uid": user_id}) == []

@@ -730,6 +730,32 @@ async function backingOptions(page: Page): Promise<string[]> {
   return texts.map((t) => t.trim())
 }
 
+/**
+ * Review R15: the "¿Cuál?" error sits right under its label, BEFORE the chip
+ * group (DOM order and on screen), not after the 13 options.
+ */
+async function expectConditionErrorAboveChips(error: Locator, group: Locator) {
+  const groupHandle = await group.elementHandle()
+  expect(
+    await error.evaluate(
+      (el, g) =>
+        !!g &&
+        (el.compareDocumentPosition(g) & Node.DOCUMENT_POSITION_FOLLOWING) !==
+          0,
+      groupHandle,
+    ),
+  ).toBe(true)
+  const errorBox = await error.boundingBox()
+  const firstChipBox = await group
+    .getByRole("radio")
+    .or(group.getByRole("button"))
+    .first()
+    .boundingBox()
+  expect(errorBox).not.toBeNull()
+  expect(firstChipBox).not.toBeNull()
+  expect(errorBox?.y ?? 0).toBeLessThan(firstChipBox?.y ?? 0)
+}
+
 async function pickBacking(page: Page, label: string) {
   const field = page.getByRole("combobox", { name: BACKING })
   const native = await field.evaluate((el) => el.tagName === "SELECT")
@@ -951,9 +977,36 @@ test.describe("Perfil médico — enfermedades crónicas (perfil-cronicas, grupo
       .getByRole("radiogroup", { name: CONDITION })
       .or(page.getByRole("group", { name: CONDITION }))
       .first()
+    await expectConditionErrorAboveChips(error, group)
     await expect
       .poll(() => group.evaluate((el) => el.contains(document.activeElement)))
       .toBe(true)
+    expect(await historyCount(api)).toBe(0)
+  })
+
+  test("E9c R5 sin condición y con un '¿Desde cuándo?' imposible: manda el error de '¿Cuál?', el de arriba", async ({
+    page,
+    request,
+  }) => {
+    const api = await freshPatient(page, request)
+    await setBirthDate(page, "1990-03-15", "15/03/1990")
+    await openSection(page, CHRONIC)
+    await startAdd(page)
+    await sinceGroup(page).getByLabel("Edad que tenías").fill("50")
+    await save(page)
+
+    const error = page.getByText("Elige la condición o escribe cuál es")
+    await expect(error).toBeVisible()
+    const group = page
+      .getByRole("radiogroup", { name: CONDITION })
+      .or(page.getByRole("group", { name: CONDITION }))
+      .first()
+    await expect
+      .poll(() => group.evaluate((el) => el.contains(document.activeElement)))
+      .toBe(true)
+    await expect(sinceGroup(page)).not.toContainText(
+      "La edad no puede ser mayor que tu edad actual",
+    )
     expect(await historyCount(api)).toBe(0)
   })
 
@@ -1068,5 +1121,86 @@ test.describe("Perfil médico — enfermedades crónicas (perfil-cronicas, grupo
       card(page, "chronic").getByText("1 registro", { exact: true }),
     ).toBeVisible()
     await expect(card(page, "chronic")).not.toContainText("Ninguna")
+  })
+})
+
+// --- Review R5: el "hoy" del formulario es el de Ciudad de México, como el API ---
+//
+// Nacida el 1990-10-21 y el reloj del navegador fijo cerca de la medianoche de
+// su cumpleaños en CDMX (UTC-6). El reloj del servidor no es nuestro, así que
+// el POST se intercepta: lo que se mide es si el formulario lo deja salir.
+
+const BIRTHDAY_ISO = "1990-10-21"
+const HISTORY_POST = /\/api\/v1\/profile\/history$/
+
+/** Intercepta el POST de una entrada; devuelve el cuerpo enviado (o null). */
+async function capturePost(page: Page) {
+  const sent: { body: Record<string, unknown> | null } = { body: null }
+  await page.route(HISTORY_POST, async (route) => {
+    if (route.request().method() !== "POST") return route.continue()
+    const body = route.request().postDataJSON() as Record<string, unknown>
+    sent.body = body
+    await route.fulfill({
+      status: 201,
+      json: {
+        ...body,
+        id: "00000000-0000-4000-8000-000000000001",
+        created_at: "2026-10-21T06:30:00Z",
+      },
+    })
+  })
+  return sent
+}
+
+async function addAsthmaSince(page: Page, age: string) {
+  await openSection(page, CHRONIC)
+  await startAdd(page)
+  await choose(page, CONDITION, "Asma")
+  await sinceGroup(page).getByLabel("Edad que tenías").fill(age)
+  await save(page)
+}
+
+test.describe("Perfil médico — 'hoy' de CDMX en un dispositivo de Tijuana (R5)", () => {
+  test.use({ timezoneId: "America/Tijuana" })
+
+  test("E9d a las 23:30 en Tijuana ya es su cumpleaños en CDMX: 'desde los 36' sale al API", async ({
+    page,
+    request,
+  }) => {
+    // 00:30 del 21-oct-2026 en CDMX = 23:30 del 20-oct en Tijuana (UTC-7).
+    await page.clock.setFixedTime(new Date("2026-10-21T06:30:00Z"))
+    await freshPatient(page, request)
+    await setBirthDate(page, BIRTHDAY_ISO, "21/10/1990")
+    const sent = await capturePost(page)
+
+    await addAsthmaSince(page, "36")
+
+    await expect
+      .poll(() => sent.body?.since)
+      .toEqual({ kind: "age", value: 36 })
+    await expect(sinceGroup(page)).toHaveCount(0)
+  })
+})
+
+test.describe("Perfil médico — 'hoy' de CDMX en un dispositivo de Cancún (R5)", () => {
+  test.use({ timezoneId: "America/Cancun" })
+
+  test("E9e a las 00:30 en Cancún aún no es su cumpleaños en CDMX: 'desde los 36' no sale", async ({
+    page,
+    request,
+  }) => {
+    // 23:30 del 20-oct-2026 en CDMX = 00:30 del 21-oct en Cancún (UTC-5).
+    await page.clock.setFixedTime(new Date("2026-10-21T05:30:00Z"))
+    await freshPatient(page, request)
+    await setBirthDate(page, BIRTHDAY_ISO, "21/10/1990")
+    const sent = await capturePost(page)
+
+    await addAsthmaSince(page, "36")
+
+    await expect(sinceGroup(page)).toContainText(
+      "La edad no puede ser mayor que tu edad actual",
+    )
+    await expect(sinceGroup(page).getByLabel("Edad que tenías")).toBeFocused()
+    expect(sent.body).toBeNull()
   })
 })

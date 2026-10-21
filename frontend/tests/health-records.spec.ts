@@ -884,6 +884,17 @@ async function freshUserWithApi(
   return { request, headers: { Authorization: `Bearer ${access_token}` } }
 }
 
+/** GET /profile/history exacto (no sus subrutas /{id} ni /sections/…). */
+const HISTORY_LIST = /\/api\/v1\/profile\/history(\?.*)?$/
+
+async function seedRecord(api: Api, data: Record<string, unknown>) {
+  const res = await api.request.post(`${API}/health-records/`, {
+    headers: api.headers,
+    data,
+  })
+  expect(res.status()).toBe(201)
+}
+
 test.describe("Expediente — diagnóstico que respalda una crónica (perfil-cronicas)", () => {
   test("E17 B-5 eliminar el diagnóstico que respalda «Hipotiroidismo»: el diálogo lo avisa y la crónica se queda sin respaldo", async ({
     page,
@@ -979,5 +990,70 @@ test.describe("Expediente — diagnóstico que respalda una crónica (perfil-cro
         name: "Diagnóstico del expediente que la respalda",
       }),
     ).toHaveText("Ninguno")
+  })
+
+  test("E17b R6 si no se puede leer el historial, el diálogo lo dice y 'Eliminar' se habilita pronto", async ({
+    page,
+    request,
+  }) => {
+    const api = await freshUserWithApi(page, request)
+    await seedRecord(api, {
+      record_type: "diagnosis",
+      title: "Hipotiroidismo subclínico",
+      occurred_on: "2026-09-30",
+      professional: "Dra. Islas (endocrinología)",
+    })
+    await page.route(HISTORY_LIST, (route) =>
+      route.request().method() === "GET"
+        ? route.fulfill({ status: 500, json: { detail: "Error" } })
+        : route.continue(),
+    )
+
+    await page.reload()
+    await clickRecordAction(
+      page,
+      "Hipotiroidismo subclínico",
+      "Eliminar registro",
+    )
+
+    // Sin reintentos: dentro del timeout por omisión de expect (5 s), no ~7 s.
+    const dialog = page.getByRole("dialog")
+    await expect(
+      dialog.getByText(
+        "No pudimos revisar si respalda alguna de tus crónicas. Si la respalda, se quedará sin respaldo.",
+      ),
+    ).toBeVisible()
+    await expect(
+      dialog.getByRole("button", { name: "Eliminar", exact: true }),
+    ).toBeEnabled()
+  })
+
+  test("E17c R9b borrar una receta no consulta el historial", async ({
+    page,
+    request,
+  }) => {
+    const api = await freshUserWithApi(page, request)
+    await seedRecord(api, {
+      record_type: "prescription",
+      occurred_on: "2026-10-12",
+      professional: "Dra. Islas (endocrinología)",
+      medicines: [{ name: "Levotiroxina 50 µg", dose: "1 tableta en ayunas" }],
+    })
+    await page.reload()
+    await expect(recordRow(page, "Levotiroxina 50 µg")).toBeVisible()
+    let historyRequests = 0
+    page.on("request", (req) => {
+      if (HISTORY_LIST.test(req.url())) historyRequests += 1
+    })
+
+    await clickRecordAction(page, "Levotiroxina 50 µg", "Eliminar registro")
+
+    const dialog = page.getByRole("dialog")
+    await expect(
+      dialog.getByRole("button", { name: "Eliminar", exact: true }),
+    ).toBeEnabled()
+    // La consulta saldría al abrir el diálogo; margen para que se vea si sale.
+    await page.waitForTimeout(500)
+    expect(historyRequests).toBe(0)
   })
 })
