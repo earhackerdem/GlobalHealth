@@ -33,7 +33,7 @@ cualquier edad entre 0 y 130.
 
 #### Scenario: Lo dejó, con la edad (C-1)
 - **GIVEN** un paciente nacido el 15/03/1990
-- **WHEN** elige alcohol "Lo dejé", escribe 30 en "¿A qué edad lo dejaste?" y guarda
+- **WHEN** elige alcohol "Lo dejé", escribe 30 en "¿A qué edad dejaste de tomar?" y guarda
 - **THEN** al volver a abrir la pantalla ve "Lo dejé" con 30, y ninguna pregunta del AUDIT-C
 
 #### Scenario: Una edad mayor que la actual (C-1, C-2)

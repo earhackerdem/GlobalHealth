@@ -23,10 +23,10 @@ test.use({ storageState: { cookies: [], origins: [] } })
 //   history-card-<section>   tarjeta en /perfil, <section> ∈ past · surgeries ·
 //                            fractures · transfusions · chronic · habits. Texto
 //                            de estado: "Sin llenar" · "Ninguna" ·
-//                            "1 registro" · "N registros". Las 4 de eventos y
-//                            chronic (perfil-cronicas) son enlaces; solo
-//                            habits sigue sin enlace, sin inputs y sin
-//                            "Agregar".
+//                            "1 registro" · "N registros". Las 4 de eventos,
+//                            chronic (perfil-cronicas) y habits
+//                            (perfil-habitos: "Sin llenar" / "Con datos",
+//                            enlace a /perfil/habitos) son enlaces.
 //   sensitive-badge          (perfil-cronicas) insignia "sensible" dentro del
 //                            history-entry de una crónica marcada sensible.
 //   history-entries          lista de registros en la pantalla de sección
@@ -264,7 +264,7 @@ const card = (page: Page, section: string) =>
   page.getByTestId(`history-card-${section}`)
 
 test.describe("Perfil médico — historial por secciones (perfil-eventos, grupo 2)", () => {
-  test("S01 E10 E11 (A-1 con crónicas) estado de cada sección en su tarjeta; solo hábitos sin captura", async ({
+  test("S01 E10 E11 (A-1 con crónicas y hábitos) estado de cada sección en su tarjeta; hábitos 'Sin llenar' y enlace", async ({
     page,
     request,
   }) => {
@@ -293,7 +293,8 @@ test.describe("Perfil médico — historial por secciones (perfil-eventos, grupo
     await expect(card(page, "surgeries")).toContainText("Sin llenar")
     await expect(card(page, "fractures")).toContainText("Sin llenar")
 
-    // Crónicas ya es enlace (perfil-cronicas): solo hábitos queda sin captura.
+    // Crónicas es enlace (perfil-cronicas) y hábitos también (perfil-habitos):
+    // sin hábitos guardados su tarjeta dice "Sin llenar".
     const chronicIsLink = await card(page, "chronic").evaluate(
       (el) => el.closest("a") !== null || el.getAttribute("role") === "link",
     )
@@ -301,15 +302,11 @@ test.describe("Perfil médico — historial por secciones (perfil-eventos, grupo
 
     const habits = card(page, "habits")
     await expect(habits).toContainText("Sin llenar")
-    await expect(habits.locator("input, textarea, select")).toHaveCount(0)
-    await expect(habits.getByRole("link")).toHaveCount(0)
-    await expect(
-      habits.getByRole("button", { name: /Agregar|Añadir/ }),
-    ).toHaveCount(0)
+    await expect(habits).not.toContainText("Con datos")
     const habitsIsLink = await habits.evaluate(
       (el) => el.closest("a") !== null || el.getAttribute("role") === "link",
     )
-    expect(habitsIsLink).toBe(false)
+    expect(habitsIsLink).toBe(true)
   })
 
   test("S02 la tarjeta de cirugías abre /perfil/cirugias con 'Agregar'", async ({
