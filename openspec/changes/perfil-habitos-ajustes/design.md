@@ -1,9 +1,9 @@
 # Design
 
-Status: DRAFT
+Status: APPROVED
 Approved by: Saúl Pérez (author) on 2026-10-21, sobre el prototipo navegable (`prototipo.html`, C-10…C-14). Revisión
-pendiente de aprobar: Saúl Pérez decidió el 2026-10-21, tras la revisión ronda 1 del PR #32, quitar el guardado
-automático (C-13 nuevo: se guarda con "Guardar" y la pantalla avisa antes de perder cambios). Decision 8.
+aprobada por Saúl Pérez (author) el 2026-10-21, sobre el prototipo revisado: sin guardado automático (C-13 nuevo: se
+guarda con "Guardar" y la pantalla avisa antes de perder cambios). Decision 8.
 
 **En una frase:** los hábitos ganan la edad de inicio del alcohol, un vapeador con frecuencia y edades, y la leña
 como rango de edades con horas al día; la pantalla valida al salir de cada campo con los límites del contrato, guarda
