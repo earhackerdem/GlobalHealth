@@ -901,24 +901,34 @@ test.describe("Expediente — diagnóstico que respalda una crónica (perfil-cro
     })
     expect(dx.ok()).toBeTruthy()
     const { id: diagnosisId } = await dx.json()
-    const chronic = await request.post(`${API}/profile/history`, {
-      headers: api.headers,
-      data: {
-        section: "chronic",
+    // Review R12: dos crónicas respaldadas por el diagnóstico y una sin respaldo.
+    const seedChronic = async (data: Record<string, unknown>) => {
+      const res = await request.post(`${API}/profile/history`, {
+        headers: api.headers,
+        data: { section: "chronic", status: "active", ...data },
+      })
+      expect(res.status()).toBe(201)
+      return (await res.json()).id as string
+    }
+    const backedIds = [
+      await seedChronic({
         condition: "hypothyroidism",
-        status: "active",
         diagnosis_id: diagnosisId,
-      },
-    })
-    expect(chronic.status()).toBe(201)
+      }),
+      await seedChronic({
+        condition: "hypertension",
+        diagnosis_id: diagnosisId,
+      }),
+    ]
+    await seedChronic({ condition: "asthma" })
 
-    // Antes de borrar: la crónica muestra su respaldo.
+    // Antes de borrar: las dos crónicas muestran su respaldo.
     const entries = page.getByTestId("history-entry")
     await page.goto("/perfil/cronicas")
-    await expect(entries).toHaveCount(1)
-    await expect(entries.first()).toContainText(
-      "Respaldo: Hipotiroidismo subclínico",
-    )
+    await expect(entries).toHaveCount(3)
+    await expect(
+      entries.filter({ hasText: "Respaldo: Hipotiroidismo subclínico" }),
+    ).toHaveCount(2)
 
     // El diálogo de borrado del diagnóstico nombra la crónica que respalda.
     await page.goto("/expediente")
@@ -932,18 +942,42 @@ test.describe("Expediente — diagnóstico que respalda una crónica (perfil-cro
         "¿Seguro que quieres eliminar este registro? Se eliminarán también sus adjuntos.",
       ),
     ).toBeVisible()
+    const dialog = page.getByRole("dialog")
     await expect(
-      page.getByText(
-        "Respalda tu crónica «Hipotiroidismo». La crónica se queda, sin respaldo.",
+      dialog.getByText(
+        "Respalda tus crónicas «Hipotiroidismo», «Hipertensión». Las crónicas se quedan, sin respaldo.",
       ),
     ).toBeVisible()
+    // La crónica sin respaldo no se nombra.
+    await expect(dialog).not.toContainText("Asma")
     await page.getByRole("button", { name: "Eliminar", exact: true }).click()
     await expect(page.getByText("Registro eliminado.")).toBeVisible()
 
-    // La crónica sigue, ya sin "Respaldo".
+    // Review R14: el enlace guardado ya no está (falla si no se desenlaza).
+    const history = await request.get(`${API}/profile/history`, {
+      headers: api.headers,
+    })
+    expect(history.ok()).toBeTruthy()
+    const stored: { id: string; diagnosis_id?: string | null }[] = (
+      await history.json()
+    ).data
+    expect(stored).toHaveLength(3)
+    for (const id of backedIds) {
+      expect(stored.find((e) => e.id === id)?.diagnosis_id ?? null).toBeNull()
+    }
+
+    // Las crónicas siguen; al editar una, su respaldo es "Ninguno".
     await page.goto("/perfil/cronicas")
-    await expect(entries).toHaveCount(1)
-    await expect(entries.first()).toContainText("Hipotiroidismo")
-    await expect(entries.first()).not.toContainText("Respaldo")
+    await expect(entries).toHaveCount(3)
+    await expect(entries.filter({ hasText: "Respaldo" })).toHaveCount(0)
+    await entries
+      .filter({ hasText: "Hipotiroidismo" })
+      .getByRole("button", { name: "Editar Hipotiroidismo", exact: true })
+      .click()
+    await expect(
+      page.getByRole("combobox", {
+        name: "Diagnóstico del expediente que la respalda",
+      }),
+    ).toHaveText("Ninguno")
   })
 })

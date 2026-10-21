@@ -1111,3 +1111,64 @@ def test_b5_crud_unlink_diagnosis_counts_and_scopes_by_owner(
         str(chronic_entries(client, headers_b)[str(entry_b["id"])]["diagnosis_id"])
         == diag_b
     )
+
+
+def _setup_several_chronics(
+    client: TestClient, headers: dict[str, str]
+) -> tuple[str, dict[str, str]]:
+    """Two chronic entries backed by D1, one by D2, one with no backing.
+    Returns D1's id and the entry ids by role."""
+    r_d1 = post_record(client, headers, diagnosis_payload())
+    assert r_d1.status_code == 201, r_d1.text
+    d1 = str(r_d1.json()["id"])
+    r_d2 = post_record(client, headers, diagnosis_payload(title="Asma bronquial"))
+    assert r_d2.status_code == 201, r_d2.text
+    d2 = str(r_d2.json()["id"])
+    ids = {
+        "d1_first": post_chronic(
+            client, headers, condition="hypothyroidism", diagnosis_id=d1
+        )["id"],
+        "d1_second": post_chronic(
+            client, headers, condition="hypertension", diagnosis_id=d1
+        )["id"],
+        "d2": post_chronic(client, headers, condition="asthma", diagnosis_id=d2)["id"],
+        "none": post_chronic(client, headers, condition="arthritis")["id"],
+    }
+    return d1, {role: str(entry_id) for role, entry_id in ids.items()} | {"d2_id": d2}
+
+
+def test_b5_delete_diagnosis_unlinks_every_chronic_it_backs(
+    client: TestClient, db: Session
+) -> None:
+    """Review R12, B-5 "una o más": dos crónicas respaldadas por D1 quedan sin
+    respaldo; la de D2 y la que no tiene respaldo no cambian. Directo,
+    crud.unlink_diagnosis devuelve 2."""
+    headers = consented_user_headers(client, db)
+    d1, ids = _setup_several_chronics(client, headers)
+
+    r_delete = client.delete(record_url(d1), headers=headers)
+
+    assert r_delete.status_code == 200, r_delete.text
+    assert r_delete.json() == {"message": "Registro eliminado"}
+    mine = chronic_entries(client, headers)
+    assert len(mine) == 4
+    assert mine[ids["d1_first"]].get("diagnosis_id") is None
+    assert mine[ids["d1_second"]].get("diagnosis_id") is None
+    assert str(mine[ids["d2"]]["diagnosis_id"]) == ids["d2_id"]
+    assert mine[ids["none"]].get("diagnosis_id") is None
+    assert mine[ids["d1_second"]]["condition"] == "hypertension"
+
+    headers_direct = consented_user_headers(client, db)
+    d1_direct, ids_direct = _setup_several_chronics(client, headers_direct)
+    changed = crud.unlink_diagnosis(
+        session=db,
+        owner_id=user_id_of(client, headers_direct),
+        diagnosis_id=uuid.UUID(d1_direct),
+    )
+    db.commit()
+
+    assert changed == 2
+    direct = chronic_entries(client, headers_direct)
+    assert direct[ids_direct["d1_first"]].get("diagnosis_id") is None
+    assert direct[ids_direct["d1_second"]].get("diagnosis_id") is None
+    assert str(direct[ids_direct["d2"]]["diagnosis_id"]) == ids_direct["d2_id"]

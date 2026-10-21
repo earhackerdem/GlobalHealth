@@ -559,8 +559,9 @@ test.describe("Perfil médico — historial por secciones (perfil-eventos, grupo
     await age.fill("90")
     await expect(page.getByText(/Año aproximado/)).toHaveCount(0)
 
-    // El servidor la rechaza: el mensaje queda junto al campo, que recibe
-    // el foco y lo lleva como descripción.
+    // Imposible (el formulario repite la regla del servidor, review R5): el
+    // mensaje queda junto al campo, que recibe el foco y lo lleva como
+    // descripción.
     await save(page)
     await expect(age).toBeFocused()
     await expect(age).toHaveAttribute("aria-invalid", "true")
@@ -942,9 +943,10 @@ test.describe("Perfil médico — enfermedades crónicas (perfil-cronicas, grupo
     )
     await save(page)
 
-    await expect(
-      page.getByText("Elige la condición o escribe cuál es"),
-    ).toBeVisible()
+    const error = page.getByText("Elige la condición o escribe cuál es")
+    await expect(error).toBeVisible()
+    // Review R15: on screen where the focus lands (64333d0), not 13 options below.
+    await expect(error).toBeInViewport()
     const group = page
       .getByRole("radiogroup", { name: CONDITION })
       .or(page.getByRole("group", { name: CONDITION }))
@@ -953,6 +955,77 @@ test.describe("Perfil médico — enfermedades crónicas (perfil-cronicas, grupo
       .poll(() => group.evaluate((el) => el.contains(document.activeElement)))
       .toBe(true)
     expect(await historyCount(api)).toBe(0)
+  })
+
+  test("E9b R5 desde y hasta imposibles: el error va junto a '¿Desde cuándo?' con el foco ahí y nada se guarda", async ({
+    page,
+    request,
+  }) => {
+    const api = await freshPatient(page, request)
+    await setBirthDate(page, "1990-03-15", "15/03/1990")
+    await openSection(page, CHRONIC)
+    await startAdd(page)
+    await choose(page, CONDITION, "Asma")
+    await whenChip(page, "Ya no la tengo")
+    const since = sinceGroup(page).getByLabel("Edad que tenías")
+    await since.fill("50")
+    await untilGroup(page).getByLabel("Edad que tenías").fill("52")
+    await save(page)
+
+    await expect(sinceGroup(page)).toContainText(
+      "La edad no puede ser mayor que tu edad actual",
+    )
+    await expect(since).toBeFocused()
+    await expect(since).toHaveAttribute("aria-invalid", "true")
+    await expect(since).toHaveAccessibleDescription(
+      "La edad no puede ser mayor que tu edad actual",
+    )
+    await expect(page.getByRole("alert")).toHaveCount(0)
+    await expect(entries(page)).toHaveCount(0)
+    expect(await historyCount(api)).toBe(0)
+  })
+
+  test("E2b R24 'Sensible' usa lo guardado al editar, y sin tocarla sigue a la condición elegida", async ({
+    page,
+    request,
+  }) => {
+    const api = await freshPatient(page, request)
+    const seeded = await seedEntry(api, {
+      section: "chronic",
+      condition: "anxiety",
+      sensitive: false,
+    })
+    await openSection(page, CHRONIC)
+
+    // Una Ansiedad guardada como no sensible se abre sin la casilla y, al
+    // guardar sin tocarla, sigue sin serlo.
+    const anxiety = entries(page).filter({ hasText: "Ansiedad" })
+    await expect(anxiety.getByTestId("sensitive-badge")).toHaveCount(0)
+    await anxiety
+      .getByRole("button", { name: "Editar Ansiedad", exact: true })
+      .click()
+    await expect(sensitiveBox(page)).not.toBeChecked()
+    await save(page)
+    await expect(
+      page.getByRole("button", { name: "Guardar", exact: true }),
+    ).toHaveCount(0)
+    await expect(anxiety.getByTestId("sensitive-badge")).toHaveCount(0)
+    const res = await api.request.get(`${API}/profile/history`, {
+      headers: api.headers,
+    })
+    const stored = (await res.json()).data.find(
+      (e: { id: string }) => e.id === seeded.id,
+    )
+    expect(stored.sensitive).toBe(false)
+
+    // Sin tocar la casilla, el valor por defecto sigue a la última condición.
+    await startAdd(page)
+    await choose(page, CONDITION, "Asma")
+    await expect(sensitiveBox(page)).not.toBeChecked()
+    await choose(page, CONDITION, "Depresión")
+    await expect(sensitiveBox(page)).toBeChecked()
+    await choose(page, CONDITION, "Epilepsia")
+    await expect(sensitiveBox(page)).not.toBeChecked()
   })
 
   test("E12 la tarjeta de crónicas abre /perfil/cronicas con 'Agregar'", async ({

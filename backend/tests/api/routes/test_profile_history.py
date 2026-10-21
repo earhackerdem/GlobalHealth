@@ -1095,6 +1095,64 @@ def test_b2_until_vs_since_by_age_range(
         assert entry["status"] == "resolved"
 
 
+def test_b2_year_is_an_age_range_with_birth_date(
+    client: TestClient, db: Session
+) -> None:
+    """Review R11: nacido 1990-12-01, en 2022 tuvo 31 (enero) y 32 (diciembre);
+    desde {year: 2022} hasta {age: 31} es posible -> 201."""
+    headers, _ = consented_user(client, db)
+    r_profile = put_profile(client, headers, {"birth_date": "1990-12-01"})
+    assert r_profile.status_code == 200, r_profile.text
+    since = {"kind": "year", "value": 2022}
+    until = {"kind": "age", "value": 31}
+
+    r = post_entry(
+        client,
+        headers,
+        chronic(condition="asthma", status="resolved", since=since, until=until),
+    )
+
+    assert r.status_code == 201, r.text
+    entry = only_entry(client, headers)
+    assert entry["since"] == since
+    assert entry["until"] == until
+
+
+@pytest.mark.parametrize(
+    ("since_year", "until_year", "expected_status"),
+    [
+        pytest.param(2015, 2005, 422, id="until-year-before-since-year-rejected"),
+        pytest.param(2005, 2015, 201, id="until-year-after-since-year-accepted"),
+    ],
+)
+def test_b2_year_vs_year_without_birth_date(
+    client: TestClient,
+    db: Session,
+    since_year: int,
+    until_year: int,
+    expected_status: int,
+) -> None:
+    """Review R13: año contra año se compara directo, sin fecha de nacimiento."""
+    headers, _ = consented_user(client, db)
+    since = {"kind": "year", "value": since_year}
+    until = {"kind": "year", "value": until_year}
+
+    r = post_entry(
+        client,
+        headers,
+        chronic(condition="asthma", status="resolved", since=since, until=until),
+    )
+
+    assert r.status_code == expected_status, r.text
+    if expected_status == 422:
+        assert r.json()["detail"] == UNTIL_BEFORE_SINCE
+        assert_history_empty(client, headers)
+    else:
+        entry = only_entry(client, headers)
+        assert entry["since"] == since
+        assert entry["until"] == until
+
+
 def test_b2_since_until_use_story_a_when_validation(
     client: TestClient, db: Session
 ) -> None:
@@ -1316,7 +1374,7 @@ def test_b1_empty_chronic_rejected(client: TestClient, db: Session) -> None:
     r = post_entry(client, headers, {"section": "chronic"})
 
     assert r.status_code == 422, r.text
-    assert isinstance(r.json()["detail"], str), r.text
+    assert r.json()["detail"] == "Llena al menos un dato"
     assert_history_empty(client, headers)
 
 
