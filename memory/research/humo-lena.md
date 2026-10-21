@@ -7,10 +7,12 @@
   https://ru.dgb.unam.mx/bitstream/20.500.14330/TES01000311003/3/0311003.pdf · consulted 2026-10-19
 - **Confidence:** [VERIFIED] el riesgo (fuente institucional + tesis coincidentes). NO se encontró un formato
   estándar de historia clínica para registrar la exposición (años, horas/año): la forma de captura en
-  product/dominio.md (nunca/antes/actual + años aprox.) es [ASSUMPTION].
+  product/dominio.md (nunca/antes/actual + años aprox.) es [ASSUMPTION]. *Superado el 2026-10-21: ver
+  [cómo se mide la exposición](#humo-lena-horas-ano).*
 - **Re-check if:** se diseña un aviso FR-021 que use la exposición (ahí fijar umbral con guía GOLD o la guía
   mexicana de EPOC).
 
+<a id="humo-lena-horas-ano"></a>
 - **Fact (cómo se mide la exposición, verificado 2026-10-21):** el estudio mexicano de referencia (casos y
   controles, mujeres mayores de 40 años, Ciudad de México) mide la exposición acumulada en **horas-año = años de
   exposición × horas promedio al día**. El riesgo creció linealmente con las horas-año; por encima de 200 horas-año
@@ -20,9 +22,9 @@
   Med 1996;154(3 Pt 1):701-6, PMID 8810608 (resumen vía Europe PMC,
   https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=EXT_ID:8810608%20AND%20SRC:MED&resultType=core&format=json)
   · Rev Med Hosp Gen Mex 2015, https://www.elsevier.es/en-revista-revista-medica-del-hospital-general-325-pdf-download-S0185106315000554
-  (vía buscador) · consulted 2026-10-21
-- **Confidence:** [VERIFIED] la medida y los OR de 1996 (resumen del artículo); [NOT VERIFIED] el estudio de 2015
-  (solo el buscador). Sigue sin encontrarse un formato de historia clínica oficial (GPC IMSS de EPOC no leída).
+  (PDF no leído; datos del resultado del buscador) · consulted 2026-10-21
+- **Confidence:** [VERIFIED] la medida y los OR de 1996 (resumen del artículo en Europe PMC); [NOT VERIFIED] el
+  estudio de 2015 (solo el resultado del buscador, sin abrir la fuente). Sigue sin encontrarse un formato de historia clínica oficial (GPC IMSS de EPOC no leída).
 - **Consecuencia para la captura:** edad de inicio, edad de fin (si es *Antes*) y **horas al día en promedio**; la
   app guarda los datos crudos y no calcula horas-año (C-6). Esto reemplaza la [ASSUMPTION] de "años aprox.".
 - **Re-check if:** se diseña un aviso FR-021 con la exposición (fijar umbral con GOLD o la guía mexicana de EPOC).

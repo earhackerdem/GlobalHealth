@@ -60,6 +60,8 @@ are `single`. `make tdd-check` requires one `test:` commit per `test→impl` gro
 - [x] 3.2 **Exploración en Chrome por el agente.** Recorrer el cuestionario completo: guardado al elegir y al salir de
   campos, doble y triple clic en "Guardar" y "Cancelar", salir a media escritura por el menú, recargar, cambiar de
   cuenta en otra pestaña, 384 px. Verificación: tabla en evidence.md; los defectos dentro del plan se arreglan.
+  *Corrección (revisión ronda 1, D6): ese recorrido fue a 580 px y con cierre de sesión en otra pestaña, no con cambio
+  de cuenta ni a 384 px; la 6.3 los cubre.*
 - [x] 3.3 **Entregables.** `evidence.md`, `validation.md` (no técnico, para Saúl Pérez), el journal y el PR.
 - [x] 3.4a **Revisión ronda 1** (`/epe-4-review`): 22 hallazgos confirmados (PR #32, comentarios finder y validator).
   Saúl Pérez decidió quitar el guardado automático (design.md Decision 8); los grupos 4–6 aplican la revisión.
@@ -79,7 +81,7 @@ are `single`. `make tdd-check` requires one `test:` commit per `test→impl` gro
 
 ## 5. Backend: filas ilegibles (hallazgo B1) · single
 
-- [ ] 5.1 Rojo: en `backend/tests/api/routes/test_profile_habits.py`, JSON inválido, una lista y uno anidado 100 000
+- [x] 5.1 Rojo: en `backend/tests/api/routes/test_profile_habits.py`, JSON inválido, una lista y uno anidado 100 000
   niveles → GET 200 vacío con el aviso en el log (fila 14). Commit `test:`. Verde: `_stored_habits` lee con
   `pydantic_core.from_json`. Suite backend completa, cobertura ≥ 90 %, mypy.
 

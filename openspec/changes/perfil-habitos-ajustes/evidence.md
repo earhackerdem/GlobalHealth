@@ -18,7 +18,7 @@
 | Task | Red run: command → failures | `test:` commit | Green run | `make tdd-check` |
 |---|---|---|---|---|
 | 1 · backend | `uv run pytest tests/api/routes/test_profile_habits.py -q` → **77 failed, 15 passed, 0 errors**: el modelo viejo rechaza el vapeador como objeto y los campos nuevos (`extra_forbidden`), falta `upgrade_stored_habits` (ImportError dentro de 6 tests) y la fila con la forma anterior se lee vacía | 97074f1 | 92/92 del archivo; suite completa 342 passed | ✓ red 97074f1, tests sin cambios hasta el verde 7e9b05b |
-| 2 · frontend | `bunx playwright test tests/profile-habits.spec.ts` → **32 failed, 27 passed** (16 + 13 por proyecto, 0 errores de setup): faltan las preguntas nuevas, el estado, el guardado automático y D20; el vapeador sembrado como objeto no se ve elegido | 1cfa5ce | 59/59 (verde 7b56610) | ✓ red 1cfa5ce, tests sin cambios hasta el verde 7b56610. Después, un `test:` propio (1facd80): formato de biome y `Connection: close` en la API de los e2e (un `socket hang up` de R1 en s26-ultra, sin aserción cambiada). `make tdd-check` ancla ahora en 1facd80 (deuda T6 conocida: pasa en vacío para ese commit) |
+| 2 · frontend | `bunx playwright test tests/profile-habits.spec.ts` → **32 failed, 27 passed** (16 + 13 por proyecto, 0 errores de setup): faltan las preguntas nuevas, el estado, el guardado automático y D20; el vapeador sembrado como objeto no se ve elegido | 1cfa5ce | 59/59 (verde 7b56610) | ✓ red 1cfa5ce, tests sin cambios hasta el verde 7b56610. Después, un `test:` propio (1facd80): formato de biome y `Connection: close` en la API de los e2e (un `socket hang up` de R1 en s26-ultra, sin aserción cambiada). Después hubo otro `test:` (a985310, formato de ruff en un caso fuera de escala), y `make tdd-check` ancló en a985310, no en 1facd80 (*corrección, revisión ronda 1, D1*; deuda T6 conocida: pasa en vacío para ese commit) |
 
 ## Criterio → prueba
 
@@ -47,6 +47,8 @@
 | Aislados y cifrados | `test_c_habits_isolated_and_encrypted_at_rest` (también `some_days` y `days_last_30` en claro) | ✅ |
 
 ## Exploración en Chrome (agente, antes de la validación humana)
+
+### Primera versión, con guardado automático (retirado por la Decision 8; queda como historia)
 
 Imagen reconstruida con esta rama en `localhost:8000`, cuenta de prueba local nueva (nacida el 15/03/1990, 36 años, con
 tabaco "Nunca" sembrado), ventana de 580 px. Los `PUT` se contaron con el lector de red del navegador.

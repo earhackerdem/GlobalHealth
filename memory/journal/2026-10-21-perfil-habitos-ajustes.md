@@ -25,7 +25,8 @@ investigar primero cómo se recaba cada dato.
 
 ## Verificación
 Backend 342 passed (96 %); e2e del cambio 137 passed (chromium + s26-ultra); suite completa 239 passed en una corrida y
-238 + el heredado `login.spec.ts:87` en otra. Exploración en Chrome (8 intentos, sin defectos). Números en
+238 + el heredado `login.spec.ts:87` en otra. Exploración en Chrome (8 intentos, sin defectos; *corrección: 10 filas en evidence.md, a 580 px y con cierre de sesión
+en otra pestaña, no a 384 px ni con cambio de cuenta*). Números en
 `openspec/changes/perfil-habitos-ajustes/evidence.md`.
 
 ## Sorpresas

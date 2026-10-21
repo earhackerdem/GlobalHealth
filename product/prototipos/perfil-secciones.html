@@ -127,10 +127,10 @@ dd{margin:0; min-width:0; overflow-wrap:anywhere}
   <p><strong>Story C, hábitos:</strong> <em>Como paciente, quiero contar mis hábitos con el detalle que el médico
   pregunta (cuánto, cada cuándo, desde cuándo), para que no quede en un «sí fumo» o «tomo poco».</em></p>
   <ol>
-    <li><strong>C-1</strong> Alcohol: nunca / lo dejé (a qué edad) / actual. Si es actual, las 3 preguntas del AUDIT-C (frecuencia, bebidas en un día típico, 6 o más en una ocasión) y «sobre todo fines de semana».</li>
-    <li><strong>C-2</strong> Tabaco (nunca/antes/actual, cigarros al día, a qué edad empezaste y a qué edad lo dejaste) y vapeador.</li>
+    <li><strong>C-1</strong> Alcohol: nunca / lo dejé / actual; con «Lo dejé» o «Actual», a qué edad empezó (sin contar probaditas) y, con «Lo dejé», a qué edad lo dejó (perfil-habitos-ajustes, C-10). Si es actual, las 3 preguntas del AUDIT-C (frecuencia, bebidas en un día típico, 6 o más en una ocasión) y «sobre todo fines de semana».</li>
+    <li><strong>C-2</strong> Tabaco (nunca/antes/actual, cigarros al día, a qué edad empezaste y a qué edad lo dejaste) y vapeador como el tabaco: edades y, si es actual, «Todos los días» o «Algunos días» con cuántos de los últimos 30 (C-11).</li>
     <li><strong>C-3</strong> Humo de tabaco ajeno: dónde (casa, trabajo o escuela, otro lugar) y cuántos días por semana.</li>
-    <li><strong>C-4</strong> Humo de leña: nunca/antes/actual y años aproximados.</li>
+    <li><strong>C-4</strong> Humo de leña: nunca/antes/actual, a qué edad empezó, a qué edad terminó (si es antes) y horas al día en promedio (C-12; reemplaza los años aproximados).</li>
     <li><strong>C-5</strong> Ejercicio como lista de actividades, cada una con días por semana y minutos por vez; se muestra el total semanal.</li>
     <li><strong>C-6</strong> La app no calcula puntajes ni riesgos con estas respuestas: interpretarlas es del médico (NFR-008).</li>
     <li><strong>C-7</strong> Movimiento del día, aparte del ejercicio y sin sumarse a su total: cómo pasas el día en tu trabajo (casi todo sentado / de pie o caminando / esfuerzo físico pesado), si caminas o vas en bici para ir a algún lado (días por semana) y horas sentado al día.</li>
@@ -463,7 +463,7 @@ function pintarHabitos(s){
       <div class="habito" style="border:0; margin-top:0; padding-top:0">
         <span class="lbl">Alcohol${ac("C-1", true)}</span>
         ${chipsDe("alcohol", ["Nunca","Lo dejé","Actual"], v, "Alcohol")}
-        ${v.alcohol === "Lo dejé" ? `<div class="cuando" style="margin-top:6px">${numH("alcDesde", "¿A qué edad lo dejaste?", v)}</div>` : ""}
+        ${v.alcohol === "Lo dejé" || v.alcohol === "Actual" ? `<div class="cuando" style="margin-top:6px">${numH("alcInicio", "¿A qué edad empezaste a tomar?", v)}${v.alcohol === "Lo dejé" ? numH("alcDesde", "¿A qué edad lo dejaste?", v) : ""}</div><p class="hint">Sin contar probaditas.</p>` : ""}
         ${v.alcohol === "Actual" ? `
           ${subLbl("¿Con qué frecuencia tomas?")}${chipsDe("alcFrec", ALC_FREC, v, "Frecuencia")}
           <div class="chips"><button data-chip="alcFinde" data-v="Sí" aria-pressed="${v.alcFinde === "Sí"}">Sobre todo fines de semana</button></div>
@@ -477,6 +477,9 @@ function pintarHabitos(s){
         ${chipsDe("tabaco", ["Nunca","Antes","Actual"], v, "Tabaco")}
         ${v.tabaco && v.tabaco !== "Nunca" ? `<div class="cuando" style="margin-top:6px">${numH("cigarros", "Cigarros al día", v)}${numH("tabDesde", "¿A qué edad empezaste?", v)}${v.tabaco === "Antes" ? numH("tabHasta", "¿A qué edad lo dejaste?", v) : ""}</div>` : ""}
         ${subLbl("Vapeador o cigarro electrónico")}${chipsDe("vape", ["Nunca","Antes","Actual"], v, "Vapeador")}
+        ${v.vape && v.vape !== "Nunca" ? `<div class="cuando" style="margin-top:6px">${numH("vapeDesde", "¿A qué edad empezaste a vapear?", v)}${v.vape === "Antes" ? numH("vapeHasta", "¿A qué edad dejaste de vapear?", v) : ""}</div>` : ""}
+        ${v.vape === "Actual" ? `${subLbl("¿Con qué frecuencia vapeas?")}${chipsDe("vapeFrec", ["Todos los días","Algunos días"], v, "Frecuencia del vapeador")}` : ""}
+        ${v.vape === "Actual" && v.vapeFrec === "Algunos días" ? `<div class="cuando" style="margin-top:6px">${numH("vapeDias", "¿Cuántos días de los últimos 30?", v)}</div>` : ""}
       </div>
 
       <div class="habito">
@@ -492,7 +495,7 @@ function pintarHabitos(s){
         <span class="lbl">Humo de leña${ac("C-4", true)}</span>
         <p class="hint">Cocinar o calentar la casa con leña o carbón.</p>
         ${chipsDe("lena", ["Nunca","Antes","Actual"], v, "Humo de leña")}
-        ${v.lena && v.lena !== "Nunca" ? `<div class="cuando" style="margin-top:6px">${numH("lenaAnios", "¿Cuántos años, aprox.?", v)}</div>` : ""}
+        ${v.lena && v.lena !== "Nunca" ? `<div class="cuando" style="margin-top:6px">${numH("lenaDesde", "¿A qué edad empezaste a exponerte?", v)}${v.lena === "Antes" ? numH("lenaHasta", "¿A qué edad dejaste de exponerte?", v) : ""}${numH("lenaHoras", "¿Cuántas horas al día, en promedio?", v)}</div>` : ""}
       </div>
 
       <div class="habito">
