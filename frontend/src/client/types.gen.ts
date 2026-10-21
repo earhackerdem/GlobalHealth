@@ -109,6 +109,138 @@ export type Body_login_login_access_token = {
 };
 
 /**
+ * ChronicHistoryContent
+ */
+export type ChronicHistoryContent = {
+    /**
+     * Section
+     */
+    section: 'chronic';
+    /**
+     * Condition
+     */
+    condition?: 'type2_diabetes' | 'hypertension' | 'asthma' | 'hypothyroidism' | 'high_cholesterol' | 'copd' | 'arthritis' | 'epilepsy' | 'depression' | 'anxiety' | 'bipolar_disorder' | 'substance_use' | 'other' | null;
+    /**
+     * Other Text
+     */
+    other_text?: string | null;
+    /**
+     * Sensitive
+     */
+    sensitive?: boolean | null;
+    /**
+     * Status
+     */
+    status?: 'active' | 'resolved' | null;
+    /**
+     * Since
+     */
+    since?: ({
+        kind: 'age';
+    } & WhenAge) | ({
+        kind: 'stage';
+    } & WhenStage) | ({
+        kind: 'year';
+    } & WhenYear) | ({
+        kind: 'unknown';
+    } & WhenUnknown) | null;
+    /**
+     * Until
+     */
+    until?: ({
+        kind: 'age';
+    } & WhenAge) | ({
+        kind: 'stage';
+    } & WhenStage) | ({
+        kind: 'year';
+    } & WhenYear) | ({
+        kind: 'unknown';
+    } & WhenUnknown) | null;
+    /**
+     * Treatment
+     */
+    treatment?: string | null;
+    /**
+     * Note
+     */
+    note?: string | null;
+    /**
+     * Diagnosis Id
+     */
+    diagnosis_id?: string | null;
+};
+
+/**
+ * ChronicHistoryEntry
+ */
+export type ChronicHistoryEntry = {
+    /**
+     * Section
+     */
+    section: 'chronic';
+    /**
+     * Condition
+     */
+    condition?: 'type2_diabetes' | 'hypertension' | 'asthma' | 'hypothyroidism' | 'high_cholesterol' | 'copd' | 'arthritis' | 'epilepsy' | 'depression' | 'anxiety' | 'bipolar_disorder' | 'substance_use' | 'other' | null;
+    /**
+     * Other Text
+     */
+    other_text?: string | null;
+    /**
+     * Sensitive
+     */
+    sensitive?: boolean | null;
+    /**
+     * Status
+     */
+    status?: 'active' | 'resolved' | null;
+    /**
+     * Since
+     */
+    since?: ({
+        kind: 'age';
+    } & WhenAge) | ({
+        kind: 'stage';
+    } & WhenStage) | ({
+        kind: 'year';
+    } & WhenYear) | ({
+        kind: 'unknown';
+    } & WhenUnknown) | null;
+    /**
+     * Until
+     */
+    until?: ({
+        kind: 'age';
+    } & WhenAge) | ({
+        kind: 'stage';
+    } & WhenStage) | ({
+        kind: 'year';
+    } & WhenYear) | ({
+        kind: 'unknown';
+    } & WhenUnknown) | null;
+    /**
+     * Treatment
+     */
+    treatment?: string | null;
+    /**
+     * Note
+     */
+    note?: string | null;
+    /**
+     * Diagnosis Id
+     */
+    diagnosis_id?: string | null;
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Created At
+     */
+    created_at: string;
+};
+
+/**
  * ConsentCreate
  */
 export type ConsentCreate = {
@@ -578,6 +710,8 @@ export type HistoryEntriesPublic = {
      * Data
      */
     data: Array<({
+        section: 'chronic';
+    } & ChronicHistoryEntry) | ({
         section: 'past';
     } & PastHistoryEntry) | ({
         section: 'surgeries';
@@ -825,7 +959,7 @@ export type PatientProfilePublic = {
     /**
      * Sections None
      */
-    sections_none: Array<'past' | 'surgeries' | 'fractures' | 'transfusions'>;
+    sections_none: Array<'chronic' | 'past' | 'surgeries' | 'fractures' | 'transfusions'>;
 };
 
 /**
@@ -2554,6 +2688,8 @@ export type profileCreateHistoryEntryData = {
      * Entry In
      */
     body: ({
+        section: 'chronic';
+    } & ChronicHistoryContent) | ({
         section: 'past';
     } & PastHistoryContent) | ({
         section: 'surgeries';
@@ -2583,6 +2719,8 @@ export type profileCreateHistoryEntryResponses = {
      * Successful Response
      */
     201: ({
+        section: 'chronic';
+    } & ChronicHistoryEntry) | ({
         section: 'past';
     } & PastHistoryEntry) | ({
         section: 'surgeries';
@@ -2630,6 +2768,8 @@ export type profileUpdateHistoryEntryData = {
      * Entry In
      */
     body: ({
+        section: 'chronic';
+    } & ChronicHistoryContent) | ({
         section: 'past';
     } & PastHistoryContent) | ({
         section: 'surgeries';
@@ -2664,6 +2804,8 @@ export type profileUpdateHistoryEntryResponses = {
      * Successful Response
      */
     200: ({
+        section: 'chronic';
+    } & ChronicHistoryEntry) | ({
         section: 'past';
     } & PastHistoryEntry) | ({
         section: 'surgeries';
@@ -2682,7 +2824,7 @@ export type profileSetHistorySectionNoneData = {
         /**
          * Section
          */
-        section: 'past' | 'surgeries' | 'fractures' | 'transfusions';
+        section: 'chronic' | 'past' | 'surgeries' | 'fractures' | 'transfusions';
     };
     query?: never;
     url: '/api/v1/profile/history/sections/{section}/none';

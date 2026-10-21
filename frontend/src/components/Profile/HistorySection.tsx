@@ -1,5 +1,6 @@
 import {
   useMutation,
+  useQuery,
   useQueryClient,
   useSuspenseQuery,
 } from "@tanstack/react-query"
@@ -17,16 +18,24 @@ import { handleError } from "@/utils"
 import BloodTypePicker from "./BloodTypePicker"
 import HistoryEntryForm from "./HistoryEntryForm"
 import {
+  type ChronicEntry,
+  chronicTitle,
   type HistoryEntry,
   type HistorySection as Section,
   sectionStatus,
   whenSummary,
 } from "./history"
-import { getHistoryQueryOptions, getProfileQueryOptions } from "./queries"
+import {
+  getDiagnosesQueryOptions,
+  getHistoryQueryOptions,
+  getProfileQueryOptions,
+} from "./queries"
 
 /** Bold first line of an entry in the list (prototype `tituloReg`). */
 function entryTitle(entry: HistoryEntry, t: TFunction): string {
   switch (entry.section) {
+    case "chronic":
+      return chronicTitle(entry, t)
     case "past":
       if (entry.condition === "other" && entry.other_text) {
         return entry.other_text
@@ -47,12 +56,38 @@ function entryTitle(entry: HistoryEntry, t: TFunction): string {
   }
 }
 
+/**
+ * "desde los 31 años (≈2021) · activa · Levotiroxina 50 mcg en ayunas" ·
+ * "desde la primaria (≈1996–2001) · hasta los 16 años (≈2006)".
+ */
+function chronicSummary(
+  entry: ChronicEntry,
+  birthDate: string | null,
+  t: TFunction,
+): string {
+  const parts: string[] = []
+  if (entry.since) {
+    parts.push(whenSummary(entry.since, birthDate, t, "since"))
+  }
+  if (entry.status === "resolved" && entry.until) {
+    parts.push(whenSummary(entry.until, birthDate, t, "until"))
+  }
+  if (entry.status === "active") {
+    parts.push(t("profile:history.summary.active"))
+  } else if (entry.status === "resolved" && !entry.until) {
+    parts.push(t("profile:history.summary.resolved"))
+  }
+  if (entry.treatment) parts.push(entry.treatment)
+  return parts.join(" · ")
+}
+
 /** "izquierdo · a los 10 años · requirió cirugía · implante: …" (prototype `resumen`). */
 function entrySummary(
   entry: HistoryEntry,
   birthDate: string | null,
   t: TFunction,
 ): string {
+  if (entry.section === "chronic") return chronicSummary(entry, birthDate, t)
   const parts: string[] = []
   const s = (key: string, options?: Record<string, unknown>) =>
     t(`profile:history.summary.${key}`, options)
@@ -120,9 +155,16 @@ function HistorySection({ section }: { section: Section }) {
   const [mode, setMode] = useState<Mode>({ kind: "list" })
   const [confirmingId, setConfirmingId] = useState<string | null>(null)
 
+  // The "Respaldo" line names the diagnosis a chronic entry points to.
+  const { data: diagnoses } = useQuery({
+    ...getDiagnosesQueryOptions(),
+    enabled: section === "chronic",
+  })
+
   const entries = history.data.filter((entry) => entry.section === section)
   const none = profile.sections_none.includes(section)
-  const noneKey = section === "transfusions" ? "transfusions" : "default"
+  const noneKey =
+    section === "transfusions" || section === "chronic" ? section : "default"
 
   // Where the focus goes once the next render has painted its target (it may
   // not exist yet: the list after the form, "Sí, eliminar" after "Eliminar").
@@ -213,19 +255,55 @@ function HistorySection({ section }: { section: Section }) {
             {entries.length > 0 ? (
               entries.map((entry) => {
                 const title = entryTitle(entry, t)
+                const summary = entrySummary(entry, profile.birth_date, t)
+                const backing =
+                  entry.section === "chronic" && entry.diagnosis_id
+                    ? diagnoses?.find((d) => d.id === entry.diagnosis_id)
+                    : undefined
                 return (
                   <div
                     key={entry.id}
                     data-testid="history-entry"
                     className="flex flex-col gap-2 border-b pb-3 last:border-b-0 last:pb-0 sm:flex-row sm:items-start sm:justify-between"
                   >
-                    <div className="min-w-0">
-                      <p className="font-medium wrap-break-word">{title}</p>
-                      <p className="text-sm text-muted-foreground wrap-break-word">
-                        {entrySummary(entry, profile.birth_date, t) ||
-                          t("history.noMoreData")}
-                      </p>
-                    </div>
+                    {entry.section === "chronic" ? (
+                      // One line "Hipotiroidismo · desde … · activa · …"
+                      // (the chronic summary reads as a sentence).
+                      <div className="flex min-w-0 flex-col gap-1">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <p className="wrap-break-word">
+                            <span className="font-medium">{title}</span>
+                            {summary && (
+                              <span className="text-sm text-muted-foreground">
+                                {` · ${summary}`}
+                              </span>
+                            )}
+                          </p>
+                          {entry.sensitive && (
+                            <Badge
+                              variant="outline"
+                              data-testid="sensitive-badge"
+                            >
+                              {t("history.summary.sensitive")}
+                            </Badge>
+                          )}
+                        </div>
+                        {backing && (
+                          <p className="text-sm text-muted-foreground wrap-break-word">
+                            {t("history.summary.backing", {
+                              title: backing.title,
+                            })}
+                          </p>
+                        )}
+                      </div>
+                    ) : (
+                      <div className="min-w-0">
+                        <p className="font-medium wrap-break-word">{title}</p>
+                        <p className="text-sm text-muted-foreground wrap-break-word">
+                          {summary || t("history.noMoreData")}
+                        </p>
+                      </div>
+                    )}
                     {confirmingId === entry.id ? (
                       <div
                         ref={confirmRef}

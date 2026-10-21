@@ -66,7 +66,9 @@ contenido clínico (medicinas, médico, diagnóstico, notas) SHALL almacenarse c
 
 El sistema SHALL devolver a cada paciente únicamente sus propios registros, SHALL permitirle corregirlos —
 incluyendo agregar, editar o quitar medicinas de una receta (dejando siempre al menos una) — y eliminarlos, y
-SHALL responder de forma indistinguible ante un registro inexistente y uno ajeno.
+SHALL responder de forma indistinguible ante un registro inexistente y uno ajeno. Antes de eliminar un diagnóstico
+que respalda enfermedades crónicas del perfil, la confirmación SHALL nombrarlas; al eliminarlo, esas crónicas SHALL
+conservarse y solo perder el enlace.
 
 #### Scenario: Un registro ajeno no existe para mí
 
@@ -96,6 +98,14 @@ SHALL responder de forma indistinguible ante un registro inexistente y uno ajeno
 - **WHEN** elimina la receta
 - **THEN** la receta ya no aparece en la lista ni por id (404) y sus medicinas y adjuntos no sobreviven en la
   base de datos
+
+#### Scenario: Eliminar un diagnóstico que respalda crónicas avisa y conserva las crónicas (B-5)
+
+- **GIVEN** la paciente A con el diagnóstico "Hipotiroidismo subclínico", que respalda su crónica "Hipotiroidismo"
+- **WHEN** abre "Eliminar registro" sobre ese diagnóstico
+- **THEN** la confirmación dice que respalda su crónica "Hipotiroidismo" y que la crónica se queda sin respaldo; al
+  confirmar, el diagnóstico desaparece, la crónica "Hipotiroidismo" sigue en su perfil sin "Respaldo", y el id del
+  diagnóstico ya no está guardado en la crónica
 
 ### Requirement: Un registro admite documentos adjuntos (imagen o PDF)
 El sistema SHALL permitir adjuntar a un registro propio documentos de tipo imagen (JPEG/PNG) o PDF dentro del

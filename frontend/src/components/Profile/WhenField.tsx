@@ -20,6 +20,7 @@ import {
  * approximate year computed on screen (Decision 4: nothing derived is stored).
  * `error` (local or the server's impossible age/year) shows under the box,
  * which carries aria-invalid + aria-describedby so the form can focus it.
+ * `legend` names the group ("¿Desde cuándo?" / "¿Hasta cuándo?" in chronic).
  */
 function WhenField({
   idPrefix,
@@ -27,12 +28,14 @@ function WhenField({
   onChange,
   birthDate,
   error,
+  legend,
 }: {
   idPrefix: string
   value: WhenDraft
   onChange: (next: WhenDraft) => void
   birthDate: string | null | undefined
   error?: string
+  legend?: string
 }) {
   const { t } = useTranslation("profile")
   const inputId = `${idPrefix}-when-input`
@@ -59,7 +62,7 @@ function WhenField({
   return (
     <fieldset className="m-0 grid min-w-0 gap-2 border-0 p-0">
       <legend className="mb-2 text-sm font-medium">
-        {t("history.when.legend")}
+        {legend ?? t("history.when.legend")}
       </legend>
       <div className="grid gap-1.5">
         <Label htmlFor={inputId}>

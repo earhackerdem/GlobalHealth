@@ -96,6 +96,10 @@
     "menuItem": "Eliminar registro",
     "dialogTitle": "Eliminar registro",
     "dialogDescription": "¿Seguro que quieres eliminar este registro? Se eliminarán también sus adjuntos.",
+    "backsChronic_one": "Respalda tu crónica {{names}}. La crónica se queda, sin respaldo.",
+    "backsChronic_many": "Respalda tus crónicas {{names}}. Las crónicas se quedan, sin respaldo.",
+    "backsChronic_other": "Respalda tus crónicas {{names}}. Las crónicas se quedan, sin respaldo.",
+    "backsChronicUnknown": "No pudimos revisar si respalda alguna de tus crónicas. Si la respalda, se quedará sin respaldo.",
     "confirmButton": "Eliminar",
     "successToast": "Registro eliminado."
   },

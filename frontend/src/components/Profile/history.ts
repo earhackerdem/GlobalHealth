@@ -1,13 +1,19 @@
 import type { TFunction } from "i18next"
 
 import type {
+  ChronicHistoryEntry,
   HistoryEntriesPublic,
   PatientProfilePublic,
   WhenStage,
 } from "@/client"
+import { mexicoCityTodayIso } from "./format"
 
-/** The four event sections of US-18 Story A (keys as in perfil.tsx). */
+/**
+ * The sections with their own screen (keys as in perfil.tsx): chronic (US-18
+ * Story B) and the four event sections of Story A.
+ */
 export const HISTORY_SECTIONS = [
+  "chronic",
   "past",
   "surgeries",
   "fractures",
@@ -16,7 +22,7 @@ export const HISTORY_SECTIONS = [
 
 export type HistorySection = (typeof HISTORY_SECTIONS)[number]
 
-/** Every card on "Mi perfil médico", in display order (B and C still read-only). */
+/** Every card on "Mi perfil médico", in display order (habits still read-only). */
 export const HISTORY_CARD_KEYS = [
   "chronic",
   "past",
@@ -30,6 +36,7 @@ export type HistoryCardKey = (typeof HISTORY_CARD_KEYS)[number]
 
 /** es-MX URL segment of each section: /perfil/<slug>. */
 export const SECTION_SLUGS: Record<HistorySection, string> = {
+  chronic: "cronicas",
   past: "pasadas",
   surgeries: "cirugias",
   fractures: "fracturas",
@@ -46,8 +53,50 @@ export function isHistorySection(key: string): key is HistorySection {
 }
 
 export type HistoryEntry = HistoryEntriesPublic["data"][number]
-export type When = NonNullable<HistoryEntry["when"]>
+export type ChronicEntry = Extract<HistoryEntry, { section: "chronic" }>
+/** One "cuándo" answer; the same union as Story A's `when` and B's since/until. */
+export type When = NonNullable<ChronicHistoryEntry["since"]>
 export type Stage = WhenStage["value"]
+
+/**
+ * Chronic conditions catalog (Story B), in display order; the sensitive ones
+ * go under their own subtitle "Salud mental y adicciones", then "Otra".
+ */
+export const CHRONIC_CONDITIONS = [
+  "type2_diabetes",
+  "hypertension",
+  "asthma",
+  "hypothyroidism",
+  "high_cholesterol",
+  "copd",
+  "arthritis",
+  "epilepsy",
+] as const satisfies readonly NonNullable<ChronicEntry["condition"]>[]
+
+export const CHRONIC_SENSITIVE_CONDITIONS = [
+  "depression",
+  "anxiety",
+  "bipolar_disorder",
+  "substance_use",
+] as const satisfies readonly NonNullable<ChronicEntry["condition"]>[]
+
+/**
+ * "Sensible" checked by default for the mental health and addictions
+ * conditions (Decision 2, same set as the API's CHRONIC_SENSITIVE_BY_DEFAULT).
+ */
+export function sensitiveByDefault(condition: string | null | undefined) {
+  return (CHRONIC_SENSITIVE_CONDITIONS as readonly string[]).includes(
+    condition ?? "",
+  )
+}
+
+/** A chronic entry's name: the catalog label, or the patient's own text for "Otra". */
+export function chronicTitle(entry: ChronicEntry, t: TFunction): string {
+  if (entry.condition === "other" && entry.other_text) return entry.other_text
+  return entry.condition
+    ? t(`profile:history.options.chronicCondition.${entry.condition}`)
+    : ""
+}
 
 export const STAGES: readonly Stage[] = [
   "before_primary",
@@ -58,9 +107,10 @@ export const STAGES: readonly Stage[] = [
 
 /**
  * Typical ages per school stage in Mexico, [first, last] inclusive.
- * [ASSUMPTION] of the domain (design.md, Decision 4): they only estimate the
- * approximate year on screen, so correcting them never touches stored data.
- * The ONE place these ranges live.
+ * [ASSUMPTION] of the domain (design.md, Decision 4). Here they estimate the
+ * approximate year on screen; the same ranges live in the backend
+ * (backend/app/models.py STAGE_AGE_RANGES), where they decide the chronic 422
+ * "hasta antes de desde": change both together. Stored data never changes.
  */
 export const STAGE_AGE_RANGES: Record<Stage, readonly [number, number]> = {
   before_primary: [0, 5],
@@ -110,26 +160,85 @@ export function approxYears(
   return null
 }
 
+/** The API's limits for a "cuándo" (backend/app/models.py HISTORY_MAX_AGE, HISTORY_MIN_YEAR). */
+const MAX_AGE = 130
+const MIN_YEAR = 1900
+
+/** Age on `today` from ISO "aaaa-mm-dd" dates (no `new Date(iso)`). */
+function ageToday(birthDate: string, today: string): number | null {
+  const [year, month, day] = birthDate.split("-").map(Number)
+  const [todayYear, todayMonth, todayDay] = today.split("-").map(Number)
+  if (![year, month, day].every(Number.isFinite)) return null
+  const beforeBirthday =
+    todayMonth < month || (todayMonth === month && todayDay < day)
+  return todayYear - year - (beforeBirthday ? 1 : 0)
+}
+
+/**
+ * The es-MX message of an impossible age or year, or null: the same checks
+ * and texts as the API's validate_when (backend/app/models.py), run before
+ * submit so the error shows next to its own "cuándo" even when two are sent
+ * (review R5). "Today" is Mexico City's, like the API's, so a device in
+ * another timezone near midnight agrees with the server. The server still
+ * decides anything this misses.
+ */
+export function impossibleWhen(
+  when: When,
+  birthDate: string | null | undefined,
+  t: TFunction,
+  today: string = mexicoCityTodayIso(),
+): string | null {
+  if (when.kind === "age") {
+    const current = birthDate ? ageToday(birthDate, today) : null
+    if (current !== null && when.value > current)
+      return t("profile:history.when.ageOverCurrent")
+    if (when.value > MAX_AGE)
+      return t("profile:history.when.ageOutOfRange", { max: MAX_AGE })
+  } else if (when.kind === "year") {
+    const birthYear = birthYearOf(birthDate)
+    if (birthYear !== null && when.value < birthYear)
+      return t("profile:history.when.yearBeforeBirth")
+    if (when.value < MIN_YEAR)
+      return t("profile:history.when.yearTooOld", { min: MIN_YEAR })
+    if (when.value > Number(today.slice(0, 4)))
+      return t("profile:history.when.yearFuture")
+  }
+  return null
+}
+
 /** "1997" or "1996–2001" (en dash). */
 export function formatYearRange([from, to]: readonly [number, number]): string {
   return from === to ? `${from}` : `${from}–${to}`
 }
 
-/** "a los 7 años (≈1997)" · "en la primaria (≈1996–2001)" · "en 2015" · "no recuerda cuándo". */
+/** i18n key family per wording: "a los…" (when), "desde los…" (since), "hasta los…" (until). */
+const WHEN_SUMMARY_KEYS = {
+  when: "profile:history.when.summary",
+  since: "profile:history.when.summarySince",
+  until: "profile:history.when.summaryUntil",
+} as const
+
+/**
+ * "a los 7 años (≈1997)" · "en la primaria (≈1996–2001)" · "en 2015" · "no
+ * recuerda cuándo"; with `wording` "since" / "until" the chronic forms "desde
+ * los 31 años (≈2021)" · "hasta la primaria (≈…)" · "desde 2015".
+ */
 export function whenSummary(
   when: When,
   birthDate: string | null | undefined,
   t: TFunction,
+  wording: keyof typeof WHEN_SUMMARY_KEYS = "when",
 ): string {
+  const base = WHEN_SUMMARY_KEYS[wording]
   let text: string
   if (when.kind === "age") {
-    text = t("profile:history.when.summary.age", { value: when.value })
+    text = t(`${base}.age`, { value: when.value })
   } else if (when.kind === "stage") {
-    text = t(`profile:history.when.summary.stages.${when.value}`)
+    text = t(`${base}.stages.${when.value}`)
   } else if (when.kind === "year") {
-    return t("profile:history.when.summary.year", { value: when.value })
+    return t(`${base}.year`, { value: when.value })
   } else {
-    return t("profile:history.when.summary.unknown")
+    return t(`${base}.unknown`)
   }
   const range = approxYears(when, birthDate)
   return range

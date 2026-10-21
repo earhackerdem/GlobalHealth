@@ -1,25 +1,38 @@
-import { useMutation, useQueryClient } from "@tanstack/react-query"
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { AxiosError } from "axios"
 import { type FormEvent, useEffect, useId, useRef, useState } from "react"
 import { useTranslation } from "react-i18next"
 
 import { ProfileService, type profileCreateHistoryEntryData } from "@/client"
 import { Button } from "@/components/ui/button"
+import { Checkbox } from "@/components/ui/checkbox"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { LoadingButton } from "@/components/ui/loading-button"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
 import useCustomToast from "@/hooks/useCustomToast"
 import { handleError } from "@/utils"
 import ChipGroup from "./ChipGroup"
 import {
+  CHRONIC_CONDITIONS,
+  CHRONIC_SENSITIVE_CONDITIONS,
   draftToWhen,
-  EMPTY_WHEN,
   type HistoryEntry,
   type HistorySection,
+  impossibleWhen,
+  sensitiveByDefault,
+  type When,
   type WhenDraft,
   whenToDraft,
 } from "./history"
+import { getDiagnosesQueryOptions } from "./queries"
 import WhenField from "./WhenField"
 
 type EntryBody = profileCreateHistoryEntryData["body"]
@@ -27,19 +40,48 @@ type EntryBody = profileCreateHistoryEntryData["body"]
 const NAME_MAX = 200
 const TEXT_MAX = 2000
 
+/** The "cuándo" answers: Story A's `when`, chronic's `since` / `until`. */
+type WhenKey = "when" | "since" | "until"
+const WHEN_KEYS: readonly WhenKey[] = ["when", "since", "until"]
+
+/** Radix Select needs a non-empty value for "Ninguno". */
+const NO_DIAGNOSIS = "none"
+
 /**
  * Field layout per section (contract "Contenido por sección", labels from the
  * spec). `text` = a textbox; `choice` = single-choice chips; `yesNo` = Sí /
  * No / No sé chips, optionally with a detail box shown on "Sí"; `when` = the
- * WhenField.
+ * WhenField (`legend` names it when it is not "¿Cuándo?"). Chronic only:
+ * `chronicCondition` = the "¿Cuál?" chips, with the sensitive subgroup;
+ * `sensitive` = the "Sensible"
+ * checkbox; `diagnosis` = the select of the patient's diagnoses.
  */
 type FieldDef =
   | { kind: "text"; key: string; label: string; required?: boolean }
   | { kind: "choice"; key: string; label: string; options: readonly string[] }
   | { kind: "yesNo"; key: string; label: string; detailKey?: string }
-  | { kind: "when" }
+  | { kind: "when"; key: WhenKey; legend?: string }
+  | { kind: "chronicCondition" }
+  | { kind: "sensitive" }
+  | { kind: "diagnosis" }
 
 const FIELDS: Record<HistorySection, readonly FieldDef[]> = {
+  chronic: [
+    { kind: "chronicCondition" },
+    { kind: "sensitive" },
+    {
+      kind: "choice",
+      key: "status",
+      label: "status",
+      options: ["active", "resolved"],
+    },
+    { kind: "when", key: "since", legend: "legendSince" },
+    // Only with "Ya no la tengo" (whenKeys); never sent while active.
+    { kind: "when", key: "until", legend: "legendUntil" },
+    { kind: "text", key: "treatment", label: "treatment" },
+    { kind: "text", key: "note", label: "note" },
+    { kind: "diagnosis" },
+  ],
   past: [
     {
       kind: "choice",
@@ -59,7 +101,7 @@ const FIELDS: Record<HistorySection, readonly FieldDef[]> = {
         "other",
       ],
     },
-    { kind: "when" },
+    { kind: "when", key: "when" },
     { kind: "yesNo", key: "hospitalized", label: "hospitalized" },
     { kind: "text", key: "sequelae", label: "sequelae" },
     { kind: "text", key: "note", label: "note" },
@@ -72,7 +114,7 @@ const FIELDS: Record<HistorySection, readonly FieldDef[]> = {
       options: ["surgery", "hospitalization"],
     },
     { kind: "text", key: "name", label: "name", required: true },
-    { kind: "when" },
+    { kind: "when", key: "when" },
     { kind: "text", key: "reason", label: "reason" },
     { kind: "text", key: "place", label: "place" },
     { kind: "text", key: "physician", label: "physician" },
@@ -93,13 +135,13 @@ const FIELDS: Record<HistorySection, readonly FieldDef[]> = {
       label: "side",
       options: ["left", "right", "both", "not_applicable"],
     },
-    { kind: "when" },
+    { kind: "when", key: "when" },
     { kind: "yesNo", key: "required_surgery", label: "requiredSurgery" },
     { kind: "text", key: "implant", label: "implant" },
     { kind: "text", key: "sequelae", label: "sequelae" },
   ],
   transfusions: [
-    { kind: "when" },
+    { kind: "when", key: "when" },
     { kind: "text", key: "reason", label: "reason" },
     {
       kind: "choice",
@@ -119,9 +161,21 @@ const FIELDS: Record<HistorySection, readonly FieldDef[]> = {
 
 /** The field that carries each section's required-data message. */
 const REQUIRED_KEY: Partial<Record<HistorySection, string>> = {
+  chronic: "condition",
   past: "condition",
   surgeries: "name",
   fractures: "what",
+}
+
+/**
+ * The API's chronic 422 messages and the field each belongs to
+ * (backend/app/models.py HISTORY_REQUIRED and _validate_chronic_dates,
+ * api/routes/profile.py _check_diagnosis_link).
+ */
+const SERVER_MESSAGE_FIELD: Record<string, string> = {
+  "Elige la condición o escribe cuál es": "condition",
+  "No puede ser antes de «desde cuándo»": "until",
+  "Ese diagnóstico no está en tu expediente": "diagnosis_id",
 }
 
 const SHORT_TEXT_KEYS = new Set(["name", "what", "other_text"])
@@ -139,11 +193,40 @@ function valuesFrom(entry: HistoryEntry | null): Values {
   return values
 }
 
+/** The stored answer of one "cuándo" (chronic has since/until, not when). */
+function whenOf(entry: HistoryEntry | null, key: WhenKey): When | null {
+  if (!entry) return null
+  if (entry.section === "chronic") {
+    return key === "when" ? null : (entry[key] ?? null)
+  }
+  return key === "when" ? (entry.when ?? null) : null
+}
+
+/** The WhenFields on screen: "¿Hasta cuándo?" only with "Ya no la tengo". */
+function whenKeys(section: HistorySection, values: Values): WhenKey[] {
+  const keys: WhenKey[] = []
+  for (const field of FIELDS[section]) {
+    if (field.kind !== "when") continue
+    if (field.key === "until" && values.status !== "resolved") continue
+    keys.push(field.key)
+  }
+  return keys
+}
+
 /** Which keys the current values actually send (a detail only after "Sí"). */
 function activeKeys(section: HistorySection, values: Values): string[] {
   const keys: string[] = []
   for (const field of FIELDS[section]) {
-    if (field.kind === "when") continue
+    if (field.kind === "when" || field.kind === "sensitive") continue
+    if (field.kind === "diagnosis") {
+      keys.push("diagnosis_id")
+      continue
+    }
+    if (field.kind === "chronicCondition") {
+      keys.push("condition")
+      if (values.condition === "other") keys.push("other_text")
+      continue
+    }
     keys.push(field.key)
     if (
       field.kind === "yesNo" &&
@@ -173,14 +256,39 @@ function serverMessage(
 }
 
 /**
+ * The field a server error belongs to: a known chronic message goes to its
+ * field; any other 422 with exactly one "cuándo" sent is that answer's
+ * impossible age or year; otherwise (two "cuándo" sent, other statuses) the
+ * message stays under the form.
+ */
+function serverErrorKey(
+  status: number | undefined,
+  detail: string,
+  body: Record<string, unknown>,
+): string {
+  if (status !== 422) return "_form"
+  const known = SERVER_MESSAGE_FIELD[detail]
+  if (known) return known
+  const sent = WHEN_KEYS.filter((key) => body[key])
+  return sent.length === 1 ? sent[0] : "_form"
+}
+
+/**
  * Add / edit form of one history entry, on the section's own screen (Decision
  * 5). Validates what the API would reject anyway (nothing filled in, the
- * section's required datum, a non-numeric "cuándo") so the es-MX message
- * shows inline next to its field; anything else the server says is shown
- * inline too: a 422 with a "cuándo" sent is the impossible age or year (the
- * only server check the form does not repeat), so it goes next to "¿Cuándo?".
- * A failed validation moves the focus to the invalid field, whose
- * aria-describedby reads the message. `onDone` fires after a save or a cancel.
+ * section's required datum, a non-numeric "cuándo", an impossible age or year
+ * via impossibleWhen) so the es-MX message shows inline next to its field,
+ * the first invalid one in document order; anything else the server says is
+ * shown inline too (serverErrorKey): a 422 with exactly one "cuándo" sent goes
+ * next to its "¿Cuándo?" (e.g. what impossibleWhen missed); chronic's "hasta
+ * antes de desde" and foreign diagnosis go next to "¿Hasta cuándo?" and the
+ * diagnosis select. A failed validation moves the focus to the invalid field,
+ * whose aria-describedby reads the message. `onDone` fires after a save or a
+ * cancel.
+ *
+ * Chronic (Story B): "Sensible" follows the condition's default
+ * (sensitiveByDefault) until the patient touches it, and is always sent
+ * explicitly; `until` is only sent with "Ya no la tengo".
  */
 function HistoryEntryForm({
   section,
@@ -203,9 +311,21 @@ function HistoryEntryForm({
   const formRef = useRef<HTMLFormElement>(null)
 
   const [values, setValues] = useState<Values>(() => valuesFrom(entry))
-  const [when, setWhen] = useState<WhenDraft>(() =>
-    entry ? whenToDraft(entry.when) : EMPTY_WHEN,
+  const [whens, setWhens] = useState<Record<WhenKey, WhenDraft>>(() => ({
+    when: whenToDraft(whenOf(entry, "when")),
+    since: whenToDraft(whenOf(entry, "since")),
+    until: whenToDraft(whenOf(entry, "until")),
+  }))
+  // null = untouched: "Sensible" follows the condition's default. A stored
+  // entry always carries an explicit value (the API sets it).
+  const [sensitiveChoice, setSensitiveChoice] = useState<boolean | null>(() =>
+    entry?.section === "chronic" ? (entry.sensitive ?? null) : null,
   )
+  const sensitive = sensitiveChoice ?? sensitiveByDefault(values.condition)
+  const { data: diagnoses } = useQuery({
+    ...getDiagnosesQueryOptions(),
+    enabled: section === "chronic",
+  })
   const [errors, setErrors] = useState<Record<string, string>>({})
   // Bumped on every failed validation so the focus moves even when the
   // same error repeats.
@@ -218,7 +338,7 @@ function HistoryEntryForm({
   useEffect(() => {
     if (!failedAttempt) return
     // First invalid field in document order: a box (aria-invalid) or the
-    // first chip of an invalid chip group (a fieldset is not focusable).
+    // first chip of an invalid group (a fieldset is not focusable).
     formRef.current
       ?.querySelector<HTMLElement>(
         '[aria-invalid="true"], fieldset[data-invalid] button',
@@ -251,11 +371,12 @@ function HistoryEntryForm({
     onError: (err, body) => {
       const message = serverMessage(err)
       if (message) {
-        fail(
-          message.status === 422 && body.when
-            ? { when: message.detail }
-            : { _form: message.detail },
+        const key = serverErrorKey(
+          message.status,
+          message.detail,
+          body as Record<string, unknown>,
         )
+        fail({ [key]: message.detail })
       } else {
         handleError.call(showErrorToast, err as Error)
       }
@@ -272,14 +393,22 @@ function HistoryEntryForm({
       const value = (values[key] ?? "").trim()
       if (value) body[key] = value
     }
-    const parsedWhen = draftToWhen(when)
-    if (parsedWhen === "invalid") {
-      fail({ when: t("history.when.onlyNumber") })
-      return
+    // A "cuándo" error is reported only after the checks of the fields above
+    // it (the required datum, "¿Cuál fue?"), so the message and the focus go
+    // to the first invalid field in document order (review R5).
+    let whenError: Record<string, string> | null = null
+    for (const key of whenKeys(section, values)) {
+      const parsed = draftToWhen(whens[key])
+      if (parsed === "invalid") {
+        whenError ??= { [key]: t("history.when.onlyNumber") }
+        continue
+      }
+      const impossible = parsed && impossibleWhen(parsed, birthDate, t)
+      if (impossible) whenError ??= { [key]: impossible }
+      if (parsed) body[key] = parsed
     }
-    if (parsedWhen) body.when = parsedWhen
 
-    if (Object.keys(body).length === 0) {
+    if (Object.keys(body).length === 0 && !whenError) {
       fail({ _form: t("history.validation.empty") })
       return
     }
@@ -288,11 +417,21 @@ function HistoryEntryForm({
       fail({ [requiredKey]: t(`history.validation.${section}`) })
       return
     }
-    // "Otra" chosen but "¿Cuál fue?" empty: the error belongs to that box.
-    if (section === "past" && body.condition === "other" && !body.other_text) {
-      fail({ other_text: t("history.validation.past") })
+    // "Otra" chosen but "¿Cuál fue?" / "¿Cuál es?" empty: the error belongs
+    // to that box.
+    if (
+      (section === "past" || section === "chronic") &&
+      body.condition === "other" &&
+      !body.other_text
+    ) {
+      fail({ other_text: t(`history.validation.${section}`) })
       return
     }
+    if (whenError) {
+      fail(whenError)
+      return
+    }
+    if (section === "chronic") body.sensitive = sensitive
     setErrors({})
     mutation.mutate({ section, ...body } as EntryBody)
   }
@@ -342,6 +481,106 @@ function HistoryEntryForm({
     )
   }
 
+  const visibleWhens = whenKeys(section, values)
+
+  /** "¿Cuál?": one chip per condition, the sensitive ones under their subtitle. */
+  const conditionChips = () => {
+    const label = t("history.fields.chronicCondition")
+    const invalid = !!errors.condition
+    const option = (condition: string) => ({
+      value: condition,
+      label: t(`history.options.chronicCondition.${condition}`),
+    })
+    return (
+      <div key="condition" className="grid gap-2">
+        <span className="text-sm font-medium" aria-hidden="true">
+          {label} <span className="text-destructive">*</span>
+        </span>
+        {/* Nothing chosen: the error sits under the label, where the focus lands,
+            not 13 options below (off-screen on a phone). With "Otra", under its text. */}
+        {values.condition !== "other" && fieldError("condition")}
+        <ChipGroup
+          label={label}
+          showLabel={false}
+          options={[
+            ...CHRONIC_CONDITIONS.map(option),
+            {
+              label: t("history.fields.mentalHealth"),
+              options: CHRONIC_SENSITIVE_CONDITIONS.map(option),
+            },
+            option("other"),
+          ]}
+          value={values.condition || null}
+          onChange={(next) => set("condition", next)}
+          invalid={invalid}
+          describedBy={invalid ? errorId("condition") : undefined}
+        />
+        {values.condition === "other" &&
+          textField("other_text", t("history.fields.chronicOtherText"))}
+        {values.condition === "other" && fieldError("condition")}
+      </div>
+    )
+  }
+
+  const sensitiveField = () => {
+    const id = `${idPrefix}-sensitive`
+    const hintId = `${id}-hint`
+    return (
+      <div key="sensitive" className="flex items-start gap-2">
+        <Checkbox
+          id={id}
+          checked={sensitive}
+          onCheckedChange={(checked) => setSensitiveChoice(checked === true)}
+          aria-describedby={hintId}
+          className="mt-0.5"
+        />
+        <div className="grid gap-1">
+          <Label htmlFor={id}>{t("history.fields.sensitive")}</Label>
+          <p id={hintId} className="text-sm text-muted-foreground">
+            {t("history.fields.sensitiveHint")}
+          </p>
+        </div>
+      </div>
+    )
+  }
+
+  /** "Ninguno" + only the patient's diagnoses (prescriptions never back one). */
+  const diagnosisField = () => {
+    const id = `${idPrefix}-diagnosis`
+    const invalid = !!errors.diagnosis_id
+    return (
+      <div key="diagnosis" className="grid gap-1.5">
+        <Label htmlFor={id}>{t("history.fields.diagnosis")}</Label>
+        <Select
+          value={values.diagnosis_id || NO_DIAGNOSIS}
+          onValueChange={(next) =>
+            set("diagnosis_id", next === NO_DIAGNOSIS ? "" : next)
+          }
+        >
+          <SelectTrigger
+            id={id}
+            className="w-full"
+            aria-invalid={invalid || undefined}
+            aria-describedby={invalid ? errorId("diagnosis_id") : undefined}
+          >
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value={NO_DIAGNOSIS}>
+              {t("history.fields.diagnosisNone")}
+            </SelectItem>
+            {diagnoses?.map((diagnosis) => (
+              <SelectItem key={diagnosis.id} value={diagnosis.id}>
+                {diagnosis.title}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        {fieldError("diagnosis_id")}
+      </div>
+    )
+  }
+
   return (
     <form
       ref={formRef}
@@ -368,17 +607,28 @@ function HistoryEntryForm({
 
       {FIELDS[section].map((field) => {
         if (field.kind === "when") {
+          if (!visibleWhens.includes(field.key)) return null
           return (
             <WhenField
-              key="when"
-              idPrefix={idPrefix}
-              value={when}
-              onChange={setWhen}
+              key={field.key}
+              idPrefix={
+                field.key === "when" ? idPrefix : `${idPrefix}-${field.key}`
+              }
+              value={whens[field.key]}
+              onChange={(next) =>
+                setWhens((prev) => ({ ...prev, [field.key]: next }))
+              }
               birthDate={birthDate}
-              error={errors.when}
+              error={errors[field.key]}
+              legend={
+                field.legend ? t(`history.when.${field.legend}`) : undefined
+              }
             />
           )
         }
+        if (field.kind === "chronicCondition") return conditionChips()
+        if (field.kind === "sensitive") return sensitiveField()
+        if (field.kind === "diagnosis") return diagnosisField()
         const label = t(`history.fields.${field.label}`)
         if (field.kind === "text") {
           return textField(field.key, label, field.required)
