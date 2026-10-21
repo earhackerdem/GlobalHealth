@@ -857,6 +857,7 @@ class _ClosedSchema(SQLModel):
 
 class AlcoholHabit(_ClosedSchema):
     status: Literal["never", "quit", "current"]
+    start_age: HabitAge | None = None
     quit_age: HabitAge | None = None
     frequency: (
         Literal[
@@ -893,17 +894,44 @@ class SecondhandSmoke(_ClosedSchema):
     days_per_week: int | None = Field(default=None, ge=1, le=7)
 
 
+# perfil-habitos-ajustes Decision 2: its own object, not a TobaccoHabit (it has
+# days of the last 30, not cigarettes per day).
+class VapingHabit(_ClosedSchema):
+    status: HabitStatus
+    frequency: Literal["daily", "some_days"] | None = None
+    days_last_30: int | None = Field(default=None, ge=1, le=30)
+    start_age: HabitAge | None = None
+    quit_age: HabitAge | None = None
+
+
 class WoodSmokeHabit(_ClosedSchema):
     status: HabitStatus
-    years: HabitAge | None = None
+    start_age: HabitAge | None = None
+    quit_age: HabitAge | None = None
+    hours_per_day: int | None = Field(default=None, ge=1, le=24)
 
 
 class Habits(_ClosedSchema):
     alcohol: AlcoholHabit | None = None
     tobacco: TobaccoHabit | None = None
-    vaping: HabitStatus | None = None
+    vaping: VapingHabit | None = None
     secondhand_smoke: SecondhandSmoke | None = None
     wood_smoke: WoodSmokeHabit | None = None
+
+
+def upgrade_stored_habits(raw: dict[str, Any]) -> dict[str, Any]:
+    """The decrypted JSON stored before perfil-habitos-ajustes, in the current
+    shape (Decision 1: converted on read, no migration). Only for stored rows:
+    the PUT body stays closed. Vaping as text becomes {"status": text}; the
+    wood smoke `years` is dropped (Decision 3: it cannot become an age). Pure:
+    `raw` is not modified."""
+    upgraded = dict(raw)
+    if isinstance(upgraded.get("vaping"), str):
+        upgraded["vaping"] = {"status": upgraded["vaping"]}
+    wood = upgraded.get("wood_smoke")
+    if isinstance(wood, dict) and "years" in wood:
+        upgraded["wood_smoke"] = {k: v for k, v in wood.items() if k != "years"}
+    return upgraded
 
 
 def _normalize_alcohol(alcohol: AlcoholHabit) -> AlcoholHabit:
@@ -912,6 +940,8 @@ def _normalize_alcohol(alcohol: AlcoholHabit) -> AlcoholHabit:
         updates.update(
             frequency=None, typical_drinks=None, six_or_more=None, mostly_weekends=None
         )
+    if alcohol.status == "never":
+        updates["start_age"] = None
     if alcohol.status != "quit":
         updates["quit_age"] = None
     return alcohol.model_copy(update=updates)
@@ -933,10 +963,26 @@ def _normalize_secondhand(smoke: SecondhandSmoke) -> SecondhandSmoke:
     return smoke.model_copy(update={"places": places})
 
 
+def _normalize_vaping(vaping: VapingHabit) -> VapingHabit:
+    updates: dict[str, Any] = {}
+    if vaping.status == "never":
+        updates["start_age"] = None
+    if vaping.status != "current":
+        updates.update(frequency=None, days_last_30=None)
+    elif vaping.frequency != "some_days":
+        updates["days_last_30"] = None
+    if vaping.status != "former":
+        updates["quit_age"] = None
+    return vaping.model_copy(update=updates)
+
+
 def _normalize_wood(wood: WoodSmokeHabit) -> WoodSmokeHabit:
+    updates: dict[str, Any] = {}
     if wood.status == "never":
-        return wood.model_copy(update={"years": None})
-    return wood
+        updates.update(start_age=None, hours_per_day=None)
+    if wood.status != "former":
+        updates["quit_age"] = None
+    return wood.model_copy(update=updates)
 
 
 def normalize_habits(habits: Habits) -> Habits:
@@ -948,6 +994,8 @@ def normalize_habits(habits: Habits) -> Habits:
         updates["alcohol"] = _normalize_alcohol(habits.alcohol)
     if habits.tobacco is not None:
         updates["tobacco"] = _normalize_tobacco(habits.tobacco)
+    if habits.vaping is not None:
+        updates["vaping"] = _normalize_vaping(habits.vaping)
     if habits.secondhand_smoke is not None:
         updates["secondhand_smoke"] = _normalize_secondhand(habits.secondhand_smoke)
     if habits.wood_smoke is not None:
@@ -968,22 +1016,26 @@ def habits_errors(
         return age is not None and age_now is not None and age > age_now
 
     above = "La edad no puede ser mayor que tu edad actual"
-    if habits.alcohol and above_now(habits.alcohol.quit_age):
-        errors.append(("alcohol", "quit_age", above))
-    if habits.tobacco:
-        start, quit = habits.tobacco.start_age, habits.tobacco.quit_age
+    after_quit = "No puede ser mayor que la edad en que lo dejaste"
+    after_end = "No puede ser mayor que la edad en que terminó"
+    # Same start/quit rules in every block; only the wood's wording differs.
+    aged = AlcoholHabit | TobaccoHabit | VapingHabit | WoodSmokeHabit
+    age_blocks: list[tuple[str, aged | None, str]] = [
+        ("alcohol", habits.alcohol, after_quit),
+        ("tobacco", habits.tobacco, after_quit),
+        ("vaping", habits.vaping, after_quit),
+        ("wood_smoke", habits.wood_smoke, after_end),
+    ]
+    for block, answer, start_after_quit in age_blocks:
+        if answer is None:
+            continue
+        start, quit = answer.start_age, answer.quit_age
         if above_now(start):
-            errors.append(("tobacco", "start_age", above))
+            errors.append((block, "start_age", above))
         elif start is not None and quit is not None and start > quit:
-            errors.append(
-                (
-                    "tobacco",
-                    "start_age",
-                    "No puede ser mayor que la edad en que lo dejaste",
-                )
-            )
+            errors.append((block, "start_age", start_after_quit))
         if above_now(quit):
-            errors.append(("tobacco", "quit_age", above))
+            errors.append((block, "quit_age", above))
     smoke = habits.secondhand_smoke
     if smoke and smoke.exposed and not smoke.places:
         errors.append(("secondhand_smoke", "places", "Elige dónde, o «No me expongo»"))

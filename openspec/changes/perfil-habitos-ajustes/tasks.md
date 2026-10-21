@@ -28,7 +28,7 @@ are `single`. `make tdd-check` requires one `test:` commit per `test→impl` gro
   la parte pytest del test plan (filas 2–5, 8, 9, 11, 13, 14, 15, 22) y el Interface contract. Ajusta los citadores
   (vapeador como texto, `years` de leña). Verificación: rojo porque faltan los campos, la conversión y las reglas, no
   porque un test esté roto. Commit `test:` solo.
-- [ ] 1.2 **Implementer.**
+- [x] 1.2 **Implementer.**
   - Esquemas, normalización y `habits_errors` en `backend/app/models.py`;
   - `upgrade_stored_habits` y su uso en `_stored_habits` (`backend/app/api/routes/profile.py`).
 
