@@ -1,15 +1,15 @@
 #!/usr/bin/env python3
-"""SessionStart hook: reminds up to 3 OPEN items from memory/inbox.md (oldest first), says how many it
-hides and honours 💤 snoozed until YYYY-MM-DD. A cap that lies is worse than no cap: with 10+ open
-items it says triage is due, not a higher cap.
+"""SessionStart hook: reminds up to 3 OPEN items from memory/inbox/ (oldest first), says how many it
+hides and honours `status: snoozed YYYY-MM-DD`; reads the old memory/inbox.md too while a project has it.
+A cap that lies is worse than no cap: with 10+ open items it says triage is due, not a higher cap.
 """
-import datetime
 import json
 import os
 import re
 import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import _memory  # noqa: E402
 from _config import root  # noqa: E402
 
 MAX_SHOWN = 3
@@ -23,39 +23,13 @@ def main():
     except Exception:
         data = {}
     cwd = data.get("cwd") or os.environ.get("CLAUDE_PROJECT_DIR") or os.getcwd()
-    path = os.path.join(root(cwd), "memory", "inbox.md")
-    if not os.path.isfile(path):
-        return 0
-    text = open(path, encoding="utf-8").read()
-    m = re.search(r"^## Open\s*$(.*?)(?=^## |\Z)", text, re.M | re.S)
-    if not m:
-        return 0
-    today = datetime.date.today()
-    open_items = []
-    for line in m.group(1).splitlines():
-        line = line.strip()
-        if not line.startswith("|") or re.match(r"^\|[\s\-:|]+\|$", line):
-            continue
-        cells = [c.replace("\\|", "|").strip() for c in re.split(r"(?<!\\)\|", line.strip("|"))]
-        if len(cells) < 4 or cells[0].lower().startswith("date"):
-            continue
-        date, what, why, status = cells[:4]
-        snoozed = re.search(r"(\d{4}-\d{2}-\d{2})", status) if "💤" in status else None
-        if snoozed:
-            try:
-                if datetime.date.fromisoformat(snoozed.group(1)) > today:
-                    continue
-            except ValueError:
-                pass
-        elif "✅" in status or "❌" in status:
-            continue
-        open_items.append((date, what, why))
+    items = _memory.inbox(root(cwd))
+    open_items = [(date, what, None) for date, what, _, _ in items["open"]]
     if not open_items:
         return 0
-    open_items.sort(key=lambda r: r[0])
     shown = open_items[:MAX_SHOWN]
     hidden = len(open_items) - len(shown)
-    out = ["📥 Open inbox items (memory/inbox.md), a reminder, not this session's task:"]
+    out = ["📥 Open inbox items (memory/inbox/), a reminder, not this session's task:"]
     for date, what, _ in shown:
         what = re.sub(r"\*\*(.+?)\*\*", r"\1", what)
         out.append(f"  · [{date}] {what[:177] + '…' if len(what) > 180 else what}")

@@ -13,7 +13,7 @@ The harness is the same; what changes is **what counts as `code`** and **what ve
 | Truly green | 0 failures, 0 errors, 0 skipped | cold reader with no real stumbles; figures with the authority of their record |
 | Who executes a task | `single` for small tickets (red → green by the orchestrator, `test:` commit first); `tester` → `implementer` agents for tickets with 3+ criteria or 2+ files (`harness.json → roles`), barrier by role (`guard-tests`) and by git (`make tdd-check`); `parallel` only with an interface contract | writer + `cold-reader`; no split |
 | Extra skill | none (the stack's, if the project adds them) | `produce-content` |
-| Own artifact | `CHANGELOG.md` | `content/STYLE.md` (voice, language, length, what's forbidden) |
+| Own artifact | `CHANGELOG.md` (from `changelog.d/`) | `content/STYLE.md` (voice, language, length, what's forbidden) |
 | Product layer (optional) | brief → PRD → technical brief (stack, NFR budget) | brief = editorial line; PRD = editorial plan with epics as series; technical brief = channels, formats, cadence budget |
 
 `mixed` is for the mother template: it brings both template families and no paths in `code`.

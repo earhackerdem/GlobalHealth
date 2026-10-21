@@ -1,6 +1,6 @@
 ---
 name: product-tech-brief
-description: Decides "with what" and "how well" after the brief or PRD, before the first plan. Step 1 is a BLOCKING question: is there a team, and what stack, platform and budget does it already have? (if a stack exists, it wins). Otherwise proposes 2-3 candidate stacks from the PRD constraints with trade-offs, favouring boring technology. Fixes the NFR budget as measurable statements (ISO 25010 + operational), records stack choices as ADRs in memory/decisions.md and writes product/technical-brief.md, which every change's exploration inherits. Use when the user says "/product-tech-brief", "which stack", "which framework/language", "non-functional requirements", "NFRs", "technical brief".
+description: Decides "with what" and "how well" after the brief or PRD, before the first plan. Step 1 is a BLOCKING question: is there a team, and what stack, platform and budget does it already have? (if a stack exists, it wins). Otherwise proposes 2-3 candidate stacks from the PRD constraints with trade-offs, favouring boring technology. Fixes the NFR budget as measurable statements (ISO 25010 + operational), records stack choices as ADRs in memory/decisions/ and writes product/technical-brief.md, which every change's exploration inherits. Use when the user says "/product-tech-brief", "which stack", "which framework/language", "non-functional requirements", "NFRs", "technical brief".
 argument-hint: [path to prd or brief; defaults to product/prd.md, else product/brief.md]
 ---
 
@@ -39,7 +39,7 @@ use?** This skill asks it first and refuses to continue without the answer.
    suitability) plus operational (hosting/operations, compliance/privacy, data residency, language/i18n,
    accessibility, licensing, observability, cost ceiling).
 4. **Record**: `product/technical-brief.md` from `template.md`; each stack or platform choice as an ADR
-   `D<n>` in `memory/decisions.md` (decision, why, discarded alternatives); `harness.json` → `code` with the real source
+   `memory/decisions/D<n>-slug.md` (`make decision-next`; decision, why, discarded alternatives); `harness.json` → `code` with the real source
    folders; `blocked_commands` if the platform has dangerous operations (deploy, drop database).
 5. Tell the author what every change inherits from now on: `/epe-1-explore` §4 starts from the NFR budget; `/epe-2-plan`
    must say how each affected NFR is met; a change that needs to break the budget changes the brief **and** the ADR

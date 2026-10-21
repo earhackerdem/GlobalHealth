@@ -52,7 +52,7 @@ BLOCK_AGENTS="
 ## Harness rules (adopted ${TODAY})
 This repo uses the harness: memory in the repo (\`memory/\`), the EPE cycle with a human gate (\`changes/\`), profiles and
 hooks. The full rules are in [docs/harness/AGENTS.md](docs/harness/AGENTS.md) (imported below); configuration in \`harness.json\`. Read
-\`memory/README.md\`, \`memory/decisions.md\` and \`memory/inbox.md\` at the start of every session. Run \`/codebase-context\`
+\`memory/README.md\`, \`memory/decisions/\` and the inbox (\`make inbox\`) at the start of every session. Run \`/codebase-context\`
 once to fill the verified context block below and \`harness.json\` → \`code\`.
 
 @docs/harness/AGENTS.md
@@ -102,16 +102,17 @@ with open(f"{dest}/harness.json", "w") as f:
 PY
 created+=("harness.json")
 else skipped+=("harness.json"); fi
-mkdir -p "$DEST/memory/journal" "$DEST/changes"
-put "$T/memory-README.md" "memory/README.md"; put "$T/research.md" "memory/research.md"; put "$T/inbox.md" "memory/inbox.md"
-put "$T/closed.md" "memory/closed.md"; put "$T/meta-improvements.md" "memory/meta-improvements.md"
-put "$T/journal-README.md" "memory/journal/README.md"; put "$T/changes-README.md" "changes/README.md"
-if [ ! -f "$DEST/memory/decisions.md" ]; then
-cat > "$DEST/memory/decisions.md" <<MD
-# Project decisions (lightweight ADR)
-
-States: Accepted · Revised · Proposed · Discarded. Never deleted; when they change, mark them Revised with a date and
-link the new one.
+mkdir -p "$DEST/memory" "$DEST/changes"
+for f in README.md inbox/README.md closed/README.md decisions/README.md research/README.md meta-improvements/README.md \
+         journal/README.md; do put "$T/memory/$f" "memory/$f"; done
+put "$T/changelog.d/README.md" "changelog.d/README.md"; put "$T/changes-README.md" "changes/README.md"
+if [ ! -f "$DEST/memory/decisions.md" ] && ! ls "$DEST"/memory/decisions/D1-*.md >/dev/null 2>&1; then
+cat > "$DEST/memory/decisions/D1-harness-adopted.md" <<MD
+---
+id: D1
+date: ${TODAY}
+status: accepted
+---
 
 ## D1 — The harness is adopted into an existing codebase
 - **Status:** Accepted · ${TODAY} · decided by: ${AUTHOR:-<name (role)>}
@@ -121,7 +122,7 @@ link the new one.
   first change.
 - **Next:** \`/codebase-context\` fills the \`AGENTS.md\` context block and \`harness.json\` → \`code\`.
 MD
-created+=("memory/decisions.md")
+created+=("memory/decisions/D1-harness-adopted.md")
 fi
 cat > "$DEST/memory/journal/${TODAY}-harness-adopted.md" <<MD
 # ${TODAY} — Harness adopted into an existing codebase

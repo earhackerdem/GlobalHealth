@@ -11,7 +11,7 @@ the need. Here it exists for one reason: when several people or several epics mu
 "next step" says no PRD, do not write one.**
 
 ## Procedure
-1. Read `product/brief.md` (or send to `/product-brief`), and `product/dominio.md` + `product/roles-permisos.md` when discovery ran (`/product-discovery`): with them, the FRs are **derived**, not drafted — every roles×operation cell of the matrix is an FR candidate with its actor, and every process row carries its trigger. Also `memory/decisions.md`, `memory/research.md`.
+1. Read `product/brief.md` (or send to `/product-brief`), and `product/dominio.md` + `product/roles-permisos.md` when discovery ran (`/product-discovery`): with them, the FRs are **derived**, not drafted — every roles×operation cell of the matrix is an FR candidate with its actor, and every process row carries its trigger. Also `memory/decisions/`, `memory/research/`.
 2. **Stay technology-agnostic.** The PRD says what the system must do and how well, never with what. If a requirement
    smuggles a technology ("with WebSockets", "in Postgres"), rewrite it as the behaviour it wants and leave a note for
    `/product-tech-brief`.

@@ -6,6 +6,6 @@ The full rules of this repo live in `AGENTS.md` (root) and in the skills under `
 
 - Skeptical partner: every substantive request is a hypothesis to verify. Name assumptions, verify, offer an alternative, then act.
 - Flow: story with acceptance criteria → EXPLORE (`exploration.md`) → PLAN (`plan.md` with `Status: APPROVED`) → EXECUTE (code/content + evidence + validation) → PR. Without an approved plan, nothing marked as `code` in `harness.json` gets edited.
-- Memory in the repo: decisions → `memory/decisions.md`; work → `memory/journal/YYYY-MM-DD-slug.md`; ideas → `memory/inbox.md`; verdicts → `memory/closed.md`.
+- Memory in the repo, one file per record: decisions → `memory/decisions/D<n>-slug.md`; work → `memory/journal/YYYY-MM-DD-slug.md`; ideas → `memory/inbox/YYYY-MM-DD-slug.md`; verdicts → `memory/closed/YYYY-MM-DD-slug.md`.
 - Git: one branch per task, PR always, human merge, never `git add -A` with someone else's work in the tree.
 - Cursor has no pre-edit event: the plan gate here is discipline.

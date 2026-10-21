@@ -8,7 +8,7 @@ argument-hint: [change path; defaults to .epe/active] · "plan approved" to open
 
 ## Preconditions
 - `exploration.md` exists and its §1 is all ✅. If not, go back to `/epe-1-explore`.
-- Read `memory/decisions.md`: the plan does not contradict a current ADR; if it needs to change one, the plan says so
+- Read `memory/decisions/`: the plan does not contradict a current ADR; if it needs to change one, the plan says so
   and the ADR is touched **in the same change**, not later.
 - Load every skill listed in `harness.json → phase_skills.plan` (the project's domain skills: how this stack is
   tested, its house conventions and templates). The test plan's levels and the ticket types come from them.

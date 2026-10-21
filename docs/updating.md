@@ -34,13 +34,19 @@ The updater runs **from the template** (`$(SRC)/scripts/harness-sync.py`), so it
 update; editing the rules outside the block makes the file a fork. In adopt mode the appended `<!-- harness:rules -->`
 block in your own `AGENTS.md`/`CLAUDE.md` is not rewritten (it only points to `docs/harness/`).
 
+## Updating to 0.4.0: memory becomes one file per entry
+The update never touches `memory/`, and every reader keeps parsing the old single files, so nothing breaks the day
+you update. `make doctor` then warns once per old file. Migrate in its own PR, after merging the open PRs that touch
+memory: `make memory-migrate DRY_RUN=1`, read what it would write, `make memory-migrate`, check with `make inbox`,
+`make closed` and `make memory-check` (docs/memory.md § Coming from the single files).
+
 ## The rule that makes this work
-In a project, **harness-owned files are not edited in place**. An improvement goes to `memory/meta-improvements.md`,
+In a project, **harness-owned files are not edited in place**. An improvement goes to `memory/meta-improvements/`,
 then upstream to the template, and comes back with the next update. A project that needs a different hook forks it
 knowingly: the manifest will list it as forked forever, which is the honest state. After an update, run `make doctor`
 and record it as one small change folder with a journal entry: it is a change to the repo like any other.
 
-## What the two frameworks we looked at do (research 2026-10-08, `memory/research.md#updates`)
+## What the two frameworks we looked at do (research 2026-10-08, `memory/research/updates.md`)
 OpenSpec: *"generated files are OpenSpec's to own — keep your own instructions elsewhere"*; content comparison, drift
 overwritten with a reason. BMAD: *"Updates do not touch your files, and you do not edit installed files"*; customisation
 in side files. Neither keeps a fork as a first-class state nor records the update as a reviewable change; this harness

@@ -6,4 +6,4 @@ entry merges cleanly). The date goes first so `ls` sorts: the file name **is** t
 
 Content: `# YYYY-MM-DD — Title` · **Who** (name and role, from the profile) · **Intent** · **What was done** ·
 **Verification** (real numbers) · **Declared debt**. Append-only: if a previous entry was wrong, add a dated inline
-correction, don't rewrite. Anchors in `closed.md` point by date + title, never by line number.
+correction, don't rewrite. Anchors in `memory/closed/` entries point by date + title, never by line number.

@@ -11,20 +11,21 @@ independent agents attack and **the human decides**.
 
 ## Flow
 DoD → finders (parallel, one lens each) → merge+dedupe → validators (parallel, reproduce) → loop-until-dry
-→ human gate → `/epe-5-apply` → record in `memory/closed.md`.
+→ human gate → `/epe-5-apply` → record in `memory/closed/`.
 
 ## 0. Before launching anything (you, cheap)
 - Locate the change and read `story.md`, `plan.md`, `evidence.md`.
 - Load every skill listed in `harness.json → phase_skills.review`: the project's domain lenses (house style guide,
-  security checklist, platform constraints) travel literally in the finders' briefs, next to `closed.md`.
+  security checklist, platform constraints) travel literally in the finders' briefs, next to the closed index.
 - **Walk the /epe-3-execute DoD**: one row per criterion in evidence? truly green with numbers? validation.md?
   journal? Each ✗ is a high-signal lead. Measured at origin: 14 of 21 findings fell on an unhonored DoD item.
 - Deterministic layer: project gates, lint, `git diff <base>...<branch> --stat`.
-- Read `memory/closed.md`: **it is injected literally** into every finder and validator (`guard-review-brief.py`
+- Run `make closed` (the index of `memory/closed/` as one document): **it is injected literally** into every finder
+  and validator (`guard-review-brief.py`
   blocks a review subagent that does not carry it; escape: `NO-CLOSED: <reason>`).
 
 ## 1. Brief (one file, travels literally in every prompt)
-Diff or file list; `story.md` (the criteria are the contract); `plan.md` (scope = scope-in/out); `closed.md`; the
+Diff or file list; `story.md` (the criteria are the contract); `plan.md` (scope = scope-in/out); the output of `make closed`; the
 lens rules. Does **not** include the author's justifications. Save it in the scratchpad and state its path. Measure
 its size: whatever is surplus is paid N finders × R rounds.
 
@@ -60,13 +61,13 @@ One FINDER comment and one VALIDATOR comment, idempotent by marker (`<!-- review
 review", "verified by reproduction". The orchestrator publishes, not the subagents.
 
 ## 8. After the gate
-Approved → `/epe-5-apply`. Rejected/frozen/deferred → a row in `memory/closed.md` **before closing**, in the same
+Approved → `/epe-5-apply`. Rejected/frozen/deferred → one file per verdict in `memory/closed/` **before closing**, in the same
 commit as the journal entry.
 
 ## Definition of Done
 - [ ] /epe-3-execute DoD walked; deterministic layer run.
-- [ ] `closed.md` traveled literally; brief saved and its path stated.
+- [ ] `make closed` traveled literally; brief saved and its path stated.
 - [ ] Lenses partitioned, finders in parallel, no author justifications.
 - [ ] Dedupe before validating; distinct validators, by reproduction, with a discard pile.
 - [ ] Convergence reported per file; delivery in two beats; nothing edited; explicit human gate.
-- [ ] PR comments (or their omission announced); `closed.md` updated after the gate.
+- [ ] PR comments (or their omission announced); `memory/closed/` updated after the gate.

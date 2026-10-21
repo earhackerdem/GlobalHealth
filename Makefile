@@ -1,7 +1,7 @@
 # Harness: day-to-day recipes. `make` alone lists them.
 SHELL := /bin/bash
 .DEFAULT_GOAL := help
-.PHONY: help doctor profile skills-link skills-check new adopt engine-openspec harness-status harness-update harness-harvest install-hooks hook-test epe-new epe-status tdd-check board board-serve product-init inbox memory-check memory-swept retro check-prs worktrees worktrees-clean
+.PHONY: help doctor profile skills-link skills-check new adopt engine-openspec harness-status harness-update harness-harvest install-hooks hook-test epe-new epe-status tdd-check board board-serve product-init inbox closed changelog decision-next memory-migrate memory-check memory-swept retro check-prs worktrees worktrees-clean
 
 help: ## List the recipes
 	@grep -hE '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-16s\033[0m %s\n", $$1, $$2}'
@@ -67,10 +67,22 @@ product-init: ## Create the optional product/ folder (brief → PRD → technica
 	@mkdir -p product && [ -f product/README.md ] || cp .agents/skills/product-brief/product-README.md product/README.md; echo "product/ ready: /product-brief → /product-prd (if needed) → /product-tech-brief"
 
 ## --- memory ---
-inbox: ## The whole inbox in memory/inbox.md (the hook only shows 3)
+inbox: ## The whole inbox in memory/inbox/ (the hook only shows 3)
 	@python3 scripts/inbox.py
 
-memory-check: ## Mechanical leads of stale private memories (not a gate; /epe-memory reads it)
+closed: ## The closed-verdicts index (memory/closed/) as one document, to paste literally into a review prompt
+	@python3 -c 'import sys; sys.path.insert(0, ".claude/hooks"); import _memory; print(_memory.render_closed("."), end="")'
+
+changelog: ## Render CHANGELOG.md from changelog.d/ (newest first, then _legacy.md). On main or in a release PR, never in a change PR
+	@python3 -c 'import sys; sys.path.insert(0, ".claude/hooks"); import _memory; open("CHANGELOG.md", "w", encoding="utf-8").write(_memory.render_changelog("."))' && echo "CHANGELOG.md rendered from changelog.d/"
+
+decision-next: ## The next free decision id (D<n>) for memory/decisions/D<n>-slug.md
+	@python3 -c 'import sys; sys.path.insert(0, ".claude/hooks"); import _memory; print("D%d" % (max([n for n, _ in _memory.decision_ids(".")] or [0]) + 1))'
+
+memory-migrate: ## Old single memory files (inbox.md, closed.md…) → one file per entry, lossless by check. DRY_RUN=1 writes nothing
+	@python3 scripts/memory-migrate.py --root . $(if $(DRY_RUN),--dry-run,)
+
+memory-check: ## Mechanical leads: repo memory (duplicate ids, unknown statuses, old files) and stale private memories
 	@python3 scripts/check-memory.py
 
 memory-swept: ## Record that memory was swept (resets the unswept-compactions notice)

@@ -11,7 +11,7 @@ Date: YYYY-MM-DD · Branch: `feat/<slug>` · PR: <url> · Piece: `content/<path>
 |---|---|---|---|
 
 ## Sources cited
-| Claim | Source + date | Record in research.md | Authority it is cited with |
+| Claim | Source + date | Record in memory/research/ | Authority it is cited with |
 |---|---|---|---|
 
 ## Style and confidentiality

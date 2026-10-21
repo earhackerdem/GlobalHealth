@@ -15,7 +15,7 @@ why you start by measuring.
 2. **Measure before opining**: `make retro ID=<id>`. Returns a tool histogram, skills loaded (`NONE` with code
    edits is a finding), gates run, repeated commands, files re-read 3+ times, hook blocks. **Declared blind spot**:
    what Bash wrote (cat, sed, heredoc) does not count as an edit; the real data is in `git diff --name-only`.
-3. **Read `memory/meta-improvements.md`** before proposing: a rejected proposal does not come back without new
+3. **Read `memory/meta-improvements/`** before proposing: a rejected proposal does not come back without new
    evidence.
 4. **Five lenses**, each with the evidence that turns it into a finding rather than an impression:
    loops and rework · practice worth standardizing (and not written anywhere today) · stale instruction (quote + the
@@ -25,7 +25,7 @@ why you start by measuring.
    it? is there already a rule that was not followed? Then the problem is the **gate**, not the rule: writing it
    again fixes nothing.
 6. **Human gate and only then a PR** (`improve/<slug>`, never self-merge). Record adoptions **and rejections** in
-   `memory/meta-improvements.md`.
+   `memory/meta-improvements/YYYY-MM-DD-slug.md`.
 
 > "Nothing to standardize" is a legitimate and frequent result. A retro forced to find something manufactures
 > friction.

@@ -2,7 +2,7 @@
 
 ## Phase 1 — outline and sources
 - [ ] T-01 Outline with a thesis per section (AC1, AC2)
-- [ ] T-02 Records in `research.md` created or updated for every figure or quote
+- [ ] T-02 Records in `memory/research/` created or updated for every figure or quote
 
 ## Phase 2 — draft
 - [ ] T-03 Complete draft in `content/<path>`

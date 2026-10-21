@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
-"""Mechanical sweep of the agent's PRIVATE memory (~/.claude/projects/<slug>/memory/).
+"""Mechanical sweep of the repo's memory/ and of the agent's PRIVATE memory (~/.claude/projects/<slug>/memory/).
+
+Repo memory (one file per entry): two decision files with the same id (two branches took it), an entry with an
+unknown status or no date, an old single file (inbox.md…) that is still there or came back, and lines of
+CHANGELOG.md that no fragment renders (an entry written by hand instead of in changelog.d/).
 
 NOT a gate: always exits 0. It generates leads for /epe-memory. What a script can decide: broken [[x]]
 links, MEMORY.md pointers to missing files and memories without a pointer, frontmatter without `type:`,
@@ -12,6 +16,9 @@ import pathlib
 import re
 import subprocess
 import sys
+
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), ".claude", "hooks"))
+import _memory  # noqa: E402
 
 LIVE_CONTEXT = re.compile(r"not merged|unmerged|pending merge|awaiting|waiting|still open|remains open|yet to merge|"
                           r"sin fusionar|pendiente de fusi|todav[ií]a abierto|sigue abierto", re.I)
@@ -39,11 +46,31 @@ def pr_state(num, repo):
         return None
 
 
+def repo_leads(repo):
+    leads = list(_memory.problems(str(repo)))
+    changelog = repo / "CHANGELOG.md"
+    if (repo / "changelog.d").is_dir() and changelog.is_file():
+        rendered = _memory.render_changelog(str(repo))
+        stray = [ln for ln in changelog.read_text(encoding="utf-8").splitlines() if ln.strip() and ln not in rendered]
+        if stray:
+            leads.append(("CHANGELOG.md", f"{len(stray)} line(s) no fragment renders, e.g. «{stray[0][:80]}»: "
+                                          "move them to a changelog.d/ fragment, then `make changelog`"))
+    print("== Repo memory (memory/, changelog.d/)")
+    for where, msg in leads:
+        print(f"   ✗ {where}: {msg}")
+    if not leads:
+        print("   ✓ one file per entry, ids unique, statuses known.")
+    return leads
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--dir")
+    ap.add_argument("--root")
     args = ap.parse_args()
-    repo = pathlib.Path(os.environ.get("CLAUDE_PROJECT_DIR", os.getcwd())).resolve()
+    repo = pathlib.Path(args.root or os.environ.get("CLAUDE_PROJECT_DIR", os.getcwd())).resolve()
+    repo_leads(repo)
+    print("\n== Private memory")
     mem = pathlib.Path(args.dir).resolve() if args.dir else memory_dir(repo)
     if not mem or not mem.is_dir():
         print("ℹ  No private memory directory to sweep (yet).")

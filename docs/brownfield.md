@@ -1,7 +1,7 @@
 # Existing projects: brownfield, monorepo, multirepo
 
 The harness goes **into** an existing repo with `make adopt DEST=<repo>`; it never touches the code. What the four SDD
-tools we studied agree on (`memory/research.md#prd`): you do not document the system first; you verify what the agent
+tools we studied agree on (`memory/research/prd.md`): you do not document the system first; you verify what the agent
 cannot read from the code, you open one bounded change, and specs grow one change at a time.
 
 ## What `make adopt` does
