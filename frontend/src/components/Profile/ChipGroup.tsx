@@ -8,11 +8,19 @@ export type ChipOption<V extends string> = {
   spokenLabel?: string
 }
 
+/** Chips under their own subtitle, inside the same group (chronic "Salud mental y adicciones"). */
+export type ChipSubgroup<V extends string> = {
+  label: string
+  options: readonly ChipOption<V>[]
+}
+
 /**
  * Single-choice chips (prototype v4): a group (fieldset) named by `label`, one
  * toggle button per option with `aria-pressed`. Tapping the chosen chip again
  * clears it (`onChange(null)`), so every answer stays optional. `required`
- * only adds the visual asterisk: the group's name stays the clean label.
+ * only adds the visual asterisk: the group's name stays the clean label. An
+ * entry of `options` may be a subgroup: a nested fieldset whose legend is its
+ * subtitle, still one choice for the whole group.
  */
 function ChipGroup<V extends string>({
   label,
@@ -26,7 +34,7 @@ function ChipGroup<V extends string>({
   className,
 }: {
   label: string
-  options: readonly ChipOption<V>[]
+  options: readonly (ChipOption<V> | ChipSubgroup<V>)[]
   value: V | null
   onChange: (next: V | null) => void
   showLabel?: boolean
@@ -35,6 +43,23 @@ function ChipGroup<V extends string>({
   describedBy?: string
   className?: string
 }) {
+  const chip = (option: ChipOption<V>) => {
+    const pressed = value === option.value
+    return (
+      <Button
+        key={option.value}
+        type="button"
+        size="sm"
+        variant={pressed ? "default" : "outline"}
+        aria-pressed={pressed}
+        aria-label={option.spokenLabel}
+        onClick={() => onChange(pressed ? null : option.value)}
+      >
+        {option.label}
+      </Button>
+    )
+  }
+
   return (
     <div className={cn("grid gap-2", className)}>
       {showLabel && (
@@ -55,22 +80,21 @@ function ChipGroup<V extends string>({
         data-invalid={invalid || undefined}
         className="m-0 flex min-w-0 flex-wrap gap-2 border-0 p-0"
       >
-        {options.map((option) => {
-          const pressed = value === option.value
-          return (
-            <Button
-              key={option.value}
-              type="button"
-              size="sm"
-              variant={pressed ? "default" : "outline"}
-              aria-pressed={pressed}
-              aria-label={option.spokenLabel}
-              onClick={() => onChange(pressed ? null : option.value)}
+        {options.map((option) =>
+          "options" in option ? (
+            <fieldset
+              key={option.label}
+              className="m-0 flex min-w-0 basis-full flex-wrap gap-2 border-0 p-0"
             >
-              {option.label}
-            </Button>
-          )
-        })}
+              <legend className="mb-2 text-sm text-muted-foreground">
+                {option.label}
+              </legend>
+              {option.options.map(chip)}
+            </fieldset>
+          ) : (
+            chip(option)
+          ),
+        )}
       </fieldset>
     </div>
   )

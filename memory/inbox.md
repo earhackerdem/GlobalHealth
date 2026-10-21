@@ -13,6 +13,7 @@ task: if the person you work with doesn't mention it, it is not started.
 
 | 2026-10-12 | **Receta a la mexicana** (feedback de Saúl Pérez tras probar el PR #6; no leyó las delta specs y el resultado no cumplió su expectativa): una receta real trae varias medicinas, fecha de expedición y nombre del paciente; NO trae vigencia inicio/fin y normalmente NO trae diagnóstico (se dice de palabra) → el modelo debería ser receta con medicinas[] y diagnóstico como campo opcional, no dos tipos con vigencia obligatoria. Intención de fondo: subir foto de la receta (o cámara) y que OCR+IA llene los campos. Prototipo clickeable para validar el flujo: https://claude.ai/artifact/PJUNDJ5d2c8R8YHq6qPXtZ | Toca el modelo recién fusionable (PR #6), el PRD (FR-005/FR-006; la captura por foto no tiene FR) y FR-025 (recordatorios usaban la vigencia); merece story propia (reshape) + story de captura foto/OCR tras decidir proveedor IA (NFR-005) | ✅ cerrado el reshape (PR #13 mergeado 2026-10-19: receta+medicinas[], sin vigencia, dx opcional/suelto, archivado; prototipo en product/prototipos/receta-primero.html); la captura foto/OCR sigue pendiente del proveedor IA (story 2) |
 | 2026-10-12 | **Prototipo mock como paso del ciclo**: pedido de Saúl Pérez — antes de (o junto con) las specs, generar un frontend solo-mock para que usuarios no programadores validen la idea sin leer delta specs; opciones: artifact clickeable generado por el harness (demostrado hoy), o emitir un prompt para Claude Design / v0 / Stitch | El gate humano del propose hoy exige leer specs; un prototipo navegable detecta expectativas rotas ANTES de ejecutar (hoy costó un ciclo completo) → meta-mejora al harness | ✅ cerrado (improve/harness-0.3.1, 2026-10-20): gate de prototipo desde 0.2.0; desde 0.3.1 el prototipo es HTML local en `product/prototipos/`, sin copia hospedada salvo que se pida |
+| 2026-10-20 | **Fix aparte: e2e intermitentes heredados** — `admin.spec.ts:204` pierde la carrera saludo vs redirect de la home (la fila 🔒 2026-10-19 de closed.md ya prescribía "waitForURL tolerante en utils/user.ts"; se reabre con evidencia nueva: 2 fallos en 4 corridas de la review de perfil-cronicas) y `reset-password.spec.ts:90` (Mailpit, sin fila). Decisión de Saúl Pérez (R18 opción b): no en el PR #26 | Sin esto la suite e2e completa no es truly green y la casilla del PR queda sin marcar | abierto |
 
 ## Closed
 
@@ -90,3 +91,8 @@ task: if the person you work with doesn't mention it, it is not started.
   renombrar (cambio propio `fix/tablas-snake-case`: `__tablename__` + migración nueva con `op.rename_table`, FKs a
   `healthrecord.id`, índices y constraints, y 4 tests con nombres crudos) o fijar la convención solo para tablas
   nuevas. Editar las migraciones viejas no sirve: no corren otra vez en las BD existentes.
+- [2026-10-20] Compartir el historial por secciones (pedido de Saúl Pérez al explorar perfil-cronicas): que el
+  paciente decida qué secciones de su historial, y qué registros marcados como sensibles, ve cada médico. Ejemplo
+  del pedido: un nutriólogo habría ajustado dieta y medicación de saber de una condición de salud mental. Extiende
+  FR-014 (hoy "categorías del expediente") al historial del perfil; aterriza con E3/E4. El foco actual es crónicas y
+  luego hábitos.

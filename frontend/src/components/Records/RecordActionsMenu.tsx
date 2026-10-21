@@ -29,7 +29,11 @@ export const RecordActionsMenu = ({ record }: RecordActionsMenuProps) => {
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
         <EditRecord record={record} />
-        <DeleteRecord id={record.id} onSuccess={() => setOpen(false)} />
+        <DeleteRecord
+          id={record.id}
+          isDiagnosis={record.record_type === "diagnosis"}
+          onSuccess={() => setOpen(false)}
+        />
       </DropdownMenuContent>
     </DropdownMenu>
   )

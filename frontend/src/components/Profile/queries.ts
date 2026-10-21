@@ -1,4 +1,4 @@
-import { ProfileService } from "@/client"
+import { HealthRecordsService, ProfileService } from "@/client"
 
 /**
  * Shared ["profile"] query options (same pattern as getRecordsQueryOptions in
@@ -12,13 +12,37 @@ export function getProfileQueryOptions() {
 }
 
 /**
- * Shared ["history"] query: every entry of the four event sections in one
- * list (GET /profile/history); /perfil counts them per card and each section
+ * Shared ["history"] query: every entry of the history sections in one list
+ * (GET /profile/history); /perfil counts them per card and each section
  * screen filters its own.
  */
 export function getHistoryQueryOptions() {
   return {
     queryKey: ["history"],
     queryFn: async () => (await ProfileService.readHistory()).data,
+  }
+}
+
+/**
+ * The patient's diagnoses (id and title), the only records a chronic entry
+ * may be backed by (Story B, B-4). Under the ["health-records"] prefix, so
+ * creating, editing or deleting a record refreshes it too.
+ */
+export function getDiagnosesQueryOptions() {
+  return {
+    queryKey: ["health-records", "diagnoses"],
+    queryFn: async () => {
+      const records = (
+        await HealthRecordsService.recordsReadHealthRecords({
+          query: { skip: 0, limit: 1000 },
+        })
+      ).data
+      return records.data
+        .filter((record) => record.record_type === "diagnosis")
+        .map((record) => ({
+          id: record.id,
+          title: record.title ?? record.occurred_on,
+        }))
+    },
   }
 }

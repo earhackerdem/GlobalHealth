@@ -1,4 +1,10 @@
-import { expect, type Locator, type Page, test } from "@playwright/test"
+import {
+  type APIRequestContext,
+  expect,
+  type Locator,
+  type Page,
+  test,
+} from "@playwright/test"
 import { createUser } from "./utils/privateApi"
 import { randomEmail, randomPassword } from "./utils/random"
 import { logInUser } from "./utils/user"
@@ -836,5 +842,218 @@ test.describe("Expediente — receta a la mexicana", () => {
 
     // El formulario manual sigue siendo utilizable en el mismo modal.
     await expect(dialog.getByLabel("Médico que la expide")).toBeVisible()
+  })
+})
+
+// --- perfil-cronicas (Historia B, B-5): borrar un diagnóstico que respalda ---
+
+const API = `${process.env.VITE_API_URL}/api/v1`
+
+type Api = {
+  request: APIRequestContext
+  headers: Record<string, string>
+}
+
+/**
+ * Como freshUserOnExpediente, pero cerrando el onboarding y devolviendo un
+ * cliente del API autenticado para sembrar datos.
+ */
+async function freshUserWithApi(
+  page: Page,
+  request: APIRequestContext,
+): Promise<Api> {
+  const email = randomEmail()
+  const password = randomPassword()
+  await createUser({ email, password })
+  await logInUser(page, email, password)
+
+  const consentButton = page.getByTestId("consent-accept-button")
+  await expect(consentButton).toBeVisible()
+  await consentButton.click()
+  await expect(consentButton).not.toBeVisible()
+  await page
+    .getByRole("button", { name: "Ahora no, llévame a mi expediente" })
+    .click()
+  await page.waitForURL(/\/expediente/)
+
+  const login = await request.post(`${API}/login/access-token`, {
+    form: { username: email, password },
+  })
+  expect(login.ok()).toBeTruthy()
+  const { access_token } = await login.json()
+  return { request, headers: { Authorization: `Bearer ${access_token}` } }
+}
+
+/** GET /profile/history exacto (no sus subrutas /{id} ni /sections/…). */
+const HISTORY_LIST = /\/api\/v1\/profile\/history(\?.*)?$/
+
+async function seedRecord(api: Api, data: Record<string, unknown>) {
+  const res = await api.request.post(`${API}/health-records/`, {
+    headers: api.headers,
+    data,
+  })
+  expect(res.status()).toBe(201)
+}
+
+test.describe("Expediente — diagnóstico que respalda una crónica (perfil-cronicas)", () => {
+  test("E17 B-5 eliminar el diagnóstico que respalda «Hipotiroidismo»: el diálogo lo avisa y la crónica se queda sin respaldo", async ({
+    page,
+    request,
+  }) => {
+    const api = await freshUserWithApi(page, request)
+    const dx = await request.post(`${API}/health-records/`, {
+      headers: api.headers,
+      data: {
+        record_type: "diagnosis",
+        title: "Hipotiroidismo subclínico",
+        occurred_on: "2026-09-30",
+        professional: "Dra. Islas (endocrinología)",
+      },
+    })
+    expect(dx.ok()).toBeTruthy()
+    const { id: diagnosisId } = await dx.json()
+    // Review R12: dos crónicas respaldadas por el diagnóstico y una sin respaldo.
+    const seedChronic = async (data: Record<string, unknown>) => {
+      const res = await request.post(`${API}/profile/history`, {
+        headers: api.headers,
+        data: { section: "chronic", status: "active", ...data },
+      })
+      expect(res.status()).toBe(201)
+      return (await res.json()).id as string
+    }
+    const backedIds = [
+      await seedChronic({
+        condition: "hypothyroidism",
+        diagnosis_id: diagnosisId,
+      }),
+      await seedChronic({
+        condition: "hypertension",
+        diagnosis_id: diagnosisId,
+      }),
+    ]
+    await seedChronic({ condition: "asthma" })
+
+    // Antes de borrar: las dos crónicas muestran su respaldo.
+    const entries = page.getByTestId("history-entry")
+    await page.goto("/perfil/cronicas")
+    await expect(entries).toHaveCount(3)
+    await expect(
+      entries.filter({ hasText: "Respaldo: Hipotiroidismo subclínico" }),
+    ).toHaveCount(2)
+
+    // El diálogo de borrado del diagnóstico nombra la crónica que respalda.
+    await page.goto("/expediente")
+    await clickRecordAction(
+      page,
+      "Hipotiroidismo subclínico",
+      "Eliminar registro",
+    )
+    await expect(
+      page.getByText(
+        "¿Seguro que quieres eliminar este registro? Se eliminarán también sus adjuntos.",
+      ),
+    ).toBeVisible()
+    const dialog = page.getByRole("dialog")
+    await expect(
+      dialog.getByText(
+        "Respalda tus crónicas «Hipotiroidismo», «Hipertensión». Las crónicas se quedan, sin respaldo.",
+      ),
+    ).toBeVisible()
+    // La crónica sin respaldo no se nombra.
+    await expect(dialog).not.toContainText("Asma")
+    await page.getByRole("button", { name: "Eliminar", exact: true }).click()
+    await expect(page.getByText("Registro eliminado.")).toBeVisible()
+
+    // Review R14: el enlace guardado ya no está (falla si no se desenlaza).
+    const history = await request.get(`${API}/profile/history`, {
+      headers: api.headers,
+    })
+    expect(history.ok()).toBeTruthy()
+    const stored: { id: string; diagnosis_id?: string | null }[] = (
+      await history.json()
+    ).data
+    expect(stored).toHaveLength(3)
+    for (const id of backedIds) {
+      expect(stored.find((e) => e.id === id)?.diagnosis_id ?? null).toBeNull()
+    }
+
+    // Las crónicas siguen; al editar una, su respaldo es "Ninguno".
+    await page.goto("/perfil/cronicas")
+    await expect(entries).toHaveCount(3)
+    await expect(entries.filter({ hasText: "Respaldo" })).toHaveCount(0)
+    await entries
+      .filter({ hasText: "Hipotiroidismo" })
+      .getByRole("button", { name: "Editar Hipotiroidismo", exact: true })
+      .click()
+    await expect(
+      page.getByRole("combobox", {
+        name: "Diagnóstico del expediente que la respalda",
+      }),
+    ).toHaveText("Ninguno")
+  })
+
+  test("E17b R6 si no se puede leer el historial, el diálogo lo dice y 'Eliminar' se habilita pronto", async ({
+    page,
+    request,
+  }) => {
+    const api = await freshUserWithApi(page, request)
+    await seedRecord(api, {
+      record_type: "diagnosis",
+      title: "Hipotiroidismo subclínico",
+      occurred_on: "2026-09-30",
+      professional: "Dra. Islas (endocrinología)",
+    })
+    await page.route(HISTORY_LIST, (route) =>
+      route.request().method() === "GET"
+        ? route.fulfill({ status: 500, json: { detail: "Error" } })
+        : route.continue(),
+    )
+
+    await page.reload()
+    await clickRecordAction(
+      page,
+      "Hipotiroidismo subclínico",
+      "Eliminar registro",
+    )
+
+    // Sin reintentos: dentro del timeout por omisión de expect (5 s), no ~7 s.
+    const dialog = page.getByRole("dialog")
+    await expect(
+      dialog.getByText(
+        "No pudimos revisar si respalda alguna de tus crónicas. Si la respalda, se quedará sin respaldo.",
+      ),
+    ).toBeVisible()
+    await expect(
+      dialog.getByRole("button", { name: "Eliminar", exact: true }),
+    ).toBeEnabled()
+  })
+
+  test("E17c R9b borrar una receta no consulta el historial", async ({
+    page,
+    request,
+  }) => {
+    const api = await freshUserWithApi(page, request)
+    await seedRecord(api, {
+      record_type: "prescription",
+      occurred_on: "2026-10-12",
+      professional: "Dra. Islas (endocrinología)",
+      medicines: [{ name: "Levotiroxina 50 µg", dose: "1 tableta en ayunas" }],
+    })
+    await page.reload()
+    await expect(recordRow(page, "Levotiroxina 50 µg")).toBeVisible()
+    let historyRequests = 0
+    page.on("request", (req) => {
+      if (HISTORY_LIST.test(req.url())) historyRequests += 1
+    })
+
+    await clickRecordAction(page, "Levotiroxina 50 µg", "Eliminar registro")
+
+    const dialog = page.getByRole("dialog")
+    await expect(
+      dialog.getByRole("button", { name: "Eliminar", exact: true }),
+    ).toBeEnabled()
+    // La consulta saldría al abrir el diálogo; margen para que se vea si sale.
+    await page.waitForTimeout(500)
+    expect(historyRequests).toBe(0)
   })
 })

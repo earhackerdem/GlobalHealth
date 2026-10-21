@@ -485,8 +485,11 @@ class FamilyHistory(SQLModel, table=True):
 # created_at; the server groups/filters in memory after decrypting the
 # owner's rows (tens per patient).
 
-HistorySection = Literal["past", "surgeries", "fractures", "transfusions"]
+# perfil-cronicas Decision 1: chronic diseases are one more section, first in
+# the canonical order; its link to a diagnosis lives inside the encrypted JSON.
+HistorySection = Literal["chronic", "past", "surgeries", "fractures", "transfusions"]
 HISTORY_SECTIONS: tuple[HistorySection, ...] = (
+    "chronic",
     "past",
     "surgeries",
     "fractures",
@@ -536,12 +539,59 @@ class WhenUnknown(SQLModel):
 
 When = Annotated[WhenAge | WhenStage | WhenYear | WhenUnknown, Discriminator("kind")]
 
+# Typical ages per school stage in Mexico, [first, last] inclusive; the same
+# ranges as frontend/src/components/Profile/history.ts (STAGE_AGE_RANGES),
+# which shows the approximate year. Here they decide a 422 (chronic "hasta"
+# before "desde"): change both together.
+STAGE_AGE_RANGES: dict[str, tuple[int, int]] = {
+    "before_primary": (0, 5),
+    "primary": (6, 11),
+    "secondary": (12, 14),
+    "high_school": (15, 17),
+}
+
 
 # Content per section. Every field is optional AT THE SCHEMA LEVEL (also the
 # section's required one) so that a missing required field reaches
 # validate_history_content and gets a STRING es-MX 422, and so stored entries
 # tolerate absent fields on read (Risks: defaults None). Enums and lengths
 # are still enforced by pydantic.
+ChronicCondition = Literal[
+    "type2_diabetes",
+    "hypertension",
+    "asthma",
+    "hypothyroidism",
+    "high_cholesterol",
+    "copd",
+    "arthritis",
+    "epilepsy",
+    "depression",
+    "anxiety",
+    "bipolar_disorder",
+    "substance_use",
+    "other",
+]
+# perfil-cronicas Decision 2: `sensitive` defaults to true for these when the
+# client does not send it.
+CHRONIC_SENSITIVE_BY_DEFAULT: frozenset[str] = frozenset(
+    {"depression", "anxiety", "bipolar_disorder", "substance_use"}
+)
+
+
+class ChronicHistoryContent(SQLModel):
+    section: Literal["chronic"]
+    condition: ChronicCondition | None = None
+    other_text: str | None = Field(default=None, max_length=HISTORY_TEXT_MAX)
+    sensitive: bool | None = None
+    status: Literal["active", "resolved"] | None = None
+    since: When | None = None
+    until: When | None = None
+    treatment: str | None = Field(default=None, max_length=HISTORY_TEXT_MAX)
+    note: str | None = Field(default=None, max_length=HISTORY_TEXT_MAX)
+    # A diagnosis HealthRecord of the same patient (checked in the route).
+    diagnosis_id: uuid.UUID | None = None
+
+
 class PastHistoryContent(SQLModel):
     section: Literal["past"]
     condition: (
@@ -604,13 +654,19 @@ class TransfusionHistoryContent(SQLModel):
 
 
 HistoryContentModel = (
-    PastHistoryContent
+    ChronicHistoryContent
+    | PastHistoryContent
     | SurgeryHistoryContent
     | FractureHistoryContent
     | TransfusionHistoryContent
 )
 # Request body of POST/PUT /profile/history: discriminated by `section`.
 HistoryContent = Annotated[HistoryContentModel, Discriminator("section")]
+
+
+class ChronicHistoryEntry(ChronicHistoryContent):
+    id: uuid.UUID
+    created_at: datetime
 
 
 class PastHistoryEntry(PastHistoryContent):
@@ -635,7 +691,8 @@ class TransfusionHistoryEntry(TransfusionHistoryContent):
 
 # HistoryEntry = {id, section, created_at, ...fields of its section}.
 HistoryEntry = Annotated[
-    PastHistoryEntry
+    ChronicHistoryEntry
+    | PastHistoryEntry
     | SurgeryHistoryEntry
     | FractureHistoryEntry
     | TransfusionHistoryEntry,
@@ -654,6 +711,7 @@ class HistorySectionNone(SQLModel):
 
 # Required field per section and its es-MX message (Interface contract).
 HISTORY_REQUIRED: dict[str, tuple[str, str]] = {
+    "chronic": ("condition", "Elige la condición o escribe cuál es"),
     "past": ("condition", "Elige la condición o escribe cuál fue"),
     "surgeries": ("name", "Escribe qué cirugía u hospitalización fue"),
     "fractures": ("what", "Escribe qué hueso o lesión fue"),
@@ -697,6 +755,43 @@ def validate_when(
             raise ValueError("El año no puede ser futuro")
 
 
+def _when_age_range(
+    when: WhenAge | WhenStage | WhenYear | WhenUnknown | None,
+    birth_date: date | None,
+) -> tuple[int, int] | None:
+    """`when` as an inclusive age range, or None when it cannot be compared
+    (unknown, absent, or a year without a birth date). A year is two ages:
+    before and after that year's birthday (review R11)."""
+    if isinstance(when, WhenAge):
+        return (when.value, when.value)
+    if isinstance(when, WhenStage):
+        return STAGE_AGE_RANGES[when.value]
+    if isinstance(when, WhenYear) and birth_date is not None:
+        age = when.value - birth_date.year
+        return (max(age - 1, 0), max(age, 0))
+    return None
+
+
+def _validate_chronic_dates(
+    content: ChronicHistoryContent, birth_date: date | None, today: date
+) -> None:
+    """since/until with Story A's rules; until only counts when resolved
+    (Decision 5) and is rejected only when it surely precedes since
+    (Decision 6: max(until) < min(since)). Year against year compares the
+    years themselves, with or without a birth date (review R13)."""
+    until = content.until if content.status == "resolved" else None
+    validate_when(content.since, birth_date, today)
+    validate_when(until, birth_date, today)
+    if isinstance(content.since, WhenYear) and isinstance(until, WhenYear):
+        if until.value < content.since.value:
+            raise ValueError("No puede ser antes de «desde cuándo»")
+        return
+    since_range = _when_age_range(content.since, birth_date)
+    until_range = _when_age_range(until, birth_date)
+    if since_range and until_range and until_range[1] < since_range[0]:
+        raise ValueError("No puede ser antes de «desde cuándo»")
+
+
 def validate_history_content(
     content: HistoryContentModel, birth_date: date | None, today: date
 ) -> None:
@@ -710,10 +805,30 @@ def validate_history_content(
         field, message = required
         if not _is_filled(values.get(field)):
             raise ValueError(message)
-        if isinstance(content, PastHistoryContent) and content.condition == "other":
+        if (
+            isinstance(content, PastHistoryContent | ChronicHistoryContent)
+            and content.condition == "other"
+        ):
             if not _is_filled(content.other_text):
                 raise ValueError(message)
-    validate_when(content.when, birth_date, today)
+    if isinstance(content, ChronicHistoryContent):
+        _validate_chronic_dates(content, birth_date, today)
+    else:
+        validate_when(content.when, birth_date, today)
+
+
+def normalize_history_content(content: HistoryContentModel) -> HistoryContentModel:
+    """What gets stored, after validation: a chronic entry always carries an
+    explicit `sensitive` (Decision 2) and no `until` unless resolved
+    (Decision 5). Other sections pass through untouched."""
+    if not isinstance(content, ChronicHistoryContent):
+        return content
+    updates: dict[str, Any] = {}
+    if content.sensitive is None:
+        updates["sensitive"] = content.condition in CHRONIC_SENSITIVE_BY_DEFAULT
+    if content.status != "resolved":
+        updates["until"] = None
+    return content.model_copy(update=updates)
 
 
 # Partial update: absent = "do not touch", explicit null clears the field.

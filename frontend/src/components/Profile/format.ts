@@ -19,6 +19,21 @@ export function localTodayIso(): string {
   return `${now.getFullYear()}-${month}-${day}`
 }
 
+/**
+ * Today in America/Mexico_City as "aaaa-mm-dd", whatever the device's
+ * timezone: the API's "today" for the history checks (profile.py MEXICO_CITY),
+ * so the form never blocks what the server accepts, nor the reverse.
+ */
+export function mexicoCityTodayIso(now: Date = new Date()): string {
+  // en-CA formats as aaaa-mm-dd.
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone: "America/Mexico_City",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(now)
+}
+
 /** Age (completed years) as of today for an ISO "aaaa-mm-dd" birth date. */
 export function ageFrom(isoDate: string): number {
   const [year, month, day] = isoDate.split("-").map(Number)

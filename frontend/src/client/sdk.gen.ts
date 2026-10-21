@@ -495,7 +495,11 @@ export class HealthRecordsService {
     /**
      * Delete Health Record
      *
-     * Delete an owned record (cancelación ARCO).
+     * Delete an owned record (cancelación ARCO). A diagnosis is first unlinked
+     * from the chronic entries it backs, in the SAME transaction (perfil-cronicas
+     * Decision 3), holding the profile lock the history writes take (review R1):
+     * a chronic save never re-links it nor overwrites the unlink. The profile is
+     * not created here: without one there are no chronic entries to unlink.
      */
     public static recordsDeleteHealthRecord<ThrowOnError extends boolean = true>(options: Options<healthRecordsDeleteHealthRecordData, ThrowOnError>) {
         return (options.client ?? client).delete<healthRecordsDeleteHealthRecordResponses, healthRecordsDeleteHealthRecordErrors, ThrowOnError>({
@@ -823,7 +827,9 @@ export class ProfileService {
     /**
      * Delete History Entry
      *
-     * Delete an owned entry (same 404 for missing and foreign).
+     * Delete an owned entry (same 404 for missing and foreign). Takes the
+     * profile lock first, without creating the profile (review R1): a diagnosis
+     * DELETE unlinking this entry finishes before it, never mid-flush.
      */
     public static deleteHistoryEntry<ThrowOnError extends boolean = true>(options: Options<profileDeleteHistoryEntryData, ThrowOnError>) {
         return (options.client ?? client).delete<profileDeleteHistoryEntryResponses, profileDeleteHistoryEntryErrors, ThrowOnError>({
@@ -837,7 +843,9 @@ export class ProfileService {
     /**
      * Update History Entry
      *
-     * Full update of an owned entry; its section cannot change (422).
+     * Full update of an owned entry; its section cannot change (422). Takes
+     * the profile lock, like the POST and the diagnosis DELETE (review R1), so a
+     * save and an unlink never act on a stale view of each other.
      */
     public static updateHistoryEntry<ThrowOnError extends boolean = true>(options: Options<profileUpdateHistoryEntryData, ThrowOnError>) {
         return (options.client ?? client).put<profileUpdateHistoryEntryResponses, profileUpdateHistoryEntryErrors, ThrowOnError>({

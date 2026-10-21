@@ -76,7 +76,7 @@
   },
   "pending": {
     "heading": "Tu historial",
-    "description": "Llénalas a tu ritmo; todo es opcional. Crónicas y hábitos llegan pronto.",
+    "description": "Llénalas a tu ritmo; todo es opcional. Los hábitos llegan pronto.",
     "sections": {
       "chronic": "Enfermedades crónicas",
       "past": "Enfermedades pasadas e infecciosas",
@@ -107,10 +107,12 @@
     "emptySection": "Aún no has llenado esta sección.",
     "noneButton": {
       "default": "No he tenido ninguna",
+      "chronic": "No tengo ninguna",
       "transfusions": "Nunca me han transfundido"
     },
     "noneMarked": {
       "default": "Marcaste: no he tenido ninguna.",
+      "chronic": "Marcaste: no tengo ninguna.",
       "transfusions": "Marcaste: nunca me han transfundido."
     },
     "noneHint": "Queda registrado que lo respondiste.",
@@ -145,9 +147,37 @@
       "side": "Lado",
       "requiredSurgery": "¿Requirió cirugía?",
       "component": "Qué se transfundió",
-      "reaction": "¿Hubo reacción?"
+      "reaction": "¿Hubo reacción?",
+      "chronicCondition": "¿Cuál?",
+      "chronicOtherText": "¿Cuál es?",
+      "mentalHealth": "Salud mental y adicciones",
+      "sensitive": "Sensible",
+      "sensitiveHint": "Podrás ocultarla cuando compartas tu expediente",
+      "status": "¿La sigues teniendo?",
+      "treatment": "Tratamiento actual",
+      "diagnosis": "Diagnóstico del expediente que la respalda",
+      "diagnosisNone": "Ninguno"
     },
     "options": {
+      "chronicCondition": {
+        "type2_diabetes": "Diabetes tipo 2",
+        "hypertension": "Hipertensión",
+        "asthma": "Asma",
+        "hypothyroidism": "Hipotiroidismo",
+        "high_cholesterol": "Colesterol alto",
+        "copd": "EPOC",
+        "arthritis": "Artritis",
+        "epilepsy": "Epilepsia",
+        "depression": "Depresión",
+        "anxiety": "Ansiedad",
+        "bipolar_disorder": "Trastorno bipolar",
+        "substance_use": "Consumo de alcohol u otras sustancias",
+        "other": "Otra"
+      },
+      "status": {
+        "active": "Activa",
+        "resolved": "Ya no la tengo"
+      },
       "condition": {
         "varicella": "Varicela",
         "measles": "Sarampión",
@@ -202,10 +232,16 @@
       "hospitalized": "hospitalizado",
       "requiredSurgery": "requirió cirugía",
       "implant": "implante: {{implant}}",
-      "reaction": "hubo reacción"
+      "reaction": "hubo reacción",
+      "active": "activa",
+      "resolved": "ya no la tiene",
+      "sensitive": "sensible",
+      "backing": "Respaldo: {{title}}"
     },
     "when": {
       "legend": "¿Cuándo?",
+      "legendSince": "¿Desde cuándo?",
+      "legendUntil": "¿Hasta cuándo?",
       "age": "Edad que tenías",
       "year": "Año",
       "ageUnit": "años",
@@ -221,6 +257,11 @@
       "unknown": "No recuerdo",
       "approxHint": "Año aproximado: {{range}}, calculado con tu fecha de nacimiento.",
       "onlyNumber": "Escribe solo el número.",
+      "ageOverCurrent": "La edad no puede ser mayor que tu edad actual",
+      "ageOutOfRange": "La edad debe estar entre 0 y {{max}} años",
+      "yearBeforeBirth": "El año no puede ser anterior a tu nacimiento",
+      "yearTooOld": "El año no puede ser anterior a {{min}}",
+      "yearFuture": "El año no puede ser futuro",
       "summary": {
         "age": "a los {{value}} años",
         "year": "en {{value}}",
@@ -231,6 +272,28 @@
           "primary": "en la primaria",
           "secondary": "en la secundaria",
           "high_school": "en la prepa"
+        }
+      },
+      "summarySince": {
+        "age": "desde los {{value}} años",
+        "year": "desde {{value}}",
+        "unknown": "no recuerda desde cuándo",
+        "stages": {
+          "before_primary": "desde antes de la primaria",
+          "primary": "desde la primaria",
+          "secondary": "desde la secundaria",
+          "high_school": "desde la prepa"
+        }
+      },
+      "summaryUntil": {
+        "age": "hasta los {{value}} años",
+        "year": "hasta {{value}}",
+        "unknown": "no recuerda hasta cuándo",
+        "stages": {
+          "before_primary": "hasta antes de la primaria",
+          "primary": "hasta la primaria",
+          "secondary": "hasta la secundaria",
+          "high_school": "hasta la prepa"
         }
       }
     },
@@ -264,6 +327,7 @@
     },
     "validation": {
       "empty": "Llena al menos un dato",
+      "chronic": "Elige la condición o escribe cuál es",
       "past": "Elige la condición o escribe cuál fue",
       "surgeries": "Escribe qué cirugía u hospitalización fue",
       "fractures": "Escribe qué hueso o lesión fue"

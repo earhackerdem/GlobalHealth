@@ -9,7 +9,8 @@ import { sectionFromSlug } from "@/components/Profile/history"
 import i18n from "@/i18n"
 
 /**
- * /perfil/pasadas · /perfil/cirugias · /perfil/fracturas · /perfil/transfusiones:
+ * /perfil/cronicas · /perfil/pasadas · /perfil/cirugias · /perfil/fracturas ·
+ * /perfil/transfusiones:
  * one screen per history section (Decision 5). The trailing `_` in the file
  * name keeps it out of perfil.tsx's layout (it is a sibling page, not a child).
  */
