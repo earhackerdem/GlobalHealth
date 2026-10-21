@@ -33,7 +33,7 @@ are `single`. `make tdd-check` requires one `test:` commit per `test→impl` gro
   - `upgrade_stored_habits` y su uso en `_stored_habits` (`backend/app/api/routes/profile.py`).
 
   Verificación: los tests de 1.1 verdes sin tocarlos; mypy limpio.
-- [ ] 1.3 **Orquestador.**
+- [x] 1.3 **Orquestador.**
   - Suite backend completa desde limpio: cero fallos, errores y skips; cobertura ≥ 90 %.
   - Agrega el plugin `zod` a `frontend/openapi-ts.config.ts` y regenera el cliente (`scripts/generate-client.sh`).
   - Números en evidence.md § Grupo 1; `make tdd-check`.

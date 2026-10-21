@@ -13,6 +13,10 @@ export type AlcoholHabit = {
      */
     status: 'never' | 'quit' | 'current';
     /**
+     * Start Age
+     */
+    start_age?: number | null;
+    /**
      * Quit Age
      */
     quit_age?: number | null;
@@ -482,10 +486,7 @@ export type HTTPValidationError = {
 export type Habits = {
     alcohol?: AlcoholHabit | null;
     tobacco?: TobaccoHabit | null;
-    /**
-     * Vaping
-     */
-    vaping?: 'never' | 'former' | 'current' | null;
+    vaping?: VapingHabit | null;
     secondhand_smoke?: SecondhandSmoke | null;
     wood_smoke?: WoodSmokeHabit | null;
 };
@@ -1491,6 +1492,32 @@ export type ValidationError = {
 };
 
 /**
+ * VapingHabit
+ */
+export type VapingHabit = {
+    /**
+     * Status
+     */
+    status: 'never' | 'former' | 'current';
+    /**
+     * Frequency
+     */
+    frequency?: 'daily' | 'some_days' | null;
+    /**
+     * Days Last 30
+     */
+    days_last_30?: number | null;
+    /**
+     * Start Age
+     */
+    start_age?: number | null;
+    /**
+     * Quit Age
+     */
+    quit_age?: number | null;
+};
+
+/**
  * WhenAge
  */
 export type WhenAge = {
@@ -1551,9 +1578,17 @@ export type WoodSmokeHabit = {
      */
     status: 'never' | 'former' | 'current';
     /**
-     * Years
+     * Start Age
      */
-    years?: number | null;
+    start_age?: number | null;
+    /**
+     * Quit Age
+     */
+    quit_age?: number | null;
+    /**
+     * Hours Per Day
+     */
+    hours_per_day?: number | null;
 };
 
 export type loginLoginAccessTokenData = {
