@@ -47,7 +47,7 @@ const useAuth = () => {
 
   // Logging in or out without a reload keeps the in-memory cache: it is
   // emptied on both, so nothing of the previous account reaches the next one
-  // (perfil-habitos review R1).
+  // (perfil-habitos review R1). Other tabs: the storage listener in main.tsx.
   const loginMutation = useMutation({
     mutationFn: login,
     onSuccess: () => {

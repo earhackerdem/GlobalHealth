@@ -209,6 +209,22 @@ def test_c1_current_alcohol_with_audit_c_round_trip(
     assert stored_habits(client, headers) == expected
 
 
+def test_c1_mostly_weekends_false_round_trip(client: TestClient, db: Session) -> None:
+    """Alcohol current con mostly_weekends False -> PUT y GET devuelven False,
+    no None (el «No» es una respuesta, review R2)."""
+    headers, _ = consented_user(client, db)
+    answers = {"status": "current", "mostly_weekends": False}
+    expected = habits(alcohol=alcohol(**answers))
+
+    saved = save(client, headers, {"alcohol": answers})
+    stored = stored_habits(client, headers)
+
+    assert saved == expected
+    assert stored == expected
+    assert saved["alcohol"]["mostly_weekends"] is False
+    assert stored["alcohol"]["mostly_weekends"] is False
+
+
 # --- Row 2: Lo dejó, con la edad (C-1) --------------------------------------------
 
 

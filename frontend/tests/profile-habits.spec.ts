@@ -147,6 +147,30 @@ async function seedHabits(api: Api, body: Record<string, unknown>) {
   expect(res.status(), await res.text()).toBe(200)
 }
 
+async function emailOf(api: Api): Promise<string> {
+  const res = await api.request.get(`${API}/users/me`, {
+    headers: api.headers,
+  })
+  expect(res.ok()).toBeTruthy()
+  return (await res.json()).email
+}
+
+/** Otro paciente con el consentimiento ya dado (por API): entra directo a la app. */
+async function consentedPatient(request: APIRequestContext) {
+  const user = { email: randomEmail(), password: randomPassword() }
+  await createUser(user)
+  const api = await apiSession(request, user.email, user.password)
+  const text = await request.get(`${API}/consent/text`, {
+    headers: api.headers,
+  })
+  const consent = await request.post(`${API}/consent/`, {
+    headers: api.headers,
+    data: { version: (await text.json()).version },
+  })
+  expect(consent.ok()).toBeTruthy()
+  return { ...user, api }
+}
+
 async function getHabits(api: Api) {
   const res = await api.request.get(`${API}/profile/habits`, {
     headers: api.headers,
@@ -563,23 +587,15 @@ test.describe("Perfil médico — hábitos (perfil-habitos, grupo 2)", () => {
     })
     await openHabitsFromProfile(page)
     await expect(numberField(page, CIGARETTES)).toHaveValue("20")
+    const aEmail = await emailOf(apiA)
 
-    // B ya dio su consentimiento (por API) y entra directo a la app.
-    const b = { email: randomEmail(), password: randomPassword() }
-    await createUser(b)
-    const apiB = await apiSession(request, b.email, b.password)
-    const text = await request.get(`${API}/consent/text`, {
-      headers: apiB.headers,
-    })
-    const consent = await request.post(`${API}/consent/`, {
-      headers: apiB.headers,
-      data: { version: (await text.json()).version },
-    })
-    expect(consent.ok()).toBeTruthy()
+    const b = await consentedPatient(request)
+    const apiB = b.api
 
     // A cierra sesión desde el menú; B entra por el formulario sin recargar,
-    // con su GET de hábitos retrasado 2 s (lo que tarde no debe dejar ver los
-    // de A).
+    // con su GET de hábitos retrasado 2 s y su /users/me detenido hasta mirar
+    // el menú (lo que tarden no debe dejar ver nada de A: ni sus hábitos ni
+    // su correo, review R2).
     const userMenu = page.getByTestId("user-menu")
     await revealInSidebar(page, userMenu)
     await userMenu.click()
@@ -591,10 +607,22 @@ test.describe("Perfil médico — hábitos (perfil-habitos, grupo 2)", () => {
       }
       await route.continue()
     })
+    let releaseMe = () => {}
+    const meHeld = new Promise<void>((resolve) => {
+      releaseMe = resolve
+    })
+    await page.route("**/api/v1/users/me", async (route) => {
+      await meHeld
+      await route.continue()
+    })
     await inAppLogin(page, b.email, b.password)
 
     const perfilLink = page.getByRole("link", { name: "Mi perfil médico" })
     await revealInSidebar(page, perfilLink)
+    await expect(page.getByText(aEmail)).toHaveCount(0)
+    releaseMe()
+    await expect(userMenu).toContainText(b.email)
+    await expect(page.getByText(aEmail)).toHaveCount(0)
     await perfilLink.click()
     await page.waitForURL(PROFILE_URL)
     await reopen(page)
@@ -604,6 +632,46 @@ test.describe("Perfil médico — hábitos (perfil-habitos, grupo 2)", () => {
 
     await saveOk(page)
     const saved = await getHabits(apiB)
+    expect(saved.tobacco ?? null).toBeNull()
+    expect(saved.vaping ?? null).toBeNull()
+  })
+
+  test("R2 (N1) A cierra sesión y B entra en OTRA pestaña: la que tenía abiertos los hábitos de A ya no los muestra ni los puede guardar", async ({
+    page,
+    request,
+  }) => {
+    const apiA = await freshPatient(page, request)
+    await seedHabits(apiA, {
+      tobacco: { status: "current", cigarettes_per_day: 20 },
+      vaping: "current",
+    })
+    await openHabitsFromProfile(page)
+    await expect(numberField(page, CIGARETTES)).toHaveValue("20")
+    const aEmail = await emailOf(apiA)
+    const b = await consentedPatient(request)
+
+    // Pestaña 2 del mismo navegador (comparte localStorage): A sale, B entra.
+    const other = await page.context().newPage()
+    await other.goto("/perfil")
+    const otherMenu = other.getByTestId("user-menu")
+    await revealInSidebar(other, otherMenu)
+    await otherMenu.click()
+    await other.getByRole("menuitem", { name: "Cerrar sesión" }).click()
+    await other.waitForURL(/\/login/)
+    await inAppLogin(other, b.email, b.password)
+
+    // La pestaña 1 dejó el cuestionario de A: ni sus datos ni "Guardar".
+    await expect(page).not.toHaveURL(HABITS_URL)
+    await expect(numberField(page, CIGARETTES)).toHaveCount(0)
+    await expect(
+      page.getByRole("button", { name: "Guardar", exact: true }),
+    ).toHaveCount(0)
+    const userMenu = page.getByTestId("user-menu")
+    await revealInSidebar(page, userMenu)
+    await expect(userMenu).toContainText(b.email)
+    await expect(page.getByText(aEmail)).toHaveCount(0)
+
+    const saved = await getHabits(b.api)
     expect(saved.tobacco ?? null).toBeNull()
     expect(saved.vaping ?? null).toBeNull()
   })
@@ -722,6 +790,23 @@ test.describe("Perfil médico — hábitos (perfil-habitos, grupo 2)", () => {
     const saved = await getHabits(api)
     expect(saved.alcohol?.status).toBe("current")
     expect(saved.alcohol?.mostly_weekends ?? null).toBeNull()
+  })
+
+  test("R2 (N3) 'Sobre todo fines de semana' en 'No' se guarda como false y al reabrir 'No' sigue elegido", async ({
+    page,
+    request,
+  }) => {
+    const api = await freshPatient(page, request)
+    await openHabitsFromProfile(page)
+
+    await chip(page, ALCOHOL, "Actual").click()
+    await chip(page, WEEKENDS, "No").click()
+    await saveOk(page)
+    expect((await getHabits(api)).alcohol?.mostly_weekends).toBe(false)
+
+    await reopen(page)
+    await expectPressed(chip(page, WEEKENDS, "No"), true)
+    await expectPressed(chip(page, WEEKENDS, "Sí"), false)
   })
 
   test("R18 un 422 en una pregunta de chips va bajo SU grupo (servidor simulado: la UI no puede provocarlo)", async ({

@@ -39,6 +39,18 @@ const queryClient = new QueryClient({
   }),
 })
 
+// The token is shared by every tab: when another tab logs in or out (or
+// empties localStorage, key null), this one drops its cache and reloads, so
+// neither the previous account's data nor a half-filled form stays visible or
+// can be saved with the new token (perfil-habitos review, round 2, N1). /login sends a
+// tab that has a session on to "/".
+window.addEventListener("storage", (event) => {
+  if (event.key === "access_token" || event.key === null) {
+    queryClient.clear()
+    window.location.href = "/login"
+  }
+})
+
 const router = createRouter({ routeTree })
 declare module "@tanstack/react-router" {
   interface Register {
