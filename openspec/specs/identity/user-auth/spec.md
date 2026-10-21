@@ -8,13 +8,13 @@ de cualquier otra.
 El sistema SHALL permitir crear una cuenta de paciente con correo y contraseña e iniciar sesión con esas credenciales.
 
 #### Scenario: Alta exitosa con correo
-- **GIVEN** no existe cuenta para `saul@example.com`
-- **WHEN** se registra con `saul@example.com` y una contraseña válida
+- **GIVEN** no existe cuenta para `email@example.com`
+- **WHEN** se registra con `email@example.com` y una contraseña válida
 - **THEN** la cuenta queda creada y puede iniciar sesión con esas credenciales
 
 #### Scenario: Correo ya registrado
-- **GIVEN** ya existe una cuenta para `saul@example.com`
-- **WHEN** alguien intenta registrarse con `saul@example.com`
+- **GIVEN** ya existe una cuenta para `email@example.com`
+- **WHEN** alguien intenta registrarse con `email@example.com`
 - **THEN** el alta se rechaza sin revelar datos de la cuenta existente
 
 ### Requirement: Registro e inicio de sesión con Google
@@ -22,12 +22,12 @@ El sistema SHALL permitir crear la cuenta e iniciar sesión mediante la cuenta d
 usando a Google únicamente como proveedor de identidad.
 
 #### Scenario: Alta con Google
-- **GIVEN** no existe cuenta para `saul@gmail.com` y el paciente tiene esa cuenta de Google
+- **GIVEN** no existe cuenta para `email@example.com` y el paciente tiene esa cuenta de Google
 - **WHEN** elige "Continuar con Google" y autoriza
 - **THEN** la cuenta queda creada sin contraseña local y la sesión iniciada
 
 #### Scenario: Google con correo ya registrado por contraseña
-- **GIVEN** existe una cuenta creada con correo/contraseña para `saul@gmail.com`
+- **GIVEN** existe una cuenta creada con correo/contraseña para `email@example.com`
 - **WHEN** inicia con Google y Google reporta ese correo como verificado
 - **THEN** accede a la misma cuenta (no se crea una cuenta duplicada)
 
