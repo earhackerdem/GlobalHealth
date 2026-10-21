@@ -56,5 +56,13 @@ Ver evidence.md § Deuda.
   ahora también vigila el correo del menú), N3 («No» guarda `false`, e2e y backend) y D1–D4 (textos que el apply dejó
   viejos, incluido `product/dominio.md`). Verificación: backend 304 passed, e2e del cambio 119 passed, suite completa
   221 · 221 · 220 + el heredado `reset-password.spec.ts:90`.
+- **Ronda 3** (sobre el apply de la ronda 2, 2026-10-21): 2 finders, sin defectos de código. Ni bucles de recarga ni
+  caminos de sesión sin cubrir (expirada, `localStorage.clear()`, Google, bfcache). 4 bajos: M1 (otra pestaña con
+  un token nuevo de la MISMA cuenta también recarga y pierde el borrador) a deuda ⏸️, aceptado por Saúl Pérez; M2
+  pruebas renombradas a "N1"/"N3 (ronda 2)" porque "R2" chocaba con el R2 de la ronda 1; M3 bloque "Cambiar de
+  cuenta" en validation.md; M4 la casilla "truly green" del PR se desmarca (una corrida tuvo el heredado). Saúl
+  Pérez pidió además una tarea para atender TODAS las deudas antes de la investigación de UX:
+  `memory/inbox/2026-10-21-atender-todas-las-deudas-antes-de-la-investigacion-ux.md`, y el orden quedó también en el
+  pendiente de la ronda 2 del dominio.
 - El hook `lint.py` volvió a marcar el `except A, B:` (PEP 758) de `profile.py:220` con el Python 3.9 del sistema;
   ya está en el inbox del template.

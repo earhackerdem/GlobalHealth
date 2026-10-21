@@ -211,7 +211,7 @@ def test_c1_current_alcohol_with_audit_c_round_trip(
 
 def test_c1_mostly_weekends_false_round_trip(client: TestClient, db: Session) -> None:
     """Alcohol current con mostly_weekends False -> PUT y GET devuelven False,
-    no None (el «No» es una respuesta, review R2)."""
+    no None (el «No» es una respuesta; revisión, ronda 2, N3)."""
     headers, _ = consented_user(client, db)
     answers = {"status": "current", "mostly_weekends": False}
     expected = habits(alcohol=alcohol(**answers))

@@ -576,7 +576,7 @@ test.describe("Perfil médico — hábitos (perfil-habitos, grupo 2)", () => {
     ).toBeVisible()
   })
 
-  test("R1 otro paciente entra sin recargar tras 'Cerrar sesión': no ve ni guarda los hábitos del anterior", async ({
+  test("R1 otro paciente entra sin recargar tras 'Cerrar sesión': no ve ni guarda los hábitos del anterior, ni ve su correo (N2)", async ({
     page,
     request,
   }) => {
@@ -595,7 +595,7 @@ test.describe("Perfil médico — hábitos (perfil-habitos, grupo 2)", () => {
     // A cierra sesión desde el menú; B entra por el formulario sin recargar,
     // con su GET de hábitos retrasado 2 s y su /users/me detenido hasta mirar
     // el menú (lo que tarden no debe dejar ver nada de A: ni sus hábitos ni
-    // su correo, review R2).
+    // su correo; revisión, ronda 2, N2).
     const userMenu = page.getByTestId("user-menu")
     await revealInSidebar(page, userMenu)
     await userMenu.click()
@@ -636,7 +636,7 @@ test.describe("Perfil médico — hábitos (perfil-habitos, grupo 2)", () => {
     expect(saved.vaping ?? null).toBeNull()
   })
 
-  test("R2 (N1) A cierra sesión y B entra en OTRA pestaña: la que tenía abiertos los hábitos de A ya no los muestra ni los puede guardar", async ({
+  test("N1 (ronda 2) A cierra sesión y B entra en OTRA pestaña: la que tenía abiertos los hábitos de A ya no los muestra ni los puede guardar", async ({
     page,
     request,
   }) => {
@@ -792,7 +792,7 @@ test.describe("Perfil médico — hábitos (perfil-habitos, grupo 2)", () => {
     expect(saved.alcohol?.mostly_weekends ?? null).toBeNull()
   })
 
-  test("R2 (N3) 'Sobre todo fines de semana' en 'No' se guarda como false y al reabrir 'No' sigue elegido", async ({
+  test("N3 (ronda 2) 'Sobre todo fines de semana' en 'No' se guarda como false y al reabrir 'No' sigue elegido", async ({
     page,
     request,
   }) => {

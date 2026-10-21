@@ -30,7 +30,7 @@
 |---|---|---|---|---|
 | `cd backend && FASTAPI_ENV=development uv run coverage run -m pytest tests/ -q` | **304 passed, 0 failed** (hábitos 54: + "No" guarda `False`, N3) · cobertura **96 %** | 0 | 0 | ✅ |
 | `bunx playwright test tests/profile-habits.spec.ts tests/profile.spec.ts tests/profile-history.spec.ts` (chromium + s26-ultra), corrida del fixer | **119 passed, 0 failed** | 0 | 0 | ✅ |
-| N1 sin el fix (`main.tsx` de `7872cdf`) → con el fix, `-g "R2 \(N1\)" --project=chromium` | 1 failed (la pestaña 1 sigue en `/perfil/habitos` con los datos de A) → 2 passed | — | 0 | ✅ |
+| N1 sin el fix (`main.tsx` de `7872cdf`) → con el fix, `-g "N1 \(ronda 2\)" --project=chromium` | 1 failed (la pestaña 1 sigue en `/perfil/habitos` con los datos de A) → 2 passed | — | 0 | ✅ |
 | N2: R1 con un fix estrecho (`removeQueries(["habits"])`) | 2 failed (el menú de B muestra el correo de A) → con `clear()`, verde | — | 0 | ✅ |
 | Sondas del validador de la ronda 2, después del fix | ya no pueden guardar: la pestaña 1 sale de la pantalla de hábitos (y del diálogo "Editar datos básicos") en cuanto la otra cambia la sesión | — | — | ✅ |
 | `bunx tsc -p tsconfig.build.json --noEmit` · `bunx biome check src/ tests/` | 0 errores · 104 archivos, sin cambios | 0 | — | ✅ |

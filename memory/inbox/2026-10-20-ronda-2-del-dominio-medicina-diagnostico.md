@@ -7,4 +7,4 @@ status: open
 
 **Why it matters:** Toca receta (FR-005/FR-006), crónicas (FR-028) y el futuro de la IA; texto libre vs catálogo vs híbrido se decide con la investigación de `docs/investigacion-captura-ux` antes de `/product-discovery` ronda 2
 
-**Status:** abierto · investigación hecha (research.md#captura-catalogos). Saúl Pérez (2026-10-20) adoptó como dirección el **híbrido**: texto obligatorio + código opcional (CIE-10 interno), sin catálogo cerrado ni CRUD de admin; se vuelve ADR al cerrar la ronda 2. Orden: cerrar PR #26 → hábitos (Story C) → ronda 2
+**Status:** abierto · investigación hecha (research.md#captura-catalogos). Saúl Pérez (2026-10-20) adoptó como dirección el **híbrido**: texto obligatorio + código opcional (CIE-10 interno), sin catálogo cerrado ni CRUD de admin; se vuelve ADR al cerrar la ronda 2. Orden: cerrar PR #26 → hábitos (Story C) → deudas (`memory/inbox/2026-10-21-atender-todas-las-deudas-antes-de-la-investigacion-ux.md`, pedido de Saúl Pérez 2026-10-21) → ronda 2

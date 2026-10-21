@@ -47,7 +47,18 @@ Registra tu fecha de nacimiento en "Editar datos básicos": con ella la app sabe
 - [ ] Puedo contestar una sola cosa (por ejemplo, vapeador "Nunca"), guardar, y la tarjeta dice "Con datos".
 - [ ] "Cancelar" vuelve sin guardar.
 
+## Cambiar de cuenta (lo encontró la revisión)
+Necesitas una segunda cuenta de prueba (no la tuya real) con otros hábitos.
+- [ ] Con tus hábitos abiertos, cierra sesión desde el menú y entra con la otra cuenta sin recargar: no ves tus
+  respuestas ni tu correo, y al guardar en esa cuenta no se copian las tuyas.
+- [ ] Abre tus hábitos en una pestaña y, en otra pestaña del mismo navegador, cierra sesión y entra con la otra
+  cuenta. Al volver a la primera, ya no muestra tus hábitos: la pestaña se fue sola a "Iniciar sesión" o al inicio
+  de la otra cuenta, y no hay "Guardar" con tus datos.
+
 ## Lo que todavía NO hace
 - Ejercicio, movimiento del día, sueño y el bloque "Trabajo" del perfil básico (Story C2).
 - No avisa si sales de la pantalla sin guardar: lo contestado se pierde, igual que en las otras secciones.
+- Si en otra pestaña cambia la sesión (cierras sesión, entras con otra cuenta, o vuelves a entrar con la misma),
+  esta pestaña se recarga y lo que tenías sin guardar se pierde. Es a propósito: es preferible a que quede a la vista
+  o se guarde con la cuenta equivocada.
 - La experiencia por pasos con mascota ("casi como Duolingo") sigue en el inbox.
