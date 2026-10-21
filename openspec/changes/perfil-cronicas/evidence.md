@@ -99,3 +99,38 @@ usuario y luego responde 500 (validación de la respuesta). Es del template (sol
   código de este cambio. El CI del PR corre con `--fail-on-flaky-tests`.
 - **H5 (`closed.md`):** el formulario crece sin RHF+zod.
 - **Dos líneas sin cubrir** en `crud.py` y `models.py` (ver notas del grupo 1).
+
+## Review adversarial y apply (`/epe-4-review` → `/epe-5-apply`, 2026-10-20)
+
+- **Ronda 1:** 5 lentes en paralelo produjeron 41 hallazgos en bruto, que quedaron en 24 entradas tras deduplicar. 4
+  validadores los reprodujeron con pytest, Playwright y mutaciones sobre copias. Saúl Pérez aprobó R1, R5, R6+R9b,
+  R11, R12, R13, R14, R15, R16, R17, R19, R24 y R25 (chips, ADR D18). R18 se resolvió con la opción b. El resto va
+  a deuda o se descartó (`memory/closed.md`).
+- **Apply 1:** test 6242e3d y fix e59ba83.
+- **Ronda 2:** sobre el diff del apply, encontró 12 entradas. La mayoría eran arreglos aprobados sin prueba o
+  regresiones del propio apply: hora del navegador, orden de los errores y reintentos del aviso.
+- **Apply 2:** test 6539264 y fix 903124e.
+- **Ronda 3:** dos hallazgos bajos, que pasaron a deuda. Convergencia: 24 → 12 → 2.
+
+| Command | Result (numbers) | Errors in log | Skipped | Truly-green verdict |
+|---|---|---|---|---|
+| `cd backend && FASTAPI_ENV=development uv run coverage run -m pytest tests/ -q` (tras el apply 2, re-corrido por el orquestador) | **250 passed, 0 failed** · cobertura **96 %** | 0 (los mismos UserWarning de dev) | 0 | ✅ |
+| `uv run mypy app` · `uv run ruff check app tests` · `bunx tsc -p tsconfig.build.json --noEmit` · `bunx biome check src/ tests/` | limpios | 0 | — | ✅ |
+| e2e del cambio: `bunx playwright test tests/profile-history.spec.ts tests/profile.spec.ts tests/health-records.spec.ts` (chromium + s26-ultra) | **117 passed, 0 failed** | 0 | 0 | ✅ |
+| Estabilidad de los e2e nuevos (ronda 3): E9, E9b–e, E17, E17b y E17c con `--repeat-each=5`; los 6 pytest de candado y rangos, 5 veces | 80/80 · 6/6 × 5 | 0 | 0 | ✅ |
+| `make tdd-check` | ✓ red 6539264, test paths sin cambios desde entonces | — | — | ✅ |
+
+**Rojo de las pruebas del apply.** Las escribió el fixer junto con los arreglos, no antes. El rojo se demostró por
+mutación:
+- sin `unlink_diagnosis`, fallan E17 y 2 pytest;
+- sin la validación de R5, falla E9b;
+- sin candado en cada una de las 3 rutas, falla su prueba;
+- con «hoy» del dispositivo, fallan E9d y E9e;
+- con el orden de errores revertido, falla E9c;
+- con el error de «¿Cuál?» debajo de los chips, falla E9;
+- con reintentos en el aviso, falla E17b;
+- consultando el historial al borrar una receta, falla E17c.
+
+**Entorno.** En `127.0.0.1:8000` escucha además un `fastapi dev` de larga duración (PID 1076, desde el
+2026-10-11) que recarga el árbol de trabajo, junto al contenedor en `*:8000`. Durante esta sesión los dos sirvieron
+el mismo código; no es de esta sesión y no se tocó.
