@@ -25,6 +25,7 @@ from fastapi import APIRouter, HTTPException, Query
 from pydantic import ConfigDict, TypeAdapter, ValidationError
 from sqlmodel import col, func, select
 
+from app import crud
 from app.api.deps import ConsentedUser, SessionDep
 from app.models import (
     HISTORY_SECTIONS,
@@ -137,16 +138,16 @@ def _store_sections_none(profile: PatientProfile, marks: list[HistorySection]) -
 
 
 def _lock_profile(session: SessionDep, current_user: ConsentedUser) -> PatientProfile:
-    """The profile re-read FOR UPDATE: "mark ninguna", "create / update an
-    entry" and "delete a diagnosis" (health_records.py) serialize on it, so
-    none acts on a stale view of another (design.md Risks: two tabs)."""
+    """The profile, created if missing, then locked (crud.lock_profile): "mark
+    ninguna" and "create / update an entry" take it here; "delete an entry"
+    and "delete a diagnosis" (health_records.py) take crud.lock_profile
+    directly, without creating it. All of them serialize on that row, so none
+    acts on a stale view of another (design.md Risks: two tabs; review R1)."""
     _get_or_create_profile(session, current_user)
-    return session.exec(
-        select(PatientProfile)
-        .where(PatientProfile.user_id == current_user.id)
-        .with_for_update()
-        .execution_options(populate_existing=True)
-    ).one()
+    profile = crud.lock_profile(session=session, owner_id=current_user.id)
+    if profile is None:  # just created above; only a concurrent delete
+        raise HTTPException(status_code=404, detail="Perfil no encontrado")
+    return profile
 
 
 def _profile_birth_date(profile: PatientProfile) -> date | None:
@@ -569,7 +570,10 @@ def update_history_entry(
 def delete_history_entry(
     session: SessionDep, current_user: ConsentedUser, id: uuid.UUID
 ) -> Message:
-    """Delete an owned entry (same 404 for missing and foreign)."""
+    """Delete an owned entry (same 404 for missing and foreign). Takes the
+    profile lock first, without creating the profile (review R1): a diagnosis
+    DELETE unlinking this entry finishes before it, never mid-flush."""
+    crud.lock_profile(session=session, owner_id=current_user.id)
     entry = _get_owned_history_entry(session, current_user, id)
     session.delete(entry)
     session.commit()

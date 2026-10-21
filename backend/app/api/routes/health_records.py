@@ -20,7 +20,6 @@ from sqlmodel import col, delete, func, select
 
 from app import crud
 from app.api.deps import ConsentedUser, SessionDep
-from app.api.routes.profile import _lock_profile
 from app.models import (
     HealthRecord,
     HealthRecordAttachment,
@@ -222,11 +221,12 @@ def delete_health_record(
 ) -> Message:
     """Delete an owned record (cancelación ARCO). A diagnosis is first unlinked
     from the chronic entries it backs, in the SAME transaction (perfil-cronicas
-    Decision 3), holding the profile lock the history POST/PUT take (review
-    R1): a chronic save never re-links it nor overwrites the unlink."""
+    Decision 3), holding the profile lock the history writes take (review R1):
+    a chronic save never re-links it nor overwrites the unlink. The profile is
+    not created here: without one there are no chronic entries to unlink."""
     record = _get_owned_record(session, current_user, id)
     if record.record_type == "diagnosis":
-        _lock_profile(session, current_user)
+        crud.lock_profile(session=session, owner_id=current_user.id)
         crud.unlink_diagnosis(
             session=session, owner_id=current_user.id, diagnosis_id=record.id
         )

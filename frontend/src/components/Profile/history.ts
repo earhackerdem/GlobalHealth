@@ -6,6 +6,7 @@ import type {
   PatientProfilePublic,
   WhenStage,
 } from "@/client"
+import { mexicoCityTodayIso } from "./format"
 
 /**
  * The sections with their own screen (keys as in perfil.tsx): chronic (US-18
@@ -163,27 +164,29 @@ export function approxYears(
 const MAX_AGE = 130
 const MIN_YEAR = 1900
 
-/** Age today from an ISO "aaaa-mm-dd" birth date (no `new Date(iso)`). */
-function ageToday(birthDate: string, today: Date): number | null {
+/** Age on `today` from ISO "aaaa-mm-dd" dates (no `new Date(iso)`). */
+function ageToday(birthDate: string, today: string): number | null {
   const [year, month, day] = birthDate.split("-").map(Number)
+  const [todayYear, todayMonth, todayDay] = today.split("-").map(Number)
   if (![year, month, day].every(Number.isFinite)) return null
   const beforeBirthday =
-    today.getMonth() + 1 < month ||
-    (today.getMonth() + 1 === month && today.getDate() < day)
-  return today.getFullYear() - year - (beforeBirthday ? 1 : 0)
+    todayMonth < month || (todayMonth === month && todayDay < day)
+  return todayYear - year - (beforeBirthday ? 1 : 0)
 }
 
 /**
  * The es-MX message of an impossible age or year, or null: the same checks
  * and texts as the API's validate_when (backend/app/models.py), run before
  * submit so the error shows next to its own "cuándo" even when two are sent
- * (review R5). The server still decides anything this misses.
+ * (review R5). "Today" is Mexico City's, like the API's, so a device in
+ * another timezone near midnight agrees with the server. The server still
+ * decides anything this misses.
  */
 export function impossibleWhen(
   when: When,
   birthDate: string | null | undefined,
   t: TFunction,
-  today: Date = new Date(),
+  today: string = mexicoCityTodayIso(),
 ): string | null {
   if (when.kind === "age") {
     const current = birthDate ? ageToday(birthDate, today) : null
@@ -197,7 +200,7 @@ export function impossibleWhen(
       return t("profile:history.when.yearBeforeBirth")
     if (when.value < MIN_YEAR)
       return t("profile:history.when.yearTooOld", { min: MIN_YEAR })
-    if (when.value > today.getFullYear())
+    if (when.value > Number(today.slice(0, 4)))
       return t("profile:history.when.yearFuture")
   }
   return null

@@ -276,14 +276,15 @@ function serverErrorKey(
 /**
  * Add / edit form of one history entry, on the section's own screen (Decision
  * 5). Validates what the API would reject anyway (nothing filled in, the
- * section's required datum, a non-numeric "cuándo") so the es-MX message
- * shows inline next to its field; anything else the server says is shown
- * inline too (serverErrorKey): a 422 with a "cuándo" sent is the impossible
- * age or year (the only server check the form does not repeat), so it goes
- * next to its "¿Cuándo?"; chronic's "hasta antes de desde" and foreign
- * diagnosis go next to "¿Hasta cuándo?" and the diagnosis select. A failed
- * validation moves the focus to the invalid field, whose aria-describedby
- * reads the message. `onDone` fires after a save or a cancel.
+ * section's required datum, a non-numeric "cuándo", an impossible age or year
+ * via impossibleWhen) so the es-MX message shows inline next to its field,
+ * the first invalid one in document order; anything else the server says is
+ * shown inline too (serverErrorKey): a 422 with exactly one "cuándo" sent goes
+ * next to its "¿Cuándo?" (e.g. what impossibleWhen missed); chronic's "hasta
+ * antes de desde" and foreign diagnosis go next to "¿Hasta cuándo?" and the
+ * diagnosis select. A failed validation moves the focus to the invalid field,
+ * whose aria-describedby reads the message. `onDone` fires after a save or a
+ * cancel.
  *
  * Chronic (Story B): "Sensible" follows the condition's default
  * (sensitiveByDefault) until the patient touches it, and is always sent
@@ -392,21 +393,22 @@ function HistoryEntryForm({
       const value = (values[key] ?? "").trim()
       if (value) body[key] = value
     }
+    // A "cuándo" error is reported only after the checks of the fields above
+    // it (the required datum, "¿Cuál fue?"), so the message and the focus go
+    // to the first invalid field in document order (review R5).
+    let whenError: Record<string, string> | null = null
     for (const key of whenKeys(section, values)) {
       const parsed = draftToWhen(whens[key])
       if (parsed === "invalid") {
-        fail({ [key]: t("history.when.onlyNumber") })
-        return
+        whenError ??= { [key]: t("history.when.onlyNumber") }
+        continue
       }
       const impossible = parsed && impossibleWhen(parsed, birthDate, t)
-      if (impossible) {
-        fail({ [key]: impossible })
-        return
-      }
+      if (impossible) whenError ??= { [key]: impossible }
       if (parsed) body[key] = parsed
     }
 
-    if (Object.keys(body).length === 0) {
+    if (Object.keys(body).length === 0 && !whenError) {
       fail({ _form: t("history.validation.empty") })
       return
     }
@@ -423,6 +425,10 @@ function HistoryEntryForm({
       !body.other_text
     ) {
       fail({ other_text: t(`history.validation.${section}`) })
+      return
+    }
+    if (whenError) {
+      fail(whenError)
       return
     }
     if (section === "chronic") body.sensitive = sensitive

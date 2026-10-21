@@ -9,6 +9,7 @@ from app.models import (
     Item,
     ItemCreate,
     MedicalHistoryEntry,
+    PatientProfile,
     User,
     UserCreate,
     UserUpdate,
@@ -74,6 +75,19 @@ def create_item(*, session: Session, item_in: ItemCreate, owner_id: uuid.UUID) -
     session.commit()
     session.refresh(db_item)
     return db_item
+
+
+def lock_profile(*, session: Session, owner_id: uuid.UUID) -> PatientProfile | None:
+    """The owner's profile re-read FOR UPDATE, or None if there is none (it is
+    NOT created here). Every write that reads or changes the history or the
+    "ninguna" marks takes it first, so they serialize per owner (perfil-cronicas
+    review R1). Held until the caller's commit or rollback."""
+    return session.exec(
+        select(PatientProfile)
+        .where(PatientProfile.user_id == owner_id)
+        .with_for_update()
+        .execution_options(populate_existing=True)
+    ).first()
 
 
 def unlink_diagnosis(

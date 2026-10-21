@@ -39,7 +39,8 @@ const DeleteRecord = ({ id, isDiagnosis, onSuccess }: DeleteRecordProps) => {
   // rejects any other link), so the dialog names them, read from
   // GET /profile/history while it is open; a prescription never asks. While
   // it loads, "Eliminar" waits; if it fails, the dialog says so and the
-  // patient can still delete (ARCO).
+  // patient can still delete (ARCO). No retries: the default three (~7 s)
+  // would keep "Eliminar" disabled with nothing on screen saying why.
   const {
     data: history,
     isLoading: historyLoading,
@@ -47,6 +48,7 @@ const DeleteRecord = ({ id, isDiagnosis, onSuccess }: DeleteRecordProps) => {
   } = useQuery({
     ...getHistoryQueryOptions(),
     enabled: isOpen && isDiagnosis,
+    retry: false,
   })
   const backedNames = (history?.data ?? []).flatMap((entry) =>
     entry.section === "chronic" && entry.diagnosis_id === id
