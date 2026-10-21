@@ -13,16 +13,16 @@ Saúl Pérez validó la Story C1 y encontró tres preguntas que no capturan lo q
 - **Vapeador:** solo dice Nunca/Antes/Actual, sin cuánto se usa. No hay una medida validada en vapeadores o pods; lo
   que miden los estudios es "todos los días / algunos días" y los días de los últimos 30.
 - **Humo de leña:** "años aproximados" no basta. El estudio mexicano de referencia mide la exposición en horas-año (años
-  × horas al día); por encima de 200 horas-año el riesgo de bronquitis con obstrucción sale 75 veces mayor.
+  × horas al día); por encima de 200 horas-año la razón de momios de bronquitis con obstrucción es 75 (IC 95 % 18–306).
 
 Y dos problemas de uso: la pantalla valida solo al tocar "Guardar", con reglas copiadas a mano del backend (deuda R19);
-y si la persona sale de la pantalla, cambia de cuenta en otra pestaña o se le cierra el navegador, pierde lo que
-contestó (deuda "sin aviso de cambios sin guardar").
+y si la persona sale de la pantalla sin tocar "Guardar", pierde lo que contestó sin ningún aviso (deuda "sin aviso de
+cambios sin guardar").
 
 ## User story
 
-Como paciente, quiero contar desde cuándo y cuánto tomo, vapeo o me expongo al humo de leña, y que lo que contesto se
-guarde solo, para que mi médico tenga mi historia completa sin que yo pierda lo que ya escribí.
+Como paciente, quiero contar desde cuándo y cuánto tomo, vapeo o me expongo al humo de leña, y que la app me avise
+antes de perder lo que contesté, para que mi médico tenga mi historia completa sin que yo pierda lo que ya escribí.
 
 ## Acceptance criteria (los Given/When/Then con datos concretos van en la spec delta)
 
@@ -33,8 +33,11 @@ guarde solo, para que mi médico tenga mi historia completa sin que yo pierda lo
   últimos 30?" (1 a 30).
 - **C-12 Humo de leña como rango:** con "Antes" o "Actual", a qué edad empezó y cuántas horas al día en promedio (1 a
   24); con "Antes", a qué edad terminó. Reemplaza los "años aproximados". La app NO calcula horas-año (C-6).
-- **C-13 Se guarda solo:** cada respuesta válida se guarda sin botón; la pantalla dice si está guardando, si ya guardó
-  o qué falta corregir. Salir de la pantalla no pierde lo ya guardado.
+- **C-13 Se guarda con "Guardar" y avisa antes de perderse:** la pantalla dice desde que se abre que las respuestas se
+  guardan al tocar "Guardar"; salir con cambios sin guardar (menú, atrás, recargar, cerrar la pestaña) pregunta antes,
+  salvo que la sesión haya terminado o cambiado. "Guardar" y "Cancelar" no disponibles mientras guarda (D20).
+  Revisado el 2026-10-21 por Saúl Pérez tras la revisión ronda 1: primero era guardado automático (design.md
+  Decision 8).
 - **C-14 Errores al momento:** un número fuera de su escala, una edad imposible o una edad de inicio mayor que la de
   fin se marcan junto a su campo al salir de él, sin esperar al servidor. Los límites de cada número vienen del
   contrato del backend, no de una copia.
@@ -47,7 +50,8 @@ guarde solo, para que mi médico tenga mi historia completa sin que yo pierda lo
 - Los hábitos ganan campos: `alcohol.start_age`; `vaping` pasa de texto a objeto (`status`, `frequency`,
   `days_last_30`, `start_age`, `quit_age`); `wood_smoke` cambia `years` por `start_age`, `quit_age` y
   `hours_per_day`. El mismo `GET/PUT /profile/habits`.
-- La pantalla de hábitos guarda sola (sin "Guardar"/"Cancelar") y valida al salir de cada campo.
+- La pantalla de hábitos valida al salir de cada campo, guarda con "Guardar" y avisa antes de salir con cambios sin
+  guardar.
 - El cliente generado gana esquemas Zod del OpenAPI (`@hey-api/openapi-ts`, plugin `zod`), y el formulario toma de ahí
   los límites.
 
@@ -57,12 +61,13 @@ guarde solo, para que mi médico tenga mi historia completa sin que yo pierda lo
 Ninguna.
 
 ### Modified Capabilities
-- `records/patient-profile`: "Hábitos: sustancias y humo" cambia alcohol, vapeador y leña, y el guardado pasa a ser
-  automático.
+- `records/patient-profile`: "Hábitos: sustancias y humo" cambia alcohol, vapeador y leña; se agregan el aviso de
+  cambios sin guardar y la validación al salir de cada campo.
 
 ## Impact
 
-- **Backend:** `backend/app/models.py` (esquemas, normalización, validación de edades), sin migración.
+- **Backend:** `backend/app/models.py` (esquemas, normalización, validación de edades) y
+  `backend/app/api/routes/profile.py` (`_stored_habits` convierte lo guardado antes), sin migración.
 - **Frontend:** `HabitsForm.tsx`, los textos es-MX, `openapi-ts.config.ts` y el cliente regenerado (`zod.gen.ts`).
-- **Fuera:** guardado automático en las demás secciones (crónicas y eventos son listas con diálogo; se evalúa aparte);
+- **Fuera:** guardado automático; el aviso de cambios sin guardar en las demás secciones (tarea de deudas);
   ejercicio, movimiento, sueño y trabajo (Story C2); calcular horas-año o cualquier puntaje.

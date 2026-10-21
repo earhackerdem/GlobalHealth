@@ -127,40 +127,53 @@ ellas: interpretarlas es del médico (NFR-008).
 
 ## ADDED Requirements
 
-### Requirement: Los hábitos se guardan solos
-La pantalla de hábitos SHALL guardar cada respuesta sin esperar a un botón: una opción al elegirla y un número al
-salir de su campo, siempre que todo el cuestionario sea válido. Mientras haya un campo con error SHALL no guardar nada
-y decirlo. La pantalla SHALL mostrar en un mensaje de estado, sin mover el foco, si está guardando, si ya guardó o qué
-falta corregir. "Guardar" SHALL mandar lo pendiente y volver a "Mi perfil médico"; "Cancelar" SHALL dejar los hábitos
-como estaban al abrir la pantalla y volver. Los dos botones SHALL estar desactivados mientras se guarda, para que un
-doble clic no mande dos veces lo mismo.
+### Requirement: Los hábitos se guardan con "Guardar" y avisan antes de perderse
+La pantalla de hábitos SHALL decir desde que se abre que las respuestas se guardan al tocar "Guardar", y SHALL guardar
+solo entonces, si todo el cuestionario es válido. Si el paciente sale de la pantalla con cambios sin guardar (por el
+menú, por "‹ Mi perfil médico", con atrás del navegador, al recargar o al cerrar la pestaña), la pantalla SHALL
+preguntarle antes, salvo que la sesión haya terminado o cambiado de cuenta. "Cancelar" SHALL descartar los cambios sin
+preguntar y sin guardar nada. "Guardar" y "Cancelar" SHALL quedar no disponibles mientras se guarda, sin perder el
+foco, para que un doble clic no mande dos veces lo mismo.
 
-#### Scenario: Una respuesta se guarda al elegirla (C-13)
+#### Scenario: Se guarda al tocar "Guardar" (C-13)
 - **GIVEN** un paciente con la pantalla de hábitos abierta y nada guardado
-- **WHEN** elige tabaco "Nunca" y, sin tocar "Guardar", vuelve a "Mi perfil médico" desde el menú
-- **THEN** la tarjeta "Hábitos" dice "Con datos" y, al abrirla, ve tabaco "Nunca"
+- **WHEN** lee "Tus respuestas se guardan cuando tocas «Guardar».", elige tabaco "Nunca" y toca "Guardar"
+- **THEN** el sistema no recibe nada hasta que toca "Guardar"; después vuelve a "Mi perfil médico" con "Hábitos
+  guardados", la tarjeta dice "Con datos" y, al abrirla, ve tabaco "Nunca"
 
-#### Scenario: Un número se guarda al salir de su campo (C-13)
-- **GIVEN** un paciente con tabaco "Actual"
-- **WHEN** escribe 12 en "Cigarros al día" y pasa al siguiente campo
-- **THEN** el mensaje de estado dice "Guardado" y, al recargar la página, ve 12
+#### Scenario: Aviso al salir con cambios sin guardar (C-13)
+- **GIVEN** un paciente con tabaco "Nunca" guardado, que abre la pantalla, elige "Actual" y escribe 12 en "Cigarros al
+  día" sin salir del campo
+- **WHEN** toca "‹ Mi perfil médico"
+- **THEN** ve "¿Salir sin guardar?"; con "Seguir editando" sigue en la pantalla con "Actual" y 12; con "Salir sin
+  guardar" vuelve a "Mi perfil médico", el sistema no recibió nada y, al abrir, ve tabaco "Nunca"
 
-#### Scenario: Con un error no se guarda nada (C-13, C-14)
-- **GIVEN** un paciente nacido el 15/03/1990, con vapeador "Nunca" guardado
-- **WHEN** escribe 101 en "Cigarros al día", sale del campo, y después elige vapeador "Actual"
-- **THEN** ve "Debe estar entre 1 y 100" junto a los cigarros y "Sin guardar: corrige el campo marcado" en el estado,
-  sin que el sistema reciba nada; al recargar, el vapeador sigue en "Nunca"
+#### Scenario: Sin cambios no hay aviso (C-13)
+- **GIVEN** un paciente con tabaco "Nunca" guardado
+- **WHEN** abre la pantalla, elige "Actual", vuelve a elegir "Nunca" y toca "‹ Mi perfil médico"
+- **THEN** vuelve a "Mi perfil médico" sin ninguna pregunta
 
-#### Scenario: Botones desactivados mientras guarda (C-13)
-- **GIVEN** un paciente que acaba de elegir una respuesta y la pantalla dice "Guardando…"
-- **WHEN** intenta tocar "Guardar" o "Cancelar"
-- **THEN** los dos están desactivados hasta que el estado dice "Guardado", y el sistema recibe un solo guardado
+#### Scenario: Aviso del navegador al recargar (C-13)
+- **GIVEN** un paciente con un cambio sin guardar
+- **WHEN** recarga la página
+- **THEN** el navegador le pregunta si quiere salir; sin cambios, no le pregunta
 
-#### Scenario: Cancelar deja todo como al abrir (C-13)
+#### Scenario: Sin aviso cuando la sesión cambió (C-13)
+- **GIVEN** un paciente con un cambio sin guardar en la pantalla de hábitos
+- **WHEN** cierra sesión en otra pestaña
+- **THEN** esta pestaña va a la pantalla de inicio de sesión sin preguntar, y el sistema no recibió nada
+
+#### Scenario: Botones no disponibles mientras guarda (C-13)
+- **GIVEN** un paciente que eligió una respuesta y tocó "Guardar", y el guardado sigue en curso
+- **WHEN** vuelve a tocar "Guardar" o toca "Cancelar"
+- **THEN** los dos están marcados como no disponibles, el foco sigue en "Guardar", el sistema recibe un solo guardado y
+  al terminar vuelve a "Mi perfil médico"
+
+#### Scenario: Cancelar descarta (C-13)
 - **GIVEN** un paciente con tabaco "Nunca" guardado, que abre la pantalla y cambia a tabaco "Actual" con 5 cigarros
-  (ya guardado solo)
 - **WHEN** toca "Cancelar"
-- **THEN** vuelve a "Mi perfil médico" y, al abrir la pantalla, ve tabaco "Nunca"
+- **THEN** vuelve a "Mi perfil médico" con "Se descartaron los cambios", sin ninguna pregunta, el sistema no recibió
+  nada y, al abrir la pantalla, ve tabaco "Nunca"; si toca "Cancelar" sin haber cambiado nada, vuelve sin ese aviso
 
 ### Requirement: Los errores se marcan al momento
 Al salir de un campo numérico, la pantalla de hábitos SHALL marcar junto a él, sin preguntar al servidor, un valor que
@@ -172,3 +185,8 @@ Los límites de cada número SHALL ser los mismos que publica el contrato del si
 - **WHEN** escribe 25 en "¿Cuántas horas al día, en promedio?" y sale del campo
 - **THEN** ve "Debe estar entre 1 y 24" junto a ese campo, con el campo marcado como inválido, y el sistema no recibe
   ningún guardado
+
+#### Scenario: La marca sigue mientras el campo está a la vista (C-14)
+- **GIVEN** un paciente con tabaco "Actual" y 101 en "Cigarros al día", marcado con "Debe estar entre 1 y 100"
+- **WHEN** cambia el tabaco a "Antes"
+- **THEN** los cigarros siguen a la vista con su marca y su mensaje

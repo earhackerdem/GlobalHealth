@@ -1,11 +1,13 @@
 # Design
 
-Status: APPROVED
-Approved by: Saúl Pérez (author) on 2026-10-21, sobre el prototipo navegable (`prototipo.html`, C-10…C-14)
+Status: DRAFT
+Approved by: Saúl Pérez (author) on 2026-10-21, sobre el prototipo navegable (`prototipo.html`, C-10…C-14). Revisión
+pendiente de aprobar: Saúl Pérez decidió el 2026-10-21, tras la revisión ronda 1 del PR #32, quitar el guardado
+automático (C-13 nuevo: se guarda con "Guardar" y la pantalla avisa antes de perder cambios). Decision 8.
 
 **En una frase:** los hábitos ganan la edad de inicio del alcohol, un vapeador con frecuencia y edades, y la leña
-como rango de edades con horas al día; la pantalla guarda sola, valida al salir de cada campo con los límites del
-contrato, y conserva "Guardar" y "Cancelar", desactivados mientras guarda.
+como rango de edades con horas al día; la pantalla valida al salir de cada campo con los límites del contrato, guarda
+al tocar "Guardar" (desactivado mientras guarda) y avisa antes de salir con cambios sin guardar.
 
 ## Context
 
@@ -24,26 +26,30 @@ contrato, y conserva "Guardar" y "Cancelar", desactivados mientras guarda.
 **Goals:** C-10…C-14; leer lo guardado en la forma anterior; los límites de los números tomados del contrato; D20
 (botones desactivados mientras hay un envío) registrada y aplicada en la pantalla de hábitos.
 
-**Non-Goals:** guardado automático en las demás secciones (listas con diálogo); revisar el doble clic en el resto de
-la app (va a la tarea de deudas, con D20 como regla); calcular horas-año o cualquier índice (C-6); la Story C2;
-pasar el formulario a React Hook Form.
+**Non-Goals:** guardado automático (Decision 8); el aviso de cambios sin guardar y el doble clic en el resto de la app
+(van a la tarea de deudas, con D20 como regla); calcular horas-año o cualquier índice (C-6); la Story C2; pasar el
+formulario a React Hook Form; cambiar el listener de sesión de `main.tsx` (N1, M1 ⏸️).
 
 ## Qué se toca / qué NO
 
 | Se toca | NO se toca |
 |---|---|
 | `backend/app/models.py` (esquemas de hábitos, normalización, `habits_errors`, la conversión de lo guardado), `backend/app/api/routes/profile.py` (`_stored_habits` llama a la conversión) | La columna, sus migraciones, las rutas de historial |
-| `frontend/openapi-ts.config.ts` (plugin `zod`), el cliente regenerado (`src/client/zod.gen.ts` nuevo, `types.gen.ts`), `frontend/src/components/Profile/HabitsForm.tsx`, `frontend/src/locales/es-MX/profile.json` | `ChipGroup.tsx`, `perfil.tsx`, las demás pantallas del perfil |
+| `frontend/openapi-ts.config.ts` (plugin `zod`), el cliente regenerado (`src/client/zod.gen.ts` nuevo, `types.gen.ts`), `frontend/src/components/Profile/HabitsForm.tsx`, `frontend/src/locales/es-MX/profile.json`; se borra `frontend/src/components/Profile/useAutosave.ts` | `ChipGroup.tsx`, `perfil.tsx`, `ui/dialog.tsx` (se usa, no se cambia), `main.tsx`, `useAuth.ts`, las demás pantallas del perfil |
 | Tests: `backend/tests/api/routes/test_profile_habits.py`, `frontend/tests/profile-habits.spec.ts` | Las suites de A y B |
-| `memory/decisions/D20-…md` (nueva), la tarea de deudas en el inbox (fila del doble clic), `product/dominio.md` § Hábitos | Las demás decisiones |
+| `memory/decisions/D20-…md` (nueva; revisada: `aria-disabled`), la tarea de deudas en el inbox (fila del doble clic), `product/dominio.md` § Hábitos, `product/prototipos/perfil-secciones.html` (pantalla de hábitos) | Las demás decisiones |
 
 **Decisiones afectadas:** D18 (chips) se aplica a "Todos los días / Algunos días". **D20 nueva:** un botón que envía
-datos, o que vuelve después de enviarlos, se desactiva mientras hay un envío en curso.
+datos, o que sale de la pantalla mientras ese envío sigue en curso, queda no disponible hasta que termine. Revisada en
+este cambio: "no disponible" es `aria-disabled` (sigue en el recorrido del teclado y no pierde el foco) y el botón
+ignora el clic, no `disabled` (hallazgo A1 de la revisión).
 
 **Citadores que vencen en este cambio:**
 - La spec canónica `records/patient-profile` (vía la delta).
 - `product/dominio.md` § Hábitos: vapeador y leña ("años aprox.").
-- `profile.json`: "Años con humo de leña, aprox." y los textos de "Guardar".
+- `profile.json`: "Años con humo de leña, aprox.", los textos de "Guardar" y las llaves `habits.autosave.*` (se van).
+- `product/prototipos/perfil-secciones.html`: la pantalla de hábitos con alcohol sin edad de inicio, el vapeador como
+  chip suelto y la leña con "años aproximados".
 - Los e2e que eligen el vapeador como chip suelto o escriben los años de leña (`frontend/tests/profile-habits.spec.ts`;
   se ubican con `grep -n "vaping\|Años con humo"`).
 - Los pytest de leña con `years` y de vapeador como texto (`grep -n "years\|\"vaping\"" backend/tests/api/routes/test_profile_habits.py`).
@@ -79,6 +85,8 @@ Base `/api/v1`, detrás de `ConsentedUser`. Mismos `GET` y `PUT /profile/habits`
 aplica al JSON descifrado antes de validarlo; NO se aplica al cuerpo del `PUT`, que sigue cerrado):
 - `vaping` como texto → `{"status": <texto>}`.
 - `wood_smoke.years` → se descarta.
+- Una fila ilegible (JSON inválido, que no es un objeto, o anidado tan hondo que el lector se rinde) se lee como
+  vacía con el aviso de fila ilegible en el log, nunca como un 500 (hallazgo B1: se lee con `pydantic_core.from_json`).
 
 **Frontend**
 - **Generación:** `frontend/openapi-ts.config.ts` agrega el plugin `{ name: "zod" }`. `src/client/zod.gen.ts` exporta
@@ -96,24 +104,29 @@ aplica al JSON descifrado antes de validarlo; NO se aplica al cuerpo del `PUT`, 
   edad ≤ actual) y la regla de inicio ≤ fin de su bloque; el error va junto al campo con `aria-invalid` y
   `aria-describedby` (sin mover el foco). Al tocar "Guardar" se valida todo y el foco va al primer error (como hoy).
   Los mensajes de escala: "Debe estar entre {min} y {max}" con los límites del esquema.
-- **Guardado automático:**
-  - Un chip guarda al elegirlo; un número, al salir de su campo. Se espera 600 ms sin cambios antes de mandar.
-  - Solo se manda si todo el cuestionario es válido (la misma función que arma el cuerpo). Con algún error no se
-    manda nada.
-  - Un `PUT` a la vez: si llega otro cambio mientras uno está en curso, al terminar se manda el estado más reciente.
-  - La respuesta del `PUT` actualiza la caché `["habits"]` sin reescribir lo que el paciente está escribiendo.
-  - Un 422 se ubica por `loc` como hoy; otro error deja el estado "No se pudo guardar" y se reintenta con el siguiente
-    cambio o con "Guardar".
-  - Si el paciente sale de la pantalla por otro camino (menú, atrás) con un guardado pendiente y válido, se manda al
-    salir.
-- **Estado** (`role="status"`, sin mover el foco), debajo del título y junto a los botones: "Guardando…", "Guardado",
-  "Sin guardar: corrige el campo marcado" o "No se pudo guardar". Sin aviso emergente por cada guardado.
-- **"Guardar":** valida todo; si hay errores, foco al primero. Si no, manda lo pendiente (si hay), avisa "Hábitos
-  guardados" y vuelve a `/perfil`.
-- **"Cancelar":** si lo guardado difiere de lo que había al abrir la pantalla, manda un `PUT` con lo de entonces, avisa
-  "Se descartaron los cambios" y vuelve; si no, solo vuelve.
-- **Desactivados (D20):** "Guardar" y "Cancelar" con `disabled` mientras hay un `PUT` en curso, incluido el suyo; el
-  texto del estado dice por qué.
+- **Al abrir:** debajo de la introducción, el texto "Tus respuestas se guardan cuando tocas «Guardar»."
+- **"Guardar":** valida todo; si hay errores, foco al primero y no manda nada. Si no, manda un `PUT` con el
+  cuestionario completo por la mutación de TanStack Query (con el manejo de 401/403 de `main.tsx`), avisa "Hábitos
+  guardados" y vuelve a `/perfil`. Un 422 se ubica por `loc` como en la C1.
+- **"Cancelar":** no manda nada. Si hay cambios sin guardar, vuelve con el aviso "Se descartaron los cambios"; si no,
+  solo vuelve. Nunca abre el diálogo de salida.
+- **No disponibles mientras guarda (D20):** "Guardar" y "Cancelar" con `aria-disabled="true"` mientras el `PUT` está en
+  curso; un clic o Enter en ellos no hace nada, y el foco se queda donde estaba. "Guardar" muestra que está guardando
+  como el resto de los formularios (`LoadingButton`).
+- **Cambios sin guardar:** hay cambios si lo que está en pantalla (incluido un número escrito sin salir del campo)
+  difiere de lo que había al abrir. Elegir una opción y volver a la de antes no cuenta como cambio.
+- **Aviso al salir dentro de la app** (menú, "‹ Mi perfil médico", atrás del navegador), con `useBlocker` de TanStack
+  Router: un diálogo (`ui/dialog.tsx`) "¿Salir sin guardar?" con el texto "Los cambios que hiciste en Hábitos se van a
+  perder." y los botones "Seguir editando" (con el foco al abrir) y "Salir sin guardar". "Seguir editando" deja la
+  pantalla como estaba, con el foco donde estaba; "Salir sin guardar" sigue a donde iba. No aparece después de
+  "Guardar" o "Cancelar".
+- **Aviso al recargar o cerrar la pestaña:** el evento `beforeunload` pide el aviso del navegador (su texto no se puede
+  cambiar).
+- **Sin aviso cuando la sesión terminó o cambió:** si el token de `localStorage` ya no es el de cuando se abrió la
+  pantalla (cerrar sesión aquí o en otra pestaña, sesión vencida), ni el diálogo ni el aviso del navegador aparecen: la
+  salida es obligatoria y quedarse permitiría guardar lo de una cuenta con la sesión de otra (hallazgo A5).
+- **Errores y opciones (hallazgo A3):** al elegir una opción, se borran solo los errores de las preguntas que se
+  ocultan; un campo que sigue a la vista conserva su marca.
 
 ## Decisions
 
@@ -126,18 +139,24 @@ aplica al JSON descifrado antes de validarlo; NO se aplica al cuerpo del `PUT`, 
    pide la edad de inicio en su lugar.
 4. **Guardar solo cuando todo es válido.** Guardar un campo inválido como null borraría lo guardado antes; guardar por
    bloque exige un endpoint por bloque (descartado en la C1, Decision 2).
-5. **Cancelar restaura lo de la apertura.** Con el guardado automático, "Cancelar" sin restaurar no haría nada; Saúl
-   Pérez pidió conservarlo. Se restaura con el mismo `PUT`.
+5. **Cancelar descarta sin mandar nada.** Sin guardado automático no hay nada que restaurar (reemplaza a la Decision 5
+   aprobada, "Cancelar restaura con un `PUT`").
 6. **Límites desde `zod.gen.ts`; reglas entre campos a mano en una función.** El OpenAPI no expresa "≤ edad actual" ni
    "inicio ≤ fin". Descartado: React Hook Form + `zodResolver` para toda la pantalla (rehace el estado por bloque).
 7. **Nada en el navegador.** Ni borradores en `localStorage` (datos de salud en equipos compartidos) ni en
-   `sessionStorage`. Lo que no es válido se pierde al salir, y la pantalla lo dice antes.
+   `sessionStorage`. Lo no guardado se pierde al salir, y la pantalla avisa antes.
+8. **Guardar con el botón, con aviso al salir, en vez de guardado automático.** Decidido por Saúl Pérez el 2026-10-21,
+   tras la revisión ronda 1 del PR #32. El guardado automático con un `PUT` que reemplaza todo el cuestionario trajo
+   un hallazgo alto (con otra pestaña que entra a otra cuenta, un guardado pendiente mandaba los hábitos de una cuenta
+   con la sesión de otra, A5) y siete más (A2, A4, A6–A9, T2) que salen del mismo mecanismo. Descartado: arreglar el
+   guardado automático (token por pestaña en `main.tsx` y `useAuth.ts`, fuera del alcance, más una cola con foto de lo
+   confirmado). Costo: en el celular, si el navegador cierra la pestaña en segundo plano, lo no guardado se pierde.
 
 ## Test plan (one row per scenario, mandatory)
 
 | # | Spec · scenario | Test | Dónde |
 |---|---|---|---|
-| 1 | Hábitos · Alcohol actual con el AUDIT-C (C-1) | e2e existente (fila 1), ajustado al guardado automático | Playwright |
+| 1 | Hábitos · Alcohol actual con el AUDIT-C (C-1) | e2e existente (fila 1), con "Guardar" | Playwright |
 | 2 | Hábitos · Lo dejó, con la edad (C-1, C-10) | pytest: `quit` + 17/30 → GET igual. e2e: reabrir muestra 17 y 30 | pytest + Playwright |
 | 3 | Hábitos · Alcohol: empezó después de dejarlo (C-10) | pytest: 30/18 → 422 en `["body","alcohol","start_age"]`. e2e: error junto a la edad de inicio al salir del campo, nada guardado | pytest + Playwright |
 | 4 | Hábitos · Una edad mayor que la actual (C-1, C-2) | pytest: las ocho edades (inicio y fin de los cuatro bloques) con 40 → 422 en su `loc`. e2e existente (fila 3) | pytest + Playwright |
@@ -150,34 +169,36 @@ aplica al JSON descifrado antes de validarlo; NO se aplica al cuerpo del `PUT`, 
 | 11 | Hábitos · Humo de leña de antes (C-4, C-12) | pytest roundtrip y `start_age` > `quit_age` → 422. e2e: verlo al reabrir | pytest + Playwright |
 | 12 | Hábitos · Contesta solo una cosa | e2e existente (fila 9), con el vapeador como objeto | Playwright |
 | 13 | Hábitos · Respuestas fuera de su escala | pytest: los casos nuevos (días 0/31, horas 0/25, `vaping` como texto en el `PUT`, `years` en el `PUT`) → 422 y GET sin cambios | pytest |
-| 14 | Hábitos · Lo guardado antes se sigue leyendo | pytest: fila cifrada con la forma anterior en la BD de prueba → GET con vapeador `{status}` y leña sin años, el tabaco intacto; sin aviso de fila ilegible en el log. Unitario de `upgrade_stored_habits` | pytest |
+| 14 | Hábitos · Lo guardado antes se sigue leyendo | pytest: fila cifrada con la forma anterior en la BD de prueba → GET con vapeador `{status}` y leña sin años, el tabaco intacto; sin aviso de fila ilegible en el log. Unitario de `upgrade_stored_habits`. Filas ilegibles: JSON inválido, una lista y un JSON anidado 100 000 niveles (con `json.loads` es `RecursionError`, verificado hoy) → GET 200 con hábitos vacíos y el aviso en el log | pytest |
 | 15 | No interpreta · Sin puntaje ni riesgo (C-6) | pytest: llaves exactas del contrato nuevo. e2e: la pantalla no contiene "horas-año", "riesgo", "puntaje", "AUDIT" | pytest + Playwright |
-| 16 | Se guardan solos · Una respuesta se guarda al elegirla (C-13) | e2e: elegir tabaco "Nunca", ir a `/perfil` por el menú → "Con datos"; reabrir | Playwright |
-| 17 | Se guardan solos · Un número se guarda al salir de su campo (C-13) | e2e: 12 cigarros, Tab → estado "Guardado"; recargar → 12 | Playwright |
-| 18 | Se guardan solos · Con un error no se guarda nada (C-13, C-14) | e2e: 101 cigarros + salir + elegir vapeador → error, estado "Sin guardar…", ningún `PUT` (contador de `page.on('request')`); recargar → vapeador "Nunca" | Playwright |
-| 19 | Se guardan solos · Botones desactivados mientras guarda (C-13) | e2e: con el `PUT` retenido por `page.route`, "Guardar" y "Cancelar" `toBeDisabled()`; doble clic forzado sobre "Guardar" al soltar → un solo `PUT` más | Playwright |
-| 20 | Se guardan solos · Cancelar deja todo como al abrir (C-13) | e2e: tabaco "Nunca" sembrado → "Actual" + 5 (guardado solo) → "Cancelar" → GET con "Nunca" | Playwright |
-| 21 | Errores al momento · Fuera de escala al salir del campo (C-14) | e2e: leña "Actual", 25 horas, Tab → "Debe estar entre 1 y 24", `aria-invalid`, ningún `PUT`. Revisión estática: `HabitsForm.tsx` sin límites literales (grep en la verificación) | Playwright + grep |
-| 22 | Aislados y cifrados (C1) | existentes: SQL directo sin texto en claro, ahora también `some_days`; 403 sin consentimiento | pytest |
+| 16 | Guardar · Se guarda al tocar "Guardar" (C-13) | e2e: el texto "Tus respuestas se guardan cuando tocas «Guardar»."; elegir tabaco "Nunca" sin tocar nada más → ningún `PUT` (contador de `page.on('request')`); "Guardar" → un `PUT`, aviso "Hábitos guardados", tarjeta "Con datos"; reabrir | Playwright |
+| 17 | Guardar · Aviso al salir con cambios sin guardar (C-13) | e2e: tabaco "Nunca" sembrado → "Actual", 12 sin salir del campo, "‹ Mi perfil médico" → diálogo con el foco en "Seguir editando"; "Seguir editando" → misma pantalla con "Actual" y 12; atrás del navegador → diálogo; "Salir sin guardar" → `/perfil`, ningún `PUT`, GET con "Nunca" | Playwright |
+| 18 | Guardar · Sin cambios no hay aviso (C-13) | e2e: abrir y volver sin tocar → sin diálogo; elegir "Actual" y volver a "Nunca" → sin diálogo | Playwright |
+| 19 | Guardar · Aviso del navegador al recargar (C-13) | e2e: con un cambio, `page.reload()` → `page.on('dialog')` recibe uno de tipo `beforeunload`; sin cambios, ninguno | Playwright |
+| 20 | Guardar · Sin aviso cuando la sesión cambió (C-13, N1) | e2e: con un cambio, otra pestaña del mismo contexto cierra sesión → esta llega a `/login` sin diálogo de la app ni `beforeunload`, ningún `PUT` | Playwright |
+| 21 | Guardar · No disponibles mientras guarda (C-13, D20) | e2e: con el `PUT` retenido por `page.route`, "Guardar" y "Cancelar" con `aria-disabled="true"`, el foco sigue en "Guardar"; Enter y un clic más → un solo `PUT`; al soltarlo, `/perfil` | Playwright |
+| 22 | Guardar · Cancelar descarta (C-13) | e2e: tabaco "Nunca" sembrado → "Actual" + 5 → "Cancelar" → `/perfil` con "Se descartaron los cambios", sin diálogo, ningún `PUT`; abrir y "Cancelar" sin cambios → sin ese aviso | Playwright |
+| 23 | Errores al momento · Fuera de escala al salir del campo (C-14) | e2e: leña "Actual", 25 horas, Tab → "Debe estar entre 1 y 24", `aria-invalid`, ningún `PUT`. Lo mismo, sin `PUT`, para 40 en una edad (mayor que la actual), inicio 30 y fin 18 en vapeador y en leña, y "12a" ("Escribe solo el número."). Revisión estática: `HabitsForm.tsx` sin límites literales (grep en la verificación) | Playwright + grep |
+| 24 | Errores al momento · La marca sigue mientras el campo está a la vista (C-14) | e2e: tabaco "Actual", 101 cigarros, Tab → error; elegir "Antes" → el error y `aria-invalid` siguen junto a los cigarros | Playwright |
+| 25 | Aislados y cifrados (C1) | existentes: SQL directo sin texto en claro, ahora también `some_days`; 403 sin consentimiento | pytest |
 
 ## Non-functional constraints addressed
 
-- **NFR-001 / D13:** el mismo JSON cifrado; nada en el navegador (Decision 7, fila 22).
+- **NFR-001 / D13:** el mismo JSON cifrado; nada en el navegador (Decision 7, fila 25).
 - **NFR-008 / C-6:** sin horas-año ni índices (fila 15).
-- **D18 / D20:** chips para la frecuencia; botones desactivados mientras se guarda (fila 19).
-- **Accesibilidad:** estado con `role="status"` sin robar el foco; errores junto al campo (R5); nombres distintos (R7).
-- **Red:** un `PUT` por pausa y uno a la vez.
+- **D18 / D20:** chips para la frecuencia; botones no disponibles mientras se guarda, sin perder el foco (fila 21).
+- **Accesibilidad:** errores junto al campo (R5); nombres distintos (R7); el diálogo de salida con el foco en "Seguir
+  editando" y Escape como "Seguir editando"; `aria-disabled` en vez de `disabled` (fila 21).
+- **Red:** un `PUT` por "Guardar".
 - **Móvil 384 px:** la exploración en Chrome y s26-ultra recorren la pantalla con las preguntas nuevas.
 - **es-MX (D15):** todos los textos en `profile.json`.
 
 ## Risks / Trade-offs
 
-- **Lo inválido no se guarda.** Si el paciente sale con un campo marcado, lo de ese momento se pierde. Mitigación: el
-  estado lo dice antes ("Sin guardar: corrige el campo marcado").
-- **Cancelar después de guardados automáticos** hace un `PUT` más. Si ese `PUT` falla, se queda en la pantalla con
-  "No se pudo guardar" y no vuelve.
-- **Otra pestaña cambia de cuenta (N1)** recarga la pantalla: con el guardado automático se pierde, como mucho, la
-  última pausa de 600 ms.
+- **Lo no guardado se pierde** si el navegador cierra la pestaña sin avisar (en el celular, en segundo plano) o si la
+  sesión termina. Mitigación: el texto al abrir y los dos avisos de salida (Decision 8).
+- **El aviso del navegador** (`beforeunload`) tiene el texto del navegador, y algunos navegadores de celular no lo
+  muestran.
 - **El cliente generado crece** con `zod.gen.ts` (todos los esquemas). Es código generado, no se edita a mano.
 
 ## Migration Plan
@@ -191,11 +212,12 @@ escritura las guarda en la forma nueva.
 2. La suite completa de Playwright en chromium y s26-ultra, truly green.
 3. `make tdd-check` verde.
 4. `openspec validate perfil-habitos-ajustes --strict` limpio.
-5. La exploración en Chrome hecha por el agente (incluido el doble clic y salir a media escritura), sin defectos; la
-   revisión adversarial; el archivo como último commit del PR. Después, la validación de Saúl Pérez con
+5. La exploración en Chrome hecha por el agente (doble clic, salir a media escritura por el menú y por atrás, recargar,
+   cerrar sesión en otra pestaña), sin defectos; la ronda 2 de la revisión adversarial sobre lo que cambió; el archivo
+   como último commit del PR. Después, la validación de Saúl Pérez con
    `validation.md`. El merge es humano.
 
 ## Open Questions
 
-Ninguna bloqueante: las preguntas de la exploración están respondidas (exploration.md §6 y la respuesta de Saúl Pérez:
-"Guardar" y "Cancelar" se quedan, desactivados mientras se guarda).
+Ninguna bloqueante: las preguntas de la exploración están respondidas (exploration.md §6 y las respuestas de Saúl
+Pérez: "Guardar" y "Cancelar" se quedan, desactivados mientras se guarda; sin guardado automático, Decision 8).

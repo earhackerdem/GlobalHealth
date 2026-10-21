@@ -61,6 +61,38 @@ are `single`. `make tdd-check` requires one `test:` commit per `test→impl` gro
   campos, doble y triple clic en "Guardar" y "Cancelar", salir a media escritura por el menú, recargar, cambiar de
   cuenta en otra pestaña, 384 px. Verificación: tabla en evidence.md; los defectos dentro del plan se arreglan.
 - [x] 3.3 **Entregables.** `evidence.md`, `validation.md` (no técnico, para Saúl Pérez), el journal y el PR.
-- [ ] 3.4 **Revisión y archivo** (`/epe-4-review` → `/epe-5-apply` → `/epe-6-archive` como último commit del PR):
+- [x] 3.4a **Revisión ronda 1** (`/epe-4-review`): 22 hallazgos confirmados (PR #32, comentarios finder y validator).
+  Saúl Pérez decidió quitar el guardado automático (design.md Decision 8); los grupos 4–6 aplican la revisión.
+
+## 4. Frontend: "Guardar" con aviso al salir, y los hallazgos A1 y A3 · test→impl
+
+- [ ] 4.1 **Tester.** Reescribe en `frontend/tests/profile-habits.spec.ts` las filas del guardado automático a partir
+  de dos fuentes: las filas 16–24 del test plan y el Interface contract (Frontend). Ajusta las demás filas que dependían
+  del guardado automático (esperar "Guardado", recargar sin "Guardar") para que guarden con "Guardar". Verificación:
+  rojo porque faltan el texto, los avisos y `aria-disabled`, no porque un test esté roto. Commit `test:` solo.
+- [ ] 4.2 **Implementer.** `HabitsForm.tsx` sin guardado automático: "Guardar" por `useMutation`, "Cancelar" sin `PUT`,
+  `aria-disabled` (D20), cambios sin guardar con `useBlocker` y `beforeunload`, la condición de la sesión, y los errores
+  que se borran solo al ocultar su pregunta. Se borra `useAutosave.ts`; `profile.json` sin `habits.autosave.*` y con
+  los textos nuevos. Verificación: los tests de 4.1 verdes sin tocarlos (chromium y s26-ultra); `tsc` y `biome`
+  limpios; `grep` sin límites literales en `HabitsForm.tsx`.
+- [ ] 4.3 **Orquestador.** Rojo y verde de nuevo, `make tdd-check`, números en evidence.md § Grupo 4.
+
+## 5. Backend: filas ilegibles (hallazgo B1) · single
+
+- [ ] 5.1 Rojo: en `backend/tests/api/routes/test_profile_habits.py`, JSON inválido, una lista y uno anidado 100 000
+  niveles → GET 200 vacío con el aviso en el log (fila 14). Commit `test:`. Verde: `_stored_habits` lee con
+  `pydantic_core.from_json`. Suite backend completa, cobertura ≥ 90 %, mypy.
+
+## 6. Documentos, decisiones y verificación · single
+
+- [ ] 6.1 **D20 revisada** (`aria-disabled`, no `disabled`). **Documentos del cambio:** evidence (ancla de `tdd-check`,
+  grupos 4 y 5), validation.md para el nuevo C-13, journal, design.md (ubicación de textos). **Investigación:**
+  etiquetas de `memory/research/habitos.md` y `humo-lena.md` (hallazgos D4, D5). **Producto:** la pantalla de hábitos de
+  `product/prototipos/perfil-secciones.html` (D3). Las afirmaciones de la exploración en Chrome (D6).
+- [x] 6.2 **Cerrados:** `memory/closed/` con los hallazgos que dejó sin objeto la Decision 8 y el falso positivo D11.
+- [ ] 6.3 **Exploración en Chrome** otra vez, con los avisos de salida (menú, atrás, recargar, cerrar sesión en otra
+  pestaña), el doble clic y 384 px. Suites completas (gate). Ronda 2 de la revisión sobre lo que cambió.
+
+- [ ] 3.4 **Archivo** (`/epe-6-archive` como último commit del PR, después de la ronda que salga seca):
   `openspec archive perfil-habitos-ajustes`, fragmento en `changelog.d/`, `.epe/active` a la carpeta archivada.
   Verificación: `openspec validate --specs` limpio.

@@ -39,3 +39,16 @@ Backend 342 passed (96 %); e2e del cambio 137 passed (chromium + s26-ultra); sui
 
 ## Deuda
 Ver evidence.md § Deuda.
+
+## Revisión ronda 1 y cambio de diseño (2026-10-21)
+- La revisión adversarial confirmó 22 hallazgos (comentarios finder y validator en el PR #32). El más grave, A5 (alto,
+  privacidad): con otra pestaña que entra a otra cuenta, un guardado automático pendiente mandaba los hábitos de una
+  cuenta con la sesión de la otra. Siete más salían del mismo mecanismo.
+- El agente recomendó arreglar el guardado automático y mencionó como alternativa volver a "Guardar" con aviso de cambios
+  sin guardar. Saúl Pérez propuso quitarlo ("podemos retirar el guardado automático si de principio pedimos, da click
+  en el botón guardar"); el agente objetó que el texto solo no evita perder datos y propuso sumarle los avisos de
+  salida (`useBlocker` y `beforeunload`); Saúl Pérez eligió quitarlo con eso. design.md Decision 8.
+- Costo aceptado: en el celular, si el navegador cierra la pestaña en segundo plano, lo no guardado se pierde.
+- Plan revisado a DRAFT: spec (C-13 nuevo), design (contrato, decisiones 5, 7 y 8, filas 16–24), tasks (grupos 4–6) y
+  el prototipo, recorrido por el agente en Chrome antes de pedir la aprobación. Cerrados: A2, A4–A9, T2, T4 (sin
+  objeto) y D11 (falso positivo).

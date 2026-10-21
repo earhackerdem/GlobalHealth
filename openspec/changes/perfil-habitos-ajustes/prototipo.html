@@ -30,7 +30,6 @@ p{margin:.35rem 0}
 .banner{background:var(--warn-bg); color:var(--warn-fg); border-radius:8px; padding:8px 12px; font-size:.85rem; margin:12px 0}
 button{font:inherit; border:1px solid var(--line); background:var(--surface); color:var(--fg);
   border-radius:10px; padding:10px 14px; cursor:pointer}
-button:disabled{opacity:.5; cursor:not-allowed}
 button.primary{background:var(--accent); color:var(--accent-fg); border-color:transparent; font-weight:700}
 button.link{border:none; background:none; color:var(--accent); padding:4px; font-weight:600}
 button:focus-visible,input:focus-visible{outline:2px solid var(--accent); outline-offset:2px}
@@ -52,8 +51,13 @@ legend{font-size:.85rem; font-weight:700; padding:0; margin-bottom:3px}
 .chips button{border-radius:999px; padding:5px 12px; font-size:.85rem}
 .chips button[aria-pressed="true"]{background:var(--accent); color:var(--accent-fg); border-color:transparent}
 .sub-bloque{border-left:3px solid var(--line); padding-left:12px; margin-top:8px}
-.estado{font-size:.88rem; font-weight:600; min-height:1.4em; color:var(--muted)}
-.estado.ok{color:var(--ok)} .estado.mal{color:var(--danger)}
+.aviso-guardar{font-size:.9rem; font-weight:600; color:var(--fg); background:var(--chip); border-radius:8px; padding:6px 10px}
+button[aria-disabled="true"]{opacity:.55; cursor:not-allowed}
+.velo{position:fixed; inset:0; background:color-mix(in srgb, var(--fg) 45%, transparent); display:grid; place-items:center;
+  padding-left:max(16px, env(safe-area-inset-left, 0px)); padding-right:max(16px, env(safe-area-inset-right, 0px))}
+.dialogo{background:var(--surface); color:var(--fg); border-radius:14px; padding:18px; max-width:24rem; width:100%;
+  box-sizing:border-box; border:1px solid var(--line)}
+.dialogo h2{font-size:1.1rem}
 .toast{position:fixed; left:50%; transform:translateX(-50%); bottom:calc(16px + env(safe-area-inset-bottom, 0px));
   background:var(--fg); color:var(--bg); border-radius:10px; padding:10px 16px; font-size:.9rem}
 .ac{display:none; font-size:.7rem; font-weight:700; letter-spacing:.03em; background:var(--b-tag); color:var(--bg);
@@ -66,13 +70,15 @@ details{margin:8px 0} summary{cursor:pointer; font-weight:700}
 ul{padding-left:1.2rem; margin:.3rem 0}
 </style>
 
-<div class="banner">Prototipo local de <strong>perfil-habitos-ajustes</strong> (C-10…C-14). Datos de ejemplo: paciente
-nacida el 15/03/1990, hoy con 36 años. El "servidor" es simulado en la página.</div>
+<div class="banner">Prototipo local de <strong>perfil-habitos-ajustes</strong> (C-10…C-14), revisado el 2026-10-21: sin
+guardado automático. Datos de ejemplo: paciente nacida el 15/03/1990, hoy con 36 años. El "servidor" es simulado en la
+página. Atrás del navegador y recargar esta página funcionan de verdad.</div>
 
 <details>
   <summary>Historia y criterios</summary>
-  <p><em>Como paciente, quiero contar desde cuándo y cuánto tomo, vapeo o me expongo al humo de leña, y que lo que
-  contesto se guarde solo, para que mi médico tenga mi historia completa sin que yo pierda lo que ya escribí.</em></p>
+  <p><em>Como paciente, quiero contar desde cuándo y cuánto tomo, vapeo o me expongo al humo de leña, y que la app me
+  avise antes de perder lo que contesté, para que mi médico tenga mi historia completa sin que yo pierda lo que ya
+  escribí.</em></p>
   <ul>
     <li><strong>C-10</strong> Alcohol: con "Lo dejé" o "Actual", la edad en que empezó (sin contar probaditas); no
       mayor que la de dejarlo ni que la actual.</li>
@@ -80,8 +86,9 @@ nacida el 15/03/1990, hoy con 36 años. El "servidor" es simulado en la página.
       "Algunos días", cuántos de los últimos 30.</li>
     <li><strong>C-12</strong> Humo de leña como rango: edad de inicio, de fin (con "Antes") y horas al día (1 a 24). Sin
       calcular horas-año.</li>
-    <li><strong>C-13</strong> Se guarda solo; el estado dice si está guardando, si guardó o qué corregir. "Guardar" y
-      "Cancelar" se quedan, desactivados mientras guarda; "Cancelar" deja todo como al abrir.</li>
+    <li><strong>C-13</strong> Se guarda con "Guardar" y lo dice desde el inicio. Salir con cambios sin guardar (menú,
+      atrás, recargar, cerrar la pestaña) pregunta antes, salvo que la sesión haya cambiado. "Guardar" y "Cancelar" no
+      disponibles mientras guarda; "Cancelar" descarta sin preguntar.</li>
     <li><strong>C-14</strong> Errores al salir del campo, con los límites del contrato.</li>
   </ul>
 </details>
@@ -89,7 +96,8 @@ nacida el 15/03/1990, hoy con 36 años. El "servidor" es simulado en la página.
 <div class="panel">
   <label><input type="checkbox" id="ver-ac"> Mostrar criterios</label> ·
   <label><input type="checkbox" id="lento"> Guardado lento (3 s)</label> ·
-  Guardados recibidos por el servidor: <strong id="contador">0</strong>
+  Guardados recibidos por el servidor: <strong id="contador">0</strong> ·
+  <button class="link" id="otra-pestana">Simular: cerrar sesión en otra pestaña</button>
 </div>
 
 <main id="app"></main>
@@ -115,18 +123,18 @@ const PARES = [ // [inicio, fin, mensaje]
 
 let servidor = {};               // lo guardado
 let guardados = 0;
-let vista = "perfil";
+let vista = "perfil";            // "perfil" | "habitos" | "login"
 let d = {};                      // borrador en pantalla (textos de los números, opciones elegidas)
-let foto = {};                   // lo que había al abrir la pantalla
+let huellaAlAbrir = "";          // lo que había al abrir la pantalla
 let errores = {};
 let tocados = new Set();
-let enVuelo = false, pendiente = false, timer = null;
-let estado = "";                 // "guardando" | "guardado" | "corrige" | "fallo" | ""
+let enVuelo = false;
+let saliendoPorCodigo = false;
 
 const $ = (s) => document.querySelector(s);
 const ac = (id) => `<span class="ac">${id}</span>`;
-const copia = (o) => JSON.parse(JSON.stringify(o));
-const conDatos = () => Object.values(servidor).some((v) => v !== null && v !== undefined && v !== "");
+const conDatos = () => Object.values(servidor).some((v) => v !== null && v !== undefined && v !== "" &&
+  !(Array.isArray(v) && !v.length));
 
 function toast(texto) {
   const t = document.createElement("div"); t.className = "toast"; t.textContent = texto;
@@ -166,13 +174,29 @@ function validarTodo(soloTocados) {
   }
   for (const [a, b, msg] of PARES) {
     if (!vis.includes(a) || !vis.includes(b) || e[a] || e[b]) continue;
-    const ia = Number(d[a]), ib = Number(d[b]);
-    if (d[a] && d[b] && ia > ib) e[a] = msg;
+    if (soloTocados && !tocados.has(a) && !tocados.has(b)) continue;
+    if (d[a] && d[b] && Number(d[a]) > Number(d[b])) e[a] = msg;
   }
   return e;
 }
 
-// ---------- guardado automático (simulado) ----------
+// ---------- cambios sin guardar ----------
+// Lo que está en pantalla, incluido un número escrito sin salir del campo. Elegir una opción y volver a la de antes
+// deja la misma huella: no cuenta como cambio.
+function huella() {
+  const o = { alcohol: d.alcohol || null, tobacco: d.tobacco || null, vaping: d.vaping || null,
+    vapingFreq: d.vaping === "current" ? d.vapingFreq || null : null,
+    places: [...(d.places || [])].sort(), wood: d.wood || null };
+  for (const k of visibles()) o[k] = (d[k] || "").trim();
+  return JSON.stringify(o);
+}
+const sucio = () => vista === "habitos" && huella() !== huellaAlAbrir;
+
+window.addEventListener("beforeunload", (ev) => {
+  if (sucio()) { ev.preventDefault(); ev.returnValue = ""; }
+});
+
+// ---------- guardado (simulado), solo con "Guardar" ----------
 function cuerpo() {
   const num = (k) => (visibles().includes(k) && d[k] ? Number(d[k]) : null);
   return {
@@ -186,37 +210,20 @@ function cuerpo() {
     wood_hours: num("wood.hours_per_day"),
   };
 }
-function programar() {
-  clearTimeout(timer);
-  timer = setTimeout(guardarAhora, 600);
-}
-function guardarAhora() {
-  clearTimeout(timer); timer = null;
-  errores = validarTodo(false);
-  // los errores de campos no tocados no se muestran, pero sí bloquean el guardado
-  const visiblesErr = Object.fromEntries(Object.entries(errores).filter(([k]) => tocados.has(k)));
-  if (Object.keys(errores).length) { estado = "corrige"; errores = visiblesErr; refrescar(); return Promise.resolve(false); }
-  if (enVuelo) { pendiente = true; return Promise.resolve(true); }
-  return mandar(cuerpo());
-}
 function mandar(body) {
-  enVuelo = true; estado = "guardando"; refrescar();
+  enVuelo = true; refrescar();
   return new Promise((ok) => setTimeout(() => {
     servidor = body; guardados++; enVuelo = false;
-    $("#contador").textContent = guardados;
-    if (pendiente) { pendiente = false; mandar(cuerpo()).then(ok); return; }
-    estado = "guardado"; if (vista === "perfil") pintar(); else refrescar(); ok(true);
+    $("#contador").textContent = guardados; ok();
   }, $("#lento").checked ? 3000 : 900));
 }
 
-// Actualiza en su lugar el estado, los botones y los errores, sin redibujar: no roba el foco a quien escribe ni
-// se traga el clic en un chip justo después de salir de un campo.
+// Actualiza en su lugar los botones y los errores, sin redibujar: no roba el foco a quien escribe ni se traga el clic
+// en un chip justo después de salir de un campo.
 function refrescar() {
-  const st = $(".estado"); if (!st) return;
-  st.className = "estado " + (estado === "guardado" ? "ok" : estado === "corrige" || estado === "fallo" ? "mal" : "");
-  st.innerHTML = (TEXTO_ESTADO[estado] || "") + ac("C-13");
-  for (const sel of ["[data-guardar]", "[data-cancelar]"]) { const b = $(sel); if (b) b.disabled = enVuelo; }
-  const espera = $(".actions .sub"); if (espera) espera.textContent = enVuelo ? "Espera a que termine de guardar." : "";
+  const g = $("[data-guardar]"), c = $("[data-cancelar]");
+  if (g) { g.setAttribute("aria-disabled", String(enVuelo)); g.textContent = enVuelo ? "Guardando…" : "Guardar"; }
+  if (c) c.setAttribute("aria-disabled", String(enVuelo));
   for (const input of document.querySelectorAll("input[data-num]")) {
     const k = input.dataset.num, e = errores[k];
     input.setAttribute("aria-invalid", String(!!e));
@@ -228,10 +235,12 @@ function refrescar() {
   }
 }
 
-// ---------- vistas ----------
+// ---------- vistas y salidas ----------
 function abrirHabitos() {
-  foto = copia(servidor);
-  d = desdeServidor(servidor); errores = {}; tocados = new Set(); estado = ""; vista = "habitos"; pintar();
+  d = desdeServidor(servidor); errores = {}; tocados = new Set(); vista = "habitos";
+  huellaAlAbrir = huella();
+  history.pushState({ v: "habitos" }, "");
+  pintar();
 }
 function desdeServidor(s) {
   const t = (n) => (n === null || n === undefined ? "" : String(n));
@@ -246,30 +255,48 @@ function desdeServidor(s) {
     "wood.hours_per_day": t(s.wood_hours),
   };
 }
-function volver(texto) { vista = "perfil"; pintar(); if (texto) toast(texto); }
+// Sale de la pantalla sin preguntar (después de "Guardar", "Cancelar" o "Salir sin guardar").
+function volver(texto) {
+  vista = "perfil"; pintar(); if (texto) toast(texto);
+  if (history.state && history.state.v === "habitos") { saliendoPorCodigo = true; history.back(); }
+}
+// Sale por el menú o "‹ Mi perfil médico": pregunta si hay cambios sin guardar.
+function intentarSalir() { if (sucio()) preguntar(); else volver(); }
+window.addEventListener("popstate", () => {
+  if (saliendoPorCodigo) { saliendoPorCodigo = false; return; }
+  if (vista !== "habitos") return;
+  if (sucio()) { history.pushState({ v: "habitos" }, ""); preguntar(); }
+  else { vista = "perfil"; pintar(); }
+});
+
+function preguntar() {
+  const antes = document.activeElement;
+  const velo = document.createElement("div"); velo.className = "velo";
+  velo.innerHTML = `<div class="dialogo" role="dialog" aria-modal="true" aria-labelledby="dlg-t" aria-describedby="dlg-d">
+    <h2 id="dlg-t">¿Salir sin guardar?${ac("C-13")}</h2>
+    <p id="dlg-d">Los cambios que hiciste en Hábitos se van a perder.</p>
+    <div class="actions"><button class="primary" data-seguir>Seguir editando</button>
+      <button data-salir>Salir sin guardar</button></div></div>`;
+  document.body.append(velo);
+  const cerrar = () => { velo.remove(); antes?.focus?.(); };
+  velo.querySelector("[data-seguir]").onclick = cerrar;
+  velo.querySelector("[data-salir]").onclick = () => { velo.remove(); volver(); };
+  velo.addEventListener("keydown", (ev) => { if (ev.key === "Escape") cerrar(); });
+  velo.querySelector("[data-seguir]").focus();
+}
 
 async function alGuardar() {
+  if (enVuelo) return;
   for (const k of visibles()) tocados.add(k);
   errores = validarTodo(false);
-  if (Object.keys(errores).length) {
-    estado = "corrige"; refrescar();
-    document.querySelector('[aria-invalid="true"]')?.focus(); return;
-  }
-  if (timer || JSON.stringify(cuerpo()) !== JSON.stringify(servidor)) await guardarAhora();
+  if (Object.keys(errores).length) { refrescar(); document.querySelector('[aria-invalid="true"]')?.focus(); return; }
+  await mandar(cuerpo());
   volver("Hábitos guardados");
 }
-async function alCancelar() {
-  clearTimeout(timer); timer = null;
-  if (JSON.stringify(servidor) !== JSON.stringify(foto)) {
-    await mandar(copia(foto));
-    volver("Se descartaron los cambios");
-  } else volver();
+function alCancelar() {
+  if (enVuelo) return;
+  volver(sucio() ? "Se descartaron los cambios" : null);
 }
-
-const TEXTO_ESTADO = {
-  guardando: "Guardando…", guardado: "Guardado",
-  corrige: "Sin guardar: corrige el campo marcado", fallo: "No se pudo guardar",
-};
 
 function chips(nombre, clave, opciones, id) {
   return `<fieldset><legend>${nombre}${id ? ac(id) : ""}</legend><div class="chips">${opciones.map(([v, t]) =>
@@ -287,25 +314,31 @@ function numero(k, etiqueta, hint, id) {
 function pintar() {
   document.body.classList.toggle("show-ac", $("#ver-ac").checked);
   const app = $("#app");
+  if (vista === "login") {
+    app.innerHTML = `<h1>Iniciar sesión</h1>
+      <p class="sub">La sesión cambió en otra pestaña: esta llegó aquí sin preguntar${ac("C-13")}.</p>
+      <div class="actions"><button class="primary" data-entrar>Entrar de nuevo</button></div>`;
+    return;
+  }
   if (vista === "perfil") {
-    app.innerHTML = `<h1>Mi perfil médico</h1>
+    app.innerHTML = `<nav class="sub">Menú: <button class="link" data-menu-perfil>Mi perfil médico</button></nav>
+      <h1>Mi perfil médico</h1>
       <div class="card"><button class="link" data-abrir style="font-size:1rem">Hábitos ›</button>
         <span class="pill ${conDatos() ? "datos" : "vacia"}">${conDatos() ? "Con datos" : "Sin llenar"}</span></div>`;
     return;
   }
-  const ocupado = enVuelo;
   const lugares = d.places || [];
-  app.innerHTML = `<button class="link" data-volver-menu>‹ Mi perfil médico</button>
+  app.innerHTML = `<nav class="sub">Menú: <button class="link" data-menu-perfil>Mi perfil médico</button></nav>
+    <button class="link" data-volver-menu>‹ Mi perfil médico</button>
     <h1>Hábitos</h1>
     <p class="sub">Contesta solo lo que quieras. «Nunca» también le sirve a tu médico. La app no califica tus respuestas.</p>
-    <p class="estado ${estado === "guardado" ? "ok" : estado === "corrige" || estado === "fallo" ? "mal" : ""}"
-      role="status" aria-live="polite">${TEXTO_ESTADO[estado] || ""}${ac("C-13")}</p>
+    <p class="aviso-guardar">Tus respuestas se guardan cuando tocas «Guardar».${ac("C-13")}</p>
 
     <section class="card"><h2>Alcohol</h2>
       ${chips("Alcohol", "alcohol", [["never","Nunca"],["quit","Lo dejé"],["current","Actual"]])}
       ${d.alcohol === "quit" || d.alcohol === "current" ? numero("alcohol.start_age", "¿A qué edad empezaste a tomar?", "Sin contar probaditas.", "C-10") : ""}
       ${d.alcohol === "quit" ? numero("alcohol.quit_age", "¿A qué edad dejaste de tomar?") : ""}
-      ${d.alcohol === "current" ? `<p class="hint">(Aquí siguen las tres preguntas del AUDIT-C y "Sobre todo fines de semana", sin cambios.)</p>` : ""}
+      ${d.alcohol === "current" ? `<p class="hint">(Nota del prototipo: aquí siguen las tres preguntas de frecuencia y "Sobre todo fines de semana", sin cambios.)</p>` : ""}
     </section>
 
     <section class="card"><h2>Tabaco y vapeador</h2>
@@ -338,31 +371,37 @@ function pintar() {
     </section>
 
     <div class="actions">
-      <button class="primary" data-guardar ${ocupado ? "disabled" : ""}>Guardar</button>
-      <button data-cancelar ${ocupado ? "disabled" : ""}>Cancelar</button>
-      <span class="sub">${ocupado ? "Espera a que termine de guardar." : ""}</span>
+      <button class="primary" data-guardar aria-disabled="${enVuelo}">${enVuelo ? "Guardando…" : "Guardar"}</button>
+      <button data-cancelar aria-disabled="${enVuelo}">Cancelar</button>
     </div>`;
 }
 
 // ---------- eventos ----------
 document.addEventListener("click", (ev) => {
-  const b = ev.target.closest("button"); if (!b || b.disabled) return;
+  const b = ev.target.closest("button"); if (!b || b.closest(".velo")) return;
+  if (b.getAttribute("aria-disabled") === "true") return;
   if (b.dataset.abrir !== undefined) return abrirHabitos();
-  if (b.dataset.volverMenu !== undefined) { if (timer) guardarAhora(); return volver(); }
+  if (b.dataset.entrar !== undefined) { vista = "perfil"; return pintar(); }
+  if (b.dataset.menuPerfil !== undefined || b.dataset.volverMenu !== undefined) {
+    if (vista === "habitos") return intentarSalir();
+    return;
+  }
   if (b.dataset.guardar !== undefined) return alGuardar();
   if (b.dataset.cancelar !== undefined) return alCancelar();
   if (b.dataset.chip) {
     const k = b.dataset.chip, v = b.dataset.v;
     d[k] = d[k] === v ? null : v;
-    // lo que se oculta se lleva sus errores (R12 de la C1)
+    // solo lo que se oculta se lleva sus errores; un campo que sigue a la vista conserva su marca (A3)
     for (const e of Object.keys(errores)) if (!visibles().includes(e)) delete errores[e];
-    programar(); pintar(); document.querySelector(`[data-chip="${k}"][data-v="${v}"]`)?.focus(); return;
+    pintar(); document.querySelector(`[data-chip="${k}"][data-v="${v}"]`)?.focus(); return;
   }
   if (b.dataset.lugar) {
     const v = b.dataset.lugar; let l = d.places || [];
     if (v === "none") l = l.includes("none") ? [] : ["none"];
     else { l = l.filter((p) => p !== "none"); l = l.includes(v) ? l.filter((p) => p !== v) : [...l, v]; }
-    d.places = l; programar(); pintar(); document.querySelector(`[data-lugar="${v}"]`)?.focus();
+    d.places = l;
+    for (const e of Object.keys(errores)) if (!visibles().includes(e)) delete errores[e];
+    pintar(); document.querySelector(`[data-lugar="${v}"]`)?.focus();
   }
 });
 document.addEventListener("input", (ev) => { const k = ev.target.dataset?.num; if (k) d[k] = ev.target.value; });
@@ -370,9 +409,13 @@ document.addEventListener("focusout", (ev) => {
   const k = ev.target.dataset?.num; if (!k) return;
   tocados.add(k);
   errores = validarTodo(true);
-  if (Object.keys(errores).length) estado = "corrige";
-  else programar();
   refrescar();
+});
+// La otra pestaña cierra sesión: esta sale sin preguntar (ni diálogo ni aviso del navegador).
+$("#otra-pestana").addEventListener("click", () => {
+  document.querySelector(".velo")?.remove();
+  if (history.state && history.state.v === "habitos") { saliendoPorCodigo = true; history.back(); }
+  vista = "login"; pintar();
 });
 $("#ver-ac").addEventListener("change", pintar);
 pintar();
