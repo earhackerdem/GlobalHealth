@@ -395,11 +395,11 @@ estado, fechas y humo ajeno son lo que los campos estructurados de los expedient
 
 | Hábito | Respuesta |
 |---|---|
-| alcohol | **nunca / lo dejé (a qué edad; ronda 8) / actual**. Si actual, las 3 preguntas del **AUDIT-C** con su escala: frecuencia (una vez al mes o menos · 2–4 al mes · 2–3 por semana · 4+ por semana), bebidas en un día típico (1–2 · 3–4 · 5–6 · 7–9 · 10+), frecuencia de 6 o más en una ocasión (nunca · menos de una vez al mes · cada mes · cada semana · diario o casi) + "sobre todo fines de semana" (Sí · No). **Sin puntaje** (C-6) |
+| alcohol | **nunca / lo dejé (a qué edad; ronda 8) / actual**; con "lo dejé" o "actual", **a qué edad empezó** (sin contar probaditas; perfil-habitos-ajustes, 2026-10-21). Si actual, las 3 preguntas del **AUDIT-C** con su escala: frecuencia (una vez al mes o menos · 2–4 al mes · 2–3 por semana · 4+ por semana), bebidas en un día típico (1–2 · 3–4 · 5–6 · 7–9 · 10+), frecuencia de 6 o más en una ocasión (nunca · menos de una vez al mes · cada mes · cada semana · diario o casi) + "sobre todo fines de semana" (Sí · No). **Sin puntaje** (C-6) |
 | tabaco | nunca / antes / actual + cigarros al día + a qué edad empezó + a qué edad lo dejó (si "antes") — ronda 8: edad, no año |
-| vapeador | nunca / antes / actual |
+| vapeador | nunca / antes / actual; con "antes" o "actual", a qué edad empezó, y con "antes", a qué edad lo dejó; con "actual", **todos los días / algunos días** + con "algunos días", **cuántos de los últimos 30** (Saúl Pérez, 2026-10-21; medida de PATH, research `habitos.md#vapeo-inicio`) |
 | humo de tabaco ajeno | **hábito propio** (ronda 6): dónde (casa · trabajo o escuela · otro lugar, varios) + días por semana, o "no me expongo" |
-| humo de leña | nunca / antes / actual + años aprox.; riesgo [VERIFIED] (research.md § humo de leña), forma de captura [ASSUMPTION] |
+| humo de leña | nunca / antes / actual; con "antes" o "actual", **a qué edad empezó** y **horas al día en promedio**, y con "antes", a qué edad terminó (Saúl Pérez, 2026-10-21). Forma [VERIFIED]: la exposición se mide en horas-año = años × horas al día (Pérez-Padilla 1996, research `humo-lena.md`); la app no la calcula (C-6) |
 | ejercicio | **lista de actividades** (caminar, correr, bicicleta, nadar, pesas o gimnasio, fútbol u otro deporte, yoga o pilates, baile, otra), cada una con días por semana + minutos por vez (forma del Exercise Vital Sign, por actividad); se muestra el total semanal **sin veredicto** contra la OMS. El tipo permite distinguir aeróbico de fuerza (OMS 2020) sin preguntar intensidad |
 
 | movimiento del día | ronda 7, forma del GPAQ (OMS): en el trabajo o actividad principal (casi todo sentado · de pie o caminando · esfuerzo físico pesado), desplazamiento activo (caminar o bici para ir a algún lado: sí/no + días por semana) y horas sentado al día. **No se suma al total de ejercicio** (paradoja de la actividad física, research.md § ocupación) |

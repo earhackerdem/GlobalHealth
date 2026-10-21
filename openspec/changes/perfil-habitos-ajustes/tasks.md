@@ -52,7 +52,7 @@ are `single`. `make tdd-check` requires one `test:` commit per `test→impl` gro
 
 ## 3. Verificación final, decisiones y entrega · single
 
-- [ ] 3.1 **D20 y deudas.**
+- [x] 3.1 **D20 y deudas.**
   - `memory/decisions/D20-…md`: botones que envían, desactivados mientras hay un envío.
   - Una fila en `memory/inbox/2026-10-21-atender-todas-las-deudas-antes-de-la-investigacion-ux.md`: revisar el doble
     clic en el resto de la app.
