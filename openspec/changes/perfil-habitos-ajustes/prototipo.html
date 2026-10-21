@@ -193,7 +193,7 @@ function huella() {
 const sucio = () => vista === "habitos" && huella() !== huellaAlAbrir;
 
 window.addEventListener("beforeunload", (ev) => {
-  if (sucio()) { ev.preventDefault(); ev.returnValue = ""; }
+  if (sucio() && !enVuelo) { ev.preventDefault(); ev.returnValue = ""; }
 });
 
 // ---------- guardado (simulado), solo con "Guardar" ----------
@@ -224,6 +224,9 @@ function refrescar() {
   const g = $("[data-guardar]"), c = $("[data-cancelar]");
   if (g) { g.setAttribute("aria-disabled", String(enVuelo)); g.textContent = enVuelo ? "Guardando…" : "Guardar"; }
   if (c) c.setAttribute("aria-disabled", String(enVuelo));
+  // mientras guarda, las preguntas no aceptan cambios (R2-3)
+  for (const ch of document.querySelectorAll("[data-chip],[data-lugar]")) ch.setAttribute("aria-disabled", String(enVuelo));
+  for (const i of document.querySelectorAll("input[data-num]")) i.readOnly = enVuelo;
   for (const input of document.querySelectorAll("input[data-num]")) {
     const k = input.dataset.num, e = errores[k];
     input.setAttribute("aria-invalid", String(!!e));
@@ -261,11 +264,12 @@ function volver(texto) {
   if (history.state && history.state.v === "habitos") { saliendoPorCodigo = true; history.back(); }
 }
 // Sale por el menú o "‹ Mi perfil médico": pregunta si hay cambios sin guardar.
-function intentarSalir() { if (sucio()) preguntar(); else volver(); }
+// Mientras guarda no pregunta: el guardado termina sin aviso ni regreso (R2-2).
+function intentarSalir() { if (sucio() && !enVuelo) preguntar(); else volver(); }
 window.addEventListener("popstate", () => {
   if (saliendoPorCodigo) { saliendoPorCodigo = false; return; }
   if (vista !== "habitos") return;
-  if (sucio()) { history.pushState({ v: "habitos" }, ""); preguntar(); }
+  if (sucio() && !enVuelo) { history.pushState({ v: "habitos" }, ""); preguntar(); }
   else { vista = "perfil"; pintar(); }
 });
 
@@ -291,7 +295,7 @@ async function alGuardar() {
   errores = validarTodo(false);
   if (Object.keys(errores).length) { refrescar(); document.querySelector('[aria-invalid="true"]')?.focus(); return; }
   await mandar(cuerpo());
-  volver("Hábitos guardados");
+  if (vista === "habitos") volver("Hábitos guardados");
 }
 function alCancelar() {
   if (enVuelo) return;

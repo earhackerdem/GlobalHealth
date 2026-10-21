@@ -37,7 +37,7 @@ campo; se guarda con "Guardar", y si intentas salir con cambios sin guardar, la 
 - [ ] Abro la pantalla y salgo sin tocar nada (o elijo una opción y vuelvo a la de antes): no pregunta nada.
 - [ ] Con un cambio sin guardar, cierro sesión en otra pestaña: esta va a "Iniciar sesión" sin preguntar.
 - [ ] Toco "Guardar" varias veces seguidas: se guarda una sola vez y vuelvo a "Mi perfil médico" con "Hábitos
-  guardados". Mientras guarda, "Guardar" y "Cancelar" no responden.
+  guardados". Mientras dice "Guardando…", "Guardar", "Cancelar" y las preguntas no responden, y salir no pregunta.
 - [ ] Cambio algo y toco "Cancelar": vuelvo con "Se descartaron los cambios", sin pregunta, y al abrir todo está como
   antes. Sin cambios, "Cancelar" solo me regresa.
 
