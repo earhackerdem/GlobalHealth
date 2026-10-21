@@ -851,7 +851,7 @@ HabitAge = Annotated[int, Field(ge=0, le=HISTORY_MAX_AGE)]
 class _ClosedSchema(SQLModel):
     # sqlmodel types model_config as its private SQLModelConfig (not exported);
     # a ConfigDict merges into it the same way at runtime.
-    model_config = ConfigDict(extra="forbid")  # type: ignore[assignment]
+    model_config = ConfigDict(extra="forbid")  # type: ignore[assignment]  # ty: ignore[invalid-assignment]
 
 
 class AlcoholHabit(_ClosedSchema):
