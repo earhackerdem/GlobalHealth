@@ -107,24 +107,32 @@ aplica al JSON descifrado antes de validarlo; NO se aplica al cuerpo del `PUT`, 
 - **Al abrir:** debajo de la introducción, el texto "Tus respuestas se guardan cuando tocas «Guardar»."
 - **"Guardar":** valida todo; si hay errores, foco al primero y no manda nada. Si no, manda un `PUT` con el
   cuestionario completo por la mutación de TanStack Query (con el manejo de 401/403 de `main.tsx`), avisa "Hábitos
-  guardados" y vuelve a `/perfil`. Un 422 se ubica por `loc` como en la C1.
+  guardados" y vuelve a `/perfil`. Un 422 se ubica por `loc` como en la C1. Al terminar el `PUT`, todo eso ocurre solo
+  si la pantalla sigue abierta y el token es el de cuando se abrió; si no, la respuesta no se escribe en la caché: solo
+  se invalida `["habits"]` (se vuelve a pedir con la sesión de ese momento), sin aviso ni navegación (hallazgos R2-1 y
+  R2-2 de la ronda 2).
 - **"Cancelar":** no manda nada. Si hay cambios sin guardar, vuelve con el aviso "Se descartaron los cambios"; si no,
   solo vuelve. Nunca abre el diálogo de salida.
 - **No disponibles mientras guarda (D20):** "Guardar" y "Cancelar" con `aria-disabled="true"` mientras el `PUT` está en
-  curso; un clic o Enter en ellos no hace nada, y el foco se queda donde estaba. "Guardar" muestra el mismo indicador de
-  carga que el resto de los formularios, armado en `HabitsForm.tsx`: `ui/loading-button.tsx` pone `disabled` nativo y
-  no se toca aquí (su modo `aria-disabled` va a la fila de D20 de la tarea de deudas).
+  curso; un clic o Enter en ellos no hace nada, y el foco se queda donde estaba. Mientras tanto "Guardar" dice
+  "Guardando…" con el indicador de carga de los demás formularios (como el prototipo aprobado; R2-5), armado en
+  `HabitsForm.tsx`: `ui/loading-button.tsx` pone `disabled` nativo y no se toca aquí (su modo `aria-disabled` va a la
+  fila de D20 de la tarea de deudas). Las preguntas tampoco aceptan cambios mientras guarda: los chips con
+  `aria-disabled="true"` ignoran el clic y los números quedan de solo lectura (R2-3).
 - **Cambios sin guardar:** hay cambios si lo que está en pantalla (incluido un número escrito sin salir del campo)
   difiere de lo que había al abrir. Elegir una opción y volver a la de antes no cuenta como cambio.
 - **Aviso al salir dentro de la app** (menú, "‹ Mi perfil médico", atrás del navegador), con `useBlocker` de TanStack
   Router: un diálogo (`ui/dialog.tsx`) "¿Salir sin guardar?" con el texto "Los cambios que hiciste en Hábitos se van a
   perder." y los botones "Seguir editando" (con el foco al abrir) y "Salir sin guardar". "Seguir editando" deja la
-  pantalla como estaba, con el foco donde estaba; "Salir sin guardar" sigue a donde iba. No aparece después de
-  "Guardar" o "Cancelar".
+  pantalla como estaba, con el foco donde estaba; si ese elemento ya no existe (el menú lateral del celular o el menú de
+  usuario se cerraron), el foco va al título "Hábitos" (R2-4). "Salir sin guardar" sigue a donde iba. No aparece
+  después de "Guardar" o "Cancelar", ni mientras el `PUT` de "Guardar" está en curso: salir entonces no pregunta y el
+  guardado termina sin aviso ni regreso a `/perfil` (R2-2).
 - **Aviso al recargar o cerrar la pestaña:** el evento `beforeunload` pide el aviso del navegador (su texto no se puede
   cambiar).
 - **Sin aviso cuando la sesión terminó o cambió:** si el token de `localStorage` ya no es el de cuando se abrió la
-  pantalla (cerrar sesión aquí o en otra pestaña, sesión vencida), ni el diálogo ni el aviso del navegador aparecen: la
+  pantalla (cerrar sesión aquí o en otra pestaña, o una petición que encontró la sesión vencida y la cerró), ni el
+  diálogo ni el aviso del navegador aparecen: la
   salida es obligatoria y quedarse permitiría guardar lo de una cuenta con la sesión de otra (hallazgo A5).
 - **Errores y opciones (hallazgo A3):** al elegir una opción, se borran solo los errores de las preguntas que se
   ocultan; un campo que sigue a la vista conserva su marca.
@@ -177,10 +185,14 @@ aplica al JSON descifrado antes de validarlo; NO se aplica al cuerpo del `PUT`, 
 | 18 | Guardar · Sin cambios no hay aviso (C-13) | e2e: abrir y volver sin tocar → sin diálogo; elegir "Actual" y volver a "Nunca" → sin diálogo | Playwright |
 | 19 | Guardar · Aviso del navegador al recargar (C-13) | e2e: con un cambio, `page.reload()` → `page.on('dialog')` recibe uno de tipo `beforeunload`; sin cambios, ninguno | Playwright |
 | 20 | Guardar · Sin aviso cuando la sesión cambió (C-13, N1) | e2e: con un cambio, otra pestaña del mismo contexto cierra sesión → esta llega a `/login` sin diálogo de la app ni `beforeunload`, ningún `PUT` | Playwright |
-| 21 | Guardar · No disponibles mientras guarda (C-13, D20) | e2e: con el `PUT` retenido por `page.route`, "Guardar" y "Cancelar" con `aria-disabled="true"`, el foco sigue en "Guardar"; Enter y un clic más → un solo `PUT`; al soltarlo, `/perfil` | Playwright |
+| 21 | Guardar · No disponibles mientras guarda (C-13, D20) | e2e: con el `PUT` retenido por `page.route`, "Guardar" (con el texto "Guardando…") y "Cancelar" con `aria-disabled="true"`, el foco sigue en "Guardar"; Enter y un clic más → un solo `PUT`; al soltarlo, `/perfil` | Playwright |
 | 22 | Guardar · Cancelar descarta (C-13) | e2e: tabaco "Nunca" sembrado → "Actual" + 5 → "Cancelar" → `/perfil` con "Se descartaron los cambios", sin diálogo, ningún `PUT`; abrir y "Cancelar" sin cambios → sin ese aviso | Playwright |
 | 23 | Errores al momento · Fuera de escala al salir del campo (C-14) | e2e: leña "Actual", 25 horas, Tab → "Debe estar entre 1 y 24", `aria-invalid`, ningún `PUT`. Lo mismo, sin `PUT`, para 40 en una edad (mayor que la actual), inicio 30 y fin 18 en vapeador y en leña, y "12a" ("Escribe solo el número."). Revisión estática: `HabitsForm.tsx` sin límites literales (grep en la verificación) | Playwright + grep |
 | 24 | Errores al momento · La marca sigue mientras el campo está a la vista (C-14) | e2e: tabaco "Actual", 101 cigarros, Tab → error; elegir "Antes" → el error y `aria-invalid` siguen junto a los cigarros | Playwright |
+| 26 | Guardar · Solo un número cambia (C-13; R2-7) | e2e: tabaco "Actual" con 12 sembrado; escribir 20 sin salir del campo ni tocar chips → "‹ Mi perfil médico" pregunta; "Cancelar" avisa "Se descartaron los cambios"; recargar pide `beforeunload` | Playwright |
+| 27 | Guardar · Un guardado en camino no cruza de cuenta en la misma pestaña (C-13; R2-1) | e2e: A elige tabaco "Actual" 20 y "Guardar" (`PUT` retenido); "Cerrar sesión" real; B entra por el formulario real; al soltar el `PUT`: B no es llevado a `/perfil` ni ve "Hábitos guardados"; B abre "Hábitos" y no ve "Actual" ni 20; el GET de B sigue vacío | Playwright |
+| 28 | Guardar · Mientras guarda no se cambia nada ni se pregunta al salir (C-13; R2-2, R2-3) | e2e: `PUT` retenido; un chip con `aria-disabled="true"` y su clic no cambia nada; un número de solo lectura; "‹ Mi perfil médico" llega a `/perfil` sin diálogo; ir a "Expediente"; al soltar sigue en `/expediente` y el GET trae lo guardado | Playwright |
+| 29 | Guardar · El foco vuelve al título si su elemento ya no existe (C-13; R2-4) | e2e en s26-ultra: con un cambio, menú lateral → "Mi perfil médico" → diálogo → "Seguir editando" → foco en el título "Hábitos" | Playwright |
 | 25 | Aislados y cifrados (C1) | existentes: SQL directo sin texto en claro, ahora también `some_days`; 403 sin consentimiento | pytest |
 
 ## Non-functional constraints addressed

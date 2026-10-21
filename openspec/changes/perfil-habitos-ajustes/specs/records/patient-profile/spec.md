@@ -169,6 +169,17 @@ foco, para que un doble clic no mande dos veces lo mismo.
 - **THEN** los dos están marcados como no disponibles, el foco sigue en "Guardar", el sistema recibe un solo guardado y
   al terminar vuelve a "Mi perfil médico"
 
+#### Scenario: Un guardado en camino no llega a otra cuenta (C-13)
+- **GIVEN** un paciente A que eligió tabaco "Actual" con 20 cigarros y tocó "Guardar", y el guardado sigue en curso
+- **WHEN** cierra sesión y, en la misma pestaña, entra otro paciente B antes de que el guardado termine
+- **THEN** B no ve "Hábitos guardados" ni es llevado a "Mi perfil médico" por ese guardado, y al abrir sus hábitos no
+  ve las respuestas de A
+
+#### Scenario: Mientras guarda no se cambia nada ni se pregunta al salir (C-13)
+- **GIVEN** un paciente que tocó "Guardar", y el guardado sigue en curso
+- **WHEN** intenta elegir otra opción, y después sale por "‹ Mi perfil médico" y va al "Expediente"
+- **THEN** la opción no cambia, sale sin ninguna pregunta, y al terminar el guardado sigue en el "Expediente"
+
 #### Scenario: Cancelar descarta (C-13)
 - **GIVEN** un paciente con tabaco "Nunca" guardado, que abre la pantalla y cambia a tabaco "Actual" con 5 cigarros
 - **WHEN** toca "Cancelar"
