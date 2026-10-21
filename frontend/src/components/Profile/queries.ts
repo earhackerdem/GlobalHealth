@@ -24,6 +24,18 @@ export function getHistoryQueryOptions() {
 }
 
 /**
+ * Shared ["habits"] query (GET /profile/habits, perfil-habitos): /perfil
+ * reads it for the card's badge and /perfil/habitos for the questionnaire;
+ * saving invalidates it.
+ */
+export function getHabitsQueryOptions() {
+  return {
+    queryKey: ["habits"],
+    queryFn: async () => (await ProfileService.readHabits()).data,
+  }
+}
+
+/**
  * The patient's diagnoses (id and title), the only records a chronic entry
  * may be backed by (Story B, B-4). Under the ["health-records"] prefix, so
  * creating, editing or deleting a record refreshes it too.

@@ -19,10 +19,10 @@ are `single`. `make tdd-check` requires one `test:` commit per `test→impl` gro
 
 ## 1. Backend: hábitos, normalización, validación y cifrado · test→impl
 
-- [ ] 1.1 **Tester.** Escribe `backend/tests/api/routes/test_profile_habits.py` a partir de dos fuentes: la parte
+- [x] 1.1 **Tester.** Escribe `backend/tests/api/routes/test_profile_habits.py` a partir de dos fuentes: la parte
   pytest del test plan (filas 1–11 y 16) y el Interface contract. Verificación: la suite queda roja porque faltan
   las rutas (404), no porque un test esté roto. Commit `test:` solo.
-- [ ] 1.2 **Implementer.**
+- [x] 1.2 **Implementer.**
   - Esquemas `Habits`, `AlcoholHabit`, `TobaccoHabit`, `SecondhandSmoke`, `WoodSmokeHabit` y su normalización en
     `backend/app/models.py`;
   - la columna `patient_profile.habits` y su migración Alembic;
@@ -30,25 +30,25 @@ are `single`. `make tdd-check` requires one `test:` commit per `test→impl` gro
     `loc`.
 
   Verificación: los tests de 1.1 verdes sin tocarlos, y mypy limpio.
-- [ ] 1.3 **Orquestador.**
+- [x] 1.3 **Orquestador.**
   - Corre la suite backend completa desde limpio: cero fallos, errores y skips; cobertura ≥ 90 %.
   - Regenera el cliente (`scripts/generate-client.sh`).
   - Escribe los números en evidence.md § Grupo 1 y corre `make tdd-check`.
 
 ## 2. Frontend: tarjeta, pantalla de hábitos y chips múltiples · test→impl
 
-- [ ] 2.1 **Tester.** Escribe `frontend/tests/profile-habits.spec.ts` a partir de dos fuentes: la parte Playwright
+- [x] 2.1 **Tester.** Escribe `frontend/tests/profile-habits.spec.ts` a partir de dos fuentes: la parte Playwright
   del test plan (filas 1–9, 11–14) y el Interface contract. Reescribe los citadores que afirman que hábitos no
   tiene enlace (`grep -n habits frontend/tests/*.spec.ts`). Verificación: la suite queda roja por comportamiento
   ausente. Commit `test:` solo.
-- [ ] 2.2 **Implementer.**
+- [x] 2.2 **Implementer.**
   - `ChipMultiGroup` en `ChipGroup.tsx`;
   - `HabitsForm.tsx` y la ruta `perfil_.habitos.tsx`, con la validación en el cliente y los 422 ubicados por `loc`;
   - la tarjeta enlazada con "Sin llenar" / "Con datos" en `perfil.tsx`, y `queries.ts`;
   - los textos es-MX y los comentarios citadores (`perfil.tsx`, `history.ts`, `profile.json:79`).
 
   Verificación: los tests de 2.1 verdes sin tocarlos; tsc y biome limpios.
-- [ ] 2.3 **Orquestador.** Corre la suite Playwright completa como en CI (chromium + s26-ultra), escribe los
+- [x] 2.3 **Orquestador.** Corre la suite Playwright completa como en CI (chromium + s26-ultra), escribe los
   números en evidence.md y corre `make tdd-check`.
 
 ## 3. Verificación final, archivo y entrega · single

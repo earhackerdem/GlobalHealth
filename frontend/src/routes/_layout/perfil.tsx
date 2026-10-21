@@ -12,11 +12,13 @@ import EditFamilyHistory from "@/components/Profile/EditFamilyHistory"
 import { ageFrom, formatDateMx } from "@/components/Profile/format"
 import {
   HISTORY_CARD_KEYS,
+  hasHabits,
   isHistorySection,
   SECTION_SLUGS,
   sectionStatus,
 } from "@/components/Profile/history"
 import {
+  getHabitsQueryOptions,
   getHistoryQueryOptions,
   getProfileQueryOptions,
 } from "@/components/Profile/queries"
@@ -33,6 +35,10 @@ export const Route = createFileRoute("/_layout/perfil")({
     ],
   }),
 })
+
+/** Every history card is a link: one look for the six (chevron included). */
+const CARD_LINK_CLASS =
+  "flex flex-col gap-2 rounded-lg border p-4 transition-colors hover:bg-accent focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
 
 function Row({ label, value }: { label: string; value: string }) {
   return (
@@ -52,6 +58,7 @@ function ProfileContent() {
     queryFn: async () => (await ProfileService.readFamilyHistory()).data,
   })
   const { data: history } = useSuspenseQuery(getHistoryQueryOptions())
+  const { data: habits } = useSuspenseQuery(getHabitsQueryOptions())
 
   const birthDateValue = profile.birth_date
     ? `${formatDateMx(profile.birth_date)} · ${t("age", {
@@ -148,23 +155,35 @@ function ProfileContent() {
           </p>
         </div>
         {/* Chronic (Story B) and the four event sections (FR-028, Story A)
-            open their own screen; habits (Story C) stays listed without
-            capture: no link, no inputs, no "Agregar". */}
+            open their own screen; habits (perfil-habitos) opens its
+            questionnaire at /perfil/habitos, "Sin llenar" / "Con datos". */}
         <div className="grid gap-4 sm:grid-cols-2">
           {HISTORY_CARD_KEYS.map((key) => {
             const title = (
               <h3 className="font-medium">{t(`pending.sections.${key}`)}</h3>
             )
             if (!isHistorySection(key)) {
+              const filled = hasHabits(habits)
               return (
-                <div
+                <Link
                   key={key}
+                  to="/perfil/habitos"
                   data-testid={`history-card-${key}`}
-                  className="flex flex-col gap-2 rounded-lg border p-4"
+                  className={CARD_LINK_CLASS}
                 >
-                  {title}
-                  <Badge variant="outline">{t("history.status.empty")}</Badge>
-                </div>
+                  <div className="flex items-start justify-between gap-2">
+                    {title}
+                    <ChevronRight
+                      aria-hidden="true"
+                      className="size-5 shrink-0 text-muted-foreground"
+                    />
+                  </div>
+                  <Badge variant={filled ? "secondary" : "outline"}>
+                    {filled
+                      ? t("habits.status.filled")
+                      : t("history.status.empty")}
+                  </Badge>
+                </Link>
               )
             }
             const count = history.data.filter(
@@ -177,7 +196,7 @@ function ProfileContent() {
                 to="/perfil/$seccion"
                 params={{ seccion: SECTION_SLUGS[key] }}
                 data-testid={`history-card-${key}`}
-                className="flex flex-col gap-2 rounded-lg border p-4 transition-colors hover:bg-accent focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
+                className={CARD_LINK_CLASS}
               >
                 {/* The chevron marks, on touch too, the cards that open a
                     screen (decorative: the link's name stays the text). */}

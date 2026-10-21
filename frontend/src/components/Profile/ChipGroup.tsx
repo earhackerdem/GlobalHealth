@@ -100,4 +100,81 @@ function ChipGroup<V extends string>({
   )
 }
 
+/**
+ * Multiple-choice chips (design.md, Interface contract → `ChipMultiGroup`;
+ * D18: chips for every option, multiple choice included): same look and
+ * group semantics as ChipGroup, but each chip toggles on its own. The
+ * optional `exclusive` chip ("No me expongo") goes last; choosing it empties
+ * the others, and choosing any other turns it off. `values` keeps the order
+ * of `options`, the exclusive one alone.
+ */
+export function ChipMultiGroup<V extends string>({
+  label,
+  options,
+  values,
+  onChange,
+  exclusive,
+  showLabel = true,
+  invalid = false,
+  describedBy,
+  className,
+}: {
+  label: string
+  options: readonly ChipOption<V>[]
+  values: readonly V[]
+  onChange: (next: V[]) => void
+  exclusive?: ChipOption<V>
+  showLabel?: boolean
+  invalid?: boolean
+  describedBy?: string
+  className?: string
+}) {
+  const toggle = (value: V) => {
+    if (exclusive && value === exclusive.value) {
+      onChange(values.includes(value) ? [] : [value])
+      return
+    }
+    const chosen = new Set(values.filter((v) => v !== exclusive?.value))
+    if (chosen.has(value)) chosen.delete(value)
+    else chosen.add(value)
+    onChange(options.map((o) => o.value).filter((v) => chosen.has(v)))
+  }
+
+  const chip = (option: ChipOption<V>) => {
+    const pressed = values.includes(option.value)
+    return (
+      <Button
+        key={option.value}
+        type="button"
+        size="sm"
+        variant={pressed ? "default" : "outline"}
+        aria-pressed={pressed}
+        aria-label={option.spokenLabel}
+        onClick={() => toggle(option.value)}
+      >
+        {option.label}
+      </Button>
+    )
+  }
+
+  return (
+    <div className={cn("grid gap-2", className)}>
+      {showLabel && (
+        <span className="text-sm font-medium" aria-hidden="true">
+          {label}
+        </span>
+      )}
+      <fieldset
+        aria-label={label}
+        aria-describedby={describedBy}
+        data-invalid={invalid || undefined}
+        className="m-0 flex min-w-0 flex-wrap gap-2 border-0 p-0"
+      >
+        {options.map(chip)}
+        {exclusive && chip(exclusive)}
+      </fieldset>
+    </div>
+  )
+}
+
 export default ChipGroup
