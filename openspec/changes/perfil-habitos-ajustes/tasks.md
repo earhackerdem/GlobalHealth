@@ -44,7 +44,7 @@ are `single`. `make tdd-check` requires one `test:` commit per `test→impl` gro
   Playwright del test plan (filas 1–4, 8, 9, 11, 12, 15–21) y el Interface contract. Ajusta los e2e de la C1 que tocan
   "Guardar" para el guardado automático. Verificación: rojo por las preguntas y el guardado que faltan. Commit `test:`
   solo.
-- [ ] 2.2 **Implementer.** `HabitsForm.tsx` (preguntas nuevas, validación al salir de cada campo con `zod.gen.ts`,
+- [x] 2.2 **Implementer.** `HabitsForm.tsx` (preguntas nuevas, validación al salir de cada campo con `zod.gen.ts`,
   guardado automático, estado, "Guardar"/"Cancelar" con D20) y `profile.json`. Verificación: los tests de 2.1 verdes
   sin tocarlos (chromium y s26-ultra); `tsc` y `biome` limpios; `grep` sin límites literales en `HabitsForm.tsx`.
 - [ ] 2.3 **Orquestador.** Corre de nuevo el rojo y el verde, `make tdd-check`, y anota los números en evidence.md

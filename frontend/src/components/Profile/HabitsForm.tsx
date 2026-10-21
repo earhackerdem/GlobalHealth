@@ -1,8 +1,4 @@
-import {
-  useMutation,
-  useQueryClient,
-  useSuspenseQuery,
-} from "@tanstack/react-query"
+import { useQueryClient, useSuspenseQuery } from "@tanstack/react-query"
 import { useNavigate } from "@tanstack/react-router"
 import { AxiosError } from "axios"
 import type { TFunction } from "i18next"
@@ -22,23 +18,33 @@ import {
   ProfileService,
   type SecondhandSmoke,
   type TobaccoHabit,
+  type VapingHabit,
 } from "@/client"
+import {
+  zAlcoholHabit,
+  zSecondhandSmoke,
+  zTobaccoHabit,
+  zVapingHabit,
+  zWoodSmokeHabit,
+} from "@/client/zod.gen"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { LoadingButton } from "@/components/ui/loading-button"
 import useCustomToast from "@/hooks/useCustomToast"
-import { handleError } from "@/utils"
+import { cn } from "@/lib/utils"
 import ChipGroup, { ChipMultiGroup } from "./ChipGroup"
 import { mexicoCityTodayIso } from "./format"
 import { ageToday } from "./history"
 import { getHabitsQueryOptions, getProfileQueryOptions } from "./queries"
+import { useAutosave } from "./useAutosave"
 
 type AlcoholStatus = AlcoholHabit["status"]
 type SmokeStatus = TobaccoHabit["status"]
 type Frequency = NonNullable<AlcoholHabit["frequency"]>
 type TypicalDrinks = NonNullable<AlcoholHabit["typical_drinks"]>
 type SixOrMore = NonNullable<AlcoholHabit["six_or_more"]>
+type VapingFrequency = NonNullable<VapingHabit["frequency"]>
 type Place = NonNullable<SecondhandSmoke["places"]>[number]
 /** "No me expongo": the exclusive chip of "¿Dónde?", sent as `exposed: false`. */
 type PlaceChoice = Place | "none"
@@ -65,12 +71,14 @@ const SIX_OR_MORE: readonly SixOrMore[] = [
   "weekly",
   "daily",
 ]
+const VAPING_FREQUENCIES: readonly VapingFrequency[] = ["daily", "some_days"]
 const PLACES: readonly Place[] = ["home", "work_school", "other"]
 const YES_NO = ["yes", "no"] as const
 
-/** What the screen holds while editing; numbers stay text until submit. */
+/** What the screen holds while editing; numbers stay text until sent. */
 type Draft = {
   alcoholStatus: AlcoholStatus | null
+  alcoholStartAge: string
   alcoholQuitAge: string
   frequency: Frequency | null
   typicalDrinks: TypicalDrinks | null
@@ -80,22 +88,40 @@ type Draft = {
   cigarettes: string
   tobaccoStartAge: string
   tobaccoQuitAge: string
-  vaping: SmokeStatus | null
+  vapingStatus: SmokeStatus | null
+  vapingFrequency: VapingFrequency | null
+  vapingDays: string
+  vapingStartAge: string
+  vapingQuitAge: string
   places: PlaceChoice[]
   daysPerWeek: string
   woodStatus: SmokeStatus | null
-  woodYears: string
+  woodStartAge: string
+  woodQuitAge: string
+  woodHours: string
 }
+
+/** The draft entries that hold a number box's text. */
+type NumberDraftKey = {
+  [K in keyof Draft]: Draft[K] extends string ? K : never
+}[keyof Draft]
 
 const numberText = (value: number | null | undefined) =>
   value == null ? "" : `${value}`
 
 function draftFrom(habits: Habits): Draft {
-  const { alcohol, tobacco, secondhand_smoke: smoke, wood_smoke } = habits
+  const {
+    alcohol,
+    tobacco,
+    vaping,
+    secondhand_smoke: smoke,
+    wood_smoke,
+  } = habits
   let places: PlaceChoice[] = []
   if (smoke) places = smoke.exposed ? [...(smoke.places ?? [])] : ["none"]
   return {
     alcoholStatus: alcohol?.status ?? null,
+    alcoholStartAge: numberText(alcohol?.start_age),
     alcoholQuitAge: numberText(alcohol?.quit_age),
     frequency: alcohol?.frequency ?? null,
     typicalDrinks: alcohol?.typical_drinks ?? null,
@@ -105,89 +131,173 @@ function draftFrom(habits: Habits): Draft {
     cigarettes: numberText(tobacco?.cigarettes_per_day),
     tobaccoStartAge: numberText(tobacco?.start_age),
     tobaccoQuitAge: numberText(tobacco?.quit_age),
-    vaping: habits.vaping ?? null,
+    vapingStatus: vaping?.status ?? null,
+    vapingFrequency: vaping?.frequency ?? null,
+    vapingDays: numberText(vaping?.days_last_30),
+    vapingStartAge: numberText(vaping?.start_age),
+    vapingQuitAge: numberText(vaping?.quit_age),
     places,
     daysPerWeek: numberText(smoke?.days_per_week),
     woodStatus: wood_smoke?.status ?? null,
-    woodYears: numberText(wood_smoke?.years),
+    woodStartAge: numberText(wood_smoke?.start_age),
+    woodQuitAge: numberText(wood_smoke?.quit_age),
+    woodHours: numberText(wood_smoke?.hours_per_day),
   }
 }
 
 /**
  * The number boxes, keyed like the API's 422 `loc` ("<block>.<field>") so a
- * client error and a server one land on the same box. Ranges are the API's
- * (design.md, Interface contract → Tipos); `age` ones are also checked
- * against the patient's current age.
+ * client error and a server one land on the same box. Each scale comes from
+ * the generated schema (src/client/zod.gen.ts, design.md Decision 6), never
+ * written here; `age` ones are also checked against the patient's current
+ * age. `hint`: a help line under the label, linked to the box.
  */
 type NumberKey =
+  | "alcohol.start_age"
   | "alcohol.quit_age"
   | "tobacco.cigarettes_per_day"
   | "tobacco.start_age"
   | "tobacco.quit_age"
+  | "vaping.start_age"
+  | "vaping.quit_age"
+  | "vaping.days_last_30"
   | "secondhand_smoke.days_per_week"
-  | "wood_smoke.years"
+  | "wood_smoke.start_age"
+  | "wood_smoke.quit_age"
+  | "wood_smoke.hours_per_day"
 
-const NUMBER_FIELDS: Record<
-  NumberKey,
-  { draft: keyof Draft; label: string; min: number; max: number; age: boolean }
-> = {
-  "alcohol.quit_age": {
-    draft: "alcoholQuitAge",
-    label: "alcoholQuitAge",
-    min: 0,
-    max: 130,
-    age: true,
-  },
-  "tobacco.cigarettes_per_day": {
-    draft: "cigarettes",
-    label: "cigarettesPerDay",
-    min: 1,
-    max: 100,
-    age: false,
-  },
-  "tobacco.start_age": {
-    draft: "tobaccoStartAge",
-    label: "tobaccoStartAge",
-    min: 0,
-    max: 130,
-    age: true,
-  },
-  "tobacco.quit_age": {
-    draft: "tobaccoQuitAge",
-    label: "tobaccoQuitAge",
-    min: 0,
-    max: 130,
-    age: true,
-  },
-  "secondhand_smoke.days_per_week": {
-    draft: "daysPerWeek",
-    label: "daysPerWeek",
-    min: 1,
-    max: 7,
-    age: false,
-  },
-  "wood_smoke.years": {
-    draft: "woodYears",
-    label: "woodYears",
-    min: 0,
-    max: 130,
-    age: false,
-  },
+/** A generated `z.int().gte(min).lte(max).nullish()`, seen through. */
+type BoundedInt = {
+  unwrap(): { unwrap(): { minValue: number | null; maxValue: number | null } }
 }
 
-/** The number boxes on screen: only the questions that apply (C-1…C-4). */
+type NumberField = {
+  draft: NumberDraftKey
+  label: string
+  min: number
+  max: number
+  age: boolean
+  hint?: string
+}
+
+function numberFieldOf(
+  draft: NumberDraftKey,
+  schema: BoundedInt,
+  { age = false, hint }: { age?: boolean; hint?: string } = {},
+): NumberField {
+  const scale = schema.unwrap().unwrap()
+  return {
+    draft,
+    label: draft,
+    min: scale.minValue ?? Number.NEGATIVE_INFINITY,
+    max: scale.maxValue ?? Number.POSITIVE_INFINITY,
+    age,
+    hint,
+  }
+}
+
+const NUMBER_FIELDS: Record<NumberKey, NumberField> = {
+  "alcohol.start_age": numberFieldOf(
+    "alcoholStartAge",
+    zAlcoholHabit.shape.start_age,
+    { age: true, hint: "alcoholStartAgeHint" },
+  ),
+  "alcohol.quit_age": numberFieldOf(
+    "alcoholQuitAge",
+    zAlcoholHabit.shape.quit_age,
+    { age: true },
+  ),
+  "tobacco.cigarettes_per_day": {
+    ...numberFieldOf("cigarettes", zTobaccoHabit.shape.cigarettes_per_day),
+    label: "cigarettesPerDay",
+  },
+  "tobacco.start_age": numberFieldOf(
+    "tobaccoStartAge",
+    zTobaccoHabit.shape.start_age,
+    { age: true },
+  ),
+  "tobacco.quit_age": numberFieldOf(
+    "tobaccoQuitAge",
+    zTobaccoHabit.shape.quit_age,
+    { age: true },
+  ),
+  "vaping.start_age": numberFieldOf(
+    "vapingStartAge",
+    zVapingHabit.shape.start_age,
+    { age: true },
+  ),
+  "vaping.quit_age": numberFieldOf(
+    "vapingQuitAge",
+    zVapingHabit.shape.quit_age,
+    { age: true },
+  ),
+  "vaping.days_last_30": numberFieldOf(
+    "vapingDays",
+    zVapingHabit.shape.days_last_30,
+  ),
+  "secondhand_smoke.days_per_week": numberFieldOf(
+    "daysPerWeek",
+    zSecondhandSmoke.shape.days_per_week,
+  ),
+  "wood_smoke.start_age": numberFieldOf(
+    "woodStartAge",
+    zWoodSmokeHabit.shape.start_age,
+    { age: true },
+  ),
+  "wood_smoke.quit_age": numberFieldOf(
+    "woodQuitAge",
+    zWoodSmokeHabit.shape.quit_age,
+    { age: true },
+  ),
+  "wood_smoke.hours_per_day": numberFieldOf(
+    "woodHours",
+    zWoodSmokeHabit.shape.hours_per_day,
+  ),
+}
+
+/**
+ * Start ≤ end of each block (design.md, Interface contract → Validación): the
+ * message goes on the start age, with the block's own wording.
+ */
+const AGE_PAIRS: readonly [NumberKey, NumberKey, string][] = [
+  ["alcohol.start_age", "alcohol.quit_age", "startAfterQuit"],
+  ["tobacco.start_age", "tobacco.quit_age", "startAfterQuit"],
+  ["vaping.start_age", "vaping.quit_age", "startAfterQuit"],
+  ["wood_smoke.start_age", "wood_smoke.quit_age", "startAfterEnd"],
+]
+
+/** A box and the other end of its block's pair: both are re-checked on blur. */
+function blurKeys(key: NumberKey): NumberKey[] {
+  const pair = AGE_PAIRS.find(([start, quit]) => key === start || key === quit)
+  return pair ? [pair[0], pair[1]] : [key]
+}
+
+const ongoing = (status: string | null) => !!status && status !== "never"
+
+/** The number boxes on screen: only the questions that apply (C-1…C-4, C-10…C-12). */
 function visibleNumbers(draft: Draft): NumberKey[] {
   const keys: NumberKey[] = []
+  if (ongoing(draft.alcoholStatus)) keys.push("alcohol.start_age")
   if (draft.alcoholStatus === "quit") keys.push("alcohol.quit_age")
-  if (draft.tobaccoStatus && draft.tobaccoStatus !== "never") {
+  if (ongoing(draft.tobaccoStatus)) {
     keys.push("tobacco.cigarettes_per_day", "tobacco.start_age")
     if (draft.tobaccoStatus === "former") keys.push("tobacco.quit_age")
+  }
+  if (ongoing(draft.vapingStatus)) keys.push("vaping.start_age")
+  if (draft.vapingStatus === "former") keys.push("vaping.quit_age")
+  if (
+    draft.vapingStatus === "current" &&
+    draft.vapingFrequency === "some_days"
+  ) {
+    keys.push("vaping.days_last_30")
   }
   if (draft.places.some((place) => place !== "none")) {
     keys.push("secondhand_smoke.days_per_week")
   }
-  if (draft.woodStatus && draft.woodStatus !== "never") {
-    keys.push("wood_smoke.years")
+  if (ongoing(draft.woodStatus)) {
+    keys.push("wood_smoke.start_age")
+    if (draft.woodStatus === "former") keys.push("wood_smoke.quit_age")
+    keys.push("wood_smoke.hours_per_day")
   }
   return keys
 }
@@ -199,7 +309,7 @@ function visibleNumbers(draft: Draft): NumberKey[] {
 const BLOCK_ANCHOR: Record<string, string> = {
   alcohol: "alcohol.status",
   tobacco: "tobacco.status",
-  vaping: "vaping",
+  vaping: "vaping.status",
   secondhand_smoke: "secondhand_smoke.places",
   wood_smoke: "wood_smoke.status",
 }
@@ -218,6 +328,7 @@ const DRINKING_CHIPS = [
 function visibleFields(draft: Draft): string[] {
   const fields: string[] = visibleNumbers(draft)
   if (draft.alcoholStatus === "current") fields.push(...DRINKING_CHIPS)
+  if (draft.vapingStatus === "current") fields.push("vaping.frequency")
   return fields
 }
 
@@ -253,13 +364,15 @@ function serverErrors(
 }
 
 /**
- * Draft → PUT body, plus the client errors (design.md, Decision 3): the same
- * rules as the server, run before sending so each message shows next to its
- * own box (review R5). What does not apply is never sent (the server drops it
- * anyway): hidden questions go as null. The server's "exposed without places"
- * cannot happen here: `exposed` is derived from the chips (a place → true,
- * "No me expongo" → false, none → no answer), so that rule only arrives as a
- * 422 on `places`, placed by serverErrors.
+ * Draft → PUT body, plus the client errors (design.md, Decisions 3 and 6):
+ * the same rules as the server, run before sending so each message shows
+ * next to its own box (review R5), and the one gate of the autosave (nothing
+ * goes while there is an error, Decision 4). What does not apply is never
+ * sent (the server drops it anyway): hidden questions go as null. The
+ * server's "exposed without places" cannot happen here: `exposed` is derived
+ * from the chips (a place → true, "No me expongo" → false, none → no
+ * answer), so that rule only arrives as a 422 on `places`, placed by
+ * serverErrors.
  */
 function buildBody(
   draft: Draft,
@@ -273,7 +386,7 @@ function buildBody(
 
   for (const key of visible) {
     const field = NUMBER_FIELDS[key]
-    const text = (draft[field.draft] as string).trim()
+    const text = draft[field.draft].trim()
     if (!text) {
       numbers[key] = null
       continue
@@ -295,19 +408,24 @@ function buildBody(
     }
   }
 
-  const start = numbers["tobacco.start_age"]
-  const quit = numbers["tobacco.quit_age"]
-  if (start != null && quit != null && start > quit) {
-    errors["tobacco.start_age"] = t("habits.validation.startAfterQuit")
+  for (const [startKey, quitKey, message] of AGE_PAIRS) {
+    const start = numbers[startKey]
+    const quit = numbers[quitKey]
+    if (start != null && quit != null && start > quit) {
+      errors[startKey] = t(`habits.validation.${message}`)
+    }
   }
 
+  const number = (key: NumberKey) => numbers[key] ?? null
   const exposed = draft.places.length > 0 && !draft.places.includes("none")
   const drinksNow = draft.alcoholStatus === "current"
+  const vapesNow = draft.vapingStatus === "current"
   const body: Habits = {
     alcohol: draft.alcoholStatus
       ? {
           status: draft.alcoholStatus,
-          quit_age: numbers["alcohol.quit_age"] ?? null,
+          start_age: number("alcohol.start_age"),
+          quit_age: number("alcohol.quit_age"),
           frequency: drinksNow ? draft.frequency : null,
           typical_drinks: drinksNow ? draft.typicalDrinks : null,
           six_or_more: drinksNow ? draft.sixOrMore : null,
@@ -317,12 +435,20 @@ function buildBody(
     tobacco: draft.tobaccoStatus
       ? {
           status: draft.tobaccoStatus,
-          cigarettes_per_day: numbers["tobacco.cigarettes_per_day"] ?? null,
-          start_age: start ?? null,
-          quit_age: quit ?? null,
+          cigarettes_per_day: number("tobacco.cigarettes_per_day"),
+          start_age: number("tobacco.start_age"),
+          quit_age: number("tobacco.quit_age"),
         }
       : null,
-    vaping: draft.vaping,
+    vaping: draft.vapingStatus
+      ? {
+          status: draft.vapingStatus,
+          frequency: vapesNow ? draft.vapingFrequency : null,
+          days_last_30: number("vaping.days_last_30"),
+          start_age: number("vaping.start_age"),
+          quit_age: number("vaping.quit_age"),
+        }
+      : null,
     secondhand_smoke:
       draft.places.length === 0
         ? null
@@ -330,13 +456,15 @@ function buildBody(
           ? {
               exposed: true,
               places: draft.places.filter((p): p is Place => p !== "none"),
-              days_per_week: numbers["secondhand_smoke.days_per_week"] ?? null,
+              days_per_week: number("secondhand_smoke.days_per_week"),
             }
           : { exposed: false, places: [], days_per_week: null },
     wood_smoke: draft.woodStatus
       ? {
           status: draft.woodStatus,
-          years: numbers["wood_smoke.years"] ?? null,
+          start_age: number("wood_smoke.start_age"),
+          quit_age: number("wood_smoke.quit_age"),
+          hours_per_day: number("wood_smoke.hours_per_day"),
         }
       : null,
   }
@@ -345,28 +473,59 @@ function buildBody(
 
 /**
  * The habits questionnaire, /perfil/habitos (design.md, Interface contract →
- * Pantalla): four blocks, each question only when it applies, one "Guardar"
- * for the whole questionnaire (Decision 2). Nothing here scores or labels the
- * answers (C-6). A failed validation, client or server, puts each message
- * next to its control (aria-invalid / aria-describedby) and moves the focus
- * to the first invalid one in document order (review R5).
+ * Frontend): four blocks, each question only when it applies. It saves by
+ * itself (useAutosave: a chip on choosing it, a number on leaving its box,
+ * only when the whole questionnaire is valid) and keeps "Guardar" and
+ * "Cancelar", both disabled while a PUT is in flight (D20). Leaving a box
+ * checks it and its block's start ≤ end without moving the focus; "Guardar"
+ * checks everything and moves the focus to the first error (review R5).
+ * Nothing here scores or labels the answers (C-6).
  */
 function HabitsForm() {
   const { t } = useTranslation("profile")
   const idPrefix = useId()
   const navigate = useNavigate()
   const queryClient = useQueryClient()
-  const { showSuccessToast, showErrorToast } = useCustomToast()
+  const { showSuccessToast } = useCustomToast()
   const formRef = useRef<HTMLFormElement>(null)
 
   const { data: habits } = useSuspenseQuery(getHabitsQueryOptions())
   const { data: profile } = useSuspenseQuery(getProfileQueryOptions())
 
-  const [draft, setDraft] = useState<Draft>(() => draftFrom(habits))
+  // What was stored when the screen opened: "Cancelar" puts it back.
+  const [opening] = useState(habits)
+  const [draft, setDraft] = useState<Draft>(() => draftFrom(opening))
+  // The latest draft for handlers and the autosave, ahead of the render.
+  const draftRef = useRef(draft)
   const [errors, setErrors] = useState<Record<string, string>>({})
-  // Bumped on every failed validation so the focus moves even when the same
+  // Bumped on every failed "Guardar" so the focus moves even when the same
   // error repeats.
   const [failedAttempt, setFailedAttempt] = useState(0)
+
+  const build = (from: Draft = draftRef.current) =>
+    buildBody(from, profile.birth_date, t)
+
+  const autosave = useAutosave({
+    build: () => {
+      const { body, errors: found } = build()
+      return { body, valid: Object.keys(found).length === 0 }
+    },
+    initialBody: build(draftFrom(opening)).body,
+    put: async (body: Habits) =>
+      (await ProfileService.updateHabits({ body })).data,
+    // The answer refreshes the cache, never the draft being typed; once the
+    // screen is gone (menu, another account) the query is fetched again.
+    onSaved: (saved, mounted) => {
+      if (mounted) queryClient.setQueryData(["habits"], saved)
+      else queryClient.invalidateQueries({ queryKey: ["habits"] })
+    },
+    onFailed: (err) => {
+      const placed = serverErrors(err, visibleFields(draftRef.current))
+      if (!placed) return "failed"
+      setErrors(placed)
+      return "blocked"
+    },
+  })
 
   useEffect(() => {
     if (!failedAttempt) return
@@ -379,56 +538,113 @@ function HabitsForm() {
       ?.focus()
   }, [failedAttempt])
 
-  const fail = (next: Record<string, string>) => {
-    setErrors(next)
-    setFailedAttempt((n) => n + 1)
-  }
-
   const backToProfile = () => navigate({ to: "/perfil" })
 
-  const mutation = useMutation({
-    mutationFn: (body: Habits) => ProfileService.updateHabits({ body }),
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ["habits"] })
-      showSuccessToast(t("habits.savedToast"))
-      backToProfile()
-    },
-    onError: (err) => {
-      const placed = serverErrors(err, visibleFields(draft))
-      if (placed) fail(placed)
-      else handleError.call(showErrorToast, err as Error)
-    },
-  })
-
-  const set = <K extends keyof Draft>(key: K, value: Draft[K]) =>
-    setDraft((prev) => ({ ...prev, [key]: value }))
-
-  /**
-   * An answer that shows or hides a block's questions: the block's errors
-   * go with it, so none outlives the question it was about (review R12).
-   */
-  const setStatus = <K extends keyof Draft>(
-    blockKey: string,
-    key: K,
-    value: Draft[K],
-  ) => {
-    set(key, value)
-    setErrors((prev) =>
-      Object.fromEntries(
-        Object.entries(prev).filter(([k]) => !k.startsWith(`${blockKey}.`)),
-      ),
-    )
+  const update = (next: Draft) => {
+    draftRef.current = next
+    setDraft(next)
   }
 
-  const handleSubmit = (event: FormEvent) => {
+  /**
+   * A chip answer, saved by itself. `clear`: the error keys (a block, or one
+   * question) that go away with the questions it hides, so none outlives the
+   * question it was about (review R12).
+   */
+  const choose = <K extends keyof Draft>(
+    key: K,
+    value: Draft[K],
+    clear?: string,
+  ) => {
+    update({ ...draftRef.current, [key]: value })
+    if (clear) {
+      setErrors((prev) =>
+        Object.fromEntries(
+          Object.entries(prev).filter(
+            ([k]) => k !== clear && !k.startsWith(`${clear}.`),
+          ),
+        ),
+      )
+    }
+    autosave.schedule()
+  }
+
+  // A box left by pressing something else (a chip, "Guardar") shows its
+  // error once that press ends: an error line appearing mid-press shifts the
+  // layout under the pointer and the click would land somewhere else.
+  const pressing = useRef(false)
+  const afterPress = useRef<(() => void) | null>(null)
+  useEffect(() => {
+    const down = () => {
+      pressing.current = true
+    }
+    // After the click that follows, so the press is handled first.
+    const up = () =>
+      setTimeout(() => {
+        pressing.current = false
+        const run = afterPress.current
+        afterPress.current = null
+        run?.()
+      })
+    document.addEventListener("pointerdown", down, true)
+    document.addEventListener("pointerup", up, true)
+    document.addEventListener("pointercancel", up, true)
+    return () => {
+      document.removeEventListener("pointerdown", down, true)
+      document.removeEventListener("pointerup", up, true)
+      document.removeEventListener("pointercancel", up, true)
+    }
+  }, [])
+
+  /**
+   * Leaving a box: its errors (and its pair's) are refreshed from the draft
+   * as it is then (a chip pressed meanwhile may have hidden the pair), and
+   * the focus stays where it went.
+   */
+  const leave = (key: NumberKey) => {
+    const refresh = () => {
+      const { errors: found } = build()
+      setErrors((prev) => {
+        const next = { ...prev }
+        for (const k of blurKeys(key)) {
+          if (found[k]) next[k] = found[k]
+          else delete next[k]
+        }
+        return next
+      })
+    }
+    if (pressing.current) afterPress.current = refresh
+    else refresh()
+    autosave.schedule()
+  }
+
+  const handleSubmit = async (event: FormEvent) => {
     event.preventDefault()
-    const { body, errors: found } = buildBody(draft, profile.birth_date, t)
+    if (autosave.sending()) return
+    const { errors: found } = build()
     if (Object.keys(found).length) {
-      fail(found)
+      setErrors(found)
+      setFailedAttempt((n) => n + 1)
+      autosave.schedule()
       return
     }
-    setErrors({})
-    mutation.mutate(body)
+    if (!(await autosave.flush())) {
+      setFailedAttempt((n) => n + 1)
+      return
+    }
+    showSuccessToast(t("habits.savedToast"))
+    backToProfile()
+  }
+
+  const handleCancel = async () => {
+    if (autosave.sending()) return
+    if (!autosave.changed()) {
+      autosave.discard()
+      backToProfile()
+      return
+    }
+    if (!(await autosave.restore(opening))) return
+    showSuccessToast(t("habits.discardedToast"))
+    backToProfile()
   }
 
   const errorId = (key: string) => `${idPrefix}-${key}-error`
@@ -445,18 +661,32 @@ function HabitsForm() {
     if (!visible.includes(key)) return null
     const field = NUMBER_FIELDS[key]
     const id = `${idPrefix}-${key}`
+    const hintId = field.hint ? `${id}-hint` : undefined
     return (
       <div key={key} className="grid gap-1.5">
         <Label htmlFor={id}>{t(`habits.fields.${field.label}`)}</Label>
+        {field.hint && (
+          <p id={hintId} className="text-sm text-muted-foreground">
+            {t(`habits.fields.${field.hint}`)}
+          </p>
+        )}
         <Input
           id={id}
           inputMode="numeric"
           autoComplete="off"
           className="w-24"
-          value={draft[field.draft] as string}
+          value={draft[field.draft]}
           aria-invalid={!!errors[key] || undefined}
-          aria-describedby={errors[key] ? errorId(key) : undefined}
-          onChange={(e) => set(field.draft, e.target.value)}
+          aria-describedby={
+            [hintId, errors[key] ? errorId(key) : undefined]
+              .filter(Boolean)
+              .join(" ") || undefined
+          }
+          onChange={(e) => {
+            update({ ...draftRef.current, [field.draft]: e.target.value })
+            autosave.postpone()
+          }}
+          onBlur={() => leave(key)}
         />
         {fieldError(key)}
       </div>
@@ -533,6 +763,20 @@ function HabitsForm() {
           {t("habits.title")}
         </h1>
         <p className="text-muted-foreground">{t("habits.intro")}</p>
+        {/* The autosave's state: announced, never takes the focus; its line
+            is always there so a new text does not move what is below. */}
+        <p
+          role="status"
+          aria-live="polite"
+          className={cn(
+            "min-h-5 text-sm",
+            autosave.status === "blocked" || autosave.status === "failed"
+              ? "text-destructive"
+              : "text-muted-foreground",
+          )}
+        >
+          {autosave.status ? t(`habits.autosave.${autosave.status}`) : ""}
+        </p>
       </div>
 
       {/* The status chips go first and carry the block's name (the visible
@@ -547,9 +791,10 @@ function HabitsForm() {
             ALCOHOL_STATUSES,
             "alcoholStatus",
             draft.alcoholStatus,
-            (next) => setStatus("alcohol", "alcoholStatus", next),
+            (next) => choose("alcoholStatus", next, "alcohol"),
             { showLabel: false },
           )}
+          {numberField("alcohol.start_age")}
           {numberField("alcohol.quit_age")}
           {draft.alcoholStatus === "current" && (
             <>
@@ -559,7 +804,7 @@ function HabitsForm() {
                 FREQUENCIES,
                 "frequency",
                 draft.frequency,
-                (next) => set("frequency", next),
+                (next) => choose("frequency", next),
               )}
               {chips(
                 "alcohol.mostly_weekends",
@@ -568,7 +813,10 @@ function HabitsForm() {
                 "yesNo",
                 weekends,
                 (next) =>
-                  set("mostlyWeekends", next === null ? null : next === "yes"),
+                  choose(
+                    "mostlyWeekends",
+                    next === null ? null : next === "yes",
+                  ),
               )}
               <p id={drinksHintId} className="text-sm text-muted-foreground">
                 {t("habits.fields.typicalDrinksHint")}
@@ -579,7 +827,7 @@ function HabitsForm() {
                 TYPICAL_DRINKS,
                 "typicalDrinks",
                 draft.typicalDrinks,
-                (next) => set("typicalDrinks", next),
+                (next) => choose("typicalDrinks", next),
                 { hintId: drinksHintId },
               )}
               {chips(
@@ -588,7 +836,7 @@ function HabitsForm() {
                 SIX_OR_MORE,
                 "sixOrMore",
                 draft.sixOrMore,
-                (next) => set("sixOrMore", next),
+                (next) => choose("sixOrMore", next),
               )}
             </>
           )}
@@ -605,20 +853,32 @@ function HabitsForm() {
             SMOKE_STATUSES,
             "smokeStatus",
             draft.tobaccoStatus,
-            (next) => setStatus("tobacco", "tobaccoStatus", next),
+            (next) => choose("tobaccoStatus", next, "tobacco"),
             { showLabel: false },
           )}
           {numberField("tobacco.cigarettes_per_day")}
           {numberField("tobacco.start_age")}
           {numberField("tobacco.quit_age")}
           {chips(
-            "vaping",
+            "vaping.status",
             t("habits.fields.vaping"),
             SMOKE_STATUSES,
             "smokeStatus",
-            draft.vaping,
-            (next) => set("vaping", next),
+            draft.vapingStatus,
+            (next) => choose("vapingStatus", next, "vaping"),
           )}
+          {numberField("vaping.start_age")}
+          {numberField("vaping.quit_age")}
+          {draft.vapingStatus === "current" &&
+            chips(
+              "vaping.frequency",
+              t("habits.fields.vapingFrequency"),
+              VAPING_FREQUENCIES,
+              "vapingFrequency",
+              draft.vapingFrequency,
+              (next) => choose("vapingFrequency", next, "vaping.days_last_30"),
+            )}
+          {numberField("vaping.days_last_30")}
         </>,
       )}
 
@@ -638,7 +898,7 @@ function HabitsForm() {
                 label: t("habits.options.places.none"),
               }}
               values={draft.places}
-              onChange={(next) => setStatus("secondhand_smoke", "places", next)}
+              onChange={(next) => choose("places", next, "secondhand_smoke")}
               invalid={!!errors["secondhand_smoke.places"]}
               describedBy={[
                 secondhandHintId,
@@ -665,10 +925,12 @@ function HabitsForm() {
             SMOKE_STATUSES,
             "smokeStatus",
             draft.woodStatus,
-            (next) => setStatus("wood_smoke", "woodStatus", next),
+            (next) => choose("woodStatus", next, "wood_smoke"),
             { showLabel: false, hintId: woodHintId },
           )}
-          {numberField("wood_smoke.years")}
+          {numberField("wood_smoke.start_age")}
+          {numberField("wood_smoke.quit_age")}
+          {numberField("wood_smoke.hours_per_day")}
         </>,
       )}
 
@@ -678,18 +940,23 @@ function HabitsForm() {
         </p>
       )}
 
-      <div className="flex flex-wrap gap-2">
-        <LoadingButton type="submit" loading={mutation.isPending}>
+      <div className="flex flex-wrap items-center gap-2">
+        <LoadingButton type="submit" loading={autosave.busy}>
           {t("history.save")}
         </LoadingButton>
         <Button
           type="button"
           variant="outline"
-          disabled={mutation.isPending}
-          onClick={backToProfile}
+          disabled={autosave.busy}
+          onClick={handleCancel}
         >
           {t("history.cancel")}
         </Button>
+        {autosave.busy && (
+          <p className="text-sm text-muted-foreground">
+            {t("habits.autosave.wait")}
+          </p>
+        )}
       </div>
     </form>
   )

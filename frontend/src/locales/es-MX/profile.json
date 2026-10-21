@@ -340,6 +340,14 @@
       "filled": "Con datos"
     },
     "savedToast": "Hábitos guardados",
+    "discardedToast": "Se descartaron los cambios",
+    "autosave": {
+      "saving": "Guardando…",
+      "saved": "Guardado",
+      "blocked": "Sin guardar: corrige el campo marcado",
+      "failed": "No se pudo guardar",
+      "wait": "Espera a que termine de guardar."
+    },
     "blocks": {
       "alcohol": "Alcohol",
       "tobacco": "Tabaco",
@@ -347,6 +355,8 @@
       "wood": "Humo de leña"
     },
     "fields": {
+      "alcoholStartAge": "¿A qué edad empezaste a tomar?",
+      "alcoholStartAgeHint": "Sin contar probaditas.",
       "alcoholQuitAge": "¿A qué edad dejaste de tomar?",
       "frequency": "¿Con qué frecuencia tomas?",
       "mostlyWeekends": "Sobre todo fines de semana",
@@ -357,11 +367,17 @@
       "tobaccoStartAge": "¿A qué edad empezaste a fumar?",
       "tobaccoQuitAge": "¿A qué edad dejaste de fumar?",
       "vaping": "Vapeador o cigarro electrónico",
+      "vapingStartAge": "¿A qué edad empezaste a vapear?",
+      "vapingQuitAge": "¿A qué edad dejaste de vapear?",
+      "vapingFrequency": "¿Con qué frecuencia vapeas?",
+      "vapingDays": "¿Cuántos días de los últimos 30?",
       "secondhandHint": "Estar cerca de quien fuma, aunque tú no fumes.",
       "places": "¿Dónde?",
       "daysPerWeek": "Días por semana",
       "woodHint": "Cocinar o calentar la casa con leña o carbón.",
-      "woodYears": "Años con humo de leña, aprox."
+      "woodStartAge": "¿A qué edad empezaste a exponerte?",
+      "woodQuitAge": "¿A qué edad dejaste de exponerte?",
+      "woodHours": "¿Cuántas horas al día, en promedio?"
     },
     "options": {
       "alcoholStatus": {
@@ -373,6 +389,10 @@
         "never": "Nunca",
         "former": "Antes",
         "current": "Actual"
+      },
+      "vapingFrequency": {
+        "daily": "Todos los días",
+        "some_days": "Algunos días"
       },
       "frequency": {
         "monthly_or_less": "Una vez al mes o menos",
@@ -409,7 +429,8 @@
       "onlyNumber": "Escribe solo el número.",
       "outOfRange": "Debe estar entre {{min}} y {{max}}",
       "ageOverCurrent": "La edad no puede ser mayor que tu edad actual",
-      "startAfterQuit": "No puede ser mayor que la edad en que lo dejaste"
+      "startAfterQuit": "No puede ser mayor que la edad en que lo dejaste",
+      "startAfterEnd": "No puede ser mayor que la edad en que terminó"
     }
   },
   "validation": {
