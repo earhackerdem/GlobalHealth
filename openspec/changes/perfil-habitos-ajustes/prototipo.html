@@ -1,0 +1,379 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Hábitos, ajustes</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<style>
+/* Mismos tokens que product/prototipos/perfil-secciones.html */
+:root{
+  --bg:#f7f5f2; --surface:#ffffff; --fg:#2b2a27; --muted:#6f6a61;
+  --accent:#0f766e; --accent-fg:#ffffff; --line:#e4e0d8; --warn-bg:#fdf3e2; --warn-fg:#7a5410;
+  --chip:#eef4f3; --danger:#b42318; --b-tag:#5b4bb7; --ok:#166534;
+  --font-body:"Atkinson Hyperlegible",system-ui,sans-serif;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#171a19; --surface:#202423; --fg:#e8e6e1; --muted:#a39d92;
+  --accent:#2dd4bf; --accent-fg:#0c2b27; --line:#343a38; --warn-bg:#3a2f14; --warn-fg:#e8c27a;
+  --chip:#263230; --danger:#f97066; --b-tag:#a99bf5; --ok:#86efac; color-scheme:dark
+}}
+:root[data-theme="dark"]{
+  --bg:#171a19; --surface:#202423; --fg:#e8e6e1; --muted:#a39d92;
+  --accent:#2dd4bf; --accent-fg:#0c2b27; --line:#343a38; --warn-bg:#3a2f14; --warn-fg:#e8c27a;
+  --chip:#263230; --danger:#f97066; --b-tag:#a99bf5; --ok:#86efac; color-scheme:dark
+}
+body{background:var(--bg); color:var(--fg); font:16px/1.5 var(--font-body);
+  padding-left:max(16px, env(safe-area-inset-left, 0px)); padding-right:max(16px, env(safe-area-inset-right, 0px));
+  padding-block:8px 64px; max-width:620px; margin:0 auto}
+h1{font-size:1.35rem; margin:.4rem 0 0; text-wrap:balance}
+h2{font-size:1.05rem; margin:0 0 4px; text-wrap:balance}
+p{margin:.35rem 0}
+.sub{color:var(--muted); font-size:.9rem}
+.banner{background:var(--warn-bg); color:var(--warn-fg); border-radius:8px; padding:8px 12px; font-size:.85rem; margin:12px 0}
+button{font:inherit; border:1px solid var(--line); background:var(--surface); color:var(--fg);
+  border-radius:10px; padding:10px 14px; cursor:pointer}
+button:disabled{opacity:.5; cursor:not-allowed}
+button.primary{background:var(--accent); color:var(--accent-fg); border-color:transparent; font-weight:700}
+button.link{border:none; background:none; color:var(--accent); padding:4px; font-weight:600}
+button:focus-visible,input:focus-visible{outline:2px solid var(--accent); outline-offset:2px}
+.actions{display:flex; flex-wrap:wrap; gap:8px; margin:14px 0; align-items:center}
+.card{background:var(--surface); border:1px solid var(--line); border-radius:12px; padding:14px; min-width:0; margin:10px 0}
+.pill{display:inline-block; border-radius:999px; padding:1px 10px; font-size:.78rem; font-weight:700}
+.pill.vacia{background:var(--chip); color:var(--muted)}
+.pill.datos{background:var(--accent); color:var(--accent-fg)}
+label,.lbl{font-size:.85rem; font-weight:700; display:block; margin-bottom:3px}
+input{font:inherit; width:100%; max-width:12rem; box-sizing:border-box; border:1px solid var(--line);
+  border-radius:8px; padding:8px 10px; background:var(--bg); color:var(--fg)}
+input[aria-invalid="true"]{border-color:var(--danger)}
+.campo{margin:12px 0}
+.hint{font-size:.8rem; color:var(--muted); margin-top:2px}
+.err{font-size:.82rem; color:var(--danger); margin-top:3px}
+fieldset{border:none; padding:0; margin:12px 0}
+legend{font-size:.85rem; font-weight:700; padding:0; margin-bottom:3px}
+.chips{display:flex; flex-wrap:wrap; gap:6px}
+.chips button{border-radius:999px; padding:5px 12px; font-size:.85rem}
+.chips button[aria-pressed="true"]{background:var(--accent); color:var(--accent-fg); border-color:transparent}
+.sub-bloque{border-left:3px solid var(--line); padding-left:12px; margin-top:8px}
+.estado{font-size:.88rem; font-weight:600; min-height:1.4em; color:var(--muted)}
+.estado.ok{color:var(--ok)} .estado.mal{color:var(--danger)}
+.toast{position:fixed; left:50%; transform:translateX(-50%); bottom:calc(16px + env(safe-area-inset-bottom, 0px));
+  background:var(--fg); color:var(--bg); border-radius:10px; padding:10px 16px; font-size:.9rem}
+.ac{display:none; font-size:.7rem; font-weight:700; letter-spacing:.03em; background:var(--b-tag); color:var(--bg);
+  border-radius:6px; padding:0 6px; margin-left:6px; vertical-align:middle}
+.show-ac .ac{display:inline-block}
+.panel{font-size:.82rem; color:var(--muted); border:1px dashed var(--line); border-radius:10px; padding:8px 12px; margin:10px 0}
+.panel label{display:inline; font-weight:400; font-size:.82rem}
+.panel input{width:auto}
+details{margin:8px 0} summary{cursor:pointer; font-weight:700}
+ul{padding-left:1.2rem; margin:.3rem 0}
+</style>
+
+<div class="banner">Prototipo local de <strong>perfil-habitos-ajustes</strong> (C-10…C-14). Datos de ejemplo: paciente
+nacida el 15/03/1990, hoy con 36 años. El "servidor" es simulado en la página.</div>
+
+<details>
+  <summary>Historia y criterios</summary>
+  <p><em>Como paciente, quiero contar desde cuándo y cuánto tomo, vapeo o me expongo al humo de leña, y que lo que
+  contesto se guarde solo, para que mi médico tenga mi historia completa sin que yo pierda lo que ya escribí.</em></p>
+  <ul>
+    <li><strong>C-10</strong> Alcohol: con "Lo dejé" o "Actual", la edad en que empezó (sin contar probaditas); no
+      mayor que la de dejarlo ni que la actual.</li>
+    <li><strong>C-11</strong> Vapeador como el tabaco: edades; con "Actual", "Todos los días" o "Algunos días", y con
+      "Algunos días", cuántos de los últimos 30.</li>
+    <li><strong>C-12</strong> Humo de leña como rango: edad de inicio, de fin (con "Antes") y horas al día (1 a 24). Sin
+      calcular horas-año.</li>
+    <li><strong>C-13</strong> Se guarda solo; el estado dice si está guardando, si guardó o qué corregir. "Guardar" y
+      "Cancelar" se quedan, desactivados mientras guarda; "Cancelar" deja todo como al abrir.</li>
+    <li><strong>C-14</strong> Errores al salir del campo, con los límites del contrato.</li>
+  </ul>
+</details>
+
+<div class="panel">
+  <label><input type="checkbox" id="ver-ac"> Mostrar criterios</label> ·
+  <label><input type="checkbox" id="lento"> Guardado lento (3 s)</label> ·
+  Guardados recibidos por el servidor: <strong id="contador">0</strong>
+</div>
+
+<main id="app"></main>
+
+<script>
+// "Contrato" (lo que el frontend tomará de zod.gen.ts): límites de cada número.
+const ESCALA = {
+  "alcohol.start_age": [0, 130], "alcohol.quit_age": [0, 130],
+  "tobacco.cigarettes_per_day": [1, 100], "tobacco.start_age": [0, 130], "tobacco.quit_age": [0, 130],
+  "vaping.start_age": [0, 130], "vaping.quit_age": [0, 130], "vaping.days_last_30": [1, 30],
+  "secondhand.days_per_week": [1, 7],
+  "wood.start_age": [0, 130], "wood.quit_age": [0, 130], "wood.hours_per_day": [1, 24],
+};
+const EDADES = ["alcohol.start_age","alcohol.quit_age","tobacco.start_age","tobacco.quit_age",
+  "vaping.start_age","vaping.quit_age","wood.start_age","wood.quit_age"];
+const EDAD_ACTUAL = 36;
+const PARES = [ // [inicio, fin, mensaje]
+  ["alcohol.start_age","alcohol.quit_age","No puede ser mayor que la edad en que lo dejaste"],
+  ["tobacco.start_age","tobacco.quit_age","No puede ser mayor que la edad en que lo dejaste"],
+  ["vaping.start_age","vaping.quit_age","No puede ser mayor que la edad en que lo dejaste"],
+  ["wood.start_age","wood.quit_age","No puede ser mayor que la edad en que terminó"],
+];
+
+let servidor = {};               // lo guardado
+let guardados = 0;
+let vista = "perfil";
+let d = {};                      // borrador en pantalla (textos de los números, opciones elegidas)
+let foto = {};                   // lo que había al abrir la pantalla
+let errores = {};
+let tocados = new Set();
+let enVuelo = false, pendiente = false, timer = null;
+let estado = "";                 // "guardando" | "guardado" | "corrige" | "fallo" | ""
+
+const $ = (s) => document.querySelector(s);
+const ac = (id) => `<span class="ac">${id}</span>`;
+const copia = (o) => JSON.parse(JSON.stringify(o));
+const conDatos = () => Object.values(servidor).some((v) => v !== null && v !== undefined && v !== "");
+
+function toast(texto) {
+  const t = document.createElement("div"); t.className = "toast"; t.textContent = texto;
+  document.body.append(t); setTimeout(() => t.remove(), 2500);
+}
+
+// ---------- validación (al salir del campo y antes de guardar) ----------
+function visibles() {
+  const v = [];
+  if (d.alcohol === "quit" || d.alcohol === "current") v.push("alcohol.start_age");
+  if (d.alcohol === "quit") v.push("alcohol.quit_age");
+  if (d.tobacco && d.tobacco !== "never") v.push("tobacco.cigarettes_per_day", "tobacco.start_age");
+  if (d.tobacco === "former") v.push("tobacco.quit_age");
+  if (d.vaping && d.vaping !== "never") v.push("vaping.start_age");
+  if (d.vaping === "former") v.push("vaping.quit_age");
+  if (d.vaping === "current" && d.vapingFreq === "some_days") v.push("vaping.days_last_30");
+  if ((d.places || []).some((p) => p !== "none")) v.push("secondhand.days_per_week");
+  if (d.wood && d.wood !== "never") v.push("wood.start_age", "wood.hours_per_day");
+  if (d.wood === "former") v.push("wood.quit_age");
+  return v;
+}
+function validarCampo(k) {
+  const texto = (d[k] || "").trim();
+  if (!texto) return null;
+  if (!/^\d+$/.test(texto)) return "Escribe solo el número.";
+  const n = Number(texto), [min, max] = ESCALA[k];
+  if (n < min || n > max) return `Debe estar entre ${min} y ${max}`;
+  if (EDADES.includes(k) && n > EDAD_ACTUAL) return "La edad no puede ser mayor que tu edad actual";
+  return null;
+}
+function validarTodo(soloTocados) {
+  const e = {};
+  const vis = visibles();
+  for (const k of vis) {
+    if (soloTocados && !tocados.has(k)) continue;
+    const m = validarCampo(k); if (m) e[k] = m;
+  }
+  for (const [a, b, msg] of PARES) {
+    if (!vis.includes(a) || !vis.includes(b) || e[a] || e[b]) continue;
+    const ia = Number(d[a]), ib = Number(d[b]);
+    if (d[a] && d[b] && ia > ib) e[a] = msg;
+  }
+  return e;
+}
+
+// ---------- guardado automático (simulado) ----------
+function cuerpo() {
+  const num = (k) => (visibles().includes(k) && d[k] ? Number(d[k]) : null);
+  return {
+    alcohol: d.alcohol || null, alcohol_start: num("alcohol.start_age"), alcohol_quit: num("alcohol.quit_age"),
+    tobacco: d.tobacco || null, cigarettes: num("tobacco.cigarettes_per_day"),
+    tobacco_start: num("tobacco.start_age"), tobacco_quit: num("tobacco.quit_age"),
+    vaping: d.vaping || null, vaping_freq: d.vaping === "current" ? d.vapingFreq || null : null,
+    vaping_days: num("vaping.days_last_30"), vaping_start: num("vaping.start_age"), vaping_quit: num("vaping.quit_age"),
+    places: (d.places || []).length ? d.places : null, days_per_week: num("secondhand.days_per_week"),
+    wood: d.wood || null, wood_start: num("wood.start_age"), wood_quit: num("wood.quit_age"),
+    wood_hours: num("wood.hours_per_day"),
+  };
+}
+function programar() {
+  clearTimeout(timer);
+  timer = setTimeout(guardarAhora, 600);
+}
+function guardarAhora() {
+  clearTimeout(timer); timer = null;
+  errores = validarTodo(false);
+  // los errores de campos no tocados no se muestran, pero sí bloquean el guardado
+  const visiblesErr = Object.fromEntries(Object.entries(errores).filter(([k]) => tocados.has(k)));
+  if (Object.keys(errores).length) { estado = "corrige"; errores = visiblesErr; refrescar(); return Promise.resolve(false); }
+  if (enVuelo) { pendiente = true; return Promise.resolve(true); }
+  return mandar(cuerpo());
+}
+function mandar(body) {
+  enVuelo = true; estado = "guardando"; refrescar();
+  return new Promise((ok) => setTimeout(() => {
+    servidor = body; guardados++; enVuelo = false;
+    $("#contador").textContent = guardados;
+    if (pendiente) { pendiente = false; mandar(cuerpo()).then(ok); return; }
+    estado = "guardado"; if (vista === "perfil") pintar(); else refrescar(); ok(true);
+  }, $("#lento").checked ? 3000 : 900));
+}
+
+// Actualiza en su lugar el estado, los botones y los errores, sin redibujar: no roba el foco a quien escribe ni
+// se traga el clic en un chip justo después de salir de un campo.
+function refrescar() {
+  const st = $(".estado"); if (!st) return;
+  st.className = "estado " + (estado === "guardado" ? "ok" : estado === "corrige" || estado === "fallo" ? "mal" : "");
+  st.innerHTML = (TEXTO_ESTADO[estado] || "") + ac("C-13");
+  for (const sel of ["[data-guardar]", "[data-cancelar]"]) { const b = $(sel); if (b) b.disabled = enVuelo; }
+  const espera = $(".actions .sub"); if (espera) espera.textContent = enVuelo ? "Espera a que termine de guardar." : "";
+  for (const input of document.querySelectorAll("input[data-num]")) {
+    const k = input.dataset.num, e = errores[k];
+    input.setAttribute("aria-invalid", String(!!e));
+    let div = document.getElementById(`e-${k}`);
+    if (e && !div) { div = document.createElement("div"); div.className = "err"; div.id = `e-${k}`; input.parentElement.append(div); }
+    if (div) { if (e) div.textContent = e; else div.remove(); }
+    const ids = [document.getElementById(`h-${k}`) ? `h-${k}` : "", e ? `e-${k}` : ""].filter(Boolean).join(" ");
+    if (ids) input.setAttribute("aria-describedby", ids); else input.removeAttribute("aria-describedby");
+  }
+}
+
+// ---------- vistas ----------
+function abrirHabitos() {
+  foto = copia(servidor);
+  d = desdeServidor(servidor); errores = {}; tocados = new Set(); estado = ""; vista = "habitos"; pintar();
+}
+function desdeServidor(s) {
+  const t = (n) => (n === null || n === undefined ? "" : String(n));
+  return {
+    alcohol: s.alcohol || null, "alcohol.start_age": t(s.alcohol_start), "alcohol.quit_age": t(s.alcohol_quit),
+    tobacco: s.tobacco || null, "tobacco.cigarettes_per_day": t(s.cigarettes),
+    "tobacco.start_age": t(s.tobacco_start), "tobacco.quit_age": t(s.tobacco_quit),
+    vaping: s.vaping || null, vapingFreq: s.vaping_freq || null, "vaping.days_last_30": t(s.vaping_days),
+    "vaping.start_age": t(s.vaping_start), "vaping.quit_age": t(s.vaping_quit),
+    places: s.places || [], "secondhand.days_per_week": t(s.days_per_week),
+    wood: s.wood || null, "wood.start_age": t(s.wood_start), "wood.quit_age": t(s.wood_quit),
+    "wood.hours_per_day": t(s.wood_hours),
+  };
+}
+function volver(texto) { vista = "perfil"; pintar(); if (texto) toast(texto); }
+
+async function alGuardar() {
+  for (const k of visibles()) tocados.add(k);
+  errores = validarTodo(false);
+  if (Object.keys(errores).length) {
+    estado = "corrige"; refrescar();
+    document.querySelector('[aria-invalid="true"]')?.focus(); return;
+  }
+  if (timer || JSON.stringify(cuerpo()) !== JSON.stringify(servidor)) await guardarAhora();
+  volver("Hábitos guardados");
+}
+async function alCancelar() {
+  clearTimeout(timer); timer = null;
+  if (JSON.stringify(servidor) !== JSON.stringify(foto)) {
+    await mandar(copia(foto));
+    volver("Se descartaron los cambios");
+  } else volver();
+}
+
+const TEXTO_ESTADO = {
+  guardando: "Guardando…", guardado: "Guardado",
+  corrige: "Sin guardar: corrige el campo marcado", fallo: "No se pudo guardar",
+};
+
+function chips(nombre, clave, opciones, id) {
+  return `<fieldset><legend>${nombre}${id ? ac(id) : ""}</legend><div class="chips">${opciones.map(([v, t]) =>
+    `<button type="button" data-chip="${clave}" data-v="${v}" aria-pressed="${d[clave] === v}">${t}</button>`).join("")}</div></fieldset>`;
+}
+function numero(k, etiqueta, hint, id) {
+  const e = errores[k];
+  return `<div class="campo"><label for="f-${k}">${etiqueta}${id ? ac(id) : ""}</label>
+    <input id="f-${k}" data-num="${k}" inputmode="numeric" value="${d[k] || ""}" aria-invalid="${!!e}"
+      ${hint || e ? `aria-describedby="${hint ? `h-${k} ` : ""}${e ? `e-${k}` : ""}"` : ""}>
+    ${hint ? `<div class="hint" id="h-${k}">${hint}</div>` : ""}
+    ${e ? `<div class="err" id="e-${k}">${e}</div>` : ""}</div>`;
+}
+
+function pintar() {
+  document.body.classList.toggle("show-ac", $("#ver-ac").checked);
+  const app = $("#app");
+  if (vista === "perfil") {
+    app.innerHTML = `<h1>Mi perfil médico</h1>
+      <div class="card"><button class="link" data-abrir style="font-size:1rem">Hábitos ›</button>
+        <span class="pill ${conDatos() ? "datos" : "vacia"}">${conDatos() ? "Con datos" : "Sin llenar"}</span></div>`;
+    return;
+  }
+  const ocupado = enVuelo;
+  const lugares = d.places || [];
+  app.innerHTML = `<button class="link" data-volver-menu>‹ Mi perfil médico</button>
+    <h1>Hábitos</h1>
+    <p class="sub">Contesta solo lo que quieras. «Nunca» también le sirve a tu médico. La app no califica tus respuestas.</p>
+    <p class="estado ${estado === "guardado" ? "ok" : estado === "corrige" || estado === "fallo" ? "mal" : ""}"
+      role="status" aria-live="polite">${TEXTO_ESTADO[estado] || ""}${ac("C-13")}</p>
+
+    <section class="card"><h2>Alcohol</h2>
+      ${chips("Alcohol", "alcohol", [["never","Nunca"],["quit","Lo dejé"],["current","Actual"]])}
+      ${d.alcohol === "quit" || d.alcohol === "current" ? numero("alcohol.start_age", "¿A qué edad empezaste a tomar?", "Sin contar probaditas.", "C-10") : ""}
+      ${d.alcohol === "quit" ? numero("alcohol.quit_age", "¿A qué edad dejaste de tomar?") : ""}
+      ${d.alcohol === "current" ? `<p class="hint">(Aquí siguen las tres preguntas del AUDIT-C y "Sobre todo fines de semana", sin cambios.)</p>` : ""}
+    </section>
+
+    <section class="card"><h2>Tabaco y vapeador</h2>
+      ${chips("Tabaco", "tobacco", [["never","Nunca"],["former","Antes"],["current","Actual"]])}
+      ${d.tobacco && d.tobacco !== "never" ? numero("tobacco.cigarettes_per_day", "Cigarros al día") + numero("tobacco.start_age", "¿A qué edad empezaste a fumar?") : ""}
+      ${d.tobacco === "former" ? numero("tobacco.quit_age", "¿A qué edad dejaste de fumar?") : ""}
+      <div class="sub-bloque">
+        ${chips("Vapeador o cigarro electrónico", "vaping", [["never","Nunca"],["former","Antes"],["current","Actual"]], "C-11")}
+        ${d.vaping && d.vaping !== "never" ? numero("vaping.start_age", "¿A qué edad empezaste a vapear?") : ""}
+        ${d.vaping === "former" ? numero("vaping.quit_age", "¿A qué edad dejaste de vapear?") : ""}
+        ${d.vaping === "current" ? chips("¿Con qué frecuencia vapeas?", "vapingFreq", [["daily","Todos los días"],["some_days","Algunos días"]]) : ""}
+        ${d.vaping === "current" && d.vapingFreq === "some_days" ? numero("vaping.days_last_30", "¿Cuántos días de los últimos 30?") : ""}
+      </div>
+    </section>
+
+    <section class="card"><h2>Humo de tabaco de otras personas</h2>
+      <p class="hint">Estar cerca de quien fuma, aunque tú no fumes.</p>
+      <fieldset><legend>¿Dónde?</legend><div class="chips">
+        ${[["home","Casa"],["work_school","Trabajo o escuela"],["other","Otro lugar"],["none","No me expongo"]].map(([v, t]) =>
+          `<button type="button" data-lugar="${v}" aria-pressed="${lugares.includes(v)}">${t}</button>`).join("")}</div></fieldset>
+      ${lugares.some((p) => p !== "none") ? numero("secondhand.days_per_week", "Días por semana") : ""}
+    </section>
+
+    <section class="card"><h2>Humo de leña${ac("C-12")}</h2>
+      <p class="hint">Cocinar o calentar la casa con leña o carbón.</p>
+      ${chips("Humo de leña", "wood", [["never","Nunca"],["former","Antes"],["current","Actual"]])}
+      ${d.wood && d.wood !== "never" ? numero("wood.start_age", "¿A qué edad empezaste a exponerte?") : ""}
+      ${d.wood === "former" ? numero("wood.quit_age", "¿A qué edad dejaste de exponerte?") : ""}
+      ${d.wood && d.wood !== "never" ? numero("wood.hours_per_day", "¿Cuántas horas al día, en promedio?", null, "C-14") : ""}
+    </section>
+
+    <div class="actions">
+      <button class="primary" data-guardar ${ocupado ? "disabled" : ""}>Guardar</button>
+      <button data-cancelar ${ocupado ? "disabled" : ""}>Cancelar</button>
+      <span class="sub">${ocupado ? "Espera a que termine de guardar." : ""}</span>
+    </div>`;
+}
+
+// ---------- eventos ----------
+document.addEventListener("click", (ev) => {
+  const b = ev.target.closest("button"); if (!b || b.disabled) return;
+  if (b.dataset.abrir !== undefined) return abrirHabitos();
+  if (b.dataset.volverMenu !== undefined) { if (timer) guardarAhora(); return volver(); }
+  if (b.dataset.guardar !== undefined) return alGuardar();
+  if (b.dataset.cancelar !== undefined) return alCancelar();
+  if (b.dataset.chip) {
+    const k = b.dataset.chip, v = b.dataset.v;
+    d[k] = d[k] === v ? null : v;
+    // lo que se oculta se lleva sus errores (R12 de la C1)
+    for (const e of Object.keys(errores)) if (!visibles().includes(e)) delete errores[e];
+    programar(); pintar(); document.querySelector(`[data-chip="${k}"][data-v="${v}"]`)?.focus(); return;
+  }
+  if (b.dataset.lugar) {
+    const v = b.dataset.lugar; let l = d.places || [];
+    if (v === "none") l = l.includes("none") ? [] : ["none"];
+    else { l = l.filter((p) => p !== "none"); l = l.includes(v) ? l.filter((p) => p !== v) : [...l, v]; }
+    d.places = l; programar(); pintar(); document.querySelector(`[data-lugar="${v}"]`)?.focus();
+  }
+});
+document.addEventListener("input", (ev) => { const k = ev.target.dataset?.num; if (k) d[k] = ev.target.value; });
+document.addEventListener("focusout", (ev) => {
+  const k = ev.target.dataset?.num; if (!k) return;
+  tocados.add(k);
+  errores = validarTodo(true);
+  if (Object.keys(errores).length) estado = "corrige";
+  else programar();
+  refrescar();
+});
+$("#ver-ac").addEventListener("change", pintar);
+pintar();
+</script>
