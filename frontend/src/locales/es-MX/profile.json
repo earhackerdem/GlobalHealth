@@ -339,14 +339,14 @@
     "status": {
       "filled": "Con datos"
     },
+    "saveHint": "Tus respuestas se guardan cuando tocas «Guardar».",
     "savedToast": "Hábitos guardados",
     "discardedToast": "Se descartaron los cambios",
-    "autosave": {
-      "saving": "Guardando…",
-      "saved": "Guardado",
-      "blocked": "Sin guardar: corrige el campo marcado",
-      "failed": "No se pudo guardar",
-      "wait": "Espera a que termine de guardar."
+    "leave": {
+      "title": "¿Salir sin guardar?",
+      "text": "Los cambios que hiciste en Hábitos se van a perder.",
+      "stay": "Seguir editando",
+      "discard": "Salir sin guardar"
     },
     "blocks": {
       "alcohol": "Alcohol",

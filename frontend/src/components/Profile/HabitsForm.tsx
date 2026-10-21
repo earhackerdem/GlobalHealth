@@ -1,10 +1,16 @@
-import { useQueryClient, useSuspenseQuery } from "@tanstack/react-query"
-import { useNavigate } from "@tanstack/react-router"
+import {
+  useMutation,
+  useQueryClient,
+  useSuspenseQuery,
+} from "@tanstack/react-query"
+import { useBlocker, useNavigate } from "@tanstack/react-router"
 import { AxiosError } from "axios"
 import type { TFunction } from "i18next"
+import { Loader2 } from "lucide-react"
 import {
   type FormEvent,
   type ReactNode,
+  useCallback,
   useEffect,
   useId,
   useRef,
@@ -28,16 +34,22 @@ import {
   zWoodSmokeHabit,
 } from "@/client/zod.gen"
 import { Button } from "@/components/ui/button"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { LoadingButton } from "@/components/ui/loading-button"
 import useCustomToast from "@/hooks/useCustomToast"
-import { cn } from "@/lib/utils"
+import { handleError } from "@/utils"
 import ChipGroup, { ChipMultiGroup } from "./ChipGroup"
 import { mexicoCityTodayIso } from "./format"
 import { ageToday } from "./history"
 import { getHabitsQueryOptions, getProfileQueryOptions } from "./queries"
-import { useAutosave } from "./useAutosave"
 
 type AlcoholStatus = AlcoholHabit["status"]
 type SmokeStatus = TobaccoHabit["status"]
@@ -333,6 +345,40 @@ function visibleFields(draft: Draft): string[] {
 }
 
 /**
+ * What the screen shows, as a string to compare with the one at opening
+ * (design.md, Interface contract → Cambios sin guardar): every answer on
+ * screen and the raw text of every visible box, typed but not left included.
+ * A hidden question does not count, and choosing an option and going back to
+ * the one before gives the same string.
+ */
+function screenOf(draft: Draft): string {
+  const drinksNow = draft.alcoholStatus === "current"
+  return JSON.stringify({
+    alcohol: draft.alcoholStatus,
+    drinking: drinksNow
+      ? [
+          draft.frequency,
+          draft.typicalDrinks,
+          draft.sixOrMore,
+          draft.mostlyWeekends,
+        ]
+      : null,
+    tobacco: draft.tobaccoStatus,
+    vaping: draft.vapingStatus,
+    vapingFrequency:
+      draft.vapingStatus === "current" ? draft.vapingFrequency : null,
+    places: [...draft.places].sort(),
+    wood: draft.woodStatus,
+    numbers: visibleNumbers(draft).map(
+      (key) => [key, draft[NUMBER_FIELDS[key].draft]] as const,
+    ),
+  })
+}
+
+/** The session the screen opened with (design.md, hallazgo A5). */
+const currentToken = () => localStorage.getItem("access_token")
+
+/**
  * A 422 placed by its `loc`, never by its text (design.md, Decision 4; review
  * R20): ["body", block, field] goes to that field when it is on screen
  * (`fields`: a number box or a chip group, review R18), ["body", block] or a
@@ -366,8 +412,8 @@ function serverErrors(
 /**
  * Draft → PUT body, plus the client errors (design.md, Decisions 3 and 6):
  * the same rules as the server, run before sending so each message shows
- * next to its own box (review R5), and the one gate of the autosave (nothing
- * goes while there is an error, Decision 4). What does not apply is never
+ * next to its own box (review R5), and the gate of "Guardar" (nothing goes
+ * while there is an error, Decision 4). What does not apply is never
  * sent (the server drops it anyway): hidden questions go as null. The
  * server's "exposed without places" cannot happen here: `exposed` is derived
  * from the chips (a place → true, "No me expongo" → false, none → no
@@ -473,12 +519,14 @@ function buildBody(
 
 /**
  * The habits questionnaire, /perfil/habitos (design.md, Interface contract →
- * Frontend): four blocks, each question only when it applies. It saves by
- * itself (useAutosave: a chip on choosing it, a number on leaving its box,
- * only when the whole questionnaire is valid) and keeps "Guardar" and
- * "Cancelar", both disabled while a PUT is in flight (D20). Leaving a box
- * checks it and its block's start ≤ end without moving the focus; "Guardar"
- * checks everything and moves the focus to the first error (review R5).
+ * Frontend): four blocks, each question only when it applies. Nothing is
+ * sent until "Guardar" (Decision 8): one PUT through the mutation, so the
+ * 401/403 handling of main.tsx applies. "Guardar" and "Cancelar" are
+ * aria-disabled while that PUT is in flight (D20). Leaving a box checks it
+ * and its block's start ≤ end without moving the focus; "Guardar" checks
+ * everything and moves the focus to the first error (review R5). Leaving the
+ * screen with unsaved changes asks first, in the app (useBlocker) and on
+ * reload or close (beforeunload), unless the session changed since opening.
  * Nothing here scores or labels the answers (C-6).
  */
 function HabitsForm() {
@@ -486,46 +534,75 @@ function HabitsForm() {
   const idPrefix = useId()
   const navigate = useNavigate()
   const queryClient = useQueryClient()
-  const { showSuccessToast } = useCustomToast()
+  const { showSuccessToast, showErrorToast } = useCustomToast()
   const formRef = useRef<HTMLFormElement>(null)
+  const stayRef = useRef<HTMLButtonElement>(null)
 
   const { data: habits } = useSuspenseQuery(getHabitsQueryOptions())
   const { data: profile } = useSuspenseQuery(getProfileQueryOptions())
 
-  // What was stored when the screen opened: "Cancelar" puts it back.
-  const [opening] = useState(habits)
-  const [draft, setDraft] = useState<Draft>(() => draftFrom(opening))
-  // The latest draft for handlers and the autosave, ahead of the render.
+  // What was stored when the screen opened, and the session it opened with.
+  const [opening] = useState(() => screenOf(draftFrom(habits)))
+  const [openingToken] = useState(currentToken)
+  const [draft, setDraft] = useState<Draft>(() => draftFrom(habits))
+  // The latest draft for handlers and the blocker, ahead of the render.
   const draftRef = useRef(draft)
   const [errors, setErrors] = useState<Record<string, string>>({})
   // Bumped on every failed "Guardar" so the focus moves even when the same
   // error repeats.
   const [failedAttempt, setFailedAttempt] = useState(0)
+  // A PUT in flight, known before the next render (D20: a second click or
+  // Enter right after the first does nothing).
+  const sending = useRef(false)
+  // "Guardar" succeeded or "Cancelar" was pressed: the screen is leaving on
+  // purpose, without asking.
+  const leaving = useRef(false)
 
   const build = (from: Draft = draftRef.current) =>
     buildBody(from, profile.birth_date, t)
 
-  const autosave = useAutosave({
-    build: () => {
-      const { body, errors: found } = build()
-      return { body, valid: Object.keys(found).length === 0 }
-    },
-    initialBody: build(draftFrom(opening)).body,
-    put: async (body: Habits) =>
+  const changed = () => screenOf(draftRef.current) !== opening
+
+  const backToProfile = () => navigate({ to: "/perfil" })
+
+  // Only refs and the opening values: stable, so the blocker is registered
+  // once.
+  const mustAsk = useCallback(
+    () =>
+      !leaving.current &&
+      currentToken() === openingToken &&
+      screenOf(draftRef.current) !== opening,
+    [opening, openingToken],
+  )
+  const blocker = useBlocker({
+    shouldBlockFn: mustAsk,
+    enableBeforeUnload: mustAsk,
+    withResolver: true,
+  })
+
+  const mutation = useMutation({
+    mutationFn: async (body: Habits) =>
       (await ProfileService.updateHabits({ body })).data,
-    // The answer refreshes the cache, never the draft being typed; once the
-    // screen is gone (menu, another account) the query is fetched again.
-    onSaved: (saved, mounted) => {
-      if (mounted) queryClient.setQueryData(["habits"], saved)
-      else queryClient.invalidateQueries({ queryKey: ["habits"] })
+    onSuccess: (saved) => {
+      leaving.current = true
+      queryClient.setQueryData(["habits"], saved)
+      showSuccessToast(t("habits.savedToast"))
+      backToProfile()
     },
-    onFailed: (err) => {
+    onError: (err) => {
       const placed = serverErrors(err, visibleFields(draftRef.current))
-      if (!placed) return "failed"
-      setErrors(placed)
-      return "blocked"
+      if (placed) {
+        setErrors(placed)
+        setFailedAttempt((n) => n + 1)
+      } else {
+        handleError.call(showErrorToast, err as Error)
+      }
+    },
+    onSettled: () => {
+      sending.current = false
     },
   })
+  const busy = mutation.isPending
 
   useEffect(() => {
     if (!failedAttempt) return
@@ -538,34 +615,37 @@ function HabitsForm() {
       ?.focus()
   }, [failedAttempt])
 
-  const backToProfile = () => navigate({ to: "/perfil" })
-
   const update = (next: Draft) => {
     draftRef.current = next
     setDraft(next)
   }
 
   /**
-   * A chip answer, saved by itself. `clear`: the error keys (a block, or one
-   * question) that go away with the questions it hides, so none outlives the
-   * question it was about (review R12).
+   * A chip answer, kept on screen until "Guardar". Only the errors of the
+   * questions it hides go away (hallazgo A3): a box still on screen keeps its
+   * mark, except a start-after-end error whose end question is now hidden,
+   * which is about that question (review R12).
    */
-  const choose = <K extends keyof Draft>(
-    key: K,
-    value: Draft[K],
-    clear?: string,
-  ) => {
-    update({ ...draftRef.current, [key]: value })
-    if (clear) {
-      setErrors((prev) =>
-        Object.fromEntries(
-          Object.entries(prev).filter(
-            ([k]) => k !== clear && !k.startsWith(`${clear}.`),
-          ),
-        ),
-      )
-    }
-    autosave.schedule()
+  const choose = <K extends keyof Draft>(key: K, value: Draft[K]) => {
+    const next = { ...draftRef.current, [key]: value }
+    update(next)
+    const shown = new Set<string>([
+      ...visibleFields(next),
+      ...ANCHOR_KEYS,
+      "secondhand_smoke.places",
+      "_form",
+    ])
+    const hiddenPairs = AGE_PAIRS.filter(([, end]) => !shown.has(end))
+    setErrors((prev) => {
+      const kept: Record<string, string> = {}
+      for (const [k, message] of Object.entries(prev)) {
+        if (!shown.has(k)) continue
+        const pair = hiddenPairs.find(([start]) => start === k)
+        if (pair && message === t(`habits.validation.${pair[2]}`)) continue
+        kept[k] = message
+      }
+      return kept
+    })
   }
 
   // A box left by pressing something else (a chip, "Guardar") shows its
@@ -614,37 +694,38 @@ function HabitsForm() {
     }
     if (pressing.current) afterPress.current = refresh
     else refresh()
-    autosave.schedule()
   }
 
-  const handleSubmit = async (event: FormEvent) => {
+  const handleSubmit = (event: FormEvent) => {
     event.preventDefault()
-    if (autosave.sending()) return
-    const { errors: found } = build()
+    if (sending.current) return
+    const { body, errors: found } = build()
     if (Object.keys(found).length) {
       setErrors(found)
       setFailedAttempt((n) => n + 1)
-      autosave.schedule()
       return
     }
-    if (!(await autosave.flush())) {
-      setFailedAttempt((n) => n + 1)
-      return
-    }
-    showSuccessToast(t("habits.savedToast"))
+    setErrors({})
+    sending.current = true
+    mutation.mutate(body)
+  }
+
+  /** Never sends anything nor asks (Decision 5). */
+  const handleCancel = () => {
+    if (sending.current) return
+    const discarded = changed()
+    leaving.current = true
+    if (discarded) showSuccessToast(t("habits.discardedToast"))
     backToProfile()
   }
 
-  const handleCancel = async () => {
-    if (autosave.sending()) return
-    if (!autosave.changed()) {
-      autosave.discard()
-      backToProfile()
-      return
-    }
-    if (!(await autosave.restore(opening))) return
-    showSuccessToast(t("habits.discardedToast"))
-    backToProfile()
+  /** The leave dialog, open while the blocker holds a navigation. */
+  const asking = blocker.status === "blocked"
+  const stay = () => {
+    if (blocker.status === "blocked") blocker.reset()
+  }
+  const leaveAnyway = () => {
+    if (blocker.status === "blocked") blocker.proceed()
   }
 
   const errorId = (key: string) => `${idPrefix}-${key}-error`
@@ -682,10 +763,9 @@ function HabitsForm() {
               .filter(Boolean)
               .join(" ") || undefined
           }
-          onChange={(e) => {
+          onChange={(e) =>
             update({ ...draftRef.current, [field.draft]: e.target.value })
-            autosave.postpone()
-          }}
+          }
           onBlur={() => leave(key)}
         />
         {fieldError(key)}
@@ -763,20 +843,7 @@ function HabitsForm() {
           {t("habits.title")}
         </h1>
         <p className="text-muted-foreground">{t("habits.intro")}</p>
-        {/* The autosave's state: announced, never takes the focus; its line
-            is always there so a new text does not move what is below. */}
-        <p
-          role="status"
-          aria-live="polite"
-          className={cn(
-            "min-h-5 text-sm",
-            autosave.status === "blocked" || autosave.status === "failed"
-              ? "text-destructive"
-              : "text-muted-foreground",
-          )}
-        >
-          {autosave.status ? t(`habits.autosave.${autosave.status}`) : ""}
-        </p>
+        <p className="text-sm text-muted-foreground">{t("habits.saveHint")}</p>
       </div>
 
       {/* The status chips go first and carry the block's name (the visible
@@ -791,7 +858,7 @@ function HabitsForm() {
             ALCOHOL_STATUSES,
             "alcoholStatus",
             draft.alcoholStatus,
-            (next) => choose("alcoholStatus", next, "alcohol"),
+            (next) => choose("alcoholStatus", next),
             { showLabel: false },
           )}
           {numberField("alcohol.start_age")}
@@ -853,7 +920,7 @@ function HabitsForm() {
             SMOKE_STATUSES,
             "smokeStatus",
             draft.tobaccoStatus,
-            (next) => choose("tobaccoStatus", next, "tobacco"),
+            (next) => choose("tobaccoStatus", next),
             { showLabel: false },
           )}
           {numberField("tobacco.cigarettes_per_day")}
@@ -865,7 +932,7 @@ function HabitsForm() {
             SMOKE_STATUSES,
             "smokeStatus",
             draft.vapingStatus,
-            (next) => choose("vapingStatus", next, "vaping"),
+            (next) => choose("vapingStatus", next),
           )}
           {numberField("vaping.start_age")}
           {numberField("vaping.quit_age")}
@@ -876,7 +943,7 @@ function HabitsForm() {
               VAPING_FREQUENCIES,
               "vapingFrequency",
               draft.vapingFrequency,
-              (next) => choose("vapingFrequency", next, "vaping.days_last_30"),
+              (next) => choose("vapingFrequency", next),
             )}
           {numberField("vaping.days_last_30")}
         </>,
@@ -898,7 +965,7 @@ function HabitsForm() {
                 label: t("habits.options.places.none"),
               }}
               values={draft.places}
-              onChange={(next) => choose("places", next, "secondhand_smoke")}
+              onChange={(next) => choose("places", next)}
               invalid={!!errors["secondhand_smoke.places"]}
               describedBy={[
                 secondhandHintId,
@@ -925,7 +992,7 @@ function HabitsForm() {
             SMOKE_STATUSES,
             "smokeStatus",
             draft.woodStatus,
-            (next) => choose("woodStatus", next, "wood_smoke"),
+            (next) => choose("woodStatus", next),
             { showLabel: false, hintId: woodHintId },
           )}
           {numberField("wood_smoke.start_age")}
@@ -940,24 +1007,51 @@ function HabitsForm() {
         </p>
       )}
 
+      {/* D20: aria-disabled, not disabled, so the focus stays on "Guardar"
+          while it saves (LoadingButton sets the native attribute); the
+          handlers ignore the press meanwhile. */}
       <div className="flex flex-wrap items-center gap-2">
-        <LoadingButton type="submit" loading={autosave.busy}>
+        <Button
+          type="submit"
+          aria-disabled={busy || undefined}
+          className="aria-disabled:opacity-50"
+        >
+          {busy && <Loader2 className="mr-2 h-5 w-5 animate-spin" />}
           {t("history.save")}
-        </LoadingButton>
+        </Button>
         <Button
           type="button"
           variant="outline"
-          disabled={autosave.busy}
+          aria-disabled={busy || undefined}
+          className="aria-disabled:opacity-50"
           onClick={handleCancel}
         >
           {t("history.cancel")}
         </Button>
-        {autosave.busy && (
-          <p className="text-sm text-muted-foreground">
-            {t("habits.autosave.wait")}
-          </p>
-        )}
       </div>
+
+      <Dialog open={asking} onOpenChange={(open) => !open && stay()}>
+        <DialogContent
+          showCloseButton={false}
+          onOpenAutoFocus={(event) => {
+            event.preventDefault()
+            stayRef.current?.focus()
+          }}
+        >
+          <DialogHeader>
+            <DialogTitle>{t("habits.leave.title")}</DialogTitle>
+            <DialogDescription>{t("habits.leave.text")}</DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={leaveAnyway}>
+              {t("habits.leave.discard")}
+            </Button>
+            <Button type="button" ref={stayRef} onClick={stay}>
+              {t("habits.leave.stay")}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </form>
   )
 }
