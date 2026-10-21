@@ -316,6 +316,10 @@ registros de secciones distintas, enlace tratamiento↔medicinas de receta.
 - **Story B — crónicas:** con enlace opcional al diagnóstico del expediente. **✅ Entregada en el PR #26 (2026-10-20); spec en `openspec/specs/records/patient-profile/spec.md` (B-5 en `records/clinical-records`).**
 - **Story C — hábitos + trabajo:** cuestionario con lista anidada (ejercicio), movimiento del día y sueño, más
   el bloque "Trabajo" del Perfil básico. Se separó de B en la ronda 6 al crecer: no comparte forma con crónicas.
+  Saúl Pérez la partió en dos el 2026-10-20 (exploración de perfil-habitos): **C1 — sustancias y humo** (alcohol,
+  tabaco y vapeador, humo ajeno, leña; C-1…C-4, C-6), **✅ entregada en el PR #30 (2026-10-21); spec en
+  `openspec/specs/records/patient-profile/spec.md`**, y **C2 — cuerpo, descanso y trabajo** (ejercicio, movimiento
+  del día, sueño y Trabajo; C-5, C-7, C-8, C-9), después.
 
 ## Catálogos (en las palabras de Saúl / del borrador que aceptó)
 
@@ -391,7 +395,7 @@ estado, fechas y humo ajeno son lo que los campos estructurados de los expedient
 
 | Hábito | Respuesta |
 |---|---|
-| alcohol | **nunca / lo dejé (a qué edad; ronda 8) / actual**. Si actual, las 3 preguntas del **AUDIT-C** con su escala: frecuencia (una vez al mes o menos · 2–4 al mes · 2–3 por semana · 4+ por semana), bebidas en un día típico (1–2 · 3–4 · 5–6 · 7–9 · 10+), frecuencia de 6 o más en una ocasión (nunca · menos de una vez al mes · cada mes · cada semana · diario o casi) + marca "sobre todo fines de semana". **Sin puntaje** (C-6) |
+| alcohol | **nunca / lo dejé (a qué edad; ronda 8) / actual**. Si actual, las 3 preguntas del **AUDIT-C** con su escala: frecuencia (una vez al mes o menos · 2–4 al mes · 2–3 por semana · 4+ por semana), bebidas en un día típico (1–2 · 3–4 · 5–6 · 7–9 · 10+), frecuencia de 6 o más en una ocasión (nunca · menos de una vez al mes · cada mes · cada semana · diario o casi) + "sobre todo fines de semana" (Sí · No). **Sin puntaje** (C-6) |
 | tabaco | nunca / antes / actual + cigarros al día + a qué edad empezó + a qué edad lo dejó (si "antes") — ronda 8: edad, no año |
 | vapeador | nunca / antes / actual |
 | humo de tabaco ajeno | **hábito propio** (ronda 6): dónde (casa · trabajo o escuela · otro lugar, varios) + días por semana, o "no me expongo" |

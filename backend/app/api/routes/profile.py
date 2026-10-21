@@ -22,6 +22,7 @@ from typing import Any, Literal, cast
 from zoneinfo import ZoneInfo
 
 from fastapi import APIRouter, HTTPException, Query
+from fastapi.exceptions import RequestValidationError
 from pydantic import ConfigDict, TypeAdapter, ValidationError
 from sqlmodel import col, func, select
 
@@ -40,6 +41,7 @@ from app.models import (
     FamilyHistory,
     FamilyHistoryCreate,
     FamilyHistoryPublic,
+    Habits,
     HealthRecord,
     HistoryContent,
     HistoryContentModel,
@@ -54,6 +56,8 @@ from app.models import (
     PatientProfilePublic,
     PatientProfileUpdate,
     get_datetime_utc,
+    habits_errors,
+    normalize_habits,
     normalize_history_content,
     normalize_relatives,
     validate_birth_date,
@@ -604,3 +608,63 @@ def set_history_section_none(
     session.commit()
     session.refresh(profile)
     return _profile_public(session, current_user, profile)
+
+
+# --- Habits questionnaire (perfil-habitos design.md) ------------------------
+
+
+def _stored_habits(profile: PatientProfile | None) -> Habits:
+    """The decrypted questionnaire; all null when nothing is stored."""
+    if profile is None or profile.habits is None:
+        return Habits()
+    try:
+        return Habits.model_validate_json(profile.habits)
+    except ValidationError:
+        # Unreadable row (review R2, like the history's S4): read as all null,
+        # only the profile id logged.
+        logger.warning("Unreadable habits of patient profile %s", profile.id)
+        return Habits()
+
+
+def _validate_habits(habits_in: Habits, profile: PatientProfile) -> None:
+    """perfil-habitos Decision 4: impossible answers are a 422 in FastAPI's
+    own shape, with the `loc` of their field, so the UI places them by `loc`
+    and never by the text (review R20). "Today" is Mexico City's (R11)."""
+    errors = habits_errors(
+        habits_in, _profile_birth_date(profile), datetime.now(MEXICO_CITY).date()
+    )
+    if errors:
+        raise RequestValidationError(
+            [
+                {"loc": ("body", block, field), "msg": msg, "type": "value_error"}
+                for block, field, msg in errors
+            ]
+        )
+
+
+@router.get("/habits", response_model=Habits)
+def read_habits(session: SessionDep, current_user: ConsentedUser) -> Any:
+    """ONLY the session user's habits; reading never creates the profile."""
+    profile = session.exec(
+        select(PatientProfile).where(PatientProfile.user_id == current_user.id)
+    ).first()
+    return _stored_habits(profile)
+
+
+@router.put("/habits", response_model=Habits)
+def update_habits(
+    *, session: SessionDep, current_user: ConsentedUser, habits_in: Habits
+) -> Any:
+    """Replace the whole questionnaire (Decision 2): normalize, THEN validate
+    (a dropped age is never checked), then encrypt. All null stores null."""
+    profile = _lock_profile(session, current_user)
+    habits = normalize_habits(habits_in)
+    _validate_habits(habits, profile)
+    # Nulls are left out of the stored JSON: a dropped answer leaves no trace,
+    # not even its key (_stored_habits fills them back in).
+    answered = habits.model_dump(exclude_none=True)
+    profile.habits = habits.model_dump_json(exclude_none=True) if answered else None
+    session.add(profile)
+    session.commit()
+    session.refresh(profile)
+    return _stored_habits(profile)

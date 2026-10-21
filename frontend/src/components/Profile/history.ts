@@ -2,6 +2,7 @@ import type { TFunction } from "i18next"
 
 import type {
   ChronicHistoryEntry,
+  Habits,
   HistoryEntriesPublic,
   PatientProfilePublic,
   WhenStage,
@@ -22,7 +23,10 @@ export const HISTORY_SECTIONS = [
 
 export type HistorySection = (typeof HISTORY_SECTIONS)[number]
 
-/** Every card on "Mi perfil médico", in display order (habits still read-only). */
+/**
+ * Every card on "Mi perfil médico", in display order. Habits is not a history
+ * section: its card opens /perfil/habitos (perfil-habitos, one questionnaire).
+ */
 export const HISTORY_CARD_KEYS = [
   "chronic",
   "past",
@@ -164,8 +168,11 @@ export function approxYears(
 const MAX_AGE = 130
 const MIN_YEAR = 1900
 
-/** Age on `today` from ISO "aaaa-mm-dd" dates (no `new Date(iso)`). */
-function ageToday(birthDate: string, today: string): number | null {
+/**
+ * Age on `today` from ISO "aaaa-mm-dd" dates (no `new Date(iso)`). Exported
+ * for the habits ages (HabitsForm), checked against the same "today".
+ */
+export function ageToday(birthDate: string, today: string): number | null {
   const [year, month, day] = birthDate.split("-").map(Number)
   const [todayYear, todayMonth, todayDay] = today.split("-").map(Number)
   if (![year, month, day].every(Number.isFinite)) return null
@@ -281,6 +288,16 @@ export function draftToWhen(draft: WhenDraft): When | null | "invalid" {
   if (!text) return null
   if (!/^\d+$/.test(text)) return "invalid"
   return { kind: draft.mode, value: Number(text) }
+}
+
+/**
+ * Habits card status (design.md, Interface contract → Tarjeta): "Con datos"
+ * when any top-level answer is non-null, else "Sin llenar". Never a score
+ * (C-6).
+ */
+export function hasHabits(habits: Habits | null | undefined): boolean {
+  if (!habits) return false
+  return Object.values(habits).some((value) => value != null)
 }
 
 /** Card / section status: "Sin llenar" · "Ninguna" · "1 registro" · "N registros". */

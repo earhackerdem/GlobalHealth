@@ -76,7 +76,7 @@
   },
   "pending": {
     "heading": "Tu historial",
-    "description": "Llénalas a tu ritmo; todo es opcional. Los hábitos llegan pronto.",
+    "description": "Llénalas a tu ritmo; todo es opcional.",
     "sections": {
       "chronic": "Enfermedades crónicas",
       "past": "Enfermedades pasadas e infecciosas",
@@ -331,6 +331,85 @@
       "past": "Elige la condición o escribe cuál fue",
       "surgeries": "Escribe qué cirugía u hospitalización fue",
       "fractures": "Escribe qué hueso o lesión fue"
+    }
+  },
+  "habits": {
+    "title": "Hábitos",
+    "intro": "Contesta solo lo que quieras. «Nunca» también le sirve a tu médico. La app no califica tus respuestas.",
+    "status": {
+      "filled": "Con datos"
+    },
+    "savedToast": "Hábitos guardados",
+    "blocks": {
+      "alcohol": "Alcohol",
+      "tobacco": "Tabaco",
+      "secondhand": "Humo de tabaco de otras personas",
+      "wood": "Humo de leña"
+    },
+    "fields": {
+      "alcoholQuitAge": "¿A qué edad dejaste de tomar?",
+      "frequency": "¿Con qué frecuencia tomas?",
+      "mostlyWeekends": "Sobre todo fines de semana",
+      "typicalDrinks": "En un día que tomas, ¿cuántas bebidas?",
+      "typicalDrinksHint": "Una bebida: una cerveza, una copa de vino o un trago de tequila, ron u otro destilado.",
+      "sixOrMore": "¿Cada cuándo tomas 6 o más bebidas en una sola ocasión?",
+      "cigarettesPerDay": "Cigarros al día",
+      "tobaccoStartAge": "¿A qué edad empezaste a fumar?",
+      "tobaccoQuitAge": "¿A qué edad dejaste de fumar?",
+      "vaping": "Vapeador o cigarro electrónico",
+      "secondhandHint": "Estar cerca de quien fuma, aunque tú no fumes.",
+      "places": "¿Dónde?",
+      "daysPerWeek": "Días por semana",
+      "woodHint": "Cocinar o calentar la casa con leña o carbón.",
+      "woodYears": "Años con humo de leña, aprox."
+    },
+    "options": {
+      "alcoholStatus": {
+        "never": "Nunca",
+        "quit": "Lo dejé",
+        "current": "Actual"
+      },
+      "smokeStatus": {
+        "never": "Nunca",
+        "former": "Antes",
+        "current": "Actual"
+      },
+      "frequency": {
+        "monthly_or_less": "Una vez al mes o menos",
+        "two_to_four_monthly": "2 a 4 veces al mes",
+        "two_to_three_weekly": "2 a 3 veces por semana",
+        "four_plus_weekly": "4 o más veces por semana"
+      },
+      "typicalDrinks": {
+        "one_two": "1 o 2",
+        "three_four": "3 o 4",
+        "five_six": "5 o 6",
+        "seven_nine": "7 a 9",
+        "ten_plus": "10 o más"
+      },
+      "sixOrMore": {
+        "never": "Nunca",
+        "less_than_monthly": "Menos de una vez al mes",
+        "monthly": "Cada mes",
+        "weekly": "Cada semana",
+        "daily": "A diario o casi"
+      },
+      "places": {
+        "home": "Casa",
+        "work_school": "Trabajo o escuela",
+        "other": "Otro lugar",
+        "none": "No me expongo"
+      },
+      "yesNo": {
+        "yes": "Sí",
+        "no": "No"
+      }
+    },
+    "validation": {
+      "onlyNumber": "Escribe solo el número.",
+      "outOfRange": "Debe estar entre {{min}} y {{max}}",
+      "ageOverCurrent": "La edad no puede ser mayor que tu edad actual",
+      "startAfterQuit": "No puede ser mayor que la edad en que lo dejaste"
     }
   },
   "validation": {

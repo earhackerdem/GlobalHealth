@@ -5,6 +5,36 @@ export type ClientOptions = {
 };
 
 /**
+ * AlcoholHabit
+ */
+export type AlcoholHabit = {
+    /**
+     * Status
+     */
+    status: 'never' | 'quit' | 'current';
+    /**
+     * Quit Age
+     */
+    quit_age?: number | null;
+    /**
+     * Frequency
+     */
+    frequency?: 'monthly_or_less' | 'two_to_four_monthly' | 'two_to_three_weekly' | 'four_plus_weekly' | null;
+    /**
+     * Typical Drinks
+     */
+    typical_drinks?: 'one_two' | 'three_four' | 'five_six' | 'seven_nine' | 'ten_plus' | null;
+    /**
+     * Six Or More
+     */
+    six_or_more?: 'never' | 'less_than_monthly' | 'monthly' | 'weekly' | 'daily' | null;
+    /**
+     * Mostly Weekends
+     */
+    mostly_weekends?: boolean | null;
+};
+
+/**
  * BodyMeasurementCreate
  */
 export type BodyMeasurementCreate = {
@@ -444,6 +474,20 @@ export type HTTPValidationError = {
      * Detail
      */
     detail?: Array<ValidationError>;
+};
+
+/**
+ * Habits
+ */
+export type Habits = {
+    alcohol?: AlcoholHabit | null;
+    tobacco?: TobaccoHabit | null;
+    /**
+     * Vaping
+     */
+    vaping?: 'never' | 'former' | 'current' | null;
+    secondhand_smoke?: SecondhandSmoke | null;
+    wood_smoke?: WoodSmokeHabit | null;
 };
 
 /**
@@ -1007,6 +1051,24 @@ export type PrivateUserCreate = {
 };
 
 /**
+ * SecondhandSmoke
+ */
+export type SecondhandSmoke = {
+    /**
+     * Exposed
+     */
+    exposed: boolean;
+    /**
+     * Places
+     */
+    places?: Array<'home' | 'work_school' | 'other'>;
+    /**
+     * Days Per Week
+     */
+    days_per_week?: number | null;
+};
+
+/**
  * SurgeryHistoryContent
  */
 export type SurgeryHistoryContent = {
@@ -1128,6 +1190,28 @@ export type SurgeryHistoryEntry = {
      * Created At
      */
     created_at: string;
+};
+
+/**
+ * TobaccoHabit
+ */
+export type TobaccoHabit = {
+    /**
+     * Status
+     */
+    status: 'never' | 'former' | 'current';
+    /**
+     * Cigarettes Per Day
+     */
+    cigarettes_per_day?: number | null;
+    /**
+     * Start Age
+     */
+    start_age?: number | null;
+    /**
+     * Quit Age
+     */
+    quit_age?: number | null;
 };
 
 /**
@@ -1456,6 +1540,20 @@ export type WhenYear = {
      * Value
      */
     value: number;
+};
+
+/**
+ * WoodSmokeHabit
+ */
+export type WoodSmokeHabit = {
+    /**
+     * Status
+     */
+    status: 'never' | 'former' | 'current';
+    /**
+     * Years
+     */
+    years?: number | null;
 };
 
 export type loginLoginAccessTokenData = {
@@ -2847,6 +2945,47 @@ export type profileSetHistorySectionNoneResponses = {
 };
 
 export type profileSetHistorySectionNoneResponse = profileSetHistorySectionNoneResponses[keyof profileSetHistorySectionNoneResponses];
+
+export type profileReadHabitsData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/profile/habits';
+};
+
+export type profileReadHabitsResponses = {
+    /**
+     * Successful Response
+     */
+    200: Habits;
+};
+
+export type profileReadHabitsResponse = profileReadHabitsResponses[keyof profileReadHabitsResponses];
+
+export type profileUpdateHabitsData = {
+    body: Habits;
+    path?: never;
+    query?: never;
+    url: '/api/v1/profile/habits';
+};
+
+export type profileUpdateHabitsErrors = {
+    /**
+     * Validation Error
+     */
+    422: HTTPValidationError;
+};
+
+export type profileUpdateHabitsError = profileUpdateHabitsErrors[keyof profileUpdateHabitsErrors];
+
+export type profileUpdateHabitsResponses = {
+    /**
+     * Successful Response
+     */
+    200: Habits;
+};
+
+export type profileUpdateHabitsResponse = profileUpdateHabitsResponses[keyof profileUpdateHabitsResponses];
 
 export type privateCreateUserData = {
     body: PrivateUserCreate;

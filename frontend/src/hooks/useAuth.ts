@@ -45,9 +45,13 @@ const useAuth = () => {
     localStorage.setItem("access_token", response.data.access_token)
   }
 
+  // Logging in or out without a reload keeps the in-memory cache: it is
+  // emptied on both, so nothing of the previous account reaches the next one
+  // (perfil-habitos review R1). Other tabs: the storage listener in main.tsx.
   const loginMutation = useMutation({
     mutationFn: login,
     onSuccess: () => {
+      queryClient.clear()
       navigate({ to: "/" })
     },
     onError: handleError.bind(showErrorToast),
@@ -55,6 +59,7 @@ const useAuth = () => {
 
   const logout = () => {
     localStorage.removeItem("access_token")
+    queryClient.clear()
     navigate({ to: "/login" })
   }
 

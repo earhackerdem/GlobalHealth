@@ -26,6 +26,11 @@ accesible = "accesible"
 foto = "foto"
 importante = "importante"
 visibles = "visibles"
+# etiquetas es-MX de hábitos que asierta profile-habits.spec.ts ("Años con humo de
+# leña, aprox.", "hace" y "comparte" en sus comentarios)
+aprox = "aprox"
+hace = "hace"
+comparte = "comparte"
 # nombre real de la action re-actors/alls-green (workflows del template)
 alls = "alls"
 

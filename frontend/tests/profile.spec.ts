@@ -14,8 +14,8 @@ test.use({ storageState: { cookies: [], origins: [] } })
 //   history-card-<section>     tarjeta de cada sección del historial en
 //     /perfil (perfil-eventos), <section> ∈ chronic · past · surgeries ·
 //     fractures · transfusions · habits; sustituye al antiguo
-//     profile-pending-sections. Todas son enlaces salvo habits
-//     (chronic lo es desde perfil-cronicas).
+//     profile-pending-sections. Todas son enlaces (chronic desde
+//     perfil-cronicas, habits a /perfil/habitos desde perfil-habitos).
 // data-testid reutilizados (ya existen): consent-accept-button, email-input,
 //   password-input, user-menu.
 //
@@ -56,10 +56,11 @@ test.use({ storageState: { cookies: [], origins: [] } })
 //   Secciones del historial (6 tarjetas, estado "Sin llenar" sin datos;
 //     perfil-eventos): "Enfermedades crónicas", "Enfermedades pasadas e
 //     infecciosas", "Cirugías y hospitalizaciones", "Fracturas y lesiones",
-//     "Transfusiones y grupo sanguíneo", "Hábitos". Solo hábitos sigue sin
-//     captura: sin inputs, sin enlace y sin botón "Agregar"; crónicas es un
-//     enlace a /perfil/cronicas (perfil-cronicas). El detalle de las 4 de
-//     eventos y de crónicas vive en profile-history.spec.ts.
+//     "Transfusiones y grupo sanguíneo", "Hábitos". Las seis son enlaces y
+//     ninguna tiene inputs en la tarjeta; crónicas abre /perfil/cronicas
+//     (perfil-cronicas) y hábitos /perfil/habitos (perfil-habitos). El
+//     detalle de las 4 de eventos y de crónicas vive en
+//     profile-history.spec.ts; el de hábitos, en profile-habits.spec.ts.
 // ---------------------------------------------------------------------------
 
 const HISTORY_SECTIONS = [
@@ -268,7 +269,7 @@ test.describe("Perfil médico — onboarding y /perfil", () => {
     await expect(ahfAfter.getByText("Madre")).toBeVisible()
   })
 
-  test("Escenario 11 (Secciones listadas sin captura): con un antecedente registrado, se ve contabilizado y las 6 tarjetas del historial dicen 'Sin llenar'; solo hábitos sin inputs, enlace ni 'Agregar' (crónicas es enlace)", async ({
+  test("Escenario 11 (Secciones listadas sin captura): con un antecedente registrado, se ve contabilizado y las 6 tarjetas del historial dicen 'Sin llenar', cada una con su enlace (hábitos a /perfil/habitos)", async ({
     page,
     request,
   }) => {
@@ -308,33 +309,26 @@ test.describe("Perfil médico — onboarding y /perfil", () => {
     await expect(ahf.getByText("Madre", { exact: true })).toBeVisible()
     await expect(ahf.getByText("Sin registros")).toHaveCount(0)
 
-    // Las seis secciones del historial listadas, cada una "Sin llenar".
+    // Las seis secciones del historial listadas, cada una "Sin llenar", sin
+    // captura en la tarjeta y cada una con su enlace (perfil-habitos: también
+    // hábitos). M27: aserciones directas, no condicionales.
     for (const [key, name] of HISTORY_SECTIONS) {
       const card = page.getByTestId(`history-card-${key}`)
       await expect(card).toBeVisible()
       await expect(card).toContainText(name)
       await expect(card).toContainText("Sin llenar")
+      await expect(card.locator("input, textarea, select")).toHaveCount(0)
+      const isLink = await card.evaluate(
+        (el) => el.closest("a") !== null || el.getAttribute("role") === "link",
+      )
+      expect(isLink, `la tarjeta ${key} es un enlace`).toBe(true)
     }
 
-    // Crónicas ya tiene captura (perfil-cronicas): su tarjeta es un enlace.
-    const chronic = page.getByTestId("history-card-chronic")
-    const chronicIsLink = await chronic.evaluate(
-      (el) => el.closest("a") !== null || el.getAttribute("role") === "link",
-    )
-    expect(chronicIsLink).toBe(true)
-
-    // Solo hábitos sigue sin captura: ni inputs, ni enlace, ni botón
-    // "Agregar"/"Añadir" (M27: aserciones directas, no condicionales).
-    const habits = page.getByTestId("history-card-habits")
-    await expect(habits.locator("input, textarea, select")).toHaveCount(0)
-    await expect(habits.getByRole("link")).toHaveCount(0)
-    await expect(
-      habits.getByRole("button", { name: /Añadir|Agregar/ }),
-    ).toHaveCount(0)
-    const habitsIsLink = await habits.evaluate(
-      (el) => el.closest("a") !== null || el.getAttribute("role") === "link",
-    )
-    expect(habitsIsLink).toBe(false)
+    // La de hábitos lleva al cuestionario.
+    const habitsHref = await page
+      .getByTestId("history-card-habits")
+      .evaluate((el) => el.closest("a")?.getAttribute("href") ?? "")
+    expect(habitsHref).toMatch(/\/perfil\/habitos\/?$/)
   })
 
   test("Escenario 13 (feedback): agregar antecedentes desde /perfil tras omitir todo el onboarding", async ({
