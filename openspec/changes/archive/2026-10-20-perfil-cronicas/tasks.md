@@ -75,7 +75,7 @@ are `single`. `make tdd-check` requires one `test:` commit per `test→impl` gro
   emoji, datos largos, ancho de 500 px). Verificación: tabla en evidence.md; si hay defectos, se arreglan o se
   escalan.
 - [x] 3.2 **Entregables.** `evidence.md`, `validation.md` (no técnico, para Saúl Pérez), el journal y el PR.
-- [ ] 3.3 **Archivo como último commit del PR** (`epe-6-archive`, 0.3.2):
+- [x] 3.3 **Archivo como último commit del PR** (`epe-6-archive`, 0.3.2):
   - `openspec archive perfil-cronicas`;
   - CHANGELOG;
   - `product/dominio.md` y `product/prd.md`, con la Story B entregada;

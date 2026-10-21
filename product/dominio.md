@@ -313,7 +313,7 @@ registros de secciones distintas, enlace tratamiento↔medicinas de receta.
 ## Partición en stories (Saúl Pérez, ronda 3; rehecha en la ronda 6)
 - **Story A — eventos:** enfermedades pasadas e infecciosas, cirugías y hospitalizaciones, fracturas y lesiones,
   transfusiones + grupo sanguíneo, y el mecanismo "ninguna" común a todas (4 de las 6 tarjetas cobran vida). **✅ Entregada en el PR #20 (2026-10-20); spec en `openspec/specs/records/patient-profile/spec.md`.**
-- **Story B — crónicas:** con enlace opcional al diagnóstico del expediente.
+- **Story B — crónicas:** con enlace opcional al diagnóstico del expediente. **✅ Entregada en el PR #26 (2026-10-20); spec en `openspec/specs/records/patient-profile/spec.md` (B-5 en `records/clinical-records`).**
 - **Story C — hábitos + trabajo:** cuestionario con lista anidada (ejercicio), movimiento del día y sueño, más
   el bloque "Trabajo" del Perfil básico. Se separó de B en la ronda 6 al crecer: no comparte forma con crónicas.
 

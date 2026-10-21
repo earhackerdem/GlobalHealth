@@ -4,6 +4,9 @@ Guion no técnico. Necesitas la app corriendo con esta rama: `make up`, luego `d
 (no hay migración nueva). Entra con tu cuenta y ve a **"Mi perfil médico"** en el menú lateral. Es lo que navegaste
 en el prototipo, ahora con datos de verdad. Los ejemplos de abajo son solo ejemplos: usa lo que quieras.
 
+**Validación:** Saúl Pérez (author), 2026-10-20, tras la review y el apply: "me gusta, procede". Las casillas
+de abajo quedan como guion; no se marcaron por él.
+
 ## Qué cambia, en una frase
 
 La tarjeta "Enfermedades crónicas" ya se abre y se llena: cuál es, si sigue activa, desde y hasta cuándo, el

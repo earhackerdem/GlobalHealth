@@ -1,5 +1,12 @@
 # CHANGELOG
 
+- 2026-10-20 · perfil-cronicas · PR #26 · Enfermedades crónicas (FR-028, Story B): la tarjeta ya se abre y se llena.
+  Se elige la condición en chips (lista frecuente, "Salud mental y adicciones" u "Otra"), con la marca "Sensible"
+  que decide el paciente (viene prendida en salud mental y adicciones), "Activa" o "Ya no la tengo" con desde y
+  hasta, tratamiento, nota y el diagnóstico del expediente que la respalda. Al borrar ese diagnóstico, el aviso
+  nombra las crónicas que respalda y estas se quedan, sin respaldo. Todo cifrado en reposo y aislado por cuenta.
+  Endurecido por una revisión adversarial de tres rondas. Hábitos (Story C) sigue pendiente.
+
 - 2026-10-20 · perfil-eventos · PR #20 · Historial por secciones (FR-028, Story A): enfermedades pasadas e
   infecciosas, cirugías y hospitalizaciones, fracturas y lesiones, y transfusiones con grupo sanguíneo ya se pueden
   llenar. "Cuándo" se contesta como lo pregunta el médico: la edad, la etapa escolar o el año, y la app calcula el año
