@@ -53,11 +53,11 @@ are `single`. `make tdd-check` requires one `test:` commit per `test→impl` gro
 
 ## 3. Verificación final, archivo y entrega · single
 
-- [ ] 3.1 **Exploración en Chrome por el agente** (`epe-3-execute`, paso 2): el cuestionario completo, cambiar de
+- [x] 3.1 **Exploración en Chrome por el agente** (`epe-3-execute`, paso 2): el cuestionario completo, cambiar de
   respuesta y ver qué se descarta, edades imposibles, "No me expongo", reabrir. También intenta romperla (doble
   envío, números raros, ancho de 384 px, volver atrás sin guardar). Verificación: tabla en evidence.md; si hay
   defectos, se arreglan o se escalan.
-- [ ] 3.2 **Entregables.** `evidence.md`, `validation.md` (no técnico, para Saúl Pérez), el journal y el PR.
+- [x] 3.2 **Entregables.** `evidence.md`, `validation.md` (no técnico, para Saúl Pérez), el journal y el PR.
 - [ ] 3.3 **Archivo como último commit del PR** (`epe-6-archive`):
   - `openspec archive perfil-habitos`;
   - el fragmento en `changelog.d/` (sin generar `CHANGELOG.md`);
