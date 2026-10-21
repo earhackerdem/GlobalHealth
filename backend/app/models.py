@@ -3,7 +3,7 @@ from collections.abc import Sequence
 from datetime import UTC, date, datetime
 from typing import Annotated, Any, Literal
 
-from pydantic import Discriminator, EmailStr
+from pydantic import ConfigDict, Discriminator, EmailStr
 from sqlalchemy import Column
 from sqlmodel import Field, Relationship, SQLModel
 
@@ -436,6 +436,12 @@ class PatientProfile(SQLModel, table=True):
     sections_none: str | None = Field(
         default=None, sa_column=Column(EncryptedString(), nullable=True)
     )
+    # perfil-habitos Decision 1: the habits questionnaire is 1:1, so the JSON
+    # of the normalized Habits lives INSIDE this encrypted field (null = not
+    # answered), like blood_type.
+    habits: str | None = Field(
+        default=None, sa_column=Column(EncryptedString(), nullable=True)
+    )
 
 
 # One row per capture, never UPDATE of the value (Decision 2: history is
@@ -829,6 +835,158 @@ def normalize_history_content(content: HistoryContentModel) -> HistoryContentMod
     if content.status != "resolved":
         updates["until"] = None
     return content.model_copy(update=updates)
+
+
+# --- Habits questionnaire (perfil-habitos design.md §Interface contract) ----
+# Everything optional; extra="forbid" so an unknown field is a 422 (Decision 5:
+# the C2 extends this same object on purpose, never by accident).
+HabitStatus = Literal["never", "former", "current"]
+SecondhandPlace = Literal["home", "work_school", "other"]
+# Contract order of `places`: stored deduped and sorted this way.
+SECONDHAND_PLACES: tuple[SecondhandPlace, ...] = ("home", "work_school", "other")
+# Decision 6: ages are plain numbers, with the history's bounds.
+HabitAge = Annotated[int, Field(ge=0, le=HISTORY_MAX_AGE)]
+
+
+class _ClosedSchema(SQLModel):
+    # sqlmodel types model_config as its private SQLModelConfig (not exported);
+    # a ConfigDict merges into it the same way at runtime.
+    model_config = ConfigDict(extra="forbid")  # type: ignore[assignment]
+
+
+class AlcoholHabit(_ClosedSchema):
+    status: Literal["never", "quit", "current"]
+    quit_age: HabitAge | None = None
+    frequency: (
+        Literal[
+            "monthly_or_less",
+            "two_to_four_monthly",
+            "two_to_three_weekly",
+            "four_plus_weekly",
+        ]
+        | None
+    ) = None
+    typical_drinks: (
+        Literal["one_two", "three_four", "five_six", "seven_nine", "ten_plus"] | None
+    ) = None
+    six_or_more: (
+        Literal["never", "less_than_monthly", "monthly", "weekly", "daily"] | None
+    ) = None
+    mostly_weekends: bool | None = None
+
+
+class TobaccoHabit(_ClosedSchema):
+    status: HabitStatus
+    cigarettes_per_day: int | None = Field(default=None, ge=1, le=100)
+    start_age: HabitAge | None = None
+    quit_age: HabitAge | None = None
+
+
+class SecondhandSmoke(_ClosedSchema):
+    exposed: bool
+    # Bounded like relatives (review G11): more than three entries can only be
+    # repeats, which normalize_habits would drop anyway.
+    places: list[SecondhandPlace] = Field(
+        default_factory=list, max_length=len(SECONDHAND_PLACES)
+    )
+    days_per_week: int | None = Field(default=None, ge=1, le=7)
+
+
+class WoodSmokeHabit(_ClosedSchema):
+    status: HabitStatus
+    years: HabitAge | None = None
+
+
+class Habits(_ClosedSchema):
+    alcohol: AlcoholHabit | None = None
+    tobacco: TobaccoHabit | None = None
+    vaping: HabitStatus | None = None
+    secondhand_smoke: SecondhandSmoke | None = None
+    wood_smoke: WoodSmokeHabit | None = None
+
+
+def _normalize_alcohol(alcohol: AlcoholHabit) -> AlcoholHabit:
+    updates: dict[str, Any] = {}
+    if alcohol.status != "current":
+        updates.update(
+            frequency=None, typical_drinks=None, six_or_more=None, mostly_weekends=None
+        )
+    if alcohol.status != "quit":
+        updates["quit_age"] = None
+    return alcohol.model_copy(update=updates)
+
+
+def _normalize_tobacco(tobacco: TobaccoHabit) -> TobaccoHabit:
+    updates: dict[str, Any] = {}
+    if tobacco.status == "never":
+        updates.update(cigarettes_per_day=None, start_age=None)
+    if tobacco.status != "former":
+        updates["quit_age"] = None
+    return tobacco.model_copy(update=updates)
+
+
+def _normalize_secondhand(smoke: SecondhandSmoke) -> SecondhandSmoke:
+    if not smoke.exposed:
+        return smoke.model_copy(update={"places": [], "days_per_week": None})
+    places = [place for place in SECONDHAND_PLACES if place in smoke.places]
+    return smoke.model_copy(update={"places": places})
+
+
+def _normalize_wood(wood: WoodSmokeHabit) -> WoodSmokeHabit:
+    if wood.status == "never":
+        return wood.model_copy(update={"years": None})
+    return wood
+
+
+def normalize_habits(habits: Habits) -> Habits:
+    """What gets stored: whatever does not apply to the chosen answer is
+    dropped (perfil-habitos Decision 3, like chronic `until`), and `places`
+    deduped in contract order. Runs BEFORE validate_habits."""
+    updates: dict[str, Any] = {}
+    if habits.alcohol is not None:
+        updates["alcohol"] = _normalize_alcohol(habits.alcohol)
+    if habits.tobacco is not None:
+        updates["tobacco"] = _normalize_tobacco(habits.tobacco)
+    if habits.secondhand_smoke is not None:
+        updates["secondhand_smoke"] = _normalize_secondhand(habits.secondhand_smoke)
+    if habits.wood_smoke is not None:
+        updates["wood_smoke"] = _normalize_wood(habits.wood_smoke)
+    return habits.model_copy(update=updates)
+
+
+def habits_errors(
+    habits: Habits, birth_date: date | None, today: date
+) -> list[tuple[str, str, str]]:
+    """(block, field, es-MX message) per impossible answer of a NORMALIZED
+    Habits (a dropped age is never checked). Ages are compared to the current
+    one only with a birth date; at most one error per field."""
+    age_now = _age_on(birth_date, today) if birth_date is not None else None
+    errors: list[tuple[str, str, str]] = []
+
+    def above_now(age: int | None) -> bool:
+        return age is not None and age_now is not None and age > age_now
+
+    above = "La edad no puede ser mayor que tu edad actual"
+    if habits.alcohol and above_now(habits.alcohol.quit_age):
+        errors.append(("alcohol", "quit_age", above))
+    if habits.tobacco:
+        start, quit = habits.tobacco.start_age, habits.tobacco.quit_age
+        if above_now(start):
+            errors.append(("tobacco", "start_age", above))
+        elif start is not None and quit is not None and start > quit:
+            errors.append(
+                (
+                    "tobacco",
+                    "start_age",
+                    "No puede ser mayor que la edad en que lo dejaste",
+                )
+            )
+        if above_now(quit):
+            errors.append(("tobacco", "quit_age", above))
+    smoke = habits.secondhand_smoke
+    if smoke and smoke.exposed and not smoke.places:
+        errors.append(("secondhand_smoke", "places", "Elige dónde, o «No me expongo»"))
+    return errors
 
 
 # Partial update: absent = "do not touch", explicit null clears the field.
