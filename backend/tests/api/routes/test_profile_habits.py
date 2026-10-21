@@ -1015,9 +1015,7 @@ OUT_OF_SCALE_CASES = [
         {"wood_smoke": {"status": "former", "years": 12}},
         id="wood-years-in-put",
     ),
-    pytest.param(
-        {"vaping": {"status": "sometimes"}}, id="vaping-status-outside-enum"
-    ),
+    pytest.param({"vaping": {"status": "sometimes"}}, id="vaping-status-outside-enum"),
     pytest.param(
         {"vaping": {"status": "current", "frequency": "weekly"}},
         id="vaping-frequency-outside-enum",
