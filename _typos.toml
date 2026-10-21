@@ -31,6 +31,9 @@ visibles = "visibles"
 aprox = "aprox"
 hace = "hace"
 comparte = "comparte"
+# "en curso", "doble clic" (perfil-habitos-ajustes: D20 y sus e2e)
+curso = "curso"
+doble = "doble"
 # nombre real de la action re-actors/alls-green (workflows del template)
 alls = "alls"
 
