@@ -9,7 +9,7 @@ se guarda lo que haya contestado:
   AUDIT-C con su escala: con qué frecuencia toma (una vez al mes o menos · 2 a 4 veces al mes · 2 a 3 veces por
   semana · 4 o más veces por semana), cuántas bebidas en un día que toma (1 o 2 · 3 o 4 · 5 o 6 · 7 a 9 · 10 o más),
   cada cuándo toma 6 o más en una sola ocasión (nunca · menos de una vez al mes · cada mes · cada semana · a diario o
-  casi), y la marca "Sobre todo fines de semana";
+  casi), y si toma sobre todo en fines de semana (Sí · No);
 - **tabaco:** *Nunca*, *Antes* o *Actual*, con cigarros al día (1 a 100), a qué edad empezó y, si es *Antes*, a qué
   edad lo dejó;
 - **vapeador o cigarro electrónico:** *Nunca*, *Antes* o *Actual*;
@@ -26,8 +26,8 @@ cualquier edad entre 0 y 130.
 
 #### Scenario: Alcohol actual con las preguntas del AUDIT-C (C-1)
 - **GIVEN** un paciente nacido el 15/03/1990, sin hábitos guardados
-- **WHEN** elige alcohol "Actual", "2 a 3 veces por semana", "3 o 4" bebidas, 6 o más "Cada mes", marca "Sobre todo
-  fines de semana" y guarda
+- **WHEN** elige alcohol "Actual", "2 a 3 veces por semana", "3 o 4" bebidas, 6 o más "Cada mes", "Sí" en "Sobre
+  todo fines de semana" y guarda
 - **THEN** la tarjeta "Hábitos" dice "Con datos" y, al volver a abrir la pantalla, esas cinco respuestas siguen
   elegidas
 

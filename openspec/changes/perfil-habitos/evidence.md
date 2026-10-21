@@ -11,6 +11,19 @@
 | `bunx tsc -p tsconfig.build.json --noEmit` · `bunx biome check src/ tests/` | 0 errores · 104 archivos, sin cambios | 0 | — | ✅ |
 | Suite Playwright COMPLETA como CI (`PLAYWRIGHT_BASE_URL=http://localhost:8000`, imagen reconstruida con este frontend), 3 corridas | 2 × **203 passed**; 1 × 202 passed + 1 failed: `login.spec.ts:87` ("¡Qué gusto verte de nuevo!" vs el redirect de la home), que este cambio no toca; aislada con `--repeat-each=5`: 5/5 | 1 corrida con un fallo | 0 | 🟡 inestabilidad heredada, ver deuda |
 
+### Tras el apply de la revisión (ronda 1)
+
+| Command | Result (numbers) | Errors in log | Skipped | Truly-green verdict |
+|---|---|---|---|---|
+| `cd backend && FASTAPI_ENV=development uv run coverage run -m pytest tests/ -q` | **303 passed, 0 failed** (hábitos 53, antes 39) · cobertura **96 %** | 0 | 0 | ✅ |
+| Mutantes con un plugin fuera del repo (`MUT=nosort`, `ge`, `utc`) sobre `test_profile_habits.py` | 1, 5 y 1 fallos: los tres mueren (antes sobrevivían) | — | 0 | ✅ |
+| `uv run mypy app` · `ruff check` · `ruff format --check` | limpios | 0 | — | ✅ |
+| `bunx playwright test tests/profile-habits.spec.ts tests/profile.spec.ts tests/profile-history.spec.ts` (chromium + s26-ultra) | **115 passed, 0 failed** | 0 | 0 | ✅ |
+| R1 sin el fix (`useAuth.ts` de HEAD) → con el fix, `-g "R1 otro paciente" --project=chromium` | 1 failed (B ve "Actual" marcado) → 2 passed | — | 0 | ✅ |
+| Fila 7 (R4) `--repeat-each=5` en chromium; fila 7 y R14 en s26-ultra | 6 passed · 11 passed | 0 | 0 | ✅ |
+| `bunx tsc -p tsconfig.build.json --noEmit` · `bunx biome check src/ tests/` | 0 errores · 104 archivos, sin cambios | 0 | — | ✅ |
+| Suite Playwright COMPLETA como CI, imagen reconstruida, 3 corridas | 217 passed · 216 + 1 failed (`reset-password.spec.ts:90`) · 215 + 2 failed (ese y `login.spec.ts:87`); los dos specs solos `--repeat-each=10`: 151 passed | 2 corridas con fallos heredados | 0 | 🟡 inestabilidad heredada (misma tasa que antes del apply), ver deuda |
+
 ## Red before green
 
 | Task | Red run: command → failures | `test:` commit | Green run | `make tdd-check` |
@@ -57,6 +70,7 @@ Vite :5173 contra el backend del árbol, cuenta de prueba local nueva (nacida el
 | Caso extremo (4+ por semana, 10 o más, a diario, fines de semana) | Guardado; la edad de "Lo dejé" se descarta; ni la pantalla de hábitos ni "Mi perfil médico" dicen "riesgo", "puntaje" ni "AUDIT" |
 | "Actual" → "Nunca" y Guardar | Las preguntas del AUDIT-C se ocultan y el GET las trae en null |
 | 500 px | Sin scroll horizontal ni elementos fuera del ancho; "Guardar" y "Cancelar" al final, alcanzables |
+| 384 px (medido en la revisión, R11) | design.md prometía este ancho y la pasada en Chrome no llegó (mínimo 500), y s26-ultra no mide el desborde. El validador lo midió con Playwright a 384 px, con todos los bloques desplegados: `scrollWidth` igual al ancho de la ventana y ningún elemento fuera |
 | Consola | Solo un error de una extensión de Chrome ajena a la app (`chrome-extension://…`, 401 de "Flags") |
 
 Sin defectos dentro del plan.
@@ -72,7 +86,8 @@ Sin defectos dentro del plan.
 ## Deuda
 
 - **Flake heredado** `login.spec.ts:87`: la misma familia que `admin.spec.ts:204` (el saludo contra el redirect de la
-  home), ya en el inbox como fix aparte (`memory/inbox/2026-10-20-fix-aparte-e2e-intermitentes-heredados-admin.md`).
+  home), agregado en la revisión (R25) al pendiente del inbox de los e2e inestables heredados
+  (`memory/inbox/2026-10-20-fix-aparte-e2e-intermitentes-heredados-admin.md`).
 - **Sin aviso de cambios sin guardar:** salir de la pantalla pierde lo contestado (declarado en design.md § Risks).
 - **Dos formas de error en el perfil:** el historial responde `detail` como texto; los hábitos, con `loc` (design.md
   Decision 4). Unificar el historial queda fuera.

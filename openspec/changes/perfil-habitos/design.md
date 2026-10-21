@@ -36,6 +36,11 @@ familiares de checkboxes a chips.
 | `frontend/src/routes/_layout/perfil_.habitos.tsx` (nueva), `frontend/src/components/Profile/HabitsForm.tsx` (nuevo), `ChipGroup.tsx` (variante múltiple), `history.ts` (exportar `ageToday` si hace falta), `perfil.tsx` (tarjeta), `queries.ts`, `frontend/src/locales/es-MX/profile.json`, el cliente regenerado | `HistoryEntryForm`, `HistorySection`, `WhenField`, el expediente, los antecedentes familiares |
 | Tests: `backend/tests/api/routes/test_profile_habits.py` (nuevo), `frontend/tests/profile-habits.spec.ts` (nuevo), los citadores de "hábitos sin captura" | Las suites de A y B, salvo esos citadores |
 
+**Ampliación aprobada en la revisión** (Saúl Pérez, 2026-10-20): `frontend/src/hooks/useAuth.ts`, para que cerrar e
+iniciar sesión vacíen la caché de consultas (R1: sin eso, otra cuenta en el mismo navegador veía y podía guardar los
+hábitos de la anterior). También `frontend/playwright.config.ts`: el `testMatch` de s26-ultra incluye
+`profile-habits`, y entró en el commit verde c2b3d32 sin estar listado aquí (R24).
+
 **Decisión afectada:** ninguna ADR cambia. D13 (cifrado) y D18 (chips) se aplican; D18 se extiende a la selección
 múltiple dentro de su propia regla ("chips cuando se tienen opciones").
 
@@ -108,7 +113,8 @@ Alembic que solo agrega la columna.
   «Nunca» también le sirve a tu médico. La app no califica tus respuestas." Cuatro bloques con su título:
   - **Alcohol:** chips "Nunca" · "Lo dejé" · "Actual". Con "Lo dejé": número "¿A qué edad dejaste de tomar?". Con
     "Actual": chips "¿Con qué frecuencia tomas?" (Una vez al mes o menos · 2 a 4 veces al mes · 2 a 3 veces por
-    semana · 4 o más veces por semana), casilla "Sobre todo fines de semana", chips "En un día que tomas, ¿cuántas
+    semana · 4 o más veces por semana), chips «Sí» / «No» para "Sobre todo fines de semana" (tocar el elegido lo
+    deja sin contestar; era una casilla hasta la revisión, R14), chips "En un día que tomas, ¿cuántas
     bebidas?" (1 o 2 · 3 o 4 · 5 o 6 · 7 a 9 · 10 o más) con la ayuda "Una bebida: una cerveza, una copa de vino o
     un trago de tequila, ron u otro destilado.", chips "¿Cada cuándo tomas 6 o más bebidas en una sola ocasión?"
     (Nunca · Menos de una vez al mes · Cada mes · Cada semana · A diario o casi).

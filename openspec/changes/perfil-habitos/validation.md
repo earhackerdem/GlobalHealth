@@ -1,8 +1,9 @@
 # Validación — hábitos: sustancias y humo, Story C1 (para Saúl Pérez)
 
-Guion no técnico. Necesitas la app corriendo con esta rama: `make up` y luego `docker compose up -d --build backend`
-(hay una migración nueva; `make up` la aplica). Entra con tu cuenta y ve a **"Mi perfil médico"** en el menú
-lateral. Los ejemplos son solo ejemplos: contesta lo que quieras.
+Guion no técnico. Necesitas la app corriendo con esta rama, en este orden: `docker compose build backend` y luego
+`make up` (hay una migración nueva, y `make up` la aplica dentro de la imagen que ya está construida: si la imagen es
+la vieja, la migración no existe y "Mi perfil médico" falla). Entra con tu cuenta y ve a **"Mi perfil médico"** en
+el menú lateral. Los ejemplos son solo ejemplos: contesta lo que quieras.
 
 ## Qué cambia, en una frase
 

@@ -27,3 +27,25 @@ Números en `openspec/changes/perfil-habitos/evidence.md`.
 
 ## Deuda
 Ver evidence.md § Deuda.
+
+## Revisión (ronda 1) y apply
+- `/epe-4-review` con 5 lentes: 26 hallazgos tras deduplicar, todos reproducidos por validadores distintos. 23
+  confirmados (3 medios: R1, R4, R5), R15 dudoso, R16 falso positivo, R3 descartado. Comentarios FINDER y VALIDATOR
+  en el PR #30.
+- **Gate:** Saúl Pérez aprobó "según tu recomendación": bloques 1 y 2 aplicados, R1 dentro de este PR aunque toca
+  `useAuth.ts` (fuera del plan; ampliación registrada en design.md § Qué se toca), R14 como chips «Sí» / «No»
+  (D18), y a deuda R15, R19, R20, R21 y R23. R16 y R3 se cierran (🔒). Tres veredictos en `memory/closed/`.
+- **R1 (privacidad):** cerrar sesión no vaciaba la caché de consultas. Otro paciente que entraba sin recargar veía
+  los hábitos del anterior y podía guardarlos en su perfil, y veía también el correo anterior en el menú. La causa
+  es anterior a este cambio y la pantalla de hábitos la convirtió en una escritura. Ahora `queryClient.clear()`
+  corre al cerrar y al iniciar sesión. El e2e de regresión falla sin el fix (B ve "Actual" marcado) y pasa con él;
+  lo comprobó también el orquestador.
+- Dos fixers con archivos disjuntos, sin autoridad para descartar; aplicaron los 16 hallazgos y no rebotaron
+  ninguno. Los mutantes `nosort`, `ge` y `utc` ahora mueren.
+- Efecto de R2, avisado por el fixer back: una fila ilegible se lee vacía, y si el paciente guarda la reemplaza.
+  El PUT ya reemplazaba sin leer, así que no es un camino nuevo; es el mismo criterio que el historial (S4).
+- Verificación tras el apply: backend 303 passed (cobertura 96 %); e2e del cambio 115 passed; suite completa en 3
+  corridas: 217, 216 + 1 (`reset-password.spec.ts:90`) y 215 + 2 (ese y `login.spec.ts:87`). El de login falla al
+  esperar el saludo, antes del cierre de sesión, con la misma tasa que antes del fix (1 de 3), y pasa 10/10 solo.
+- El hook `lint.py` volvió a marcar el `except A, B:` (PEP 758) de `profile.py:220` con el Python 3.9 del sistema;
+  ya está en el inbox del template.
