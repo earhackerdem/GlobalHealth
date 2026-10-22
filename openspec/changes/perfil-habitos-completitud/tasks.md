@@ -48,5 +48,5 @@ are `single`. `make tdd-check` requires one `test:` commit per `test→impl` gro
   `product/prototipos/perfil-secciones.html`.
 - [x] 3.2 **Exploración en Chrome por el agente.** Guardar a medias, "No recuerdo" en cada bloque, escribir sobre
   "No recuerdo", corregir un error, lo guardado a medias, doble clic, 580 px. Verificación: tabla en evidence.md.
-- [ ] 3.3 **Entregables.** `evidence.md`, `validation.md` (no técnico, para Saúl Pérez), el journal y el PR.
+- [x] 3.3 **Entregables.** `evidence.md`, `validation.md` (no técnico, para Saúl Pérez), el journal y el PR.
 - [ ] 3.4 **Revisión y archivo** (`/epe-4-review` → `/epe-5-apply` → `/epe-6-archive` como último commit del PR).
