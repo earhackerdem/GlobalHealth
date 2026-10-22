@@ -178,7 +178,14 @@ foco, para que un doble clic no mande dos veces lo mismo.
 #### Scenario: Mientras guarda no se cambia nada ni se pregunta al salir (C-13)
 - **GIVEN** un paciente que tocó "Guardar", y el guardado sigue en curso
 - **WHEN** intenta elegir otra opción, y después sale por "‹ Mi perfil médico" y va al "Expediente"
-- **THEN** la opción no cambia, sale sin ninguna pregunta, y al terminar el guardado sigue en el "Expediente"
+- **THEN** la opción no cambia, no ve ninguna pregunta, y en cuanto el guardado termina llega al "Expediente"; al
+  volver a abrir sus hábitos ve lo que guardó
+
+#### Scenario: Un rechazo al salir se queda a la vista (C-13)
+- **GIVEN** un paciente que tocó "Guardar" y, mientras guarda, intenta volver a "Mi perfil médico"
+- **WHEN** el sistema rechaza el guardado (por ejemplo, una edad mayor que la actual tras corregir su fecha de
+  nacimiento en otra pestaña)
+- **THEN** se queda en la pantalla de hábitos con el error junto a su campo, y nada se guarda
 
 #### Scenario: Cancelar descarta (C-13)
 - **GIVEN** un paciente con tabaco "Nunca" guardado, que abre la pantalla y cambia a tabaco "Actual" con 5 cigarros

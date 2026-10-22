@@ -137,8 +137,9 @@ Sin defectos dentro del plan.
   (TanStack Router); al elegir "Seguir editando" vuelve a `/perfil/habitos`.
 - **Los chips no tienen una propiedad para quedar no disponibles:** `HabitsForm.tsx` les pone `aria-disabled` desde
   fuera (`ChipGroup.tsx` no se toca en este cambio). Darle esa propiedad va con la fila de D20 de la tarea de deudas.
-- **Un error del `PUT` que llega con la pantalla cerrada o con otra cuenta** todavía muestra el aviso genérico de error
-  (sin datos) a quien esté usando la app; el contrato de la ronda 2 solo cubre el éxito.
+- **Un error del `PUT` que llega con otra cuenta** (cerrar sesión e iniciar otra mientras guarda): un error que no es
+  422 muestra el aviso genérico (sin datos) a quien esté usando la app; un 422 no muestra nada. *Corregido en la ronda
+  3 (R3-3): antes decía que siempre salía el aviso genérico. Con la misma sesión, salir ya espera al guardado.*
 - **Sin guardado automático** (Decision 8): en el celular, si el navegador cierra la pestaña en segundo plano, lo no
   guardado se pierde sin aviso.
 - **Flake heredado** `login.spec.ts:87` (en el inbox de deudas).
