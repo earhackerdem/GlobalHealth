@@ -17,6 +17,7 @@
 | Suite Playwright COMPLETA como CI tras el grupo 4 (`PLAYWRIGHT_BASE_URL=http://localhost:8000`, imagen reconstruida) | **243 passed, 0 failed**; tras el arreglo del foco (imagen reconstruida otra vez) **245 passed, 0 failed** | 0 | 0 | ✅ |
 | **Ronda 2.** Re-corrido por el orquestador: `bunx playwright test tests/profile-habits.spec.ts tests/profile.spec.ts tests/profile-history.spec.ts` (chromium + s26-ultra) · `tsc` · `biome` | **151 passed, 0 failed** · 0 errores · 104 archivos sin cambios; suite COMPLETA como CI (imagen reconstruida) **253 passed, 0 failed** | 0 | 0 | ✅ |
 | **Ronda 3.** Re-corrido por el orquestador: `bunx playwright test tests/profile-habits.spec.ts tests/profile.spec.ts tests/profile-history.spec.ts` (chromium + s26-ultra) · `tsc` · `biome` | **153 passed, 0 failed** · 0 errores · 104 archivos sin cambios; suite COMPLETA como CI (imagen reconstruida) **255 passed, 0 failed** | 0 | 0 | ✅ |
+| **Ronda 4.** Re-corrido por el orquestador: los tres e2e de perfil (chromium + s26-ultra) · `-g "fila 31" --repeat-each=3` · `tsc` · `biome` | **159 passed, 0 failed** · 19 passed en las repeticiones (31b corre 5 intentos de la carrera cada vez) · 0 errores; suite COMPLETA como CI (imagen reconstruida) **261 passed, 0 failed** | 0 | 0 | ✅ |
 | Suite Playwright COMPLETA como CI (primera entrega) (`PLAYWRIGHT_BASE_URL=http://localhost:8000`, imagen reconstruida con esta rama), 2 corridas | **239 passed** · 238 passed + 1 failed: `login.spec.ts:87`, el heredado del saludo contra el redirect de la home (en el inbox de deudas) | 1 corrida con el heredado | 0 | 🟡 inestabilidad heredada |
 
 ## Red before green
@@ -31,6 +32,7 @@
 | Foco tras "Seguir editando" (defecto de la exploración) | `-g "fila 17"` → **1 failed por proyecto** (fila 17b: foco en `<body>` tras "Seguir editando" y Escape) | 02c1d04 | 33/33 por proyecto (verde 6d43be9) | ✓ red 02c1d04, tests sin cambios hasta el verde |
 | Ronda 2 (R2-1…R2-5, R2-7) | `bunx playwright test tests/profile-habits.spec.ts` → **4 failed, 33 passed por proyecto**: falta "Guardando…" (fila 21), el guardado en camino cruza de cuenta (27), los chips no se bloquean (28), el foco no vuelve al título (29). La fila 26 (solo un número) ya pasaba | 97ab624 | 37/37 por proyecto (verde 8de47e1) | ✓ red 97ab624, tests sin cambios hasta el verde |
 | Ronda 3 (R3-1…R3-4) | `bunx playwright test tests/profile-habits.spec.ts` → **2 failed, 36 passed por proyecto**: la fila 28 (chips sin atenuar; salir no espera) y la 30 (el 422 se pierde al salir). La 27 endurecida ya pasaba; el tester comprobó que falla si la respuesta se escribe en la caché | 45b73b3 | 38/38 por proyecto (verde b09397f) | ✓ red 45b73b3, tests sin cambios hasta el verde |
+| Ronda 4 (R4-1, R4-3, R4-6) | `-g "fila 31"` → **2 failed por proyecto**: 31b (la carrera de atrás + 401: la página se quedaba en la app o llegaba a `/login` sin recarga) y 31c (foco fuera del título a 384 px). 31a ya pasaba | fc26977 | 41/41 por proyecto (verde c1ce950) | ✓ red fc26977, tests sin cambios hasta el verde |
 
 ## Criterio → prueba
 
@@ -61,6 +63,7 @@
 | C-13 Un guardado en camino no llega a otra cuenta (R2-1) | e2e fila 27 (cierre e inicio de sesión reales en la misma pestaña) | ✅ |
 | C-13 Mientras guarda no se cambia nada, y salir espera sin preguntar (R2-2, R2-3, R3-1, R3-4) | e2e fila 28 | ✅ |
 | C-13 Un rechazo al salir se queda a la vista (R3-3) | e2e fila 30 | ✅ |
+| C-13 Atrás del navegador mientras guarda y el guardado falla (R4-1, R4-3, R4-6) | e2e filas 31a, 31b (5 intentos), 31c | ✅ |
 | C-13 El foco vuelve al título si su elemento ya no existe (R2-4) | e2e fila 29 (384 px, menú lateral) | ✅ |
 | C-14 Fuera de escala al salir del campo | e2e fila 23 (horas, edad mayor que la actual, inicio > fin en vapeador y leña, "12a"; 0 `PUT`) + grep de límites | ✅ |
 | C-14 La marca sigue mientras el campo está a la vista | e2e fila 24 | ✅ |

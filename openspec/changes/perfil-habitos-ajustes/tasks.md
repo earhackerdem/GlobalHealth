@@ -125,8 +125,8 @@ Aprobada por Saúl Pérez el 2026-10-21 ("procede con tu recomendación"): salir
 Aprobada por Saúl Pérez el 2026-10-21 ("aprobado"): R4-1, R4-3, R4-6 y los documentos (R4-5, R4-7, R4-8); R4-2 y R4-4 a
 deuda. Regla de cierre aprobada: si la ronda 5 trae solo hallazgos bajos, quedan como deuda registrada y se archiva.
 
-- [ ] 9.1 **Tester.** Fila 31 del test plan. Commit `test:` solo.
-- [ ] 9.2 **Implementer.** `HabitsForm.tsx`: resolver la salida retenida solo con el mismo token; foco al título si
+- [x] 9.1 **Tester.** Fila 31 del test plan. Commit `test:` solo.
+- [x] 9.2 **Implementer.** `HabitsForm.tsx`: resolver la salida retenida solo con el mismo token; foco al título si
   la salida se cancela y su elemento ya no existe.
 - [ ] 9.3 **Orquestador.** Rojo y verde, `make tdd-check`, evidencia, suite completa, ronda 5.
 

@@ -83,3 +83,11 @@ Ver evidence.md § Deuda.
 - El agente objetó que el guardado en camino ya iba por la tercera ronda de bordes y propuso una regla simple: salir
   mientras guarda espera a que termine. Saúl Pérez aprobó ("procede con tu recomendación"). Rojo 45b73b3, verde
   b09397f; la fila 27 endurecida (R3-2); chips atenuados (R3-4).
+
+## Ronda 4 de la revisión (2026-10-21)
+- 2 finders y 1 validador sobre 247f6ec..fd6acf7: 8 hallazgos, todos bajos (5 confirmados, 2 en parte, 1 dudoso).
+- Saúl Pérez aprobó ("aprobado"): R4-1 (la salida retenida solo se resuelve con la misma sesión), R4-3 (foco al título),
+  R4-6 (prueba con atrás) y los documentos; R4-2 a deuda (⏸️) y R4-4 cerrado (🔒). También la regla de cierre: si la
+  ronda 5 trae solo bajos, quedan como deuda registrada y se archiva.
+- Rojo fc26977, verde c1ce950. Para el foco, el implementer espera a que el menú lateral termine de cerrarse (con
+  `MutationObserver`, máximo 1 s), porque el `PUT` puede fallar durante la animación de cierre.
