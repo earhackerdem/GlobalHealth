@@ -324,17 +324,17 @@ async function expectPressed(locator: Locator, pressed: boolean) {
  * Error junto a su campo: aria-invalid y aria-describedby apunta a un
  * elemento con el mensaje exacto. `focused: true` (al tocar "Guardar") exige
  * el foco en el campo; `false` (al salir del campo) exige que el error NO se
- * haya llevado el foco de vuelta.
+ * haya llevado el foco de vuelta; `"any"` no mira el foco.
  */
 async function expectFieldError(
   page: Page,
   field: Locator,
   message: string,
-  { focused = true }: { focused?: boolean } = {},
+  { focused = true }: { focused?: boolean | "any" } = {},
 ) {
   await expect(field).toHaveAttribute("aria-invalid", "true")
-  if (focused) await expect(field).toBeFocused()
-  else await expect(field).not.toBeFocused()
+  if (focused === true) await expect(field).toBeFocused()
+  else if (focused === false) await expect(field).not.toBeFocused()
   await expect
     .poll(async () => {
       const describedBy = (await field.getAttribute("aria-describedby")) ?? ""
@@ -1356,7 +1356,7 @@ test.describe("Perfil médico — hábitos (perfil-habitos, grupo 2)", () => {
     expect(dialogs).toContain("beforeunload")
   })
 
-  test("fila 27 (C-13; R2-1) un guardado en camino no cruza de cuenta en la misma pestaña: A elige tabaco 'Actual' con 20 y 'Guardar' (PUT retenido); 'Cerrar sesión'; B entra por el formulario; al soltar el PUT, B no es llevado a /perfil ni ve 'Hábitos guardados'; B abre 'Hábitos' sin 'Actual' ni 20 y su GET sigue vacío", async ({
+  test("fila 27 (C-13; R2-1, R3-2) un guardado en camino no cruza de cuenta en la misma pestaña: A elige tabaco 'Actual' con 20 y 'Guardar' (PUT retenido); 'Cerrar sesión'; B entra por el formulario con su GET de hábitos demorado; al soltar el PUT de A, B no es llevado a /perfil ni ve 'Hábitos guardados'; con el GET de B todavía demorado, su tarjeta no dice 'Con datos' y su formulario no muestra 'Actual' ni 20; el GET de B sigue vacío", async ({
     page,
     request,
   }) => {
@@ -1379,6 +1379,25 @@ test.describe("Perfil médico — hábitos (perfil-habitos, grupo 2)", () => {
     await page.getByRole("menuitem", { name: "Cerrar sesión" }).click()
     await page.waitForURL(/\/login/)
 
+    // Desde el login de B, cada GET de hábitos queda demorado hasta soltarlo
+    // (los PUT siguen a la retención de arriba). Mientras está demorado, lo
+    // único que la pantalla puede mostrar de "Hábitos" es lo que haya en su
+    // caché: si escribiera ahí la respuesta del PUT de A, B la vería ahora.
+    let releaseGet = () => {}
+    const getHeld = new Promise<void>((resolve) => {
+      releaseGet = resolve
+    })
+    let heldGets = 0
+    await page.route("**/api/v1/profile/habits", async (route) => {
+      if (route.request().method() !== "GET") {
+        await route.fallback()
+        return
+      }
+      heldGets++
+      await getHeld
+      await route.continue()
+    })
+
     // B entra por el formulario de la misma pestaña.
     await inAppLogin(page, b.email, b.password)
 
@@ -1392,15 +1411,27 @@ test.describe("Perfil médico — hábitos (perfil-habitos, grupo 2)", () => {
     await expect(newToast(page, "Hábitos guardados")).toHaveCount(0)
     expect(puts).toHaveLength(1)
 
-    // B abre sus hábitos sin recargar: nada de A.
+    // Con el GET de B todavía demorado, "Mi perfil médico" no dice "Con
+    // datos" en la tarjeta "Hábitos": sin nada en la caché, la página espera
+    // al GET; con la respuesta de A en la caché, saldría con "Con datos" (y
+    // sin pedir nada). Por eso esta marca va antes de exigir el GET demorado.
     await backToProfileViaMenu(page)
+    await page.waitForTimeout(NO_PUT_WINDOW_MS)
+    await expect(card(page).filter({ hasText: "Con datos" })).toHaveCount(0)
+    expect(heldGets).toBeGreaterThan(0)
+
+    // Se suelta el GET de B: llegan sus hábitos, vacíos; ni la tarjeta ni el
+    // formulario muestran lo de A.
+    releaseGet()
+    await expect(card(page)).toBeVisible()
+    await expect(card(page)).not.toContainText("Con datos")
     await reopen(page)
     await expectPressed(chip(page, TOBACCO, "Actual"), false)
     await expect(numberField(page, CIGARETTES)).toHaveCount(0)
     expect((await getHabits(b.api)).tobacco ?? null).toBeNull()
   })
 
-  test("fila 28 (C-13; R2-2, R2-3) mientras guarda no se cambia nada ni se pregunta al salir: con el PUT retenido, el chip 'Actual' de leña con aria-disabled y su clic no cambia nada; 'Cigarros al día' de solo lectura; '‹ Mi perfil médico' llega a /perfil sin diálogo; ir a 'Expediente'; al soltar sigue en /expediente y el GET trae lo guardado", async ({
+  test("fila 28 (C-13; R2-2, R2-3, R3-1, R3-4) mientras guarda no se cambia nada, y salir espera sin preguntar: con el PUT retenido, el chip 'Actual' de leña con aria-disabled, atenuado (opacidad < 1) y su clic no cambia nada; 'Cigarros al día' de solo lectura; el menú → 'Expediente': sin diálogo y la URL sigue en /perfil/habitos mientras el PUT está retenido; al soltarlo, /expediente con 'Hábitos guardados' y el GET trae lo guardado; reabrir 'Hábitos' muestra lo guardado", async ({
     page,
     request,
   }) => {
@@ -1415,9 +1446,14 @@ test.describe("Perfil médico — hábitos (perfil-habitos, grupo 2)", () => {
     await page.getByRole("button", { name: "Guardar", exact: true }).click()
     await expect.poll(() => puts.length).toBe(1)
 
-    // Las preguntas no aceptan cambios mientras guarda.
+    // Las preguntas no aceptan cambios mientras guarda, y se ven atenuadas.
     const woodCurrent = chip(page, WOOD, "Actual")
     await expect(woodCurrent).toHaveAttribute("aria-disabled", "true")
+    await expect
+      .poll(() =>
+        woodCurrent.evaluate((el) => Number(getComputedStyle(el).opacity)),
+      )
+      .toBeLessThan(1)
     await expectPressed(woodCurrent, false)
     await woodCurrent.click({ force: true })
     await page.waitForTimeout(300)
@@ -1427,32 +1463,80 @@ test.describe("Perfil médico — hábitos (perfil-habitos, grupo 2)", () => {
     await expect(cigarettes).not.toBeEditable()
     await expect(cigarettes).toHaveValue("20")
 
-    // Salir no pregunta.
+    // Al "Expediente" por la navegación de la app: sin pregunta, y la salida
+    // espera al guardado (la URL no cambia mientras el PUT está retenido).
     const dialogs = trackBrowserDialogs(page)
-    await backLink(page).click()
-    await page.waitForURL(PROFILE_URL)
-    await expectNoLeaveDialog(page)
-
-    // Al "Expediente" por la navegación de la app.
+    await markShownToasts(page)
     const expedienteLink = page.getByRole("link", {
       name: "Expediente",
       exact: true,
     })
     await revealInSidebar(page, expedienteLink)
     await expedienteLink.click()
-    await page.waitForURL(/\/expediente/)
+    await page.waitForTimeout(NO_PUT_WINDOW_MS)
+    await expectNoLeaveDialog(page)
+    await expect(page).toHaveURL(HABITS_URL)
 
-    // Al soltar el PUT sigue en el "Expediente" y lo guardado llegó.
+    // Al soltar el PUT: llega al "Expediente" (no a /perfil) con el aviso.
     const putResponse = await hold.releaseAndWait()
     expect(putResponse.status()).toBe(200)
+    await page.waitForURL(/\/expediente/)
+    await expect(newToast(page, "Hábitos guardados")).toBeVisible()
     await page.waitForTimeout(NO_PUT_WINDOW_MS)
     await expect(page).toHaveURL(/\/expediente/)
+    await expectNoLeaveDialog(page)
     expect(dialogs).toEqual([])
     expect(puts).toHaveLength(1)
     const saved = await getHabits(api)
     expect(saved.tobacco?.status).toBe("current")
     expect(saved.tobacco?.cigarettes_per_day).toBe(20)
     expect(saved.wood_smoke ?? null).toBeNull()
+
+    // Reabrir "Hábitos" desde la tarjeta (sin recargar) muestra lo guardado.
+    await backToProfileViaMenu(page)
+    await reopen(page)
+    await expectPressed(chip(page, TOBACCO, "Actual"), true)
+    await expect(numberField(page, CIGARETTES)).toHaveValue("20")
+    await expectPressed(chip(page, WOOD, "Actual"), false)
+  })
+
+  test("fila 30 (C-13; R3-3) un rechazo al salir se queda a la vista: fecha de nacimiento cambiada por la API después de abrir; alcohol 'Lo dejé' con 40 → 'Guardar' (PUT retenido) → '‹ Mi perfil médico' → al soltar, 422: sigue en /perfil/habitos con 'La edad no puede ser mayor que tu edad actual' junto al campo; nada guardado", async ({
+    page,
+    request,
+  }) => {
+    const api = await freshPatient(page, request)
+    await openHabitsFromProfile(page)
+    // Cargó sin fecha de nacimiento (como R9): solo el servidor rechaza 40
+    // con 36 años.
+    await setAge36(api)
+    const puts = trackHabitPuts(page)
+    const hold = await holdFirstHabitsPut(page)
+
+    await chip(page, ALCOHOL, "Lo dejé").click()
+    const quitAge = numberField(page, ALCOHOL_QUIT_AGE)
+    await quitAge.fill("40")
+    await page.getByRole("button", { name: "Guardar", exact: true }).click()
+    await expect.poll(() => puts.length).toBe(1)
+
+    // Mientras guarda, intenta volver a "Mi perfil médico".
+    await backLink(page).click()
+
+    // El servidor lo rechaza: se queda en la pantalla con el error a la vista.
+    const putResponse = await hold.releaseAndWait()
+    expect(putResponse.status()).toBe(422)
+    await page.waitForTimeout(NO_PUT_WINDOW_MS)
+    await expect(page).toHaveURL(HABITS_URL)
+    await expect(quitAge).toBeVisible()
+    await expect(quitAge).toHaveValue("40")
+    await expectFieldError(
+      page,
+      quitAge,
+      "La edad no puede ser mayor que tu edad actual",
+      { focused: "any" },
+    )
+    expect(puts).toHaveLength(1)
+    const saved = await getHabits(api)
+    expect(saved.alcohol ?? null).toBeNull()
   })
 
   test("fila 29 (C-13; R2-4) el foco vuelve al título si su elemento ya no existe: a 384 px, con un cambio, menú lateral → 'Mi perfil médico' → diálogo → 'Seguir editando' → foco en el título 'Hábitos'", async ({
