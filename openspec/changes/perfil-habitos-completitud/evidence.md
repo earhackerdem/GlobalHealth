@@ -102,3 +102,8 @@ macOS, Docker Desktop (API, BD y BD de prueba de `make up`), Vite `localhost:517
   Correrla en `click`/`focusin` quitaría la carrera de raíz (anotado por el implementer).
 - El estrés de la C-17 en Vite no detecta esta clase de carrera; solo la suite completa contra `:8000` la mostró.
 - `login.spec.ts:87` sigue intermitente (heredado, en el inbox de deudas).
+- ⏸️ F de la revisión ronda 1: las preguntas que una respuesta vuelve obligatorias no se marcan (`aria-required`, `*`);
+  instancia de R8 (`memory/closed/2026-10-22-f-obligatorias-sin-marcar-habitos.md`).
+- ⏸️ Ronda 2: seis hallazgos bajos de documentos (Krosnick p. 384 telefónica, disparador de "Re-check if", etiqueta
+  `[INFERENCE]`, universo de `CIGNOW_A`, inventario de pruebas citado sin actualizar, números del journal)
+  (`memory/closed/2026-10-22-ronda-2-de-perfil-habitos-completitud.md`).

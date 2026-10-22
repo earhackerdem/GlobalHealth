@@ -1,0 +1,12 @@
+---
+date: 2026-10-22
+state: deferred
+anchor: journal: 2026-10-22 · perfil-habitos-completitud (C-15…C-17)
+---
+Ronda 2 de perfil-habitos-completitud (PR #33, diff 0c2615f..b47ae9d), seis hallazgos bajos, todos de documentos: R2-1 `memory/research/habitos.md:107-109` y `design.md:137-139` dicen que ofrecer la opción "a la vista" sube la tasa, citando Krosnick 2002 p. 384, que fue telefónica con la opción leída (sería otra analogía); R2-2 el disparador nuevo de "Re-check if" (un ítem con claramente más "No recuerdo" que los demás) no detecta a quien lo marca en todo, que sube todos a la vez: mejor una proporción por paciente; R2-3 la etiqueta `[INFERENCE]` (5 lugares) no es del vocabulario de la casa (`[VERIFIED]` / `[OPINION/HYPE]` / `NOT VERIFIED`; `mascota-color.md:17` usa `[OPINION]`); R2-4 `design.md:100` y `product/dominio.md:413` citan `CIGNOW_A` sin su universo (solo quien fuma a diario) ni que los dos porcentajes son de poblaciones distintas; R2-5 inventario de pruebas citado sin actualizar tras la ronda 1 (`evidence.md` "C-17 (dos pruebas)" ya son tres, fila de "solo en lo que pasó" cita `OUT_OF_SCALE_CASES`; `design.md` test plan filas 2, 8, 11); R2-6 registros de la ronda 1: el journal dice "2 medios" (se validó uno: B bajó a bajo) y "los mutantes de cada hallazgo mueren" sin la excepción de `places`
+
+**Verdict and why:** Encontrados por los finders de la ronda 2 (fuentes primarias releídas, `git grep`, conteo de pruebas); sin validador, por la regla de cierre que Saúl Pérez aprobó con la ronda 1 ("procede", 2026-10-22): si la ronda 2 trae solo hallazgos bajos, quedan como deuda registrada y se archiva. Ninguno toca el comportamiento de la app ni la cobertura: las cuatro correcciones de pruebas de la ronda 1 quedaron cerradas y deterministas (C-17 con el clic sostenido 30/30 en el código real y 10/10 contra la guarda revertida; 16/16 mutantes de la tabla de obligatorias mueren). Lo que la ronda 2 dijo del cuerpo del PR (números de antes de la ronda 1) se corrigió al cerrar porque el cuerpo del PR debe ser fiel (AGENTS.md), y la corrección del journal va en línea en su sección de cierre. Se pagan en la tarea de deudas (`memory/inbox/2026-10-21-atender-todas-las-deudas-antes-de-la-investigacion-ux.md`), con R2-2 junto a la medición de uso real
+
+**State:** ⏸️ deferred
+
+**Anchor (journal: date · title):** journal: 2026-10-22 · perfil-habitos-completitud (C-15…C-17)

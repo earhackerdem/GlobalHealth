@@ -45,3 +45,18 @@ estudió preguntas de opinión, se aplica por analogía; el umbral del ~1 % de N
 todo, F a deuda, ronda 2 con la misma regla de cierre). Aplicado por dos fixers con archivos disjuntos; ninguno rebotó.
 El fixer de pruebas quitó dos casos fuera de escala que repetían `UNKNOWN_IN_CURRENT_AMOUNT_CASES` (su 422 correcto es de
 dominio). Verde: backend 442, e2e de perfil 203; los mutantes de cada hallazgo mueren.
+
+*Corrección (ronda 2, R2-6):* de los dos medios de la ronda 1 se validó uno (A); B bajó a bajo. Los mutantes mueren
+todos salvo `places` sin requerir, inalcanzable en pantalla.
+
+## Revisión ronda 2 y cierre
+Dos finders sobre el diff de la ronda 1: las correcciones de pruebas cerradas y deterministas (C-17 con el clic sostenido
+30/30, 10/10 contra la guarda revertida; 16/16 mutantes de la tabla de obligatorias mueren, el `expectNoPut` es el único
+que atrapa un cliente que manda el `PUT` igual). Seis hallazgos bajos, todos de documentos (Krosnick p. 384 fue
+telefónica; el disparador de "Re-check if" no ve a quien marca todo; `[INFERENCE]` no es etiqueta de la casa;
+`CIGNOW_A` sin su universo; inventario de pruebas citado sin actualizar; estos números del journal). Por la regla de
+cierre aprobada por Saúl Pérez, deuda registrada (`memory/closed/2026-10-22-ronda-2-de-perfil-habitos-completitud.md`) y
+archivo. El cuerpo del PR se puso al día (442 backend, 203 e2e de perfil).
+
+**Convergencia:** ronda 1 medio → ronda 2 bajo (documentos). Lección: la regla de cierre decidida antes de la primera
+ronda ahorró una tercera.
