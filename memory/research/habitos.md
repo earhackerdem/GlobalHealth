@@ -64,3 +64,39 @@
 - **Confidence:** [NOT VERIFIED en loinc.org] el texto LOINC (leído completo en un agregador, findacode, no en la
   fuente primaria); [NOT VERIFIED] el origen NSDUH de PhenX 30202 (solo el resultado del buscador).
 - **Re-check if:** se diseña un aviso FR-021 sobre vapeo o alcohol, o aparece un instrumento mexicano validado.
+
+## "No recuerdo" en preguntas de hábitos (verificado 2026-10-22) <a id="no-recuerdo"></a>
+- **Fact (encuestas):** las encuestas de referencia separan "no sabe" de "rechazó", "sin respuesta" y "no aplica", con
+  códigos fuera del rango de la respuesta. NHIS 2024: edad de inicio del tabaco (`SMKAGE_A`) 99 = Don't Know, 1.03 %
+  de los casos; cigarros al día (`CIGNOW_A`) 0.40 %; años desde que dejó 0.64 %. NSDUH 2023: 994 = DON'T KNOW, 997 =
+  REFUSED, 998 = BLANK, 999 = LEGITIMATE SKIP; edad del primer cigarro DK 0.14 %. NHIS y BRFSS los codifica el
+  entrevistador ("DO NOT READ"); en la versión web de NCHS RSS-8 el "Don't know" solo aparece en los ítems que lo
+  incluyen, por ejemplo uno de recuerdo, seguido de "What is your best guess…?".
+- **Fact (AUDIT):** el manual de la OMS (Babor et al. 2001) no tiene opción "no sé" en ningún ítem; la puntuación suma
+  todas las respuestas, y el formato autoadministrado "allowing only specific choices" reduce la incertidumbre. La guía
+  VA (2004) deja pendiente un AUDIT-C sin completar; no lo calcula con faltantes.
+- **Fact (estándares):** HL7 FHIR CodeSystem data-absent-reason: `asked-unknown` "The source was asked but does not know
+  the value", `asked-declined`, `not-applicable`, `unknown`. Questionnaire R5: con `enableWhen`, `required` solo aplica
+  si la condición se cumple. LOINC 2.82: `LA12688-0` "Don't know", `LA4489-6` "Unknown".
+- **Fact (metodología):** ofrecer "no sé" atrae más a quien contesta por escrito o con poco esfuerzo y no mejora la
+  calidad de los datos (Krosnick et al. 2002, POQ 66:371-403); lo que menos faltantes dejó en línea fue no ofrecerlo y
+  repreguntar con amabilidad (de Leeuw, Hox y Boevé 2016, resumen).
+- **Fact (México):** la NOM-004-SSA3-2012 (6.1.1) pide en el interrogatorio el uso de tabaco, alcohol y otras
+  sustancias, pero no dice cómo registrar un dato desconocido.
+- **Source:** NHIS 2024 adult codebook https://ftp.cdc.gov/pub/Health_Statistics/NCHS/Dataset_Documentation/NHIS/2024/adult-codebook.pdf
+  · NSDUH 2023 codebook https://www.samhsa.gov/data/system/files/media-puf-file/nsduh-2023-ds0001-info-codebook_v2.pdf
+  · BRFSS 2024 https://www.cdc.gov/brfss/questionnaires/pdf-ques/2024-BRFSS-Questionnaire-508.pdf · NCHS RSS-8
+  https://www.cdc.gov/nchs/data/rss/round8/questionnaire.pdf · AUDIT (OMS 2001) https://www.paho.org/sites/default/files/Auditmanual_ENG.pdf
+  · VA https://www.va.gov/vdl/documents/Clinical/CPRS-Clinical_Reminders/pxrm_1_5_21_setup.pdf · FHIR
+  https://terminology.hl7.org/CodeSystem-data-absent-reason.html y https://hl7.org/fhir/R5/questionnaire-definitions.html
+  · LOINC vía tx.fhir.org `$lookup` · Krosnick 2002 https://web.stanford.edu/dept/communication/faculty/krosnick/docs/2002/2002%20The%20impact%20of%20no%20opinion%20response%20options%20on%20data%20quality-%20N.pdf
+  · de Leeuw 2016 https://research-portal.uu.nl/en/publications/handling-do-not-know-answers-exploring-new-approaches-in-online-a/
+  · NOM-004 https://dof.gob.mx/nota_detalle_popup.php?codigo=5272787 · consulted 2026-10-22
+- **Confidence:** [VERIFIED] todo lo anterior en la fuente primaria, salvo: de Leeuw 2016 (solo el resumen), Poe et al.
+  1988 (citado por Krosnick, no leído), el AUDIT-C de Bush 1998 y el umbral VA ≥5 (fuentes secundarias, no se usan aquí).
+- **Consecuencia para la captura (perfil-habitos-completitud):** "No recuerdo" solo en preguntas sobre el pasado
+  (edades de inicio y fin; cantidades de "Antes"); nunca en las tres preguntas de frecuencia del alcohol ni en lo que
+  describe el presente; guardado como un valor propio, no como un número especial, para que "no recuerda" no se
+  confunda con "sin respuesta" ni contamine un promedio.
+- **Re-check if:** se mide en producción que "No recuerdo" pasa claramente del ~1 % de NHIS en algún ítem (señal de
+  que se usa como salida rápida), o se exporta a FHIR (mapear a `asked-unknown`).
