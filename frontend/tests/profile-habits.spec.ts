@@ -463,6 +463,56 @@ async function holdFirstHabitsPut(page: Page) {
   }
 }
 
+/**
+ * Retiene el primer PUT /profile/habits SIN mandarlo al servidor; los demás
+ * pasan. `respondAndWait(status)` lo contesta con ese estado (servidor
+ * simulado: un 500 o un 401 que la UI no puede provocar) y devuelve la
+ * respuesta que vio la página.
+ */
+async function holdFirstHabitsPutToFulfill(page: Page) {
+  let respond: (status: number) => void = () => {}
+  const answer = new Promise<number>((resolve) => {
+    respond = resolve
+  })
+  let routed = 0
+  await page.route("**/api/v1/profile/habits", async (route) => {
+    if (route.request().method() !== "PUT" || routed++ > 0) {
+      await route.continue()
+      return
+    }
+    const status = await answer
+    await route.fulfill({
+      status,
+      headers: {
+        "access-control-allow-origin": route.request().headers().origin ?? "*",
+      },
+      json: {
+        detail:
+          status === 401 ? "Could not validate credentials" : "Internal error",
+      },
+    })
+  })
+  return {
+    async respondAndWait(status: number) {
+      const response = page.waitForResponse(
+        (res) =>
+          new URL(res.url()).pathname.endsWith("/profile/habits") &&
+          res.request().method() === "PUT",
+      )
+      respond(status)
+      return response
+    },
+  }
+}
+
+/** Un aviso de error (toast.error de sonner) que no estaba ya a la vista. */
+function newErrorToast(page: Page): Locator {
+  return page.locator('[data-sonner-toast][data-type="error"]:not([data-seen])')
+}
+
+/** Veces que fila 31b repite la carrera del 401 (R4-1 fallaba ~30 %). */
+const RACE_RUNS = 5
+
 /** Errores de envío fuera de los campos (el pie del formulario). */
 const formAlert = (page: Page) => page.locator("form").getByRole("alert")
 
@@ -1572,6 +1622,141 @@ test.describe("Perfil médico — hábitos (perfil-habitos, grupo 2)", () => {
     await expect(
       page.getByRole("heading", { name: "Hábitos", exact: true }),
     ).toBeFocused()
+  })
+
+  test("fila 31a (C-13; R4-1, R4-3, R4-6) atrás del navegador mientras guarda y el guardado falla: tabaco 'Actual' con 20 → 'Guardar' (PUT retenido) → atrás del navegador → el PUT responde 500 → la URL vuelve a /perfil/habitos con el formulario y el aviso de error", async ({
+    page,
+    request,
+  }) => {
+    await freshPatient(page, request)
+    await openHabitsFromProfile(page)
+    const puts = trackHabitPuts(page)
+    const hold = await holdFirstHabitsPutToFulfill(page)
+
+    await chip(page, TOBACCO, "Actual").click()
+    const cigarettes = numberField(page, CIGARETTES)
+    await cigarettes.fill("20")
+    await page.getByRole("button", { name: "Guardar", exact: true }).click()
+    await expect.poll(() => puts.length).toBe(1)
+
+    // Atrás del navegador mientras el PUT sigue retenido: sin pregunta.
+    const dialogs = trackBrowserDialogs(page)
+    await markShownToasts(page)
+    await page.goBack()
+    await expectNoLeaveDialog(page)
+
+    // El servidor falla: la salida se cancela y la pantalla sigue con el error.
+    const putResponse = await hold.respondAndWait(500)
+    expect(putResponse.status()).toBe(500)
+    await expect(newErrorToast(page)).toBeVisible()
+    await expect(page).toHaveURL(HABITS_URL)
+    await expect(
+      page.getByRole("heading", { name: "Hábitos", exact: true }),
+    ).toBeVisible()
+    await expectPressed(chip(page, TOBACCO, "Actual"), true)
+    await expect(cigarettes).toHaveValue("20")
+    await page.waitForTimeout(NO_PUT_WINDOW_MS)
+    await expect(page).toHaveURL(HABITS_URL)
+    await expect(
+      page.getByRole("heading", { name: "Hábitos", exact: true }),
+    ).toBeVisible()
+    await expectNoLeaveDialog(page)
+    expect(dialogs).toEqual([])
+    expect(puts).toHaveLength(1)
+  })
+
+  test(`fila 31b (C-13; R4-1) atrás del navegador mientras guarda y la sesión terminó: el PUT responde 401 → llega a /login con recarga completa y sin token (${RACE_RUNS} intentos, cada uno en una página nueva)`, async ({
+    context,
+    request,
+  }) => {
+    test.setTimeout(150_000)
+    for (let run = 1; run <= RACE_RUNS; run++) {
+      await test.step(`intento ${run} de ${RACE_RUNS}`, async () => {
+        const page = await context.newPage()
+        const patient = await consentedPatient(request)
+        await page.goto("/login")
+        await inAppLogin(page, patient.email, patient.password)
+        await openHabitsFromProfile(page)
+        const puts = trackHabitPuts(page)
+        const hold = await holdFirstHabitsPutToFulfill(page)
+
+        await chip(page, TOBACCO, "Actual").click()
+        await numberField(page, CIGARETTES).fill("20")
+        await page.getByRole("button", { name: "Guardar", exact: true }).click()
+        await expect.poll(() => puts.length).toBe(1)
+
+        // Marca del documento actual: una recarga completa la borra.
+        await page.evaluate(() => {
+          ;(window as unknown as Record<string, unknown>).__sameDocument = true
+        })
+        await page.goBack()
+
+        // La sesión terminó durante la espera: manda el cierre de sesión.
+        const putResponse = await hold.respondAndWait(401)
+        expect(putResponse.status()).toBe(401)
+        // Sondeo de la URL (no waitForURL): si la carga de /login se aborta,
+        // el fallo dice dónde quedó la página.
+        await expect(page).toHaveURL(/\/login/, { timeout: 10_000 })
+        await expect
+          .poll(() =>
+            page.evaluate(
+              () =>
+                (window as unknown as Record<string, unknown>).__sameDocument ??
+                null,
+            ),
+          )
+          .toBeNull()
+        await page.waitForTimeout(NO_PUT_WINDOW_MS)
+        await expect(page).toHaveURL(/\/login/)
+        await expect(page.getByTestId("email-input")).toBeVisible()
+        expect(
+          await page.evaluate(() => localStorage.getItem("access_token")),
+        ).toBeNull()
+        expect(puts).toHaveLength(1)
+        await page.close()
+      })
+    }
+  })
+
+  test("fila 31c (C-13; R4-3) a 384 px, salir por el menú lateral mientras guarda y el guardado falla: 'Expediente' → el PUT responde 500 → el foco en el título 'Hábitos'", async ({
+    page,
+    request,
+  }) => {
+    // El menú lateral del celular (s26-ultra): el mismo ancho en los dos
+    // proyectos.
+    await page.setViewportSize({ width: 384, height: 832 })
+    await freshPatient(page, request)
+    await openHabitsFromProfile(page)
+    const puts = trackHabitPuts(page)
+    const hold = await holdFirstHabitsPutToFulfill(page)
+
+    await chip(page, TOBACCO, "Actual").click()
+    await numberField(page, CIGARETTES).fill("20")
+    await page.getByRole("button", { name: "Guardar", exact: true }).click()
+    await expect.poll(() => puts.length).toBe(1)
+
+    // Sale por "Expediente" del menú lateral mientras el PUT está retenido.
+    await markShownToasts(page)
+    const expedienteLink = page.getByRole("link", {
+      name: "Expediente",
+      exact: true,
+    })
+    await expect(expedienteLink).toBeHidden()
+    await page.getByRole("button", { name: /barra lateral/ }).click()
+    await expect(expedienteLink).toBeVisible()
+    await expedienteLink.click()
+    await expectNoLeaveDialog(page)
+    await expect(page).toHaveURL(HABITS_URL)
+
+    // El servidor falla: la salida se cancela y el foco va al título.
+    const putResponse = await hold.respondAndWait(500)
+    expect(putResponse.status()).toBe(500)
+    await expect(newErrorToast(page)).toBeVisible()
+    await expect(page).toHaveURL(HABITS_URL)
+    await expect(
+      page.getByRole("heading", { name: "Hábitos", exact: true }),
+    ).toBeFocused()
+    expect(puts).toHaveLength(1)
   })
 
   test("fila 14 la tarjeta 'Hábitos' abre /perfil/habitos con el cuestionario y 'Guardar'", async ({
