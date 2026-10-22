@@ -992,16 +992,21 @@ function HabitsForm() {
    * as it is then (a chip pressed meanwhile may have hidden the pair), and
    * the focus stays where it went. What is missing is not checked here
    * (Decision 4), but a "Contesta esta pregunta" from "Guardar" stays while
-   * the box is still unanswered.
+   * the box is still unanswered. The pair's box, if it has the focus, gets
+   * no new error: it is being typed in (C-17), and a refresh held by a press
+   * may run after typing there began (the timer can lag behind the keys).
    */
   const leave = (key: NumberKey) => {
     const refresh = () => {
       const { errors: found, missing } = build()
+      const typingIn = document.activeElement?.id
       setErrors((prev) => {
         const next = { ...prev }
         for (const k of blurKeys(key)) {
-          if (found[k]) next[k] = found[k]
-          else if (!prev[k] || prev[k] !== missing[k]) delete next[k]
+          const typing = k !== key && typingIn === `${idPrefix}-${k}`
+          if (found[k]) {
+            if (!typing || prev[k]) next[k] = found[k]
+          } else if (!prev[k] || prev[k] !== missing[k]) delete next[k]
         }
         return next
       })
