@@ -524,9 +524,11 @@ function buildBody(
  * sent until "Guardar" (Decision 8): one PUT through the mutation, so the
  * 401/403 handling of main.tsx applies. "Guardar" and "Cancelar" are
  * aria-disabled while that PUT is in flight (D20), "Guardar" reads
- * "Guardando…" (R2-5) and the questions take no changes (R2-3); leaving
- * meanwhile does not ask, and its end only touches the screen and the session
- * that sent it (R2-1, R2-2). Leaving a box checks it
+ * "Guardando…" (R2-5) and the questions take no changes, the chips dimmed
+ * like "Guardar" (R2-3, R3-4); leaving meanwhile does not ask but waits for
+ * the PUT, going on after a save and staying after a failure (R3-1, R3-3), and
+ * its end only touches the screen and the session that sent it (R2-1, R2-2).
+ * Leaving a box checks it
  * and its block's start ≤ end without moving the focus; "Guardar" checks
  * everything and moves the focus to the first error (review R5). Leaving the
  * screen with unsaved changes asks first, in the app (useBlocker) and on
@@ -580,8 +582,8 @@ function HabitsForm() {
   const backToProfile = () => navigate({ to: "/perfil" })
 
   // Only refs and the opening values: stable, so the blocker is registered
-  // once. Never while the PUT is in flight (R2-2): leaving then lets it end
-  // on its own.
+  // once. Never while the PUT is in flight (R2-2): leaving then waits for it
+  // instead (`mustWait`), and reloading or closing does not ask.
   const mustAsk = useCallback(
     () =>
       !leaving.current &&
@@ -590,16 +592,38 @@ function HabitsForm() {
       screenOf(draftRef.current) !== opening,
     [opening, openingToken],
   )
+  // Leaving while "Guardar" is in flight, with the session it opened with,
+  // waits for the PUT without asking (R3-1, R3-3): held by the blocker, it goes
+  // on after a save and is called off after a failure. After a change of
+  // session nothing is held.
+  const mustWait = useCallback(
+    () =>
+      !leaving.current && sending.current && currentToken() === openingToken,
+    [openingToken],
+  )
+  // `silent`: the navigation the blocker holds is waiting, not asking (no
+  // dialog). `waiting`: a held navigation the end of the PUT has to resolve.
+  const silent = useRef(false)
+  const waiting = useRef(false)
+  // How the PUT resolved the held navigation; applied once the blocker holds
+  // it (the PUT may end before the blocker reports it).
+  const [heldOutcome, setHeldOutcome] = useState<"go" | "stay" | null>(null)
   // Where the focus was when the leave dialog opened: "Seguir editando"
   // brings it back there (Radix has no trigger to return to).
   const focusBefore = useRef<HTMLElement | null>(null)
   const blockAndRemember = useCallback(() => {
+    const wait = mustWait()
+    silent.current = wait
+    if (wait) {
+      waiting.current = true
+      return true
+    }
     const ask = mustAsk()
     if (ask && document.activeElement instanceof HTMLElement) {
       focusBefore.current = document.activeElement
     }
     return ask
-  }, [mustAsk])
+  }, [mustAsk, mustWait])
   const blocker = useBlocker({
     shouldBlockFn: blockAndRemember,
     enableBeforeUnload: mustAsk,
@@ -612,18 +636,28 @@ function HabitsForm() {
     // Only for the screen and the session that sent it (R2-1, R2-2): after
     // leaving or a change of session the answer is not written into the
     // cache (it could be another account's); ["habits"] is asked again with
-    // the session of that moment, without a toast or a navigation.
+    // the session of that moment, without a toast or a navigation. A leave
+    // held meanwhile goes where it was going instead of /perfil (R3-1).
     onSuccess: (saved) => {
+      const held = waiting.current
+      waiting.current = false
       if (!mounted.current || currentToken() !== openingToken) {
         queryClient.invalidateQueries({ queryKey: ["habits"] })
+        if (held) setHeldOutcome("go")
         return
       }
       leaving.current = true
       queryClient.setQueryData(["habits"], saved)
       showSuccessToast(t("habits.savedToast"))
-      backToProfile()
+      if (held) setHeldOutcome("go")
+      else backToProfile()
     },
+    // A leave held meanwhile is called off: the error stays in sight (R3-3).
     onError: (err) => {
+      if (waiting.current) {
+        waiting.current = false
+        setHeldOutcome("stay")
+      }
       const placed = serverErrors(err, visibleFields(draftRef.current))
       if (placed) {
         setErrors(placed)
@@ -768,8 +802,19 @@ function HabitsForm() {
     backToProfile()
   }
 
-  /** The leave dialog, open while the blocker holds a navigation. */
-  const asking = blocker.status === "blocked"
+  // The held leave, resolved once the blocker holds it and the PUT ended.
+  useEffect(() => {
+    if (!heldOutcome || blocker.status !== "blocked") return
+    setHeldOutcome(null)
+    if (heldOutcome === "go") blocker.proceed()
+    else blocker.reset()
+  }, [heldOutcome, blocker])
+
+  /**
+   * The leave dialog, open while the blocker holds a navigation to ask about
+   * (not one waiting for the PUT).
+   */
+  const asking = blocker.status === "blocked" && !silent.current
   const stay = () => {
     if (blocker.status === "blocked") blocker.reset()
   }
@@ -888,7 +933,13 @@ function HabitsForm() {
       ref={formRef}
       onSubmit={handleSubmit}
       noValidate
-      className="flex flex-col gap-4"
+      // While saving the chips look like "Guardar" (R3-4), from here like
+      // their aria-disabled: ChipGroup stays untouched.
+      className={`flex flex-col gap-4 ${
+        busy
+          ? "[&_fieldset_button]:cursor-not-allowed [&_fieldset_button]:opacity-50"
+          : ""
+      }`}
     >
       <div className="grid gap-1">
         {/* Focusable by script only: where "Seguir editando" leaves the focus
