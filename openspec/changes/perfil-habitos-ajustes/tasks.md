@@ -128,8 +128,8 @@ deuda. Regla de cierre aprobada: si la ronda 5 trae solo hallazgos bajos, quedan
 - [x] 9.1 **Tester.** Fila 31 del test plan. Commit `test:` solo.
 - [x] 9.2 **Implementer.** `HabitsForm.tsx`: resolver la salida retenida solo con el mismo token; foco al título si
   la salida se cancela y su elemento ya no existe.
-- [ ] 9.3 **Orquestador.** Rojo y verde, `make tdd-check`, evidencia, suite completa, ronda 5.
+- [x] 9.3 **Orquestador.** Rojo y verde, `make tdd-check`, evidencia, suite completa, ronda 5.
 
-- [ ] 3.4 **Archivo** (`/epe-6-archive` como último commit del PR, después de la ronda que salga seca):
+- [x] 3.4 **Archivo** (`/epe-6-archive` como último commit del PR; por la regla de cierre de la ronda 4, tras la ronda 5 con solo bajos, registrados como deuda):
   `openspec archive perfil-habitos-ajustes`, fragmento en `changelog.d/`, `.epe/active` a la carpeta archivada.
   Verificación: `openspec validate --specs` limpio.

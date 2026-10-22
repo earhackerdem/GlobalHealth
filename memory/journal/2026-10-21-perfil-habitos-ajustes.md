@@ -91,3 +91,11 @@ Ver evidence.md § Deuda.
   ronda 5 trae solo bajos, quedan como deuda registrada y se archiva.
 - Rojo fc26977, verde c1ce950. Para el foco, el implementer espera a que el menú lateral termine de cerrarse (con
   `MutationObserver`, máximo 1 s), porque el `PUT` puede fallar durante la animación de cierre.
+
+## Ronda 5 y cierre (2026-10-21)
+- 2 finders sobre fd6acf7..1c81af1: solo hallazgos bajos (tres de foco en el respaldo de R4-3, una prueba que falta, dos
+  de documentos). Por la regla de cierre aprobada por Saúl Pérez quedan como deuda (⏸️
+  `memory/closed/2026-10-21-ronda-5-de-perfil-habitos-ajustes.md`) y se archiva el cambio como último commit del PR.
+- Lección para el harness: el guardado en camino produjo bordes en cuatro rondas seguidas (alto → alto → medio → bajos).
+  Una regla de navegación simple decidida en el plan ("mientras guarda, salir espera") habría ahorrado las rondas 2–4.
+- Suite: backend 345 passed (96 %); e2e completa como CI 261 passed.
