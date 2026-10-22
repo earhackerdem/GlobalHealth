@@ -409,8 +409,9 @@ estado, fechas y humo ajeno son lo que los campos estructurados de los expedient
 respuesta elegida pide sus preguntas: con "lo dejé", "antes" o "actual", las edades, las cantidades y, en el alcohol
 actual, las tres del AUDIT-C y "sobre todo fines de semana"; con humo ajeno, dónde y los días. "Guardar" marca lo que
 falta. **"No recuerdo"** es una respuesta propia (FHIR `asked-unknown`), distinta de "sin respuesta", y solo existe en lo
-que pasó: las edades, y los cigarros y las horas de leña con "antes"; el AUDIT-C no la tiene y lo actual se estima
-(research `habitos.md#no-recuerdo`). Lo guardado a medias antes de este cambio se lee igual y se completa al guardar.
+que pasó: las edades, y los cigarros y las horas de leña con "antes"; el AUDIT-C no la tiene, y lo actual se estima
+[INFERENCE] (NHIS 2024: "no sabe" 0.40 % en los cigarros que fuma hoy, `CIGNOW_A`, frente a 1.03 % en la edad de
+inicio, `SMKAGE_A`; research `habitos.md#no-recuerdo`). Lo guardado a medias antes de este cambio se lee igual y se completa al guardar.
 
 ### Trabajo — se suma al Perfil básico (Story C)
 Ronda 7 (Saúl Pérez: "también te preguntan por tu profesión… paso mucho tiempo sentado… hay oficios que implican

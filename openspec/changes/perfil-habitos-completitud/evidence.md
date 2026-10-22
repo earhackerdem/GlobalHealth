@@ -13,6 +13,8 @@
 | Límites escritos a mano: `grep -nE "\b(130\|100\|30\|24\|7)\b" frontend/src/components/Profile/HabitsForm.tsx` | solo `className="w-24"` (ancho); las escalas salen de `zod.gen.ts` (la rama entera de la unión) | — | — | ✅ |
 | Suite Playwright COMPLETA como CI tras el grupo 2 (`PLAYWRIGHT_BASE_URL=http://localhost:8000`, imagen reconstruida), 2 corridas | 280 passed + 3 failed · 281 passed + 2 failed: la C-17 nueva (línea 2394) en las dos plataformas, más el heredado `login.spec.ts:87` en la primera | 0 | 0 | ❌ → defecto, ver abajo |
 | Suite Playwright COMPLETA tras el arreglo 4ba7717 (imagen reconstruida), 2 corridas | **283 passed, 0 failed** en la segunda; en la primera 282 passed + 1 failed: `reset-password.spec.ts:90`, timeout esperando el correo en Mailpit (heredado, `memory/inbox/2026-10-20-fix-aparte-e2e-intermitentes-heredados-admin.md`), que solo pasa 19/19 con `--repeat-each=3` | 0 | 0 | ✅ (🟡 intermitencia heredada ajena a hábitos) |
+| **Revisión ronda 1 (aplicada).** Re-corrido por el orquestador: `cd backend && FASTAPI_ENV=development uv run pytest tests/ -q` · `bunx playwright test tests/profile-habits.spec.ts tests/profile.spec.ts tests/profile-history.spec.ts` (chromium + s26-ultra) · `tsc` · `biome` · `openspec validate --strict` | **442 passed** (hábitos 192: −2 casos fuera de escala duplicados de `UNKNOWN_IN_CURRENT_AMOUNT_CASES`) · **203 passed** · 0 errores · 104 archivos sin cambios · válido | 0 | 0 | ✅ |
+| Mutantes de la ronda 1 (fixer, en el scratchpad): sin límites de cigarros, días o edades; `"unknown"` en el esquema de campos que no lo admiten; la guarda de `leave()` revertida; 9 tablas de obligatorias alteradas | todos mueren (cigarros 2, días 2, edades 10, esquema 7, guarda 3/3, cada fila de la tabla), salvo `places` sin requerir: inalcanzable en pantalla | — | — | ✅ |
 
 ## Red before green
 
@@ -82,6 +84,10 @@ con 36 años y la sesión inyectada en la pestaña.
 | Completar todo y doble clic en "Guardar" | Vuelve a "Mi perfil médico" con lo guardado: `start_age: "unknown"` en alcohol y tabaco, 12 cigarros, fin 30 (GET de la API) |
 | Ancho | `scrollWidth` 500 = ventana: sin desplazamiento lateral |
 | Consola | Sin errores de la app (solo uno de una extensión de Chrome, ajeno) |
+| **Revisión ronda 1, L:** vapeador y leña "Antes" → "Guardar" | Sin guardar; "Contesta esta pregunta o marca «No recuerdo»." en las dos edades del vapeador y en inicio, fin y horas de leña; foco en la edad de inicio del vapeador; 9 "No recuerdo" visibles, cada uno con su nombre |
+| "No recuerdo" en esos cinco y leña a "Actual" → "Guardar" | Los errores se van al marcar; con "Actual" las horas ya no ofrecen "No recuerdo" y piden "Contesta esta pregunta." (el "No recuerdo" que tenían no cuenta) |
+| 3 horas y "Guardar" | Guardado: vapeador `former` con `start_age` y `quit_age` `"unknown"`; leña `current`, `start_age` `"unknown"`, 3 horas, la edad de fin descartada |
+| Lo guardado a medias (GET interceptado en la pestaña, como la fila 7 del e2e: alcohol `quit` con solo 30) | Abre sin errores, 30 en la edad de fin, "No recuerdo" sin marcar; "Guardar" → "Contesta esta pregunta o marca «No recuerdo»." junto a la edad de inicio, foco ahí, sin guardar |
 | Prototipo de producto (`perfil-secciones.html`, servido local) | Intro nueva, chips "No recuerdo" en las edades y en cigarros solo con "Antes"; marcar vacía el número y escribir desmarca; sin errores en consola |
 
 ## Entorno

@@ -191,8 +191,9 @@ function validarTodo(alGuardar) {
   for (const k of vis) {
     if (!alGuardar && !tocados.has(k)) continue;
     const m = validarCampo(k); if (m) { e[k] = m; continue; }
-    // C-15: lo que se ve es obligatorio (solo al guardar)
-    if (alGuardar && !(d[k] || "").trim() && !d.unk?.[k]) e[k] = admiteNoRecuerdo(k) ? FALTA_NR : FALTA;
+    // C-15: lo que se ve es obligatorio (solo al guardar). Un "No recuerdo" cuenta como respuesta solo donde se admite
+    // (uno que quedó marcado en cigarros u horas al pasar de "Antes" a "Actual" no la contesta).
+    if (alGuardar && !(d[k] || "").trim() && !(d.unk?.[k] && admiteNoRecuerdo(k))) e[k] = admiteNoRecuerdo(k) ? FALTA_NR : FALTA;
   }
   for (const [a, b, msg] of PARES) {
     if (!vis.includes(a) || !vis.includes(b) || e[a] || e[b]) continue;

@@ -78,9 +78,11 @@
 - **Fact (estándares):** HL7 FHIR CodeSystem data-absent-reason: `asked-unknown` "The source was asked but does not know
   the value", `asked-declined`, `not-applicable`, `unknown`. Questionnaire R5: con `enableWhen`, `required` solo aplica
   si la condición se cumple. LOINC 2.82: `LA12688-0` "Don't know", `LA4489-6` "Unknown".
-- **Fact (metodología):** ofrecer "no sé" atrae más a quien contesta por escrito o con poco esfuerzo y no mejora la
-  calidad de los datos (Krosnick et al. 2002, POQ 66:371-403); lo que menos faltantes dejó en línea fue no ofrecerlo y
-  repreguntar con amabilidad (de Leeuw, Hox y Boevé 2016, resumen).
+- **Fact (metodología):** en preguntas de actitud ("no tengo opinión") y de voto en un referéndum, no de hechos ni de
+  recuerdo, ofrecer esa opción atrae más a quien contesta por escrito o con poco esfuerzo y no mejora la calidad de los
+  datos; ofrecerla explícitamente sube por sí solo la abstención (identificación partidista: 12.5 % frente a 1.0 %,
+  p. 384) (Krosnick et al. 2002, POQ 66:371-403). Aplicarlo a "No recuerdo" es por analogía [INFERENCE]. Lo que menos
+  faltantes dejó en línea fue no ofrecerlo y repreguntar con amabilidad (de Leeuw, Hox y Boevé 2016, resumen).
 - **Fact (México):** la NOM-004-SSA3-2012 (6.1.1) pide en el interrogatorio el uso de tabaco, alcohol y otras
   sustancias, pero no dice cómo registrar un dato desconocido.
 - **Source:** NHIS 2024 adult codebook https://ftp.cdc.gov/pub/Health_Statistics/NCHS/Dataset_Documentation/NHIS/2024/adult-codebook.pdf
@@ -89,14 +91,19 @@
   https://www.cdc.gov/nchs/data/rss/round8/questionnaire.pdf · AUDIT (OMS 2001) https://www.paho.org/sites/default/files/Auditmanual_ENG.pdf
   · VA https://www.va.gov/vdl/documents/Clinical/CPRS-Clinical_Reminders/pxrm_1_5_21_setup.pdf · FHIR
   https://terminology.hl7.org/CodeSystem-data-absent-reason.html y https://hl7.org/fhir/R5/questionnaire-definitions.html
-  · LOINC vía tx.fhir.org `$lookup` · Krosnick 2002 https://web.stanford.edu/dept/communication/faculty/krosnick/docs/2002/2002%20The%20impact%20of%20no%20opinion%20response%20options%20on%20data%20quality-%20N.pdf
+  · LOINC vía tx.fhir.org `$lookup` https://tx.fhir.org/r4/CodeSystem/$lookup?system=http://loinc.org&code=LA12688-0 y
+  https://tx.fhir.org/r4/CodeSystem/$lookup?system=http://loinc.org&code=LA4489-6 · Krosnick 2002 https://web.stanford.edu/dept/communication/faculty/krosnick/docs/2002/2002%20The%20impact%20of%20no%20opinion%20response%20options%20on%20data%20quality-%20N.pdf
   · de Leeuw 2016 https://research-portal.uu.nl/en/publications/handling-do-not-know-answers-exploring-new-approaches-in-online-a/
   · NOM-004 https://dof.gob.mx/nota_detalle_popup.php?codigo=5272787 · consulted 2026-10-22
 - **Confidence:** [VERIFIED] todo lo anterior en la fuente primaria, salvo: de Leeuw 2016 (solo el resumen), Poe et al.
   1988 (citado por Krosnick, no leído), el AUDIT-C de Bush 1998 y el umbral VA ≥5 (fuentes secundarias, no se usan aquí).
-- **Consecuencia para la captura (perfil-habitos-completitud):** "No recuerdo" solo en preguntas sobre el pasado
-  (edades de inicio y fin; cantidades de "Antes"); nunca en las tres preguntas de frecuencia del alcohol ni en lo que
-  describe el presente; guardado como un valor propio, no como un número especial, para que "no recuerda" no se
-  confunda con "sin respuesta" ni contamine un promedio.
-- **Re-check if:** se mide en producción que "No recuerdo" pasa claramente del ~1 % de NHIS en algún ítem (señal de
-  que se usa como salida rápida), o se exporta a FHIR (mapear a `asked-unknown`).
+  Lo marcado [INFERENCE] no está en ninguna fuente: es la lectura de este proyecto.
+- **Consecuencia para la captura (perfil-habitos-completitud) [INFERENCE]:** "No recuerdo" solo en preguntas sobre el
+  pasado (edades de inicio y fin; cantidades de "Antes"); nunca en las tres preguntas de frecuencia del alcohol ni en lo
+  que describe el presente, que se puede estimar (en NHIS 2024 el "no sabe" de `CIGNOW_A`, cigarros al día de quien
+  fuma a diario, es 0.40 %, frente a 1.03 % en `SMKAGE_A`, edad de inicio); guardado como un valor propio, no como un
+  número especial, para que "no recuerda" no se confunda con "sin respuesta" ni contamine un promedio.
+- **Re-check if:** se mide en uso real que un ítem de la pantalla tiene claramente más "No recuerdo" que los demás que
+  lo admiten (señal de que se usa como salida rápida), o se exporta a FHIR (mapear a `asked-unknown`). El ~1 % de NHIS
+  no sirve de umbral: allí el "no sabe" no se lee y lo dice el entrevistado por su cuenta, y ofrecer la opción a la
+  vista sube la tasa por sí solo (Krosnick 2002, p. 384).

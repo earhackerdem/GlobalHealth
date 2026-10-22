@@ -2196,6 +2196,165 @@ test.describe("Perfil médico — hábitos completos (perfil-habitos-completitud
     expect((await getHabits(api)).alcohol ?? null).toBeNull()
   })
 
+  // Fila 2 en pantalla, por cada fila de HABITS_REQUIRED (design.md, tabla de
+  // obligatoriedad): con todas las demás contestadas, falta solo una. Los
+  // lugares del humo ajeno no se alcanzan en pantalla (estar expuesto sale de
+  // elegir un lugar), así que su fila solo prueba los días.
+  type RequiredQuestion = {
+    label: string
+    kind: "number" | "group"
+    message: string
+    answer: (page: Page) => Promise<void>
+  }
+  const numberAnswer = (
+    label: string,
+    value: string,
+    message: string,
+  ): RequiredQuestion => ({
+    label,
+    kind: "number",
+    message,
+    answer: (page) => numberField(page, label).fill(value),
+  })
+  const chipAnswer = (label: string, option: string): RequiredQuestion => ({
+    label,
+    kind: "group",
+    message: MISSING,
+    answer: (page) => chip(page, label, option).click(),
+  })
+  const REQUIRED_ROWS: {
+    title: string
+    choose: (page: Page) => Promise<void>
+    questions: RequiredQuestion[]
+  }[] = [
+    {
+      title: "alcohol 'Lo dejé'",
+      choose: (page) => chip(page, ALCOHOL, "Lo dejé").click(),
+      questions: [
+        numberAnswer(ALCOHOL_START, "18", MISSING_OR_UNKNOWN),
+        numberAnswer(ALCOHOL_QUIT_AGE, "30", MISSING_OR_UNKNOWN),
+      ],
+    },
+    {
+      title: "alcohol 'Actual'",
+      choose: (page) => chip(page, ALCOHOL, "Actual").click(),
+      questions: [
+        chipAnswer(FREQUENCY, "2 a 3 veces por semana"),
+        chipAnswer(DRINKS, "3 o 4"),
+        chipAnswer(SIX_OR_MORE, "Cada mes"),
+        chipAnswer(WEEKENDS, "Sí"),
+        numberAnswer(ALCOHOL_START, "18", MISSING_OR_UNKNOWN),
+      ],
+    },
+    {
+      title: "tabaco 'Antes'",
+      choose: (page) => chip(page, TOBACCO, "Antes").click(),
+      questions: [
+        numberAnswer(CIGARETTES, "10", MISSING_OR_UNKNOWN),
+        numberAnswer(TOBACCO_START, "18", MISSING_OR_UNKNOWN),
+        numberAnswer(TOBACCO_QUIT, "30", MISSING_OR_UNKNOWN),
+      ],
+    },
+    {
+      title: "tabaco 'Actual'",
+      choose: (page) => chip(page, TOBACCO, "Actual").click(),
+      questions: [
+        numberAnswer(CIGARETTES, "10", MISSING),
+        numberAnswer(TOBACCO_START, "18", MISSING_OR_UNKNOWN),
+      ],
+    },
+    {
+      title: "vapeador 'Antes'",
+      choose: (page) => chip(page, VAPING, "Antes").click(),
+      questions: [
+        numberAnswer(VAPING_START, "25", MISSING_OR_UNKNOWN),
+        numberAnswer(VAPING_QUIT, "28", MISSING_OR_UNKNOWN),
+      ],
+    },
+    {
+      title: "vapeador 'Actual'",
+      choose: (page) => chip(page, VAPING, "Actual").click(),
+      questions: [
+        chipAnswer(VAPING_FREQUENCY, "Todos los días"),
+        numberAnswer(VAPING_START, "25", MISSING_OR_UNKNOWN),
+      ],
+    },
+    {
+      title: "vapeador 'Actual' 'Algunos días'",
+      choose: async (page) => {
+        await chip(page, VAPING, "Actual").click()
+        await chip(page, VAPING_FREQUENCY, "Algunos días").click()
+      },
+      questions: [
+        numberAnswer(VAPING_DAYS, "12", MISSING),
+        numberAnswer(VAPING_START, "25", MISSING_OR_UNKNOWN),
+      ],
+    },
+    {
+      title: "humo ajeno en 'Casa'",
+      choose: (page) => chip(page, WHERE, "Casa").click(),
+      questions: [numberAnswer(DAYS, "2", MISSING)],
+    },
+    {
+      title: "leña 'Antes'",
+      choose: (page) => chip(page, WOOD, "Antes").click(),
+      questions: [
+        numberAnswer(WOOD_START, "5", MISSING_OR_UNKNOWN),
+        numberAnswer(WOOD_QUIT, "20", MISSING_OR_UNKNOWN),
+        numberAnswer(WOOD_HOURS, "3", MISSING_OR_UNKNOWN),
+      ],
+    },
+    {
+      title: "leña 'Actual'",
+      choose: (page) => chip(page, WOOD, "Actual").click(),
+      questions: [
+        numberAnswer(WOOD_HOURS, "3", MISSING),
+        numberAnswer(WOOD_START, "5", MISSING_OR_UNKNOWN),
+      ],
+    },
+  ]
+  for (const row of REQUIRED_ROWS) {
+    test(`C-15 (completitud fila 2) cada pregunta que abre ${row.title}: con las demás contestadas y solo esa sin contestar, 'Guardar' pone su mensaje junto a ella, ningún otro, y ningún PUT`, async ({
+      page,
+      request,
+    }) => {
+      await freshPatient(page, request)
+      const puts = trackHabitPuts(page)
+
+      for (const missing of row.questions) {
+        await openHabitsFromProfile(page)
+        await row.choose(page)
+        for (const question of row.questions) {
+          if (question !== missing) await question.answer(page)
+        }
+        await page.getByRole("button", { name: "Guardar", exact: true }).click()
+
+        if (missing.kind === "number") {
+          await expectFieldError(
+            page,
+            numberField(page, missing.label),
+            missing.message,
+          )
+        } else {
+          await expectGroupError(page, missing.label, missing.message)
+        }
+        const other = missing.message === MISSING ? MISSING_OR_UNKNOWN : MISSING
+        await expect(
+          page.getByText(missing.message, { exact: true }),
+        ).toHaveCount(1)
+        await expect(page.getByText(other, { exact: true })).toHaveCount(0)
+        await expect(page).toHaveURL(HABITS_URL)
+
+        // Descarta y vuelve a abrir para la siguiente pregunta.
+        await page
+          .getByRole("button", { name: "Cancelar", exact: true })
+          .click()
+        await page.waitForURL(PROFILE_URL)
+      }
+      await expectNoPut(page, puts)
+    })
+  }
+
   test("C-15 (completitud fila 3) alcohol 'Actual' desde los 18 sin las preguntas de frecuencia: 'Guardar' → 'Contesta esta pregunta.' bajo las tres del AUDIT-C y 'Sobre todo fines de semana', ninguna ofrece 'No recuerdo', foco en la primera y ningún PUT; al cambiar a 'Nunca' se van esos errores y se guarda", async ({
     page,
     request,
@@ -2212,10 +2371,12 @@ test.describe("Perfil médico — hábitos completos (perfil-habitos-completitud
 
     for (const name of questions) {
       await expectGroupError(page, name, MISSING)
-      await expect(
-        group(page, name).getByRole("button", { name: /No recuerdo/ }),
-      ).toHaveCount(0)
     }
+    // En toda la pantalla, el único "No recuerdo" es el de la edad de inicio.
+    await expect(
+      page.getByRole("button", { name: /^No recuerdo/ }),
+    ).toHaveCount(1)
+    await expect(dontRemember(page, ALCOHOL_START)).toBeVisible()
     await expect(
       page.getByText(MISSING_OR_UNKNOWN, { exact: true }),
     ).toHaveCount(0)
@@ -2427,6 +2588,40 @@ test.describe("Perfil médico — hábitos completos (perfil-habitos-completitud
     ).toHaveCount(0)
 
     // Al salir del campo, sí (C-14).
+    await quit.press("Tab")
+    await expectFieldError(page, quit, notANumber, { focused: false })
+  })
+
+  test("C-17 (completitud fila 11) la salida diferida no marca la pareja que se escribe: 12 en la edad de inicio del alcohol; con el botón apretado sobre la edad en que lo dejó (la salida de la de inicio queda pendiente) se escribe '1a' y se suelta → sin mensaje ni aria-invalid mientras sigue en el campo; con Tab, 'Escribe solo el número.'", async ({
+    page,
+    request,
+  }) => {
+    await freshPatient(page, request)
+    await openHabitsFromProfile(page)
+    const notANumber = "Escribe solo el número."
+
+    await chip(page, ALCOHOL, "Lo dejé").click()
+    const start = numberField(page, ALCOHOL_START)
+    const quit = numberField(page, ALCOHOL_QUIT_AGE)
+    await start.fill("12")
+    await expect(start).toBeFocused()
+    await quit.scrollIntoViewIfNeeded()
+    await expect(start).toBeFocused()
+
+    // Entrada real: el foco pasa al apretar el botón y la salida de la edad de
+    // inicio se resuelve al soltarlo, ya con "1a" escrito en la otra.
+    const box = await quit.boundingBox()
+    if (!box) throw new Error("La edad en que lo dejó no está a la vista")
+    await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2)
+    await page.mouse.down()
+    await expect(quit).toBeFocused()
+    await page.keyboard.type("1a")
+    await expect(quit).toHaveValue("1a")
+    await page.mouse.up()
+    await page.waitForTimeout(300)
+    await expect(quit).toBeFocused()
+    await expectNoFieldError(page, quit, notANumber)
+
     await quit.press("Tab")
     await expectFieldError(page, quit, notANumber, { focused: false })
   })

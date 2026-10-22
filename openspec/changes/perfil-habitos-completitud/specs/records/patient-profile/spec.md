@@ -29,7 +29,8 @@ de fines de semana si el alcohol no es *Actual*; las edades si el alcohol, el ta
 frecuencia del vapeador si no es *Actual*, y los días de los últimos 30 si no es *Algunos días*; las horas si la leña
 es *Nunca*; los lugares y los días si no se expone. Después SHALL rechazar, con el mensaje junto a su campo, una
 pregunta que aplica y no se contestó ("Contesta esta pregunta." o, donde admite "No recuerdo", "Contesta esta pregunta
-o marca «No recuerdo»."), un "No recuerdo" en una pregunta que no lo admite, una edad mayor que la edad actual del
+o marca «No recuerdo»."; si faltan los lugares del humo ajeno, "Elige dónde, o «No me expongo»"), un "No recuerdo" en
+una pregunta que no lo admite, una edad mayor que la edad actual del
 paciente, una edad fuera de 0 a 130, y una edad de inicio mayor que la edad en que lo dejó o terminó, en el alcohol,
 el tabaco, el vapeador y la leña. "No recuerdo" no se compara con otras edades. Sin fecha de nacimiento SHALL aceptar
 cualquier edad entre 0 y 130.

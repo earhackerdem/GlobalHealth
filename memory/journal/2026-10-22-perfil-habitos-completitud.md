@@ -34,3 +34,14 @@ defectos (14 intentos). Números en `openspec/changes/perfil-habitos-completitud
 
 ## Deuda
 - La tabla de obligatoriedad vive dos veces (servidor y pantalla), como las demás reglas de hábitos; el servidor manda.
+
+## Revisión ronda 1
+Cinco lentes (F-Security sin hallazgos), cuatro validadores por reproducción: 2 medios (A: los casos fuera de escala ya
+no protegían los límites tras C-15; B: la prueba de C-17 no detectaba revertir el arreglo, bajado a bajo) y bajos de
+cobertura (D: 7/10 filas de la tabla de la pantalla sin prueba), esquema (E), documentos e investigación (C, G–J: Krosnick
+estudió preguntas de opinión, se aplica por analogía; el umbral del ~1 % de NHIS no es comparable), PR (K), exploración
+(L), comentarios (M, N) y prototipo (O). F (obligatorias sin marcar) ya triado como R8: deuda
+(`memory/closed/2026-10-22-f-obligatorias-sin-marcar-habitos.md`). Saúl Pérez: "procede" con la recomendación (aplicar
+todo, F a deuda, ronda 2 con la misma regla de cierre). Aplicado por dos fixers con archivos disjuntos; ninguno rebotó.
+El fixer de pruebas quitó dos casos fuera de escala que repetían `UNKNOWN_IN_CURRENT_AMOUNT_CASES` (su 422 correcto es de
+dominio). Verde: backend 442, e2e de perfil 203; los mutantes de cada hallazgo mueren.

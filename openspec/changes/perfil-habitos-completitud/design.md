@@ -14,7 +14,8 @@ ya marcado se quita en cuanto el número es válido.
   (`frontend/src/locales/es-MX/profile.json:338`).
 - Saúl Pérez decidió (2026-10-22): obligatorias, con "No recuerdo".
 - Investigación (`memory/research/habitos.md#no-recuerdo`): "no sabe" se guarda aparte de "sin respuesta" (NHIS,
-  NSDUH, FHIR `asked-unknown`); el AUDIT no tiene "no sé"; ofrecerlo en todo invita a contestar sin pensar.
+  NSDUH, FHIR `asked-unknown`); el AUDIT no tiene "no sé"; en preguntas de opinión, ofrecerlo invita a contestar sin
+  pensar (Krosnick 2002); aquí se aplica por analogía [INFERENCE].
 - El `PUT` reemplaza el cuestionario completo, valida con `habits_errors` después de normalizar y devuelve 422 por
   `loc` (`models.py:988-1040`; `profile.py`), y la pantalla ubica esos errores por `loc` (R20).
 
@@ -71,7 +72,8 @@ Base `/api/v1`, detrás de `ConsentedUser`. Mismos `GET` y `PUT /profile/habits`
 | leña `current` | `hours_per_day` | `start_age` |
 
 - Falta uno sin `"unknown"` → "Contesta esta pregunta."; falta uno que lo admite → "Contesta esta pregunta o marca
-  «No recuerdo».".
+  «No recuerdo».". Excepción: si faltan los `places` de humo ajeno, el mensaje sigue siendo el de hoy, "Elige dónde, o
+  «No me expongo»".
 - `"unknown"` en `cigarettes_per_day` con `current` o en `hours_per_day` con `current` → "Esta pregunta no admite «No
   recuerdo».".
 - Las reglas de hoy ("≤ edad actual", "inicio ≤ fin") se aplican solo entre números; un `"unknown"` no se compara.
@@ -94,8 +96,9 @@ Base `/api/v1`, detrás de `ConsentedUser`. Mismos `GET` y `PUT /profile/habits`
 1. **`"unknown"` en el mismo campo, no `null` ni un número especial ni un booleano aparte.** `null` se confundiría con
    "sin respuesta" de lo guardado antes; un 99 contamina promedios; un booleano permite "número y no recuerda" a la vez.
    El JSON cifrado no cambia de forma y el esquema cerrado sigue rechazando lo demás.
-2. **"No recuerdo" solo en lo que pasó** (edades; cigarros y horas de "Antes"). El AUDIT no tiene "no sé" y lo actual
-   se puede estimar (`memory/research/habitos.md#no-recuerdo`).
+2. **"No recuerdo" solo en lo que pasó** (edades; cigarros y horas de "Antes"). El AUDIT no tiene "no sé", y lo actual
+   se puede estimar [INFERENCE]: en NHIS 2024 el "no sabe" de los cigarros que fuma hoy (`CIGNOW_A`) es 0.40 %, frente
+   a 1.03 % en la edad en que empezó (`SMKAGE_A`) (`memory/research/habitos.md#no-recuerdo`).
 3. **El servidor también obliga.** El contrato es del servidor; la pantalla solo adelanta los mismos mensajes. Así una
    llamada directa al `PUT` no guarda un rango a medias.
 4. **Obligatorias al guardar, no al salir de cada campo.** Marcar "Contesta esta pregunta" al pasar con Tab regañaría
@@ -130,8 +133,10 @@ Base `/api/v1`, detrás de `ConsentedUser`. Mismos `GET` y `PUT /profile/habits`
 
 ## Risks / Trade-offs
 
-- **"No recuerdo" como salida rápida.** Si en uso real pasa claramente del ~1 % de NHIS en algún ítem, revisar
-  (`memory/research/habitos.md#no-recuerdo`, "Re-check if").
+- **"No recuerdo" como salida rápida.** Si en uso real un ítem de esta pantalla tiene claramente más "No recuerdo" que
+  los demás que lo admiten, revisar (`memory/research/habitos.md#no-recuerdo`, "Re-check if"). El ~1 % de NHIS no
+  sirve de umbral: allí el "no sabe" no se lee, lo dice el entrevistado por su cuenta, y ofrecer la opción a la vista
+  sube la tasa por sí solo (Krosnick 2002, p. 384: 12.5 % frente a 1.0 % en una pregunta de opinión).
 - **Quien guardó a medias** tendrá que completar antes de poder guardar otro cambio en hábitos. Solo hay cuentas de
   prueba.
 - **Más preguntas obligatorias** pueden hacer que alguien deje un hábito sin contestar en vez de completarlo; sigue

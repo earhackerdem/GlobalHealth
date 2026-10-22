@@ -87,7 +87,10 @@ const SIX_OR_MORE: readonly SixOrMore[] = [
 const VAPING_FREQUENCIES: readonly VapingFrequency[] = ["daily", "some_days"]
 const PLACES: readonly Place[] = ["home", "work_school", "other"]
 const YES_NO = ["yes", "no"] as const
-/** "No recuerdo" (design.md, Decision 1), stored in the number's own field. */
+/**
+ * "No recuerdo" (perfil-habitos-completitud design.md, Decision 1), stored in
+ * the number's own field.
+ */
 const UNKNOWN = "unknown" as const
 
 /**
@@ -379,8 +382,9 @@ function visibleFields(draft: Draft): string[] {
 }
 
 /**
- * What each answer opens and has to be answered on "Guardar" (design.md,
- * Interface contract → Validación; C-15), as data mirroring the backend's
+ * What each answer opens and has to be answered on "Guardar"
+ * (perfil-habitos-completitud design.md, Interface contract → § Validación;
+ * C-15), as data mirroring the backend's
  * HABITS_REQUIRED (backend/app/models.py): block → answer → [required, "No
  * recuerdo" not admitted; required, "No recuerdo" admitted], by field. An
  * answer not listed requires nothing. The second list is also where the "No
@@ -658,7 +662,8 @@ function buildBody(
     }
   }
 
-  // "No recuerdo" is never compared (design.md, Validación).
+  // "No recuerdo" is never compared (perfil-habitos-completitud design.md,
+  // § Validación).
   for (const [startKey, quitKey, message] of AGE_PAIRS) {
     const start = numbers[startKey]
     const quit = numbers[quitKey]
@@ -991,10 +996,11 @@ function HabitsForm() {
    * Leaving a box: its errors (and its pair's) are refreshed from the draft
    * as it is then (a chip pressed meanwhile may have hidden the pair), and
    * the focus stays where it went. What is missing is not checked here
-   * (Decision 4), but a "Contesta esta pregunta" from "Guardar" stays while
-   * the box is still unanswered. The pair's box, if it has the focus, gets
-   * no new error: it is being typed in (C-17), and a refresh held by a press
-   * may run after typing there began (the timer can lag behind the keys).
+   * (perfil-habitos-completitud design.md, Decision 4), but a "Contesta esta
+   * pregunta" from "Guardar" stays while the box is still unanswered. The
+   * pair's box, if it has the focus, gets no new error: it is being typed in
+   * (C-17), and a refresh held by a press may run after typing there began
+   * (the timer can lag behind the keys).
    */
   const leave = (key: NumberKey) => {
     const refresh = () => {

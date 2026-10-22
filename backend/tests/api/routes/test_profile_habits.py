@@ -1,5 +1,5 @@
-"""Tests for the habits questionnaire of the medical profile (perfil-habitos and
-perfil-habitos-ajustes, grupo 1).
+"""Tests for the habits questionnaire of the medical profile (perfil-habitos,
+perfil-habitos-ajustes, grupo 1, and perfil-habitos-completitud).
 
 Interface contract (perfil-habitos-ajustes design.md, "## Interface contract";
 base /api/v1/profile, behind a current consent; field names and values in
@@ -1089,132 +1089,192 @@ def test_c_get_does_not_create_the_profile(client: TestClient, db: Session) -> N
 
 # --- Test plan row 13: Respuestas fuera de su escala ------------------------------
 
+# Each body is otherwise complete (perfil-habitos-completitud C-15), so the field
+# outside its scale is the only problem: a schema 422 on that loc, never the
+# required-answer value_error.
 OUT_OF_SCALE_CASES = [
     pytest.param(
-        {"tobacco": {"status": "current", "cigarettes_per_day": 0}},
+        {"tobacco": {"status": "current", "cigarettes_per_day": 0, "start_age": 18}},
+        ["body", "tobacco", "cigarettes_per_day"],
         id="cigarettes-0",
     ),
     pytest.param(
-        {"tobacco": {"status": "current", "cigarettes_per_day": 101}},
+        {"tobacco": {"status": "current", "cigarettes_per_day": 101, "start_age": 18}},
+        ["body", "tobacco", "cigarettes_per_day"],
         id="cigarettes-101",
     ),
     pytest.param(
         {"secondhand_smoke": {"exposed": True, "places": ["home"], "days_per_week": 8}},
+        ["body", "secondhand_smoke", "days_per_week"],
         id="secondhand-8-days",
     ),
-    pytest.param({"alcohol": {"status": "quit", "quit_age": 131}}, id="age-131"),
+    pytest.param(
+        {"alcohol": {"status": "quit", "start_age": 18, "quit_age": 131}},
+        ["body", "alcohol", "quit_age"],
+        id="age-131",
+    ),
     pytest.param(
         {"tobacco": {"status": "current", "cigarettes_per_day": 5, "start_age": 131}},
+        ["body", "tobacco", "start_age"],
         id="start_age-131",
     ),
     pytest.param(
-        {"alcohol": {"status": "current", "start_age": 131}},
+        {"alcohol": {"status": "current", "start_age": 131, **AUDIT_C}},
+        ["body", "alcohol", "start_age"],
         id="alcohol-start_age-131",
     ),
     pytest.param(
-        {"vaping": {"status": "current", "start_age": 131}},
+        {"vaping": {"status": "current", "frequency": "daily", "start_age": 131}},
+        ["body", "vaping", "start_age"],
         id="vaping-start_age-131",
     ),
     pytest.param(
-        {"wood_smoke": {"status": "former", "start_age": 131}},
+        {"wood_smoke": {"status": "current", "start_age": 131, "hours_per_day": 8}},
+        ["body", "wood_smoke", "start_age"],
         id="wood-start_age-131",
     ),
-    # Review R7: the lower bounds.
-    pytest.param({"alcohol": {"status": "quit", "quit_age": -1}}, id="age--1"),
+    # Review R7: the lower bounds. A start age of "unknown" so it is never
+    # compared with the quit age of -1.
+    pytest.param(
+        {"alcohol": {"status": "quit", "start_age": UNKNOWN, "quit_age": -1}},
+        ["body", "alcohol", "quit_age"],
+        id="age--1",
+    ),
     pytest.param(
         {"tobacco": {"status": "current", "cigarettes_per_day": 5, "start_age": -1}},
+        ["body", "tobacco", "start_age"],
         id="start_age--1",
     ),
     pytest.param(
-        {"tobacco": {"status": "former", "cigarettes_per_day": 5, "quit_age": -1}},
+        {
+            "tobacco": {
+                "status": "former",
+                "cigarettes_per_day": 5,
+                "start_age": UNKNOWN,
+                "quit_age": -1,
+            }
+        },
+        ["body", "tobacco", "quit_age"],
         id="tobacco-quit_age--1",
     ),
     pytest.param(
-        {"vaping": {"status": "former", "quit_age": -1}},
+        {"vaping": {"status": "former", "start_age": UNKNOWN, "quit_age": -1}},
+        ["body", "vaping", "quit_age"],
         id="vaping-quit_age--1",
-    ),
-    pytest.param(
-        {"wood_smoke": {"status": "former", "quit_age": -1}},
-        id="wood-quit_age--1",
-    ),
-    pytest.param(
-        {"secondhand_smoke": {"exposed": True, "places": ["home"], "days_per_week": 0}},
-        id="secondhand-0-days",
-    ),
-    # perfil-habitos-ajustes: the new scales.
-    pytest.param(
-        {"vaping": {"status": "current", "frequency": "some_days", "days_last_30": 0}},
-        id="vaping-days_last_30-0",
-    ),
-    pytest.param(
-        {"vaping": {"status": "current", "frequency": "some_days", "days_last_30": 31}},
-        id="vaping-days_last_30-31",
-    ),
-    pytest.param(
-        {"wood_smoke": {"status": "current", "start_age": 5, "hours_per_day": 0}},
-        id="wood-hours_per_day-0",
-    ),
-    pytest.param(
-        {"wood_smoke": {"status": "current", "start_age": 5, "hours_per_day": 25}},
-        id="wood-hours_per_day-25",
-    ),
-    pytest.param({"vaping": "current"}, id="vaping-as-plain-text-in-put"),
-    pytest.param(
-        {"wood_smoke": {"status": "former", "years": 12}},
-        id="wood-years-in-put",
-    ),
-    pytest.param({"vaping": {"status": "sometimes"}}, id="vaping-status-outside-enum"),
-    pytest.param(
-        {"vaping": {"status": "current", "frequency": "weekly"}},
-        id="vaping-frequency-outside-enum",
-    ),
-    pytest.param(
-        {"alcohol": {"status": "sometimes"}}, id="alcohol-status-outside-enum"
-    ),
-    pytest.param(
-        {"alcohol": {"status": "current", "frequency": "daily"}},
-        id="frequency-outside-enum",
-    ),
-    pytest.param(
-        {"secondhand_smoke": {"exposed": True, "places": ["car"], "days_per_week": 2}},
-        id="place-outside-enum",
-    ),
-    pytest.param(
-        {"vaping": {"status": "never"}, "drugs": "never"},
-        id="unknown-top-level-field",
-    ),
-    pytest.param(
-        {"alcohol": {"status": "never", "audit_c_score": 0}},
-        id="unknown-nested-field",
-    ),
-    # perfil-habitos-completitud: "No recuerdo" where it is not admitted, and
-    # any string other than "unknown" in a number.
-    pytest.param(
-        {
-            "tobacco": {
-                "status": "current",
-                "cigarettes_per_day": UNKNOWN,
-                "start_age": 18,
-            }
-        },
-        id="tobacco-current-cigarettes-unknown",
     ),
     pytest.param(
         {
             "wood_smoke": {
-                "status": "current",
-                "start_age": 5,
-                "hours_per_day": UNKNOWN,
+                "status": "former",
+                "start_age": UNKNOWN,
+                "quit_age": -1,
+                "hours_per_day": 8,
             }
         },
-        id="wood-current-hours-unknown",
+        ["body", "wood_smoke", "quit_age"],
+        id="wood-quit_age--1",
     ),
     pytest.param(
+        {"secondhand_smoke": {"exposed": True, "places": ["home"], "days_per_week": 0}},
+        ["body", "secondhand_smoke", "days_per_week"],
+        id="secondhand-0-days",
+    ),
+    # perfil-habitos-ajustes: the new scales.
+    pytest.param(
+        {
+            "vaping": {
+                "status": "current",
+                "frequency": "some_days",
+                "days_last_30": 0,
+                "start_age": 25,
+            }
+        },
+        ["body", "vaping", "days_last_30"],
+        id="vaping-days_last_30-0",
+    ),
+    pytest.param(
+        {
+            "vaping": {
+                "status": "current",
+                "frequency": "some_days",
+                "days_last_30": 31,
+                "start_age": 25,
+            }
+        },
+        ["body", "vaping", "days_last_30"],
+        id="vaping-days_last_30-31",
+    ),
+    pytest.param(
+        {"wood_smoke": {"status": "current", "start_age": 5, "hours_per_day": 0}},
+        ["body", "wood_smoke", "hours_per_day"],
+        id="wood-hours_per_day-0",
+    ),
+    pytest.param(
+        {"wood_smoke": {"status": "current", "start_age": 5, "hours_per_day": 25}},
+        ["body", "wood_smoke", "hours_per_day"],
+        id="wood-hours_per_day-25",
+    ),
+    pytest.param(
+        {"vaping": "current"}, ["body", "vaping"], id="vaping-as-plain-text-in-put"
+    ),
+    pytest.param(
+        {"wood_smoke": {**ALL_WOOD, "status": "former", "years": 12}},
+        ["body", "wood_smoke", "years"],
+        id="wood-years-in-put",
+    ),
+    pytest.param(
+        {"vaping": {"status": "sometimes"}},
+        ["body", "vaping", "status"],
+        id="vaping-status-outside-enum",
+    ),
+    pytest.param(
+        {"vaping": {"status": "current", "frequency": "weekly", "start_age": 25}},
+        ["body", "vaping", "frequency"],
+        id="vaping-frequency-outside-enum",
+    ),
+    pytest.param(
+        {"alcohol": {"status": "sometimes"}},
+        ["body", "alcohol", "status"],
+        id="alcohol-status-outside-enum",
+    ),
+    pytest.param(
+        {
+            "alcohol": {
+                "status": "current",
+                "start_age": 18,
+                **AUDIT_C,
+                "frequency": "daily",
+            }
+        },
+        ["body", "alcohol", "frequency"],
+        id="frequency-outside-enum",
+    ),
+    pytest.param(
+        {"secondhand_smoke": {"exposed": True, "places": ["car"], "days_per_week": 2}},
+        ["body", "secondhand_smoke", "places"],
+        id="place-outside-enum",
+    ),
+    pytest.param(
+        {"vaping": {"status": "never"}, "drugs": "never"},
+        ["body", "drugs"],
+        id="unknown-top-level-field",
+    ),
+    pytest.param(
+        {"alcohol": {"status": "never", "audit_c_score": 0}},
+        ["body", "alcohol", "audit_c_score"],
+        id="unknown-nested-field",
+    ),
+    # perfil-habitos-completitud: any string other than "unknown" in a number.
+    # ("unknown" in a current amount is a value_error by design, C-16:
+    # test_c16_unknown_in_current_amount_rejected.)
+    pytest.param(
         {"alcohol": {"status": "quit", "start_age": "no recuerdo", "quit_age": 30}},
+        ["body", "alcohol", "start_age"],
         id="age-other-string",
     ),
     pytest.param(
         {"alcohol": {"status": "quit", "start_age": "Unknown", "quit_age": 30}},
+        ["body", "alcohol", "start_age"],
         id="age-unknown-capitalized",
     ),
     pytest.param(
@@ -1226,6 +1286,7 @@ OUT_OF_SCALE_CASES = [
                 "quit_age": 30,
             }
         },
+        ["body", "tobacco", "cigarettes_per_day"],
         id="cigarettes-unknown-with-space",
     ),
     pytest.param(
@@ -1237,23 +1298,31 @@ OUT_OF_SCALE_CASES = [
                 "hours_per_day": "",
             }
         },
+        ["body", "wood_smoke", "hours_per_day"],
         id="hours-empty-string",
     ),
 ]
 
 
-@pytest.mark.parametrize("body", OUT_OF_SCALE_CASES)
+@pytest.mark.parametrize(("body", "loc"), OUT_OF_SCALE_CASES)
 def test_c_out_of_scale_answers_rejected_habits_unchanged(
-    client: TestClient, db: Session, body: dict[str, Any]
+    client: TestClient, db: Session, body: dict[str, Any], loc: list[str]
 ) -> None:
     """Fuera de escala, fuera del catálogo, la forma anterior o un campo
-    desconocido -> 422 y los hábitos guardados no cambian."""
+    desconocido -> 422 del esquema en ese campo (no la regla de respuesta
+    obligatoria) y los hábitos guardados no cambian."""
     headers, _ = consented_user(client, db)
     save(client, headers, SEED)
 
     r = put_habits(client, headers, body)
 
     assert r.status_code == 422, r.text
+    detail = r.json()["detail"]
+    assert isinstance(detail, list), detail
+    assert detail, detail
+    assert all(
+        e["loc"][: len(loc)] == loc and e["type"] != "value_error" for e in detail
+    ), detail
     assert stored_habits(client, headers) == SEED_STORED
 
 
@@ -1907,7 +1976,10 @@ def test_c16_unknown_where_never_admitted_is_schema_error(
     assert r.status_code == 422, r.text
     detail = r.json()["detail"]
     assert isinstance(detail, list), detail
-    assert any(e["loc"][:3] == ["body", block, field] for e in detail), detail
+    assert any(
+        e["loc"][:3] == ["body", block, field] and e["type"] != "value_error"
+        for e in detail
+    ), detail
     assert stored_habits(client, headers) == SEED_STORED
 
 
