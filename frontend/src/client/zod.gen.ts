@@ -11,8 +11,14 @@ export const zAlcoholHabit = z.object({
         'quit',
         'current'
     ]),
-    start_age: z.int().gte(0).lte(130).nullish(),
-    quit_age: z.int().gte(0).lte(130).nullish(),
+    start_age: z.union([
+        z.int().gte(0).lte(130),
+        z.literal('unknown')
+    ]).nullish(),
+    quit_age: z.union([
+        z.int().gte(0).lte(130),
+        z.literal('unknown')
+    ]).nullish(),
     frequency: z.enum([
         'monthly_or_less',
         'two_to_four_monthly',
@@ -407,9 +413,18 @@ export const zTobaccoHabit = z.object({
         'former',
         'current'
     ]),
-    cigarettes_per_day: z.int().gte(1).lte(100).nullish(),
-    start_age: z.int().gte(0).lte(130).nullish(),
-    quit_age: z.int().gte(0).lte(130).nullish()
+    cigarettes_per_day: z.union([
+        z.int().gte(1).lte(100),
+        z.literal('unknown')
+    ]).nullish(),
+    start_age: z.union([
+        z.int().gte(0).lte(130),
+        z.literal('unknown')
+    ]).nullish(),
+    quit_age: z.union([
+        z.int().gte(0).lte(130),
+        z.literal('unknown')
+    ]).nullish()
 });
 
 /**
@@ -516,8 +531,14 @@ export const zVapingHabit = z.object({
     ]),
     frequency: z.enum(['daily', 'some_days']).nullish(),
     days_last_30: z.int().gte(1).lte(30).nullish(),
-    start_age: z.int().gte(0).lte(130).nullish(),
-    quit_age: z.int().gte(0).lte(130).nullish()
+    start_age: z.union([
+        z.int().gte(0).lte(130),
+        z.literal('unknown')
+    ]).nullish(),
+    quit_age: z.union([
+        z.int().gte(0).lte(130),
+        z.literal('unknown')
+    ]).nullish()
 });
 
 /**
@@ -907,9 +928,18 @@ export const zWoodSmokeHabit = z.object({
         'former',
         'current'
     ]),
-    start_age: z.int().gte(0).lte(130).nullish(),
-    quit_age: z.int().gte(0).lte(130).nullish(),
-    hours_per_day: z.int().gte(1).lte(24).nullish()
+    start_age: z.union([
+        z.int().gte(0).lte(130),
+        z.literal('unknown')
+    ]).nullish(),
+    quit_age: z.union([
+        z.int().gte(0).lte(130),
+        z.literal('unknown')
+    ]).nullish(),
+    hours_per_day: z.union([
+        z.int().gte(1).lte(24),
+        z.literal('unknown')
+    ]).nullish()
 });
 
 /**
