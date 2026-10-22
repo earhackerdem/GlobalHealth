@@ -7,6 +7,9 @@ export default defineConfig({
   plugins: [
     { name: "@hey-api/client-axios", throwOnError: true },
     { name: "@hey-api/typescript", case: "preserve" },
+    // Zod schemas with the backend's bounds (perfil-habitos-ajustes C-14): the
+    // forms take each number's scale from here instead of copying it.
+    { name: "zod" },
     {
       name: "@hey-api/sdk",
       operations: {

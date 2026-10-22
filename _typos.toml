@@ -31,6 +31,11 @@ visibles = "visibles"
 aprox = "aprox"
 hace = "hace"
 comparte = "comparte"
+# "en curso", "doble clic" (perfil-habitos-ajustes: D20 y sus e2e)
+curso = "curso"
+doble = "doble"
+# "el PUT responde 500" (títulos de la fila 31 de profile-habits.spec.ts)
+responde = "responde"
 # nombre real de la action re-actors/alls-green (workflows del template)
 alls = "alls"
 

@@ -24,6 +24,7 @@ from zoneinfo import ZoneInfo
 from fastapi import APIRouter, HTTPException, Query
 from fastapi.exceptions import RequestValidationError
 from pydantic import ConfigDict, TypeAdapter, ValidationError
+from pydantic_core import from_json
 from sqlmodel import col, func, select
 
 from app import crud
@@ -60,6 +61,7 @@ from app.models import (
     normalize_habits,
     normalize_history_content,
     normalize_relatives,
+    upgrade_stored_habits,
     validate_birth_date,
     validate_history_content,
     validate_measurement_value,
@@ -618,8 +620,16 @@ def _stored_habits(profile: PatientProfile | None) -> Habits:
     if profile is None or profile.habits is None:
         return Habits()
     try:
-        return Habits.model_validate_json(profile.habits)
-    except ValidationError:
+        # from_json, not json.loads: a too-deep row is a ValueError here, while
+        # json.loads raises RecursionError (a 500; perfil-habitos-ajustes B1).
+        raw = from_json(profile.habits)
+        if not isinstance(raw, dict):
+            raise ValueError("habits JSON is not an object")
+        # perfil-habitos-ajustes Decision 1: a row in the previous shape is
+        # upgraded here, never through the (closed) PUT body.
+        return Habits.model_validate(upgrade_stored_habits(raw))
+    except ValueError:
+        # ValidationError and from_json's errors are both ValueErrors.
         # Unreadable row (review R2, like the history's S4): read as all null,
         # only the profile id logged.
         logger.warning("Unreadable habits of patient profile %s", profile.id)
