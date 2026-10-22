@@ -131,9 +131,11 @@ ellas: interpretarlas es del médico (NFR-008).
 La pantalla de hábitos SHALL decir desde que se abre que las respuestas se guardan al tocar "Guardar", y SHALL guardar
 solo entonces, si todo el cuestionario es válido. Si el paciente sale de la pantalla con cambios sin guardar (por el
 menú, por "‹ Mi perfil médico", con atrás del navegador, al recargar o al cerrar la pestaña), la pantalla SHALL
-preguntarle antes, salvo que la sesión haya terminado o cambiado de cuenta. "Cancelar" SHALL descartar los cambios sin
-preguntar y sin guardar nada. "Guardar" y "Cancelar" SHALL quedar no disponibles mientras se guarda, sin perder el
-foco, para que un doble clic no mande dos veces lo mismo.
+preguntarle antes, salvo que la sesión haya terminado o cambiado de cuenta, o que se esté guardando. Mientras se
+guarda, salir dentro de la app SHALL esperar a que el guardado termine: si sale bien, seguir a donde iba; si falla,
+quedarse con el error a la vista; recargar o cerrar la pestaña no pregunta. "Cancelar" SHALL descartar los cambios sin
+preguntar y sin guardar nada. "Guardar", "Cancelar" y las preguntas SHALL quedar no disponibles mientras se guarda,
+sin perder el foco, para que un doble clic no mande dos veces lo mismo.
 
 #### Scenario: Se guarda al tocar "Guardar" (C-13)
 - **GIVEN** un paciente con la pantalla de hábitos abierta y nada guardado
@@ -177,7 +179,7 @@ foco, para que un doble clic no mande dos veces lo mismo.
 
 #### Scenario: Mientras guarda no se cambia nada ni se pregunta al salir (C-13)
 - **GIVEN** un paciente que tocó "Guardar", y el guardado sigue en curso
-- **WHEN** intenta elegir otra opción, y después sale por "‹ Mi perfil médico" y va al "Expediente"
+- **WHEN** intenta elegir otra opción, y después va al "Expediente" desde el menú
 - **THEN** la opción no cambia, no ve ninguna pregunta, y en cuanto el guardado termina llega al "Expediente"; al
   volver a abrir sus hábitos ve lo que guardó
 

@@ -264,12 +264,17 @@ function volver(texto) {
   if (history.state && history.state.v === "habitos") { saliendoPorCodigo = true; history.back(); }
 }
 // Sale por el menú o "‹ Mi perfil médico": pregunta si hay cambios sin guardar.
-// Mientras guarda no pregunta: el guardado termina sin aviso ni regreso (R2-2).
-function intentarSalir() { if (sucio() && !enVuelo) preguntar(); else volver(); }
+// Mientras guarda no pregunta: la salida espera a que termine y después sigue (rondas 2 y 3).
+let salidaPendiente = false;
+function intentarSalir() {
+  if (enVuelo) { salidaPendiente = true; return; }
+  if (sucio()) preguntar(); else volver();
+}
 window.addEventListener("popstate", () => {
   if (saliendoPorCodigo) { saliendoPorCodigo = false; return; }
   if (vista !== "habitos") return;
-  if (sucio() && !enVuelo) { history.pushState({ v: "habitos" }, ""); preguntar(); }
+  if (enVuelo) { history.pushState({ v: "habitos" }, ""); salidaPendiente = true; return; }
+  if (sucio()) { history.pushState({ v: "habitos" }, ""); preguntar(); }
   else { vista = "perfil"; pintar(); }
 });
 
@@ -295,7 +300,8 @@ async function alGuardar() {
   errores = validarTodo(false);
   if (Object.keys(errores).length) { refrescar(); document.querySelector('[aria-invalid="true"]')?.focus(); return; }
   await mandar(cuerpo());
-  if (vista === "habitos") volver("Hábitos guardados");
+  salidaPendiente = false;
+  volver("Hábitos guardados");
 }
 function alCancelar() {
   if (enVuelo) return;

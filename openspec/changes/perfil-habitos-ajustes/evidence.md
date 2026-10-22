@@ -147,7 +147,11 @@ Sin defectos dentro del plan.
 - **Un 422 en un grupo de chips que sigue a la vista** (incluido el que se acaba de contestar) se queda hasta el
   siguiente "Guardar"; así lo lee el contrato (A3: solo se borran los errores de lo que se oculta).
 - **Atrás del navegador con el diálogo abierto** deja ver `/perfil` en la barra de direcciones mientras pregunta
-  (TanStack Router); al elegir "Seguir editando" vuelve a `/perfil/habitos`.
+  (TanStack Router); al elegir "Seguir editando" vuelve a `/perfil/habitos`. Lo mismo pasa durante toda la espera de
+  una salida con atrás mientras guarda (ronda 4, R4-7); si el guardado falla, la URL vuelve a `/perfil/habitos`.
+- **Atrás mientras guarda y luego otra salida dentro de la app** (R4-2, ⏸️): la primera salida retenida queda sin
+  resolver; si el guardado falla, la URL dice `/perfil` con el formulario a la vista, y el historial salta una entrada.
+  Camino raro, sin pérdida de datos; arreglarlo pide manejar dos bloqueos a la vez de TanStack Router.
 - **Los chips no tienen una propiedad para quedar no disponibles:** `HabitsForm.tsx` les pone `aria-disabled` desde
   fuera (`ChipGroup.tsx` no se toca en este cambio). Darle esa propiedad va con la fila de D20 de la tarea de deudas.
 - **Un error del `PUT` que llega con otra cuenta** (cerrar sesión e iniciar otra mientras guarda): un error que no es

@@ -131,8 +131,11 @@ aplica al JSON descifrado antes de validarlo; NO se aplica al cuerpo del `PUT`, 
   espera a que termine** (ronda 3, R3-1 y R3-3): la navegación queda retenida sin diálogo; si el guardado sale bien,
   avisa "Hábitos guardados" y sigue a donde iba (no a `/perfil`); si falla, la navegación se cancela y la pantalla se
   queda con el error a la vista (un 422 junto a su campo, otro error con el aviso genérico). Así no se puede reabrir la
-  pantalla con datos de antes del guardado. No retiene la salida si la sesión terminó o cambió. Recargar o cerrar la
-  pestaña mientras guarda no pregunta.
+  pantalla con datos de antes del guardado. No retiene la salida si la sesión terminó o cambió, y una salida ya
+  retenida solo se resuelve (seguir o cancelar) si el token sigue siendo el de la apertura: si la sesión terminó
+  durante la espera (un 401/403), manda el cierre de sesión de `main.tsx` (R4-1). Si la salida se cancela y el
+  elemento con el que se salió ya no existe (el menú lateral del celular se cerró), el foco va al título "Hábitos"
+  (R4-3). Recargar o cerrar la pestaña mientras guarda no pregunta.
 - **Aviso al recargar o cerrar la pestaña:** el evento `beforeunload` pide el aviso del navegador (su texto no se puede
   cambiar).
 - **Sin aviso cuando la sesión terminó o cambió:** si el token de `localStorage` ya no es el de cuando se abrió la
@@ -197,6 +200,7 @@ aplica al JSON descifrado antes de validarlo; NO se aplica al cuerpo del `PUT`, 
 | 26 | Guardar · Solo un número cambia (C-13; R2-7) | e2e: tabaco "Actual" con 12 sembrado; escribir 20 sin salir del campo ni tocar chips → "‹ Mi perfil médico" pregunta; "Cancelar" avisa "Se descartaron los cambios"; recargar pide `beforeunload` | Playwright |
 | 27 | Guardar · Un guardado en camino no cruza de cuenta en la misma pestaña (C-13; R2-1, R3-2) | e2e: A elige tabaco "Actual" 20 y "Guardar" (`PUT` retenido); "Cerrar sesión" real; B entra por el formulario real, con su GET de hábitos demorado; al soltar el `PUT` de A: B no es llevado a `/perfil` ni ve "Hábitos guardados"; con el GET de B todavía demorado, la tarjeta de B no dice "Con datos" y su formulario no muestra "Actual" ni 20; el GET de B sigue vacío | Playwright |
 | 28 | Guardar · Mientras guarda no se cambia nada, y salir espera sin preguntar (C-13; R2-2, R2-3, R3-1, R3-4) | e2e: `PUT` retenido; un chip con `aria-disabled="true"`, atenuado (opacidad < 1) y su clic no cambia nada; un número de solo lectura; el menú → "Expediente": sin diálogo, la URL sigue en `/perfil/habitos` mientras el `PUT` está retenido; al soltarlo, `/expediente` con "Hábitos guardados" y el GET trae lo guardado; reabrir "Hábitos" muestra lo guardado | Playwright |
+| 31 | Guardar · Atrás del navegador mientras guarda, y el guardado falla (C-13; R4-1, R4-3, R4-6) | e2e: tabaco "Actual" con 20 → "Guardar" (`PUT` retenido) → atrás del navegador → el `PUT` responde 500 → la URL vuelve a `/perfil/habitos` con el formulario y el aviso de error. Con 401 en vez de 500 → llega a `/login` (recarga completa, sin token). A 384 px, salir por el menú lateral → 500 → el foco en el título "Hábitos" | Playwright |
 | 30 | Guardar · Un rechazo al salir se queda a la vista (C-13; R3-3) | e2e: fecha de nacimiento cambiada por la API después de abrir (como R9); alcohol "Lo dejé" con 40 → "Guardar" (`PUT` retenido) → "‹ Mi perfil médico" → al soltar, 422: sigue en `/perfil/habitos` con "La edad no puede ser mayor que tu edad actual" junto al campo; nada guardado | Playwright |
 | 29 | Guardar · El foco vuelve al título si su elemento ya no existe (C-13; R2-4) | e2e en s26-ultra: con un cambio, menú lateral → "Mi perfil médico" → diálogo → "Seguir editando" → foco en el título "Hábitos" | Playwright |
 | 25 | Aislados y cifrados (C1) | existentes: SQL directo sin texto en claro, ahora también `some_days`; 403 sin consentimiento | pytest |

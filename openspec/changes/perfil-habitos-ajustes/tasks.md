@@ -118,7 +118,17 @@ Aprobada por Saúl Pérez el 2026-10-21 ("procede con tu recomendación"): salir
 - [x] 8.1 **Tester.** Filas 27, 28 y 30 del test plan. Commit `test:` solo.
 - [x] 8.2 **Implementer.** `HabitsForm.tsx`: retener la salida mientras guarda (misma sesión), seguir al destino o
   cancelarla según el resultado; chips atenuados. Verificación: el archivo completo verde en chromium y s26-ultra.
-- [ ] 8.3 **Orquestador.** Rojo y verde, `make tdd-check`, evidencia, exploración en Chrome, suite completa, ronda 4.
+- [x] 8.3 **Orquestador.** Rojo y verde, `make tdd-check`, evidencia, exploración en Chrome, suite completa, ronda 4.
+
+## 9. Ronda 4 de la revisión · test→impl
+
+Aprobada por Saúl Pérez el 2026-10-21 ("aprobado"): R4-1, R4-3, R4-6 y los documentos (R4-5, R4-7, R4-8); R4-2 y R4-4 a
+deuda. Regla de cierre aprobada: si la ronda 5 trae solo hallazgos bajos, quedan como deuda registrada y se archiva.
+
+- [ ] 9.1 **Tester.** Fila 31 del test plan. Commit `test:` solo.
+- [ ] 9.2 **Implementer.** `HabitsForm.tsx`: resolver la salida retenida solo con el mismo token; foco al título si
+  la salida se cancela y su elemento ya no existe.
+- [ ] 9.3 **Orquestador.** Rojo y verde, `make tdd-check`, evidencia, suite completa, ronda 5.
 
 - [ ] 3.4 **Archivo** (`/epe-6-archive` como último commit del PR, después de la ronda que salga seca):
   `openspec archive perfil-habitos-ajustes`, fragmento en `changelog.d/`, `.epe/active` a la carpeta archivada.
