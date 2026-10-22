@@ -1,6 +1,7 @@
 # Design
 
-Status: DRAFT
+Status: APPROVED
+Approved by: Saúl Pérez (author) on 2026-10-22, después de navegar el prototipo
 
 **En una frase:** cuando una respuesta de hábitos abre más preguntas, esas preguntas se contestan antes de guardar,
 con "No recuerdo" solo en las que tratan del pasado (guardado como `"unknown"`, distinto de "sin respuesta"), y un error
