@@ -15,11 +15,11 @@ export type AlcoholHabit = {
     /**
      * Start Age
      */
-    start_age?: number | null;
+    start_age?: number | 'unknown' | null;
     /**
      * Quit Age
      */
-    quit_age?: number | null;
+    quit_age?: number | 'unknown' | null;
     /**
      * Frequency
      */
@@ -1204,15 +1204,15 @@ export type TobaccoHabit = {
     /**
      * Cigarettes Per Day
      */
-    cigarettes_per_day?: number | null;
+    cigarettes_per_day?: number | 'unknown' | null;
     /**
      * Start Age
      */
-    start_age?: number | null;
+    start_age?: number | 'unknown' | null;
     /**
      * Quit Age
      */
-    quit_age?: number | null;
+    quit_age?: number | 'unknown' | null;
 };
 
 /**
@@ -1510,11 +1510,11 @@ export type VapingHabit = {
     /**
      * Start Age
      */
-    start_age?: number | null;
+    start_age?: number | 'unknown' | null;
     /**
      * Quit Age
      */
-    quit_age?: number | null;
+    quit_age?: number | 'unknown' | null;
 };
 
 /**
@@ -1580,15 +1580,15 @@ export type WoodSmokeHabit = {
     /**
      * Start Age
      */
-    start_age?: number | null;
+    start_age?: number | 'unknown' | null;
     /**
      * Quit Age
      */
-    quit_age?: number | null;
+    quit_age?: number | 'unknown' | null;
     /**
      * Hours Per Day
      */
-    hours_per_day?: number | null;
+    hours_per_day?: number | 'unknown' | null;
 };
 
 export type loginLoginAccessTokenData = {

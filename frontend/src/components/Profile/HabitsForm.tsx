@@ -87,8 +87,16 @@ const SIX_OR_MORE: readonly SixOrMore[] = [
 const VAPING_FREQUENCIES: readonly VapingFrequency[] = ["daily", "some_days"]
 const PLACES: readonly Place[] = ["home", "work_school", "other"]
 const YES_NO = ["yes", "no"] as const
+/**
+ * "No recuerdo" (perfil-habitos-completitud design.md, Decision 1), stored in
+ * the number's own field.
+ */
+const UNKNOWN = "unknown" as const
 
-/** What the screen holds while editing; numbers stay text until sent. */
+/**
+ * What the screen holds while editing; numbers stay text until sent, and
+ * `unknown` lists the boxes marked "No recuerdo" (their text stays empty).
+ */
 type Draft = {
   alcoholStatus: AlcoholStatus | null
   alcoholStartAge: string
@@ -112,6 +120,7 @@ type Draft = {
   woodStartAge: string
   woodQuitAge: string
   woodHours: string
+  unknown: readonly NumberKey[]
 }
 
 /** The draft entries that hold a number box's text. */
@@ -119,8 +128,18 @@ type NumberDraftKey = {
   [K in keyof Draft]: Draft[K] extends string ? K : never
 }[keyof Draft]
 
-const numberText = (value: number | null | undefined) =>
-  value == null ? "" : `${value}`
+/** "No recuerdo" opens with an empty box (its chip pressed, see `draftFrom`). */
+const numberText = (value: number | typeof UNKNOWN | null | undefined) =>
+  value == null || value === UNKNOWN ? "" : `${value}`
+
+/** The boxes stored as "No recuerdo", read by their `loc`. */
+function unknownOf(habits: Habits): NumberKey[] {
+  return (Object.keys(NUMBER_FIELDS) as NumberKey[]).filter((key) => {
+    const [block, field] = key.split(".") as [keyof Habits, string]
+    const answer = habits[block] as Record<string, unknown> | null | undefined
+    return answer?.[field] === UNKNOWN
+  })
+}
 
 function draftFrom(habits: Habits): Draft {
   const {
@@ -155,6 +174,7 @@ function draftFrom(habits: Habits): Draft {
     woodStartAge: numberText(wood_smoke?.start_age),
     woodQuitAge: numberText(wood_smoke?.quit_age),
     woodHours: numberText(wood_smoke?.hours_per_day),
+    unknown: unknownOf(habits),
   }
 }
 
@@ -179,9 +199,25 @@ type NumberKey =
   | "wood_smoke.quit_age"
   | "wood_smoke.hours_per_day"
 
-/** A generated `z.int().gte(min).lte(max).nullish()`, seen through. */
+type Scale = { minValue: number | null; maxValue: number | null }
+
+/**
+ * A generated `z.int().gte(min).lte(max).nullish()`, seen through; where
+ * "No recuerdo" is admitted the int is the first option of a union with
+ * `z.literal('unknown')`, and the scale is that option's.
+ */
 type BoundedInt = {
-  unwrap(): { unwrap(): { minValue: number | null; maxValue: number | null } }
+  unwrap(): { unwrap(): Scale | { options: readonly unknown[] } }
+}
+
+function scaleOf(schema: BoundedInt): Scale {
+  const inner = schema.unwrap().unwrap()
+  if (!("options" in inner)) return inner
+  const int = inner.options.find(
+    (option): option is Scale =>
+      typeof option === "object" && option !== null && "minValue" in option,
+  )
+  return int ?? { minValue: null, maxValue: null }
 }
 
 type NumberField = {
@@ -198,7 +234,7 @@ function numberFieldOf(
   schema: BoundedInt,
   { age = false, hint }: { age?: boolean; hint?: string } = {},
 ): NumberField {
-  const scale = schema.unwrap().unwrap()
+  const scale = scaleOf(schema)
   return {
     draft,
     label: draft,
@@ -346,9 +382,128 @@ function visibleFields(draft: Draft): string[] {
 }
 
 /**
+ * What each answer opens and has to be answered on "Guardar"
+ * (perfil-habitos-completitud design.md, Interface contract → § Validación;
+ * C-15), as data mirroring the backend's
+ * HABITS_REQUIRED (backend/app/models.py): block → answer → [required, "No
+ * recuerdo" not admitted; required, "No recuerdo" admitted], by field. An
+ * answer not listed requires nothing. The second list is also where the "No
+ * recuerdo" chip goes (Decision 2: only what already happened).
+ */
+const HABITS_REQUIRED: Record<
+  string,
+  Record<string, readonly [readonly string[], readonly string[]]>
+> = {
+  alcohol: {
+    quit: [[], ["start_age", "quit_age"]],
+    current: [
+      ["frequency", "typical_drinks", "six_or_more", "mostly_weekends"],
+      ["start_age"],
+    ],
+  },
+  tobacco: {
+    former: [[], ["cigarettes_per_day", "start_age", "quit_age"]],
+    current: [["cigarettes_per_day"], ["start_age"]],
+  },
+  vaping: {
+    former: [[], ["start_age", "quit_age"]],
+    current: [["frequency"], ["start_age"]],
+    current_some_days: [["frequency", "days_last_30"], ["start_age"]],
+  },
+  secondhand_smoke: { exposed: [["places", "days_per_week"], []] },
+  wood_smoke: {
+    former: [[], ["start_age", "quit_age", "hours_per_day"]],
+    current: [["hours_per_day"], ["start_age"]],
+  },
+}
+
+/** A missing answer whose message predates the table keeps it (backend's HABITS_MISSING_MESSAGE). */
+const MISSING_MESSAGE: Record<string, string> = {
+  "secondhand_smoke.places": "habits.validation.missingPlaces",
+}
+
+/** `exposed` comes from the chips: a place → true, "No me expongo" → false. */
+const exposedOf = (draft: Draft) =>
+  draft.places.length > 0 && !draft.places.includes("none")
+
+/** Each block's HABITS_REQUIRED row, like the backend's `_habit_answer_key`. */
+function answersOf(draft: Draft): [string, string | null][] {
+  const someDays =
+    draft.vapingStatus === "current" && draft.vapingFrequency === "some_days"
+  return [
+    ["alcohol", draft.alcoholStatus],
+    ["tobacco", draft.tobaccoStatus],
+    ["vaping", someDays ? "current_some_days" : draft.vapingStatus],
+    ["secondhand_smoke", exposedOf(draft) ? "exposed" : null],
+    ["wood_smoke", draft.woodStatus],
+  ]
+}
+
+/** The questions the answers on screen require, by `loc`: true where "No recuerdo" is admitted. */
+function requiredOf(draft: Draft): Map<string, boolean> {
+  const required = new Map<string, boolean>()
+  for (const [block, answer] of answersOf(draft)) {
+    const [plain, orUnknown] = (answer && HABITS_REQUIRED[block][answer]) || [
+      [],
+      [],
+    ]
+    for (const field of plain) required.set(`${block}.${field}`, false)
+    for (const field of orUnknown) required.set(`${block}.${field}`, true)
+  }
+  return required
+}
+
+/**
+ * A box marked "No recuerdo" whose question admits it now: a mark left on a
+ * question that stopped admitting it (cigarettes from "Antes" to "Actual")
+ * is neither shown nor sent, like the text of a hidden box.
+ */
+const isUnknown = (draft: Draft, key: NumberKey) =>
+  draft.unknown.includes(key) && requiredOf(draft).get(key) === true
+
+/** The chip answers the table can require, by `loc`. */
+const CHIP_ANSWERS: Record<string, (draft: Draft) => unknown> = {
+  "alcohol.frequency": (draft) => draft.frequency,
+  "alcohol.typical_drinks": (draft) => draft.typicalDrinks,
+  "alcohol.six_or_more": (draft) => draft.sixOrMore,
+  "alcohol.mostly_weekends": (draft) => draft.mostlyWeekends,
+  "vaping.frequency": (draft) => draft.vapingFrequency,
+  "secondhand_smoke.places": (draft) =>
+    draft.places.filter((place) => place !== "none"),
+}
+
+/**
+ * The required questions left unanswered (C-15), with the server's messages:
+ * a box answers with its text or, where admitted, "No recuerdo".
+ */
+function missingOf(draft: Draft, t: TFunction): Record<string, string> {
+  const missing: Record<string, string> = {}
+  for (const [loc, orUnknown] of requiredOf(draft)) {
+    let answered: boolean
+    if (loc in NUMBER_FIELDS) {
+      const key = loc as NumberKey
+      answered =
+        !!draft[NUMBER_FIELDS[key].draft].trim() || isUnknown(draft, key)
+    } else {
+      const answer = CHIP_ANSWERS[loc]?.(draft)
+      answered = answer != null && !(Array.isArray(answer) && !answer.length)
+    }
+    if (answered) continue
+    missing[loc] = t(
+      MISSING_MESSAGE[loc] ??
+        (orUnknown
+          ? "habits.validation.missingOrUnknown"
+          : "habits.validation.missing"),
+    )
+  }
+  return missing
+}
+
+/**
  * What the screen shows, as a string to compare with the one at opening
  * (design.md, Interface contract → Cambios sin guardar): every answer on
- * screen and the raw text of every visible box, typed but not left included.
+ * screen and the raw text (or "No recuerdo") of every visible box, typed but
+ * not left included.
  * A hidden question does not count, and choosing an option and going back to
  * the one before gives the same string.
  */
@@ -371,7 +526,11 @@ function screenOf(draft: Draft): string {
     places: [...draft.places].sort(),
     wood: draft.woodStatus,
     numbers: visibleNumbers(draft).map(
-      (key) => [key, draft[NUMBER_FIELDS[key].draft]] as const,
+      (key) =>
+        [
+          key,
+          isUnknown(draft, key) ? UNKNOWN : draft[NUMBER_FIELDS[key].draft],
+        ] as const,
     ),
   })
 }
@@ -455,8 +614,11 @@ function serverErrors(
  * Draft → PUT body, plus the client errors (design.md, Decisions 3 and 6):
  * the same rules as the server, run before sending so each message shows
  * next to its own box (review R5), and the gate of "Guardar" (nothing goes
- * while there is an error, Decision 4). What does not apply is never
- * sent (the server drops it anyway): hidden questions go as null. The
+ * while there is an error, Decision 4). `errors` are the ones of what was
+ * written (checked on leaving a box too); `missing`, the required questions
+ * left unanswered, only for "Guardar" (perfil-habitos-completitud, Decision
+ * 4). What does not apply is never sent (the server drops it anyway): hidden
+ * questions go as null, and "No recuerdo" only where it is admitted. The
  * server's "exposed without places" cannot happen here: `exposed` is derived
  * from the chips (a place → true, "No me expongo" → false, none → no
  * answer), so that rule only arrives as a 422 on `places`, placed by
@@ -466,17 +628,21 @@ function buildBody(
   draft: Draft,
   birthDate: string | null | undefined,
   t: TFunction,
-): { body: Habits; errors: Record<string, string> } {
+): {
+  body: Habits
+  errors: Record<string, string>
+  missing: Record<string, string>
+} {
   const errors: Record<string, string> = {}
   const visible = visibleNumbers(draft)
   const current = birthDate ? ageToday(birthDate, mexicoCityTodayIso()) : null
-  const numbers: Partial<Record<NumberKey, number | null>> = {}
+  const numbers: Partial<Record<NumberKey, number | typeof UNKNOWN | null>> = {}
 
   for (const key of visible) {
     const field = NUMBER_FIELDS[key]
     const text = draft[field.draft].trim()
     if (!text) {
-      numbers[key] = null
+      numbers[key] = isUnknown(draft, key) ? UNKNOWN : null
       continue
     }
     if (!/^\d+$/.test(text)) {
@@ -496,16 +662,23 @@ function buildBody(
     }
   }
 
+  // "No recuerdo" is never compared (perfil-habitos-completitud design.md,
+  // § Validación).
   for (const [startKey, quitKey, message] of AGE_PAIRS) {
     const start = numbers[startKey]
     const quit = numbers[quitKey]
-    if (start != null && quit != null && start > quit) {
+    if (typeof start === "number" && typeof quit === "number" && start > quit) {
       errors[startKey] = t(`habits.validation.${message}`)
     }
   }
 
   const number = (key: NumberKey) => numbers[key] ?? null
-  const exposed = draft.places.length > 0 && !draft.places.includes("none")
+  // The boxes that never admit "No recuerdo" (days).
+  const count = (key: NumberKey) => {
+    const value = numbers[key]
+    return typeof value === "number" ? value : null
+  }
+  const exposed = exposedOf(draft)
   const drinksNow = draft.alcoholStatus === "current"
   const vapesNow = draft.vapingStatus === "current"
   const body: Habits = {
@@ -532,7 +705,7 @@ function buildBody(
       ? {
           status: draft.vapingStatus,
           frequency: vapesNow ? draft.vapingFrequency : null,
-          days_last_30: number("vaping.days_last_30"),
+          days_last_30: count("vaping.days_last_30"),
           start_age: number("vaping.start_age"),
           quit_age: number("vaping.quit_age"),
         }
@@ -544,7 +717,7 @@ function buildBody(
           ? {
               exposed: true,
               places: draft.places.filter((p): p is Place => p !== "none"),
-              days_per_week: number("secondhand_smoke.days_per_week"),
+              days_per_week: count("secondhand_smoke.days_per_week"),
             }
           : { exposed: false, places: [], days_per_week: null },
     wood_smoke: draft.woodStatus
@@ -556,7 +729,7 @@ function buildBody(
         }
       : null,
   }
-  return { body, errors }
+  return { body, errors, missing: missingOf(draft, t) }
 }
 
 /**
@@ -571,7 +744,8 @@ function buildBody(
  * its end only touches the screen and the session that sent it (R2-1, R2-2).
  * Leaving a box checks it
  * and its block's start ≤ end without moving the focus; "Guardar" checks
- * everything and moves the focus to the first error (review R5). Leaving the
+ * everything, what each answer requires included (HABITS_REQUIRED, C-15),
+ * and moves the focus to the first error (review R5). Leaving the
  * screen with unsaved changes asks first, in the app (useBlocker) and on
  * reload or close (beforeunload), unless the session changed since opening.
  * Nothing here scores or labels the answers (C-6).
@@ -756,7 +930,9 @@ function HabitsForm() {
    * A chip answer, kept on screen until "Guardar". Only the errors of the
    * questions it hides go away (hallazgo A3): a box still on screen keeps its
    * mark, except a start-after-end error whose end question is now hidden,
-   * which is about that question (review R12).
+   * which is about that question (review R12), and a "Contesta esta
+   * pregunta" that no longer holds as it was (answered now, or asked with
+   * the other wording: cigarettes from "Actual" to "Antes").
    */
   const choose = <K extends keyof Draft>(key: K, value: Draft[K]) => {
     // While saving the answers stay as sent (R2-3).
@@ -770,12 +946,19 @@ function HabitsForm() {
       "_form",
     ])
     const hiddenPairs = AGE_PAIRS.filter(([, end]) => !shown.has(end))
+    const missing = missingOf(next, t)
+    const missingTexts = new Set(
+      ["missing", "missingOrUnknown", "missingPlaces"].map((k) =>
+        t(`habits.validation.${k}`),
+      ),
+    )
     setErrors((prev) => {
       const kept: Record<string, string> = {}
       for (const [k, message] of Object.entries(prev)) {
         if (!shown.has(k)) continue
         const pair = hiddenPairs.find(([start]) => start === k)
         if (pair && message === t(`habits.validation.${pair[2]}`)) continue
+        if (missingTexts.has(message) && missing[k] !== message) continue
         kept[k] = message
       }
       return kept
@@ -812,16 +995,24 @@ function HabitsForm() {
   /**
    * Leaving a box: its errors (and its pair's) are refreshed from the draft
    * as it is then (a chip pressed meanwhile may have hidden the pair), and
-   * the focus stays where it went.
+   * the focus stays where it went. What is missing is not checked here
+   * (perfil-habitos-completitud design.md, Decision 4), but a "Contesta esta
+   * pregunta" from "Guardar" stays while the box is still unanswered. The
+   * pair's box, if it has the focus, gets no new error: it is being typed in
+   * (C-17), and a refresh held by a press may run after typing there began
+   * (the timer can lag behind the keys).
    */
   const leave = (key: NumberKey) => {
     const refresh = () => {
-      const { errors: found } = build()
+      const { errors: found, missing } = build()
+      const typingIn = document.activeElement?.id
       setErrors((prev) => {
         const next = { ...prev }
         for (const k of blurKeys(key)) {
-          if (found[k]) next[k] = found[k]
-          else delete next[k]
+          const typing = k !== key && typingIn === `${idPrefix}-${k}`
+          if (found[k]) {
+            if (!typing || prev[k]) next[k] = found[k]
+          } else if (!prev[k] || prev[k] !== missing[k]) delete next[k]
         }
         return next
       })
@@ -830,10 +1021,48 @@ function HabitsForm() {
     else refresh()
   }
 
+  /**
+   * A change in a box (C-17): the errors already shown on it (and its pair's)
+   * that no longer hold go away at once, a valid or empty box included; no
+   * new one appears while typing (they do on leaving the box, C-14). A
+   * missing answer of the pair that is still missing keeps its message.
+   */
+  const settle = (key: NumberKey, next: Draft) => {
+    const { errors: found, missing } = build(next)
+    setErrors((prev) => {
+      const kept = { ...prev }
+      for (const k of blurKeys(key)) {
+        if (!prev[k] || found[k]) continue
+        if (k === key || prev[k] !== missing[k]) delete kept[k]
+      }
+      return kept
+    })
+  }
+
+  /**
+   * "No recuerdo" (C-16): marking it empties the box and takes its error
+   * away; typing in the box unmarks it. While saving it takes no changes,
+   * like the chips (D20).
+   */
+  const toggleUnknown = (key: NumberKey) => {
+    if (sending.current) return
+    const now = draftRef.current
+    const next: Draft = now.unknown.includes(key)
+      ? { ...now, unknown: now.unknown.filter((k) => k !== key) }
+      : {
+          ...now,
+          [NUMBER_FIELDS[key].draft]: "",
+          unknown: [...now.unknown, key],
+        }
+    update(next)
+    settle(key, next)
+  }
+
   const handleSubmit = (event: FormEvent) => {
     event.preventDefault()
     if (sending.current) return
-    const { body, errors: found } = build()
+    const { body, errors: written, missing } = build()
+    const found = { ...missing, ...written }
     if (Object.keys(found).length) {
       setErrors(found)
       setFailedAttempt((n) => n + 1)
@@ -896,15 +1125,22 @@ function HabitsForm() {
     ) : null
 
   const visible = visibleNumbers(draft)
+  const required = requiredOf(draft)
 
+  /**
+   * The box, and under it "No recuerdo" where the table admits it (C-16): a
+   * toggle named after its question so each one is told apart (R7).
+   */
   const numberField = (key: NumberKey) => {
     if (!visible.includes(key)) return null
     const field = NUMBER_FIELDS[key]
     const id = `${idPrefix}-${key}`
     const hintId = field.hint ? `${id}-hint` : undefined
+    const label = t(`habits.fields.${field.label}`)
+    const unknown = isUnknown(draft, key)
     return (
       <div key={key} className="grid gap-1.5">
-        <Label htmlFor={id}>{t(`habits.fields.${field.label}`)}</Label>
+        <Label htmlFor={id}>{label}</Label>
         {field.hint && (
           <p id={hintId} className="text-sm text-muted-foreground">
             {t(`habits.fields.${field.hint}`)}
@@ -926,10 +1162,31 @@ function HabitsForm() {
           }
           onChange={(e) => {
             if (sending.current) return
-            update({ ...draftRef.current, [field.draft]: e.target.value })
+            const now = draftRef.current
+            const next: Draft = {
+              ...now,
+              [field.draft]: e.target.value,
+              unknown: now.unknown.filter((k) => k !== key),
+            }
+            update(next)
+            settle(key, next)
           }}
           onBlur={() => leave(key)}
         />
+        {required.get(key) && (
+          <Button
+            type="button"
+            size="sm"
+            variant={unknown ? "default" : "outline"}
+            className="w-fit aria-disabled:cursor-not-allowed aria-disabled:opacity-50"
+            aria-pressed={unknown}
+            aria-label={t("habits.dontRememberFor", { label })}
+            aria-disabled={busy || undefined}
+            onClick={() => toggleUnknown(key)}
+          >
+            {t("habits.dontRemember")}
+          </Button>
+        )}
         {fieldError(key)}
       </div>
     )

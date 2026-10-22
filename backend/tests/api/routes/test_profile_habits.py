@@ -1,5 +1,5 @@
-"""Tests for the habits questionnaire of the medical profile (perfil-habitos and
-perfil-habitos-ajustes, grupo 1).
+"""Tests for the habits questionnaire of the medical profile (perfil-habitos,
+perfil-habitos-ajustes, grupo 1, and perfil-habitos-completitud).
 
 Interface contract (perfil-habitos-ajustes design.md, "## Interface contract";
 base /api/v1/profile, behind a current consent; field names and values in
@@ -47,6 +47,29 @@ English):
   Without consent: 403.
 - Table: patient_profile.habits, EncryptedString (Fernet, "gAAAA" prefix) with
   the JSON of the normalized object.
+
+perfil-habitos-completitud (design.md, "## Interface contract"):
+- start_age and quit_age of alcohol, tobacco, vaping and wood_smoke:
+  0..130 | "unknown" | null; tobacco.cigarettes_per_day: 1..100 | "unknown" |
+  null; wood_smoke.hours_per_day: 1..24 | "unknown" | null. "unknown" = "No
+  recuerdo"; any other string, or "unknown" in any other field, is a schema 422.
+- Normalization unchanged; an "unknown" that does not apply is dropped like a
+  number.
+- Validation after normalizing (one error per field, same 422 shape):
+  alcohol quit -> start_age, quit_age (admit "unknown"); alcohol current ->
+  frequency, typical_drinks, six_or_more, mostly_weekends (no "unknown") and
+  start_age (admits it); tobacco former -> cigarettes_per_day, start_age,
+  quit_age (admit it); tobacco current -> cigarettes_per_day (no) and start_age
+  (admits); vaping former -> start_age, quit_age (admit); vaping current ->
+  frequency, days_last_30 with some_days (no) and start_age (admits);
+  secondhand exposed -> places, days_per_week (no); wood former -> start_age,
+  quit_age, hours_per_day (admit); wood current -> hours_per_day (no) and
+  start_age (admits). Missing without "unknown" -> "Contesta esta pregunta.";
+  missing where admitted -> "Contesta esta pregunta o marca «No recuerdo».";
+  "unknown" in cigarettes_per_day or hours_per_day with current -> "Esta
+  pregunta no admite «No recuerdo».". The age rules compare numbers only.
+- Rows saved before with partial data stay readable; nothing comes back as
+  "unknown" unless it was saved as "unknown".
 """
 
 import json
@@ -84,6 +107,11 @@ AGE_ABOVE_CURRENT = "La edad no puede ser mayor que tu edad actual"
 START_AFTER_QUIT = "No puede ser mayor que la edad en que lo dejaste"
 START_AFTER_END = "No puede ser mayor que la edad en que terminó"
 PLACES_REQUIRED = "Elige dónde, o «No me expongo»"
+ANSWER_REQUIRED = "Contesta esta pregunta."
+ANSWER_OR_UNKNOWN_REQUIRED = "Contesta esta pregunta o marca «No recuerdo»."
+UNKNOWN_NOT_ADMITTED = "Esta pregunta no admite «No recuerdo»."
+
+UNKNOWN = "unknown"
 
 TOP_LEVEL_KEYS = {"alcohol", "tobacco", "vaping", "secondhand_smoke", "wood_smoke"}
 ALCOHOL_KEYS = {
@@ -222,14 +250,16 @@ SEED_STORED = habits(vaping=vaping(status="never"))
 def test_c1_current_alcohol_with_audit_c_round_trip(
     client: TestClient, db: Session
 ) -> None:
-    """Nacido 1990-03-15, sin hábitos: alcohol current, two_to_three_weekly,
-    three_four, six_or_more monthly y mostly_weekends -> PUT y GET iguales."""
+    """Nacido 1990-03-15, sin hábitos: alcohol current desde los 18,
+    two_to_three_weekly, three_four, six_or_more monthly y mostly_weekends ->
+    PUT y GET iguales."""
     headers, _ = consented_user(client, db)
     r_profile = put_profile(client, headers, {"birth_date": BIRTH_DATE})
     assert r_profile.status_code == 200, r_profile.text
     assert stored_habits(client, headers) == empty_habits()
     answers = {
         "status": "current",
+        "start_age": 18,
         "frequency": "two_to_three_weekly",
         "typical_drinks": "three_four",
         "six_or_more": "monthly",
@@ -247,7 +277,14 @@ def test_c1_mostly_weekends_false_round_trip(client: TestClient, db: Session) ->
     """Alcohol current con mostly_weekends False -> PUT y GET devuelven False,
     no None (el «No» es una respuesta; revisión, ronda 2, N3)."""
     headers, _ = consented_user(client, db)
-    answers = {"status": "current", "mostly_weekends": False}
+    answers = {
+        "status": "current",
+        "start_age": 18,
+        "frequency": "monthly_or_less",
+        "typical_drinks": "one_two",
+        "six_or_more": "never",
+        "mostly_weekends": False,
+    }
     expected = habits(alcohol=alcohol(**answers))
 
     saved = save(client, headers, {"alcohol": answers})
@@ -348,12 +385,21 @@ def test_c2_c10_c12_start_age_after_quit_age_rejected(
 
 AGE_ABOVE_CASES = [
     pytest.param(
-        {"alcohol": {"status": "current", "start_age": 40}},
+        {
+            "alcohol": {
+                "status": "current",
+                "start_age": 40,
+                "frequency": "monthly_or_less",
+                "typical_drinks": "one_two",
+                "six_or_more": "never",
+                "mostly_weekends": False,
+            }
+        },
         ["body", "alcohol", "start_age"],
         id="alcohol-start_age",
     ),
     pytest.param(
-        {"alcohol": {"status": "quit", "quit_age": 40}},
+        {"alcohol": {"status": "quit", "start_age": 18, "quit_age": 40}},
         ["body", "alcohol", "quit_age"],
         id="alcohol-quit_age",
     ),
@@ -448,8 +494,8 @@ def test_c1_c2_age_without_birth_date_accepted(
 # equal to the quit, is possible.
 AGE_AT_LIMIT_CASES = [
     pytest.param(
-        {"alcohol": {"status": "quit", "quit_age": 36}},
-        habits(alcohol=alcohol(status="quit", quit_age=36)),
+        {"alcohol": {"status": "quit", "start_age": 18, "quit_age": 36}},
+        habits(alcohol=alcohol(status="quit", start_age=18, quit_age=36)),
         id="alcohol-quit_age-equals-current",
     ),
     pytest.param(
@@ -523,12 +569,20 @@ def test_c1_mexico_day_decides_the_current_age(
     freeze_routes_clock(monkeypatch, datetime(2026, 3, 14, 21, 0))
     save(client, headers, SEED)
 
-    r = put_habits(client, headers, {"alcohol": {"status": "quit", "quit_age": 36}})
+    r = put_habits(
+        client,
+        headers,
+        {"alcohol": {"status": "quit", "start_age": 18, "quit_age": 36}},
+    )
 
     assert_single_error(r, ["body", "alcohol", "quit_age"], AGE_ABOVE_CURRENT)
     assert stored_habits(client, headers) == SEED_STORED
-    saved = save(client, headers, {"alcohol": {"status": "quit", "quit_age": 35}})
-    assert saved == habits(alcohol=alcohol(status="quit", quit_age=35))
+    saved = save(
+        client,
+        headers,
+        {"alcohol": {"status": "quit", "start_age": 18, "quit_age": 35}},
+    )
+    assert saved == habits(alcohol=alcohol(status="quit", start_age=18, quit_age=35))
 
 
 # --- Test plan rows 5, 9: Lo que no aplica se descarta (C-1, C-11) ----------------
@@ -614,11 +668,6 @@ NORMALIZATION_CASES = [
         id="vaping-daily-drops-days",
     ),
     pytest.param(
-        {"vaping": {"status": "current", "days_last_30": 12, "start_age": 25}},
-        habits(vaping=vaping(status="current", start_age=25)),
-        id="vaping-no-frequency-drops-days",
-    ),
-    pytest.param(
         {"wood_smoke": {"status": "never", **ALL_WOOD}},
         habits(wood_smoke=wood(status="never")),
         id="wood-never-drops-ages-and-hours",
@@ -638,6 +687,80 @@ NORMALIZATION_CASES = [
         },
         habits(secondhand_smoke=secondhand(exposed=False)),
         id="not-exposed-drops-places-and-days",
+    ),
+    # perfil-habitos-completitud: an "unknown" that does not apply is dropped
+    # like a number.
+    pytest.param(
+        {"alcohol": {"status": "never", "start_age": UNKNOWN, "quit_age": UNKNOWN}},
+        habits(alcohol=alcohol(status="never")),
+        id="alcohol-never-drops-unknown-ages",
+    ),
+    pytest.param(
+        {
+            "alcohol": {
+                "status": "current",
+                "start_age": 17,
+                "quit_age": UNKNOWN,
+                **AUDIT_C,
+            }
+        },
+        habits(alcohol=alcohol(status="current", start_age=17, **AUDIT_C)),
+        id="alcohol-current-drops-unknown-quit_age",
+    ),
+    pytest.param(
+        {
+            "tobacco": {
+                "status": "never",
+                "cigarettes_per_day": UNKNOWN,
+                "start_age": UNKNOWN,
+                "quit_age": UNKNOWN,
+            }
+        },
+        habits(tobacco=tobacco(status="never")),
+        id="tobacco-never-drops-unknown-cigarettes-and-ages",
+    ),
+    pytest.param(
+        {
+            "tobacco": {
+                "status": "current",
+                "cigarettes_per_day": 10,
+                "start_age": UNKNOWN,
+                "quit_age": UNKNOWN,
+            }
+        },
+        habits(
+            tobacco=tobacco(status="current", cigarettes_per_day=10, start_age=UNKNOWN)
+        ),
+        id="tobacco-current-drops-unknown-quit_age",
+    ),
+    pytest.param(
+        {"vaping": {"status": "never", "start_age": UNKNOWN, "quit_age": UNKNOWN}},
+        habits(vaping=vaping(status="never")),
+        id="vaping-never-drops-unknown-ages",
+    ),
+    pytest.param(
+        {
+            "wood_smoke": {
+                "status": "never",
+                "start_age": UNKNOWN,
+                "quit_age": UNKNOWN,
+                "hours_per_day": UNKNOWN,
+            }
+        },
+        habits(wood_smoke=wood(status="never")),
+        id="wood-never-drops-unknown-ages-and-hours",
+    ),
+    pytest.param(
+        {
+            "wood_smoke": {
+                "status": "current",
+                "start_age": 5,
+                "quit_age": UNKNOWN,
+                "hours_per_day": 8,
+            }
+        },
+        habits(wood_smoke=wood(status="current", start_age=5, hours_per_day=8)),
+        id="wood-current-drops-unknown-quit_age",
     ),
 ]
 
@@ -672,10 +795,19 @@ def test_c1_dropped_age_is_not_validated(
     saved = save(
         client,
         headers,
-        {"tobacco": {"status": "current", "cigarettes_per_day": 5, "quit_age": 40}},
+        {
+            "tobacco": {
+                "status": "current",
+                "cigarettes_per_day": 5,
+                "start_age": 18,
+                "quit_age": 40,
+            }
+        },
     )
 
-    expected = habits(tobacco=tobacco(status="current", cigarettes_per_day=5))
+    expected = habits(
+        tobacco=tobacco(status="current", cigarettes_per_day=5, start_age=18)
+    )
     assert saved == expected
     assert stored_habits(client, headers) == expected
 
@@ -713,7 +845,7 @@ def test_c2_former_tobacco_and_current_daily_vaping_round_trip(
     client: TestClient, db: Session, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     """Nacido 1990-03-15: tabaco former, 10 al día, de 18 a 30, vaping current
-    daily -> PUT y GET iguales."""
+    desde los 30, daily -> PUT y GET iguales."""
     headers, _ = consented_user(client, db)
     born_1990_frozen(client, headers, monkeypatch)
     smoking = {
@@ -722,7 +854,7 @@ def test_c2_former_tobacco_and_current_daily_vaping_round_trip(
         "start_age": 18,
         "quit_age": 30,
     }
-    vape = {"status": "current", "frequency": "daily"}
+    vape = {"status": "current", "start_age": 30, "frequency": "daily"}
     expected = habits(tobacco=tobacco(**smoking), vaping=vaping(**vape))
 
     saved = save(client, headers, {"tobacco": smoking, "vaping": vape})
@@ -761,23 +893,39 @@ def test_c11_current_vaping_some_days_round_trip(
 def test_c11_some_days_then_daily_then_former(
     client: TestClient, db: Session, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    """Vapeador current some_days con 12 días; luego daily (con los 12 días aún
-    en el cuerpo) -> sin días; luego former 25/28 (con frecuencia y días en el
-    cuerpo) -> former 25/28 sin frecuencia ni días."""
+    """Vapeador current desde los 25, some_days con 12 días; luego daily (con
+    los 12 días aún en el cuerpo) -> sin días; luego former 25/28 (con
+    frecuencia y días en el cuerpo) -> former 25/28 sin frecuencia ni días."""
     headers, _ = consented_user(client, db)
     born_1990_frozen(client, headers, monkeypatch)
     save(
         client,
         headers,
-        {"vaping": {"status": "current", "frequency": "some_days", "days_last_30": 12}},
+        {
+            "vaping": {
+                "status": "current",
+                "start_age": 25,
+                "frequency": "some_days",
+                "days_last_30": 12,
+            }
+        },
     )
 
     daily = save(
         client,
         headers,
-        {"vaping": {"status": "current", "frequency": "daily", "days_last_30": 12}},
+        {
+            "vaping": {
+                "status": "current",
+                "start_age": 25,
+                "frequency": "daily",
+                "days_last_30": 12,
+            }
+        },
     )
-    assert daily == habits(vaping=vaping(status="current", frequency="daily"))
+    assert daily == habits(
+        vaping=vaping(status="current", start_age=25, frequency="daily")
+    )
     assert stored_habits(client, headers) == daily
 
     former = save(
@@ -941,119 +1089,240 @@ def test_c_get_does_not_create_the_profile(client: TestClient, db: Session) -> N
 
 # --- Test plan row 13: Respuestas fuera de su escala ------------------------------
 
+# Each body is otherwise complete (perfil-habitos-completitud C-15), so the field
+# outside its scale is the only problem: a schema 422 on that loc, never the
+# required-answer value_error.
 OUT_OF_SCALE_CASES = [
     pytest.param(
-        {"tobacco": {"status": "current", "cigarettes_per_day": 0}},
+        {"tobacco": {"status": "current", "cigarettes_per_day": 0, "start_age": 18}},
+        ["body", "tobacco", "cigarettes_per_day"],
         id="cigarettes-0",
     ),
     pytest.param(
-        {"tobacco": {"status": "current", "cigarettes_per_day": 101}},
+        {"tobacco": {"status": "current", "cigarettes_per_day": 101, "start_age": 18}},
+        ["body", "tobacco", "cigarettes_per_day"],
         id="cigarettes-101",
     ),
     pytest.param(
         {"secondhand_smoke": {"exposed": True, "places": ["home"], "days_per_week": 8}},
+        ["body", "secondhand_smoke", "days_per_week"],
         id="secondhand-8-days",
     ),
-    pytest.param({"alcohol": {"status": "quit", "quit_age": 131}}, id="age-131"),
+    pytest.param(
+        {"alcohol": {"status": "quit", "start_age": 18, "quit_age": 131}},
+        ["body", "alcohol", "quit_age"],
+        id="age-131",
+    ),
     pytest.param(
         {"tobacco": {"status": "current", "cigarettes_per_day": 5, "start_age": 131}},
+        ["body", "tobacco", "start_age"],
         id="start_age-131",
     ),
     pytest.param(
-        {"alcohol": {"status": "current", "start_age": 131}},
+        {"alcohol": {"status": "current", "start_age": 131, **AUDIT_C}},
+        ["body", "alcohol", "start_age"],
         id="alcohol-start_age-131",
     ),
     pytest.param(
-        {"vaping": {"status": "current", "start_age": 131}},
+        {"vaping": {"status": "current", "frequency": "daily", "start_age": 131}},
+        ["body", "vaping", "start_age"],
         id="vaping-start_age-131",
     ),
     pytest.param(
-        {"wood_smoke": {"status": "former", "start_age": 131}},
+        {"wood_smoke": {"status": "current", "start_age": 131, "hours_per_day": 8}},
+        ["body", "wood_smoke", "start_age"],
         id="wood-start_age-131",
     ),
-    # Review R7: the lower bounds.
-    pytest.param({"alcohol": {"status": "quit", "quit_age": -1}}, id="age--1"),
+    # Review R7: the lower bounds. A start age of "unknown" so it is never
+    # compared with the quit age of -1.
+    pytest.param(
+        {"alcohol": {"status": "quit", "start_age": UNKNOWN, "quit_age": -1}},
+        ["body", "alcohol", "quit_age"],
+        id="age--1",
+    ),
     pytest.param(
         {"tobacco": {"status": "current", "cigarettes_per_day": 5, "start_age": -1}},
+        ["body", "tobacco", "start_age"],
         id="start_age--1",
     ),
     pytest.param(
-        {"tobacco": {"status": "former", "cigarettes_per_day": 5, "quit_age": -1}},
+        {
+            "tobacco": {
+                "status": "former",
+                "cigarettes_per_day": 5,
+                "start_age": UNKNOWN,
+                "quit_age": -1,
+            }
+        },
+        ["body", "tobacco", "quit_age"],
         id="tobacco-quit_age--1",
     ),
     pytest.param(
-        {"vaping": {"status": "former", "quit_age": -1}},
+        {"vaping": {"status": "former", "start_age": UNKNOWN, "quit_age": -1}},
+        ["body", "vaping", "quit_age"],
         id="vaping-quit_age--1",
     ),
     pytest.param(
-        {"wood_smoke": {"status": "former", "quit_age": -1}},
+        {
+            "wood_smoke": {
+                "status": "former",
+                "start_age": UNKNOWN,
+                "quit_age": -1,
+                "hours_per_day": 8,
+            }
+        },
+        ["body", "wood_smoke", "quit_age"],
         id="wood-quit_age--1",
     ),
     pytest.param(
         {"secondhand_smoke": {"exposed": True, "places": ["home"], "days_per_week": 0}},
+        ["body", "secondhand_smoke", "days_per_week"],
         id="secondhand-0-days",
     ),
     # perfil-habitos-ajustes: the new scales.
     pytest.param(
-        {"vaping": {"status": "current", "frequency": "some_days", "days_last_30": 0}},
+        {
+            "vaping": {
+                "status": "current",
+                "frequency": "some_days",
+                "days_last_30": 0,
+                "start_age": 25,
+            }
+        },
+        ["body", "vaping", "days_last_30"],
         id="vaping-days_last_30-0",
     ),
     pytest.param(
-        {"vaping": {"status": "current", "frequency": "some_days", "days_last_30": 31}},
+        {
+            "vaping": {
+                "status": "current",
+                "frequency": "some_days",
+                "days_last_30": 31,
+                "start_age": 25,
+            }
+        },
+        ["body", "vaping", "days_last_30"],
         id="vaping-days_last_30-31",
     ),
     pytest.param(
         {"wood_smoke": {"status": "current", "start_age": 5, "hours_per_day": 0}},
+        ["body", "wood_smoke", "hours_per_day"],
         id="wood-hours_per_day-0",
     ),
     pytest.param(
         {"wood_smoke": {"status": "current", "start_age": 5, "hours_per_day": 25}},
+        ["body", "wood_smoke", "hours_per_day"],
         id="wood-hours_per_day-25",
     ),
-    pytest.param({"vaping": "current"}, id="vaping-as-plain-text-in-put"),
     pytest.param(
-        {"wood_smoke": {"status": "former", "years": 12}},
+        {"vaping": "current"}, ["body", "vaping"], id="vaping-as-plain-text-in-put"
+    ),
+    pytest.param(
+        {"wood_smoke": {**ALL_WOOD, "status": "former", "years": 12}},
+        ["body", "wood_smoke", "years"],
         id="wood-years-in-put",
     ),
-    pytest.param({"vaping": {"status": "sometimes"}}, id="vaping-status-outside-enum"),
     pytest.param(
-        {"vaping": {"status": "current", "frequency": "weekly"}},
+        {"vaping": {"status": "sometimes"}},
+        ["body", "vaping", "status"],
+        id="vaping-status-outside-enum",
+    ),
+    pytest.param(
+        {"vaping": {"status": "current", "frequency": "weekly", "start_age": 25}},
+        ["body", "vaping", "frequency"],
         id="vaping-frequency-outside-enum",
     ),
     pytest.param(
-        {"alcohol": {"status": "sometimes"}}, id="alcohol-status-outside-enum"
+        {"alcohol": {"status": "sometimes"}},
+        ["body", "alcohol", "status"],
+        id="alcohol-status-outside-enum",
     ),
     pytest.param(
-        {"alcohol": {"status": "current", "frequency": "daily"}},
+        {
+            "alcohol": {
+                "status": "current",
+                "start_age": 18,
+                **AUDIT_C,
+                "frequency": "daily",
+            }
+        },
+        ["body", "alcohol", "frequency"],
         id="frequency-outside-enum",
     ),
     pytest.param(
         {"secondhand_smoke": {"exposed": True, "places": ["car"], "days_per_week": 2}},
+        ["body", "secondhand_smoke", "places"],
         id="place-outside-enum",
     ),
     pytest.param(
         {"vaping": {"status": "never"}, "drugs": "never"},
+        ["body", "drugs"],
         id="unknown-top-level-field",
     ),
     pytest.param(
         {"alcohol": {"status": "never", "audit_c_score": 0}},
+        ["body", "alcohol", "audit_c_score"],
         id="unknown-nested-field",
+    ),
+    # perfil-habitos-completitud: any string other than "unknown" in a number.
+    # ("unknown" in a current amount is a value_error by design, C-16:
+    # test_c16_unknown_in_current_amount_rejected.)
+    pytest.param(
+        {"alcohol": {"status": "quit", "start_age": "no recuerdo", "quit_age": 30}},
+        ["body", "alcohol", "start_age"],
+        id="age-other-string",
+    ),
+    pytest.param(
+        {"alcohol": {"status": "quit", "start_age": "Unknown", "quit_age": 30}},
+        ["body", "alcohol", "start_age"],
+        id="age-unknown-capitalized",
+    ),
+    pytest.param(
+        {
+            "tobacco": {
+                "status": "former",
+                "cigarettes_per_day": "unknown ",
+                "start_age": 18,
+                "quit_age": 30,
+            }
+        },
+        ["body", "tobacco", "cigarettes_per_day"],
+        id="cigarettes-unknown-with-space",
+    ),
+    pytest.param(
+        {
+            "wood_smoke": {
+                "status": "former",
+                "start_age": 5,
+                "quit_age": 20,
+                "hours_per_day": "",
+            }
+        },
+        ["body", "wood_smoke", "hours_per_day"],
+        id="hours-empty-string",
     ),
 ]
 
 
-@pytest.mark.parametrize("body", OUT_OF_SCALE_CASES)
+@pytest.mark.parametrize(("body", "loc"), OUT_OF_SCALE_CASES)
 def test_c_out_of_scale_answers_rejected_habits_unchanged(
-    client: TestClient, db: Session, body: dict[str, Any]
+    client: TestClient, db: Session, body: dict[str, Any], loc: list[str]
 ) -> None:
     """Fuera de escala, fuera del catálogo, la forma anterior o un campo
-    desconocido -> 422 y los hábitos guardados no cambian."""
+    desconocido -> 422 del esquema en ese campo (no la regla de respuesta
+    obligatoria) y los hábitos guardados no cambian."""
     headers, _ = consented_user(client, db)
     save(client, headers, SEED)
 
     r = put_habits(client, headers, body)
 
     assert r.status_code == 422, r.text
+    detail = r.json()["detail"]
+    assert isinstance(detail, list), detail
+    assert detail, detail
+    assert all(
+        e["loc"][: len(loc)] == loc and e["type"] != "value_error" for e in detail
+    ), detail
     assert stored_habits(client, headers) == SEED_STORED
 
 
@@ -1096,6 +1365,7 @@ def test_legacy_stored_habits_still_read(
         vaping=vaping(status="current"),
         wood_smoke=wood(status="former"),
     )
+    assert UNKNOWN not in r.text, r.text
     warnings = [
         rec
         for rec in caplog.records
@@ -1183,6 +1453,536 @@ def test_upgrade_stored_habits_unit(
     Habits.model_validate(result)
 
 
+# --- perfil-habitos-completitud, row 2: Falta una pregunta de lo que eligió (C-15) -
+
+BLOCK_HELPERS = {
+    "alcohol": alcohol,
+    "tobacco": tobacco,
+    "vaping": vaping,
+    "secondhand_smoke": secondhand,
+    "wood_smoke": wood,
+}
+
+# One complete answer per row of the required table, with the fields it
+# requires and the message each one gets when it is missing.
+COMPLETE_ANSWERS: list[tuple[str, str, dict[str, Any], list[tuple[str, str]]]] = [
+    (
+        "alcohol",
+        "quit",
+        {"status": "quit", "start_age": 17, "quit_age": 30},
+        [
+            ("start_age", ANSWER_OR_UNKNOWN_REQUIRED),
+            ("quit_age", ANSWER_OR_UNKNOWN_REQUIRED),
+        ],
+    ),
+    (
+        "alcohol",
+        "current",
+        {
+            "status": "current",
+            "start_age": 18,
+            "frequency": "two_to_three_weekly",
+            "typical_drinks": "three_four",
+            "six_or_more": "monthly",
+            "mostly_weekends": True,
+        },
+        [
+            ("start_age", ANSWER_OR_UNKNOWN_REQUIRED),
+            ("frequency", ANSWER_REQUIRED),
+            ("typical_drinks", ANSWER_REQUIRED),
+            ("six_or_more", ANSWER_REQUIRED),
+            ("mostly_weekends", ANSWER_REQUIRED),
+        ],
+    ),
+    (
+        "tobacco",
+        "former",
+        {"status": "former", "cigarettes_per_day": 10, "start_age": 18, "quit_age": 30},
+        [
+            ("cigarettes_per_day", ANSWER_OR_UNKNOWN_REQUIRED),
+            ("start_age", ANSWER_OR_UNKNOWN_REQUIRED),
+            ("quit_age", ANSWER_OR_UNKNOWN_REQUIRED),
+        ],
+    ),
+    (
+        "tobacco",
+        "current",
+        {"status": "current", "cigarettes_per_day": 10, "start_age": 18},
+        [
+            ("cigarettes_per_day", ANSWER_REQUIRED),
+            ("start_age", ANSWER_OR_UNKNOWN_REQUIRED),
+        ],
+    ),
+    (
+        "vaping",
+        "former",
+        {"status": "former", "start_age": 25, "quit_age": 28},
+        [
+            ("start_age", ANSWER_OR_UNKNOWN_REQUIRED),
+            ("quit_age", ANSWER_OR_UNKNOWN_REQUIRED),
+        ],
+    ),
+    (
+        "vaping",
+        "current-daily",
+        {"status": "current", "frequency": "daily", "start_age": 25},
+        [
+            ("frequency", ANSWER_REQUIRED),
+            ("start_age", ANSWER_OR_UNKNOWN_REQUIRED),
+        ],
+    ),
+    (
+        "vaping",
+        "current-some_days",
+        {
+            "status": "current",
+            "frequency": "some_days",
+            "days_last_30": 12,
+            "start_age": 25,
+        },
+        [("days_last_30", ANSWER_REQUIRED)],
+    ),
+    (
+        "secondhand_smoke",
+        "exposed",
+        {"exposed": True, "places": ["home"], "days_per_week": 2},
+        [
+            # Today's rule for an exposure without places keeps its message.
+            ("places", PLACES_REQUIRED),
+            ("days_per_week", ANSWER_REQUIRED),
+        ],
+    ),
+    (
+        "wood_smoke",
+        "former",
+        {"status": "former", "start_age": 5, "quit_age": 20, "hours_per_day": 3},
+        [
+            ("start_age", ANSWER_OR_UNKNOWN_REQUIRED),
+            ("quit_age", ANSWER_OR_UNKNOWN_REQUIRED),
+            ("hours_per_day", ANSWER_OR_UNKNOWN_REQUIRED),
+        ],
+    ),
+    (
+        "wood_smoke",
+        "current",
+        {"status": "current", "start_age": 5, "hours_per_day": 8},
+        [
+            ("hours_per_day", ANSWER_REQUIRED),
+            ("start_age", ANSWER_OR_UNKNOWN_REQUIRED),
+        ],
+    ),
+]
+
+COMPLETE_ANSWER_CASES = [
+    pytest.param(block, answers, id=f"{block}-{label}")
+    for block, label, answers, _ in COMPLETE_ANSWERS
+]
+
+MISSING_ANSWER_CASES = [
+    pytest.param(block, answers, field, msg, how, id=f"{block}-{label}-{field}-{how}")
+    for block, label, answers, required in COMPLETE_ANSWERS
+    for field, msg in required
+    for how in ("omitted", "null")
+]
+
+
+def without_answer(answers: dict[str, Any], field: str, how: str) -> dict[str, Any]:
+    """The answers with one field left unanswered: omitted, or sent as null
+    (places: an empty list)."""
+    rest = {k: v for k, v in answers.items() if k != field}
+    if how == "omitted":
+        return rest
+    return {**rest, field: [] if field == "places" else None}
+
+
+@pytest.mark.parametrize(("block", "answers"), COMPLETE_ANSWER_CASES)
+def test_c15_complete_answers_saved(
+    client: TestClient,
+    db: Session,
+    monkeypatch: pytest.MonkeyPatch,
+    block: str,
+    answers: dict[str, Any],
+) -> None:
+    """Nacido 1990-03-15: cada respuesta con todas sus preguntas contestadas ->
+    PUT y GET iguales (el control de los casos sin una pregunta)."""
+    headers, _ = consented_user(client, db)
+    born_1990_frozen(client, headers, monkeypatch)
+    expected = habits(**{block: BLOCK_HELPERS[block](**answers)})
+
+    saved = save(client, headers, {block: answers})
+
+    assert saved == expected
+    assert stored_habits(client, headers) == expected
+
+
+@pytest.mark.parametrize(
+    ("block", "answers", "field", "msg", "how"), MISSING_ANSWER_CASES
+)
+def test_c15_missing_required_answer_rejected_habits_unchanged(
+    client: TestClient,
+    db: Session,
+    monkeypatch: pytest.MonkeyPatch,
+    block: str,
+    answers: dict[str, Any],
+    field: str,
+    msg: str,
+    how: str,
+) -> None:
+    """Nacido 1990-03-15, con hábitos guardados: por cada pregunta obligatoria
+    de la respuesta elegida, el PUT sin ella (omitida o null) -> 422 en su loc
+    con su mensaje exacto, y los hábitos guardados no cambian."""
+    headers, _ = consented_user(client, db)
+    born_1990_frozen(client, headers, monkeypatch)
+    save(client, headers, SEED)
+
+    r = put_habits(client, headers, {block: without_answer(answers, field, how)})
+
+    assert_single_error(r, ["body", block, field], msg)
+    assert stored_habits(client, headers) == SEED_STORED
+
+
+def test_c15_quit_alcohol_with_only_quit_age_rejected(
+    client: TestClient, db: Session, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Nacido 1990-03-15, sin hábitos: alcohol quit con 30 en la edad en que lo
+    dejó y sin edad de inicio -> 422 "Contesta esta pregunta o marca «No
+    recuerdo»." en start_age, y nada se guarda."""
+    headers, _ = consented_user(client, db)
+    born_1990_frozen(client, headers, monkeypatch)
+
+    r = put_habits(client, headers, {"alcohol": {"status": "quit", "quit_age": 30}})
+
+    assert_single_error(r, ["body", "alcohol", "start_age"], ANSWER_OR_UNKNOWN_REQUIRED)
+    assert stored_habits(client, headers) == empty_habits()
+
+
+def test_c15_current_alcohol_without_frequency_questions_four_errors(
+    client: TestClient, db: Session, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Nacido 1990-03-15, sin hábitos: alcohol current con 18 de edad de inicio
+    y sin las preguntas de frecuencia ni la de fines de semana -> 422 con
+    "Contesta esta pregunta." en cada una de las cuatro, y nada se guarda."""
+    headers, _ = consented_user(client, db)
+    born_1990_frozen(client, headers, monkeypatch)
+
+    r = put_habits(client, headers, {"alcohol": {"status": "current", "start_age": 18}})
+
+    assert r.status_code == 422, r.text
+    detail = r.json()["detail"]
+    assert isinstance(detail, list), detail
+    errors = sorted((tuple(e["loc"]), e["msg"], e["type"]) for e in detail)
+    assert errors == sorted(
+        (("body", "alcohol", field), ANSWER_REQUIRED, "value_error")
+        for field in ("frequency", "typical_drinks", "six_or_more", "mostly_weekends")
+    ), detail
+    assert stored_habits(client, headers) == empty_habits()
+
+
+# --- perfil-habitos-completitud, rows 7, 9: Lo guardado a medias (C-15) -----------
+
+PARTIAL_ALCOHOL = {"status": "quit", "quit_age": 30}
+
+
+def test_c15_partial_row_saved_before_read_with_null(
+    client: TestClient, db: Session, caplog: pytest.LogCaptureFixture
+) -> None:
+    """Una fila cifrada guardada antes con alcohol quit y solo la edad en que lo
+    dejó: GET -> 200 con start_age null (nunca "unknown") y sin aviso de fila
+    ilegible."""
+    headers, user_id = consented_user(client, db)
+    save(client, headers, SEED)
+    store_raw_habits_json(db, user_id, json.dumps({"alcohol": PARTIAL_ALCOHOL}))
+
+    with caplog.at_level(logging.WARNING, logger=profile_routes.__name__):
+        r = get_habits(client, headers)
+
+    assert r.status_code == 200, r.text
+    assert r.json() == habits(alcohol=alcohol(**PARTIAL_ALCOHOL))
+    assert r.json()["alcohol"]["start_age"] is None, r.text
+    assert UNKNOWN not in r.text, r.text
+    assert "Unreadable habits" not in caplog.text
+
+
+def test_c15_partial_row_saved_before_resaved_as_is_rejected(
+    client: TestClient, db: Session
+) -> None:
+    """La misma fila a medias: un PUT con lo que devolvió el GET, sin cambiar
+    nada -> 422 "Contesta esta pregunta o marca «No recuerdo»." en start_age,
+    y el GET sigue devolviendo lo guardado a medias."""
+    headers, user_id = consented_user(client, db)
+    save(client, headers, SEED)
+    store_raw_habits_json(db, user_id, json.dumps({"alcohol": PARTIAL_ALCOHOL}))
+    as_read = stored_habits(client, headers)
+
+    r = put_habits(client, headers, as_read)
+
+    assert_single_error(r, ["body", "alcohol", "start_age"], ANSWER_OR_UNKNOWN_REQUIRED)
+    assert stored_habits(client, headers) == habits(alcohol=alcohol(**PARTIAL_ALCOHOL))
+
+
+# --- perfil-habitos-completitud, row 4: No recuerda cuándo empezó (C-16) -----------
+
+
+def test_c16_unknown_start_age_with_quit_age_18_saved_and_read_back(
+    client: TestClient, db: Session, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Nacido 1990-03-15: alcohol quit con "No recuerdo" en la edad de inicio y
+    18 en la de fin -> 200 (la edad de inicio no se compara) y el GET devuelve
+    "unknown" y 18."""
+    headers, _ = consented_user(client, db)
+    born_1990_frozen(client, headers, monkeypatch)
+    expected = habits(alcohol=alcohol(status="quit", start_age=UNKNOWN, quit_age=18))
+
+    saved = save(
+        client,
+        headers,
+        {"alcohol": {"status": "quit", "start_age": UNKNOWN, "quit_age": 18}},
+    )
+
+    assert saved == expected
+    assert stored_habits(client, headers) == expected
+
+
+# Every field that admits "No recuerdo", next to numbers that would fail the
+# age rules if "unknown" were compared (born 1990, today 36).
+UNKNOWN_ADMITTED_CASES = [
+    pytest.param(
+        "alcohol",
+        {"status": "quit", "start_age": 30, "quit_age": UNKNOWN},
+        id="alcohol-quit-quit_age",
+    ),
+    pytest.param(
+        "alcohol",
+        {"status": "quit", "start_age": UNKNOWN, "quit_age": UNKNOWN},
+        id="alcohol-quit-both-ages",
+    ),
+    pytest.param(
+        "alcohol",
+        {"status": "current", "start_age": UNKNOWN, **AUDIT_C},
+        id="alcohol-current-start_age",
+    ),
+    pytest.param(
+        "tobacco",
+        {
+            "status": "former",
+            "cigarettes_per_day": UNKNOWN,
+            "start_age": UNKNOWN,
+            "quit_age": UNKNOWN,
+        },
+        id="tobacco-former-cigarettes-and-ages",
+    ),
+    pytest.param(
+        "tobacco",
+        {
+            "status": "former",
+            "cigarettes_per_day": 10,
+            "start_age": 36,
+            "quit_age": UNKNOWN,
+        },
+        id="tobacco-former-quit_age-beside-36",
+    ),
+    pytest.param(
+        "tobacco",
+        {"status": "current", "cigarettes_per_day": 10, "start_age": UNKNOWN},
+        id="tobacco-current-start_age",
+    ),
+    pytest.param(
+        "vaping",
+        {"status": "former", "start_age": UNKNOWN, "quit_age": 18},
+        id="vaping-former-start_age",
+    ),
+    pytest.param(
+        "vaping",
+        {"status": "current", "frequency": "daily", "start_age": UNKNOWN},
+        id="vaping-current-start_age",
+    ),
+    pytest.param(
+        "wood_smoke",
+        {
+            "status": "former",
+            "start_age": UNKNOWN,
+            "quit_age": UNKNOWN,
+            "hours_per_day": UNKNOWN,
+        },
+        id="wood-former-ages-and-hours",
+    ),
+    pytest.param(
+        "wood_smoke",
+        {"status": "former", "start_age": 30, "quit_age": UNKNOWN, "hours_per_day": 3},
+        id="wood-former-quit_age",
+    ),
+    pytest.param(
+        "wood_smoke",
+        {"status": "current", "start_age": UNKNOWN, "hours_per_day": 8},
+        id="wood-current-start_age",
+    ),
+]
+
+
+@pytest.mark.parametrize(("block", "answers"), UNKNOWN_ADMITTED_CASES)
+def test_c16_unknown_admitted_saved_and_never_compared(
+    client: TestClient,
+    db: Session,
+    monkeypatch: pytest.MonkeyPatch,
+    block: str,
+    answers: dict[str, Any],
+) -> None:
+    """Nacido 1990-03-15: "No recuerdo" en cada pregunta que lo admite -> 200,
+    sin "≤ edad actual" ni "inicio ≤ fin", y el GET lo devuelve igual."""
+    headers, _ = consented_user(client, db)
+    born_1990_frozen(client, headers, monkeypatch)
+    expected = habits(**{block: BLOCK_HELPERS[block](**answers)})
+
+    saved = save(client, headers, {block: answers})
+
+    assert saved == expected
+    assert stored_habits(client, headers) == expected
+
+
+def test_c16_number_beside_unknown_still_checked_against_current_age(
+    client: TestClient, db: Session, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Nacido 1990-03-15, hoy 36: alcohol quit con 40 de edad de inicio y "No
+    recuerdo" en la de fin -> 422 "La edad no puede ser mayor que tu edad
+    actual" en start_age (el número sí se compara), y nada cambia."""
+    headers, _ = consented_user(client, db)
+    born_1990_frozen(client, headers, monkeypatch)
+    save(client, headers, SEED)
+
+    r = put_habits(
+        client,
+        headers,
+        {"alcohol": {"status": "quit", "start_age": 40, "quit_age": UNKNOWN}},
+    )
+
+    assert_single_error(r, ["body", "alcohol", "start_age"], AGE_ABOVE_CURRENT)
+    assert stored_habits(client, headers) == SEED_STORED
+
+
+# --- perfil-habitos-completitud, rows 5, 8: "No recuerdo" solo en lo que pasó (C-16)
+
+UNKNOWN_IN_CURRENT_AMOUNT_CASES = [
+    pytest.param(
+        "tobacco",
+        {"status": "current", "cigarettes_per_day": UNKNOWN, "start_age": 18},
+        "cigarettes_per_day",
+        id="tobacco-current-cigarettes",
+    ),
+    pytest.param(
+        "wood_smoke",
+        {"status": "current", "start_age": 5, "hours_per_day": UNKNOWN},
+        "hours_per_day",
+        id="wood-current-hours",
+    ),
+]
+
+
+@pytest.mark.parametrize(("block", "answers", "field"), UNKNOWN_IN_CURRENT_AMOUNT_CASES)
+def test_c16_unknown_in_current_amount_rejected(
+    client: TestClient,
+    db: Session,
+    monkeypatch: pytest.MonkeyPatch,
+    block: str,
+    answers: dict[str, Any],
+    field: str,
+) -> None:
+    """Tabaco current con "No recuerdo" en cigarros, o leña current con "No
+    recuerdo" en horas -> 422 "Esta pregunta no admite «No recuerdo»." en ese
+    campo, y los hábitos guardados no cambian."""
+    headers, _ = consented_user(client, db)
+    born_1990_frozen(client, headers, monkeypatch)
+    save(client, headers, SEED)
+
+    r = put_habits(client, headers, {block: answers})
+
+    assert_single_error(r, ["body", block, field], UNKNOWN_NOT_ADMITTED)
+    assert stored_habits(client, headers) == SEED_STORED
+
+
+COMPLETE_CURRENT_ALCOHOL = {
+    "status": "current",
+    "start_age": 18,
+    "frequency": "two_to_three_weekly",
+    "typical_drinks": "three_four",
+    "six_or_more": "monthly",
+    "mostly_weekends": True,
+}
+
+UNKNOWN_SCHEMA_CASES = [
+    *[
+        pytest.param(
+            "alcohol",
+            {**COMPLETE_CURRENT_ALCOHOL, field: UNKNOWN},
+            field,
+            id=f"alcohol-{field}",
+        )
+        for field in ("frequency", "typical_drinks", "six_or_more", "mostly_weekends")
+    ],
+    pytest.param("alcohol", {"status": UNKNOWN}, "status", id="alcohol-status"),
+    pytest.param(
+        "vaping",
+        {"status": "current", "frequency": UNKNOWN, "start_age": 25},
+        "frequency",
+        id="vaping-frequency",
+    ),
+    pytest.param(
+        "vaping",
+        {
+            "status": "current",
+            "frequency": "some_days",
+            "days_last_30": UNKNOWN,
+            "start_age": 25,
+        },
+        "days_last_30",
+        id="vaping-days_last_30",
+    ),
+    pytest.param(
+        "secondhand_smoke",
+        {"exposed": True, "places": ["home"], "days_per_week": UNKNOWN},
+        "days_per_week",
+        id="secondhand-days_per_week",
+    ),
+    pytest.param(
+        "secondhand_smoke",
+        {"exposed": True, "places": [UNKNOWN], "days_per_week": 2},
+        "places",
+        id="secondhand-places",
+    ),
+    pytest.param(
+        "secondhand_smoke",
+        {"exposed": UNKNOWN},
+        "exposed",
+        id="secondhand-exposed",
+    ),
+]
+
+
+@pytest.mark.parametrize(("block", "answers", "field"), UNKNOWN_SCHEMA_CASES)
+def test_c16_unknown_where_never_admitted_is_schema_error(
+    client: TestClient,
+    db: Session,
+    block: str,
+    answers: dict[str, Any],
+    field: str,
+) -> None:
+    """Un "unknown" en una pregunta del AUDIT-C, en fines de semana, en la
+    frecuencia o los días del vapeador, o en el humo ajeno -> 422 del esquema
+    en ese campo, y los hábitos guardados no cambian."""
+    headers, _ = consented_user(client, db)
+    save(client, headers, SEED)
+
+    r = put_habits(client, headers, {block: answers})
+
+    assert r.status_code == 422, r.text
+    detail = r.json()["detail"]
+    assert isinstance(detail, list), detail
+    assert any(
+        e["loc"][:3] == ["body", block, field] and e["type"] != "value_error"
+        for e in detail
+    ), detail
+    assert stored_habits(client, headers) == SEED_STORED
+
+
 # --- Test plan row 15: Sin puntaje ni riesgo (C-6) --------------------------------
 
 
@@ -1196,20 +1996,32 @@ def assert_contract_keys_only(body: dict[str, Any]) -> None:
 
 
 def test_c6_no_score_or_risk_in_the_response(client: TestClient, db: Session) -> None:
-    """Caso extremo (alcohol four_plus_weekly, ten_plus, daily; tabaco current
-    20 al día; leña current desde los 5 con 8 horas al día): PUT y GET traen
-    exactamente las llaves del contrato nuevo, y ni "riesgo", ni "puntaje", ni
-    "AUDIT", ni "horas-año"."""
+    """Caso extremo (alcohol current desde los 15, four_plus_weekly, ten_plus,
+    daily, no en fines de semana; tabaco current 20 al día desde "No
+    recuerdo"; leña current desde los 5 con 8 horas al día): PUT y GET traen
+    exactamente las llaves del contrato nuevo, "No recuerdo" tal cual, y ni
+    "riesgo", ni "puntaje", ni "AUDIT", ni "horas-año"."""
     headers, _ = consented_user(client, db)
     body = {
         "alcohol": {
             "status": "current",
+            "start_age": 15,
             "frequency": "four_plus_weekly",
             "typical_drinks": "ten_plus",
             "six_or_more": "daily",
+            "mostly_weekends": False,
         },
-        "tobacco": {"status": "current", "cigarettes_per_day": 20},
-        "vaping": {"status": "current", "frequency": "some_days", "days_last_30": 12},
+        "tobacco": {
+            "status": "current",
+            "cigarettes_per_day": 20,
+            "start_age": UNKNOWN,
+        },
+        "vaping": {
+            "status": "current",
+            "start_age": 20,
+            "frequency": "some_days",
+            "days_last_30": 12,
+        },
         "secondhand_smoke": {"exposed": False},
         "wood_smoke": {"status": "current", "start_age": 5, "hours_per_day": 8},
     }
@@ -1221,6 +2033,7 @@ def test_c6_no_score_or_risk_in_the_response(client: TestClient, db: Session) ->
 
     for r in (r_put, r_get):
         assert_contract_keys_only(r.json())
+        assert r.json()["tobacco"]["start_age"] == UNKNOWN, r.text
         text_lower = r.text.lower()
         for word in ("riesgo", "puntaje", "audit", "horas-año", "horas-a\\u00f1o"):
             assert word not in text_lower, (word, r.text)
@@ -1232,19 +2045,27 @@ def test_c6_no_score_or_risk_in_the_response(client: TestClient, db: Session) ->
 def test_c_habits_isolated_and_encrypted_at_rest(
     client: TestClient, db: Session
 ) -> None:
-    """A con alcohol current, vapeador some_days y humo ajeno en home: B recibe
-    todo null; en BD los hábitos de A son un token Fernet sin respuestas ni
-    nombres de campo en claro (tampoco "some_days"), que descifra al objeto
-    normalizado."""
+    """A con alcohol current, vapeador some_days (ambos desde "No recuerdo") y
+    humo ajeno en home: B recibe todo null; en BD los hábitos de A son un token
+    Fernet sin respuestas ni nombres de campo en claro (tampoco "some_days" ni
+    "unknown"), que descifra al objeto normalizado."""
     headers_a, user_a = consented_user(client, db)
     headers_b, _ = consented_user(client, db)
     saved_a = save(
         client,
         headers_a,
         {
-            "alcohol": {"status": "current", "frequency": "monthly_or_less"},
+            "alcohol": {
+                "status": "current",
+                "start_age": UNKNOWN,
+                "frequency": "monthly_or_less",
+                "typical_drinks": "one_two",
+                "six_or_more": "never",
+                "mostly_weekends": False,
+            },
             "vaping": {
                 "status": "current",
+                "start_age": UNKNOWN,
                 "frequency": "some_days",
                 "days_last_30": 12,
             },
@@ -1270,10 +2091,13 @@ def test_c_habits_isolated_and_encrypted_at_rest(
         "some_days",
         "vaping",
         "days_last_30",
+        UNKNOWN,
+        "start_age",
     ):
         assert plain not in raw, plain
     decrypted = decrypt_str(raw)
     assert decrypted is not None
+    assert UNKNOWN in decrypted
     assert without_nulls(json.loads(decrypted)) == without_nulls(saved_a)
 
 

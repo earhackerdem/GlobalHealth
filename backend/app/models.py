@@ -838,14 +838,23 @@ def normalize_history_content(content: HistoryContentModel) -> HistoryContentMod
 
 
 # --- Habits questionnaire (perfil-habitos design.md §Interface contract) ----
-# Everything optional; extra="forbid" so an unknown field is a 422 (Decision 5:
-# the C2 extends this same object on purpose, never by accident).
+# Every field optional in the schema; what the chosen answer requires is checked
+# after normalizing (HABITS_REQUIRED, perfil-habitos-completitud). extra="forbid"
+# so an unknown field is a 422 (Decision 5: the C2 extends this same object on
+# purpose, never by accident).
 HabitStatus = Literal["never", "former", "current"]
 SecondhandPlace = Literal["home", "work_school", "other"]
 # Contract order of `places`: stored deduped and sorted this way.
 SECONDHAND_PLACES: tuple[SecondhandPlace, ...] = ("home", "work_school", "other")
+# perfil-habitos-completitud Decision 1: "No recuerdo" (FHIR asked-unknown) goes
+# in the same field as the number, as this exact string; any other string stays
+# a schema 422. Only where it is admitted (Decision 2: what already happened).
+HABIT_UNKNOWN = "unknown"
+HabitUnknown = Literal["unknown"]
 # Decision 6: ages are plain numbers, with the history's bounds.
 HabitAge = Annotated[int, Field(ge=0, le=HISTORY_MAX_AGE)]
+CigarettesPerDay = Annotated[int, Field(ge=1, le=100)]
+HoursPerDay = Annotated[int, Field(ge=1, le=24)]
 
 
 class _ClosedSchema(SQLModel):
@@ -857,8 +866,8 @@ class _ClosedSchema(SQLModel):
 
 class AlcoholHabit(_ClosedSchema):
     status: Literal["never", "quit", "current"]
-    start_age: HabitAge | None = None
-    quit_age: HabitAge | None = None
+    start_age: HabitAge | HabitUnknown | None = None
+    quit_age: HabitAge | HabitUnknown | None = None
     frequency: (
         Literal[
             "monthly_or_less",
@@ -879,9 +888,9 @@ class AlcoholHabit(_ClosedSchema):
 
 class TobaccoHabit(_ClosedSchema):
     status: HabitStatus
-    cigarettes_per_day: int | None = Field(default=None, ge=1, le=100)
-    start_age: HabitAge | None = None
-    quit_age: HabitAge | None = None
+    cigarettes_per_day: CigarettesPerDay | HabitUnknown | None = None
+    start_age: HabitAge | HabitUnknown | None = None
+    quit_age: HabitAge | HabitUnknown | None = None
 
 
 class SecondhandSmoke(_ClosedSchema):
@@ -900,15 +909,15 @@ class VapingHabit(_ClosedSchema):
     status: HabitStatus
     frequency: Literal["daily", "some_days"] | None = None
     days_last_30: int | None = Field(default=None, ge=1, le=30)
-    start_age: HabitAge | None = None
-    quit_age: HabitAge | None = None
+    start_age: HabitAge | HabitUnknown | None = None
+    quit_age: HabitAge | HabitUnknown | None = None
 
 
 class WoodSmokeHabit(_ClosedSchema):
     status: HabitStatus
-    start_age: HabitAge | None = None
-    quit_age: HabitAge | None = None
-    hours_per_day: int | None = Field(default=None, ge=1, le=24)
+    start_age: HabitAge | HabitUnknown | None = None
+    quit_age: HabitAge | HabitUnknown | None = None
+    hours_per_day: HoursPerDay | HabitUnknown | None = None
 
 
 class Habits(_ClosedSchema):
@@ -1003,17 +1012,63 @@ def normalize_habits(habits: Habits) -> Habits:
     return habits.model_copy(update=updates)
 
 
+# perfil-habitos-completitud design.md §Interface contract: what each answer
+# requires once normalized. block -> answer -> (required, "unknown" NOT
+# admitted; required, "unknown" admitted). An answer not listed requires nothing.
+HabitAnswer = (
+    AlcoholHabit | TobaccoHabit | VapingHabit | SecondhandSmoke | WoodSmokeHabit
+)
+HABITS_REQUIRED: dict[str, dict[str, tuple[tuple[str, ...], tuple[str, ...]]]] = {
+    "alcohol": {
+        "quit": ((), ("start_age", "quit_age")),
+        "current": (
+            ("frequency", "typical_drinks", "six_or_more", "mostly_weekends"),
+            ("start_age",),
+        ),
+    },
+    "tobacco": {
+        "former": ((), ("cigarettes_per_day", "start_age", "quit_age")),
+        "current": (("cigarettes_per_day",), ("start_age",)),
+    },
+    "vaping": {
+        "former": ((), ("start_age", "quit_age")),
+        "current": (("frequency",), ("start_age",)),
+        "current_some_days": (("frequency", "days_last_30"), ("start_age",)),
+    },
+    "secondhand_smoke": {"exposed": (("places", "days_per_week"), ())},
+    "wood_smoke": {
+        "former": ((), ("start_age", "quit_age", "hours_per_day")),
+        "current": (("hours_per_day",), ("start_age",)),
+    },
+}
+# A missing answer whose message predates the table keeps it.
+HABITS_MISSING_MESSAGE = {
+    ("secondhand_smoke", "places"): "Elige dónde, o «No me expongo»"
+}
+
+
+def _habit_answer_key(answer: HabitAnswer) -> str:
+    """The HABITS_REQUIRED row of an answer: its status, except the two that
+    depend on another field (the exposure, the vaping frequency)."""
+    if isinstance(answer, SecondhandSmoke):
+        return "exposed" if answer.exposed else "not_exposed"
+    if isinstance(answer, VapingHabit) and answer.frequency == "some_days":
+        return f"{answer.status}_some_days"
+    return answer.status
+
+
 def habits_errors(
     habits: Habits, birth_date: date | None, today: date
 ) -> list[tuple[str, str, str]]:
-    """(block, field, es-MX message) per impossible answer of a NORMALIZED
-    Habits (a dropped age is never checked). Ages are compared to the current
-    one only with a birth date; at most one error per field."""
+    """(block, field, es-MX message) per missing or impossible answer of a
+    NORMALIZED Habits (a dropped field is never checked). Ages are compared to
+    the current one only with a birth date, and only between numbers ("unknown"
+    is never compared); at most one error per field."""
     age_now = _age_on(birth_date, today) if birth_date is not None else None
-    errors: list[tuple[str, str, str]] = []
+    errors: dict[tuple[str, str], str] = {}
 
-    def above_now(age: int | None) -> bool:
-        return age is not None and age_now is not None and age > age_now
+    def above_now(age: int | str | None) -> bool:
+        return isinstance(age, int) and age_now is not None and age > age_now
 
     above = "La edad no puede ser mayor que tu edad actual"
     after_quit = "No puede ser mayor que la edad en que lo dejaste"
@@ -1031,15 +1086,39 @@ def habits_errors(
             continue
         start, quit = answer.start_age, answer.quit_age
         if above_now(start):
-            errors.append((block, "start_age", above))
-        elif start is not None and quit is not None and start > quit:
-            errors.append((block, "start_age", start_after_quit))
+            errors[(block, "start_age")] = above
+        elif isinstance(start, int) and isinstance(quit, int) and start > quit:
+            errors[(block, "start_age")] = start_after_quit
         if above_now(quit):
-            errors.append((block, "quit_age", above))
-    smoke = habits.secondhand_smoke
-    if smoke and smoke.exposed and not smoke.places:
-        errors.append(("secondhand_smoke", "places", "Elige dónde, o «No me expongo»"))
-    return errors
+            errors[(block, "quit_age")] = above
+
+    missing = "Contesta esta pregunta."
+    missing_or_unknown = "Contesta esta pregunta o marca «No recuerdo»."
+    unknown_not_admitted = "Esta pregunta no admite «No recuerdo»."
+    answers: dict[str, HabitAnswer | None] = {
+        "alcohol": habits.alcohol,
+        "tobacco": habits.tobacco,
+        "vaping": habits.vaping,
+        "secondhand_smoke": habits.secondhand_smoke,
+        "wood_smoke": habits.wood_smoke,
+    }
+    for block, given in answers.items():
+        if given is None:
+            continue
+        no_unknown, with_unknown = HABITS_REQUIRED[block].get(
+            _habit_answer_key(given), ((), ())
+        )
+        for field in no_unknown:
+            value = getattr(given, field)
+            if value is None or value == []:
+                message = HABITS_MISSING_MESSAGE.get((block, field), missing)
+                errors.setdefault((block, field), message)
+            elif value == HABIT_UNKNOWN:
+                errors.setdefault((block, field), unknown_not_admitted)
+        for field in with_unknown:
+            if getattr(given, field) is None:
+                errors.setdefault((block, field), missing_or_unknown)
+    return [(block, field, message) for (block, field), message in errors.items()]
 
 
 # Partial update: absent = "do not touch", explicit null clears the field.
