@@ -16,6 +16,7 @@
 | `bunx tsc -p tsconfig.build.json --noEmit` · `bunx biome check src/ tests/` · grep de límites en `HabitsForm.tsx` | 0 errores · 104 archivos sin cambios · solo `className="w-24"` | 0 | — | ✅ |
 | Suite Playwright COMPLETA como CI tras el grupo 4 (`PLAYWRIGHT_BASE_URL=http://localhost:8000`, imagen reconstruida) | **243 passed, 0 failed**; tras el arreglo del foco (imagen reconstruida otra vez) **245 passed, 0 failed** | 0 | 0 | ✅ |
 | **Ronda 2.** Re-corrido por el orquestador: `bunx playwright test tests/profile-habits.spec.ts tests/profile.spec.ts tests/profile-history.spec.ts` (chromium + s26-ultra) · `tsc` · `biome` | **151 passed, 0 failed** · 0 errores · 104 archivos sin cambios; suite COMPLETA como CI (imagen reconstruida) **253 passed, 0 failed** | 0 | 0 | ✅ |
+| **Ronda 3.** Re-corrido por el orquestador: `bunx playwright test tests/profile-habits.spec.ts tests/profile.spec.ts tests/profile-history.spec.ts` (chromium + s26-ultra) · `tsc` · `biome` | **153 passed, 0 failed** · 0 errores · 104 archivos sin cambios; suite COMPLETA como CI (imagen reconstruida) **255 passed, 0 failed** | 0 | 0 | ✅ |
 | Suite Playwright COMPLETA como CI (primera entrega) (`PLAYWRIGHT_BASE_URL=http://localhost:8000`, imagen reconstruida con esta rama), 2 corridas | **239 passed** · 238 passed + 1 failed: `login.spec.ts:87`, el heredado del saludo contra el redirect de la home (en el inbox de deudas) | 1 corrida con el heredado | 0 | 🟡 inestabilidad heredada |
 
 ## Red before green
@@ -29,6 +30,7 @@
 | 5 · backend B1 | `uv run pytest tests/api/routes/test_profile_habits.py -k unreadable_habits_json` → **1 failed, 2 passed**: `RecursionError` en el anidado de 100 000 niveles (500) | d5f668f | 95/95 del archivo; suite completa 345 passed (verde 5c800bb) | ✓ red d5f668f |
 | Foco tras "Seguir editando" (defecto de la exploración) | `-g "fila 17"` → **1 failed por proyecto** (fila 17b: foco en `<body>` tras "Seguir editando" y Escape) | 02c1d04 | 33/33 por proyecto (verde 6d43be9) | ✓ red 02c1d04, tests sin cambios hasta el verde |
 | Ronda 2 (R2-1…R2-5, R2-7) | `bunx playwright test tests/profile-habits.spec.ts` → **4 failed, 33 passed por proyecto**: falta "Guardando…" (fila 21), el guardado en camino cruza de cuenta (27), los chips no se bloquean (28), el foco no vuelve al título (29). La fila 26 (solo un número) ya pasaba | 97ab624 | 37/37 por proyecto (verde 8de47e1) | ✓ red 97ab624, tests sin cambios hasta el verde |
+| Ronda 3 (R3-1…R3-4) | `bunx playwright test tests/profile-habits.spec.ts` → **2 failed, 36 passed por proyecto**: la fila 28 (chips sin atenuar; salir no espera) y la 30 (el 422 se pierde al salir). La 27 endurecida ya pasaba; el tester comprobó que falla si la respuesta se escribe en la caché | 45b73b3 | 38/38 por proyecto (verde b09397f) | ✓ red 45b73b3, tests sin cambios hasta el verde |
 
 ## Criterio → prueba
 
@@ -57,7 +59,8 @@
 | C-13 Cancelar descarta | e2e fila 22 | ✅ |
 | C-13 Solo un número cambia (R2-7) | e2e fila 26 | ✅ |
 | C-13 Un guardado en camino no llega a otra cuenta (R2-1) | e2e fila 27 (cierre e inicio de sesión reales en la misma pestaña) | ✅ |
-| C-13 Mientras guarda no se cambia nada ni se pregunta al salir (R2-2, R2-3) | e2e fila 28 | ✅ |
+| C-13 Mientras guarda no se cambia nada, y salir espera sin preguntar (R2-2, R2-3, R3-1, R3-4) | e2e fila 28 | ✅ |
+| C-13 Un rechazo al salir se queda a la vista (R3-3) | e2e fila 30 | ✅ |
 | C-13 El foco vuelve al título si su elemento ya no existe (R2-4) | e2e fila 29 (384 px, menú lateral) | ✅ |
 | C-14 Fuera de escala al salir del campo | e2e fila 23 (horas, edad mayor que la actual, inicio > fin en vapeador y leña, "12a"; 0 `PUT`) + grep de límites | ✅ |
 | C-14 La marca sigue mientras el campo está a la vista | e2e fila 24 | ✅ |
@@ -86,6 +89,16 @@ equipo): el ancho de 384 px lo cubre s26-ultra. Los `PUT` se contaron con el lec
 | Ancho y consola | Sin scroll horizontal a 580 px; en consola solo el error de una extensión de Chrome ajena a la app |
 
 Sin defectos pendientes dentro del plan.
+
+### Ronda 3 (Vite `localhost:5173`, 580 px)
+
+| Intento | Qué pasó |
+|---|---|
+| Tabaco "Actual" + 20, "Guardar" con el `PUT` demorado 4 s, y "‹ Mi perfil médico" | Sin diálogo; la pantalla espera en `/perfil/habitos` con los chips atenuados (opacidad < 1) |
+| Al terminar el guardado | `/perfil` con "Hábitos guardados" |
+| Reabrir "Hábitos" | Tabaco "Actual" con 20: lo guardado |
+
+Sin defectos.
 
 ### Ronda 2 (Vite `localhost:5173`, ventana de 580 px, donde el menú es la hoja lateral del celular)
 

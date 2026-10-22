@@ -115,8 +115,8 @@ y los documentos (R2-6, R2-8, R2-9).
 Aprobada por Saúl Pérez el 2026-10-21 ("procede con tu recomendación"): salir mientras guarda espera a que termine
 (R3-1, R3-3), la fila 27 endurecida (R3-2), chips atenuados (R3-4) y el texto de la deuda.
 
-- [ ] 8.1 **Tester.** Filas 27, 28 y 30 del test plan. Commit `test:` solo.
-- [ ] 8.2 **Implementer.** `HabitsForm.tsx`: retener la salida mientras guarda (misma sesión), seguir al destino o
+- [x] 8.1 **Tester.** Filas 27, 28 y 30 del test plan. Commit `test:` solo.
+- [x] 8.2 **Implementer.** `HabitsForm.tsx`: retener la salida mientras guarda (misma sesión), seguir al destino o
   cancelarla según el resultado; chips atenuados. Verificación: el archivo completo verde en chromium y s26-ultra.
 - [ ] 8.3 **Orquestador.** Rojo y verde, `make tdd-check`, evidencia, exploración en Chrome, suite completa, ronda 4.
 

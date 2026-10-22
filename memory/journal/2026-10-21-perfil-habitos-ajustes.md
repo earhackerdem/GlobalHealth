@@ -75,3 +75,11 @@ Ver evidence.md § Deuda.
   menú lateral sin defectos.
 - Deuda nueva: los chips no tienen una propiedad para quedar no disponibles; un error del `PUT` con la pantalla
   cerrada aún muestra el aviso genérico.
+
+## Ronda 3 de la revisión (2026-10-21)
+- 2 finders y 1 validador sobre 27c7b16..247f6ec: 4 confirmados (uno en parte). El medio R3-1 lo introdujo el arreglo de
+  R2-2: salir mientras guarda y reabrir abría un formulario con lo de antes, y el siguiente "Guardar" borraba lo
+  guardado.
+- El agente objetó que el guardado en camino ya iba por la tercera ronda de bordes y propuso una regla simple: salir
+  mientras guarda espera a que termine. Saúl Pérez aprobó ("procede con tu recomendación"). Rojo 45b73b3, verde
+  b09397f; la fila 27 endurecida (R3-2); chips atenuados (R3-4).
