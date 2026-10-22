@@ -376,6 +376,47 @@ function screenOf(draft: Draft): string {
   })
 }
 
+/** Longer than any menu takes to close (the side sheet animates out). */
+const MENU_CLOSE_MS = 1000
+
+/**
+ * A leave called off: the focus goes to `title` when the element the leave
+ * came from is gone (R4-3). A menu still closing keeps that element connected
+ * until it unmounts, and then gives the focus back to its own trigger: so
+ * wait for the element to go and take the focus back once from that trigger.
+ * An element still on screen (in the form, or a menu that stays open) keeps
+ * the focus where it is.
+ */
+function focusTitleOnceGone(
+  from: HTMLElement | null,
+  form: HTMLFormElement | null,
+  title: HTMLHeadingElement | null,
+) {
+  if (!title) return
+  if (!from?.isConnected) {
+    title.focus()
+    return
+  }
+  if (form?.contains(from)) return
+  const deadline = Date.now() + MENU_CLOSE_MS
+  const takeBack = (event: FocusEvent) => {
+    if (form?.contains(event.target as Node)) return
+    document.removeEventListener("focusin", takeBack)
+    if (Date.now() < deadline) title.focus()
+  }
+  const observer = new MutationObserver(() => {
+    if (from.isConnected) return
+    observer.disconnect()
+    title.focus()
+    document.addEventListener("focusin", takeBack)
+  })
+  observer.observe(document.body, { childList: true, subtree: true })
+  setTimeout(() => {
+    observer.disconnect()
+    document.removeEventListener("focusin", takeBack)
+  }, MENU_CLOSE_MS)
+}
+
 /** The session the screen opened with (design.md, hallazgo A5). */
 const currentToken = () => localStorage.getItem("access_token")
 
@@ -611,11 +652,20 @@ function HabitsForm() {
   // Where the focus was when the leave dialog opened: "Seguir editando"
   // brings it back there (Radix has no trigger to return to).
   const focusBefore = useRef<HTMLElement | null>(null)
+  // The element the held leave came from, and whether its failure placed a
+  // 422 on a field: a leave called off moves the focus to the title when that
+  // element is gone and no field takes it (R4-3).
+  const heldFrom = useRef<HTMLElement | null>(null)
+  const heldPlaced = useRef(false)
   const blockAndRemember = useCallback(() => {
     const wait = mustWait()
     silent.current = wait
     if (wait) {
       waiting.current = true
+      heldFrom.current =
+        document.activeElement instanceof HTMLElement
+          ? document.activeElement
+          : null
       return true
     }
     const ask = mustAsk()
@@ -654,11 +704,12 @@ function HabitsForm() {
     },
     // A leave held meanwhile is called off: the error stays in sight (R3-3).
     onError: (err) => {
+      const placed = serverErrors(err, visibleFields(draftRef.current))
       if (waiting.current) {
         waiting.current = false
+        heldPlaced.current = !!placed
         setHeldOutcome("stay")
       }
-      const placed = serverErrors(err, visibleFields(draftRef.current))
       if (placed) {
         setErrors(placed)
         setFailedAttempt((n) => n + 1)
@@ -802,13 +853,27 @@ function HabitsForm() {
     backToProfile()
   }
 
-  // The held leave, resolved once the blocker holds it and the PUT ended.
+  // The held leave, resolved once the blocker holds it and the PUT ended, and
+  // only with the session it opened with: if the session ended meanwhile (a
+  // 401/403), main.tsx's reload to /login wins, and a reset here (history.go)
+  // would race it (R4-1). Called off, the focus goes to the title when the
+  // element it left from is gone (the side menu closed, or is closing) and no
+  // 422 placed it on a field (R4-3).
   useEffect(() => {
     if (!heldOutcome || blocker.status !== "blocked") return
     setHeldOutcome(null)
-    if (heldOutcome === "go") blocker.proceed()
-    else blocker.reset()
-  }, [heldOutcome, blocker])
+    const from = heldFrom.current
+    const placed = heldPlaced.current
+    heldFrom.current = null
+    heldPlaced.current = false
+    if (currentToken() !== openingToken) return
+    if (heldOutcome === "go") {
+      blocker.proceed()
+      return
+    }
+    blocker.reset()
+    if (!placed) focusTitleOnceGone(from, formRef.current, titleRef.current)
+  }, [heldOutcome, blocker, openingToken])
 
   /**
    * The leave dialog, open while the blocker holds a navigation to ask about
@@ -943,7 +1008,8 @@ function HabitsForm() {
     >
       <div className="grid gap-1">
         {/* Focusable by script only: where "Seguir editando" leaves the focus
-            when its element is gone (R2-4). */}
+            when its element is gone (R2-4), and a leave called off after a
+            failed save when the element it left from is gone (R4-3). */}
         <h1
           ref={titleRef}
           tabIndex={-1}
