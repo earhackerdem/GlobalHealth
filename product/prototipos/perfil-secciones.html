@@ -135,6 +135,9 @@ dd{margin:0; min-width:0; overflow-wrap:anywhere}
     <li><strong>C-6</strong> La app no calcula puntajes ni riesgos con estas respuestas: interpretarlas es del médico (NFR-008).</li>
     <li><strong>C-7</strong> Movimiento del día, aparte del ejercicio y sin sumarse a su total: cómo pasas el día en tu trabajo (casi todo sentado / de pie o caminando / esfuerzo físico pesado), si caminas o vas en bici para ir a algún lado (días por semana) y horas sentado al día.</li>
     <li><strong>C-8</strong> Sueño: horas por noche y si te cuesta dormir o te despiertas (nunca / a veces / casi siempre).</li>
+    <li><strong>C-15</strong> Si eliges una respuesta, completa sus preguntas: «Guardar» marca lo que falta junto a su pregunta (el detalle navegable está en el prototipo del cambio perfil-habitos-completitud).</li>
+    <li><strong>C-16</strong> «No recuerdo» solo en lo que pasó: las edades, y los cigarros y las horas de leña con «Antes». Las preguntas del AUDIT-C y lo actual no lo ofrecen.</li>
+    <li><strong>C-17</strong> Un error marcado se va en cuanto corriges el dato, sin salir del campo.</li>
     <li><strong>C-9</strong> El Perfil básico suma «Trabajo»: situación laboral, a qué te dedicas, el trabajo de más años, exposiciones (polvo, químicos o solventes, ruido fuerte, cargar peso) y turno (de día, de noche, rotativo).</li>
   </ol>
   <p class="sub">Origin: product/dominio.md (rebanada perfil médico por secciones, 2026-10-19) · FR-028 / US-18.</p>
@@ -446,6 +449,8 @@ function chipsDe(k, opts, v, lbl){
     `<button data-chip="${k}" data-v="${esc(o)}" aria-pressed="${v[k] === o}">${esc(o)}</button>`).join("")}</div>`;
 }
 const numH = (k, ph, v) => `<input id="h-${k}" data-k="${k}" inputmode="numeric" placeholder="${ph}" value="${esc(v[k] || "")}" aria-label="${ph}">`;
+// perfil-habitos-completitud C-16: «No recuerdo» solo en lo que pasó (edades; cigarros y horas con «Antes»)
+const numNR = (k, ph, v) => `${numH(k, ph, v)}<button data-chip="${k}NR" data-v="Sí" aria-pressed="${v[k + "NR"] === "Sí"}" aria-label="No recuerdo: ${esc(ph)}">No recuerdo</button>`;
 const subLbl = t => `<span class="lbl" style="margin-top:10px; font-weight:400">${esc(t)}</span>`;
 function totalSemanal(acts){
   return acts.reduce((t, a) => t + (Number(a.dias) || 0) * (Number(a.min) || 0), 0);
@@ -457,13 +462,13 @@ function pintarHabitos(s){
   return `
     <p class="migas"><button class="link" data-volver>‹ Mi perfil médico</button></p>
     <h2>${esc(s.titulo)} <span class="story">Story C</span></h2>
-    <p class="sub">Contesta solo lo que quieras. «Nunca» también le sirve a tu médico. La app no califica tus respuestas.${ac("C-6", true)}</p>
+    <p class="sub">Contesta los hábitos que quieras. Si eliges una respuesta, completa sus preguntas; si no recuerdas un dato del pasado, marca «No recuerdo». «Nunca» también le sirve a tu médico. La app no califica tus respuestas.${ac("C-6", true)}${ac("C-15", true)}</p>
     <form class="card" id="form-habitos" style="margin-top:10px" novalidate>
 
       <div class="habito" style="border:0; margin-top:0; padding-top:0">
         <span class="lbl">Alcohol${ac("C-1", true)}</span>
         ${chipsDe("alcohol", ["Nunca","Lo dejé","Actual"], v, "Alcohol")}
-        ${v.alcohol === "Lo dejé" || v.alcohol === "Actual" ? `<div class="cuando" style="margin-top:6px">${numH("alcInicio", "¿A qué edad empezaste a tomar?", v)}</div><p class="hint">Sin contar probaditas.</p>${v.alcohol === "Lo dejé" ? `<div class="cuando" style="margin-top:6px">${numH("alcDesde", "¿A qué edad dejaste de tomar?", v)}</div>` : ""}` : ""}
+        ${v.alcohol === "Lo dejé" || v.alcohol === "Actual" ? `<div class="cuando" style="margin-top:6px">${numNR("alcInicio", "¿A qué edad empezaste a tomar?", v)}</div><p class="hint">Sin contar probaditas.</p>${v.alcohol === "Lo dejé" ? `<div class="cuando" style="margin-top:6px">${numNR("alcDesde", "¿A qué edad dejaste de tomar?", v)}</div>` : ""}` : ""}
         ${v.alcohol === "Actual" ? `
           ${subLbl("¿Con qué frecuencia tomas?")}${chipsDe("alcFrec", ALC_FREC, v, "Frecuencia")}
           <div class="chips"><button data-chip="alcFinde" data-v="Sí" aria-pressed="${v.alcFinde === "Sí"}">Sobre todo fines de semana</button></div>
@@ -475,9 +480,9 @@ function pintarHabitos(s){
       <div class="habito">
         <span class="lbl">Tabaco${ac("C-2", true)}</span>
         ${chipsDe("tabaco", ["Nunca","Antes","Actual"], v, "Tabaco")}
-        ${v.tabaco && v.tabaco !== "Nunca" ? `<div class="cuando" style="margin-top:6px">${numH("cigarros", "Cigarros al día", v)}${numH("tabDesde", "¿A qué edad empezaste a fumar?", v)}${v.tabaco === "Antes" ? numH("tabHasta", "¿A qué edad dejaste de fumar?", v) : ""}</div>` : ""}
+        ${v.tabaco && v.tabaco !== "Nunca" ? `<div class="cuando" style="margin-top:6px">${v.tabaco === "Antes" ? numNR("cigarros", "Cigarros al día", v) : numH("cigarros", "Cigarros al día", v)}${numNR("tabDesde", "¿A qué edad empezaste a fumar?", v)}${v.tabaco === "Antes" ? numNR("tabHasta", "¿A qué edad dejaste de fumar?", v) : ""}</div>` : ""}
         ${subLbl("Vapeador o cigarro electrónico")}${chipsDe("vape", ["Nunca","Antes","Actual"], v, "Vapeador")}
-        ${v.vape && v.vape !== "Nunca" ? `<div class="cuando" style="margin-top:6px">${numH("vapeDesde", "¿A qué edad empezaste a vapear?", v)}${v.vape === "Antes" ? numH("vapeHasta", "¿A qué edad dejaste de vapear?", v) : ""}</div>` : ""}
+        ${v.vape && v.vape !== "Nunca" ? `<div class="cuando" style="margin-top:6px">${numNR("vapeDesde", "¿A qué edad empezaste a vapear?", v)}${v.vape === "Antes" ? numNR("vapeHasta", "¿A qué edad dejaste de vapear?", v) : ""}</div>` : ""}
         ${v.vape === "Actual" ? `${subLbl("¿Con qué frecuencia vapeas?")}${chipsDe("vapeFrec", ["Todos los días","Algunos días"], v, "Frecuencia del vapeador")}` : ""}
         ${v.vape === "Actual" && v.vapeFrec === "Algunos días" ? `<div class="cuando" style="margin-top:6px">${numH("vapeDias", "¿Cuántos días de los últimos 30?", v)}</div>` : ""}
       </div>
@@ -495,7 +500,7 @@ function pintarHabitos(s){
         <span class="lbl">Humo de leña${ac("C-4", true)}</span>
         <p class="hint">Cocinar o calentar la casa con leña o carbón.</p>
         ${chipsDe("lena", ["Nunca","Antes","Actual"], v, "Humo de leña")}
-        ${v.lena && v.lena !== "Nunca" ? `<div class="cuando" style="margin-top:6px">${numH("lenaDesde", "¿A qué edad empezaste a exponerte?", v)}${v.lena === "Antes" ? numH("lenaHasta", "¿A qué edad dejaste de exponerte?", v) : ""}${numH("lenaHoras", "¿Cuántas horas al día, en promedio?", v)}</div>` : ""}
+        ${v.lena && v.lena !== "Nunca" ? `<div class="cuando" style="margin-top:6px">${numNR("lenaDesde", "¿A qué edad empezaste a exponerte?", v)}${v.lena === "Antes" ? numNR("lenaHasta", "¿A qué edad dejaste de exponerte?", v) : ""}${v.lena === "Antes" ? numNR("lenaHoras", "¿Cuántas horas al día, en promedio?", v) : numH("lenaHoras", "¿Cuántas horas al día, en promedio?", v)}${ac("C-16", true)}</div>` : ""}
       </div>
 
       <div class="habito">
@@ -570,6 +575,7 @@ function leerInputs(){
       return;
     }
     vista.borrador[i.dataset.k] = v;
+    if(v && vista.borrador[i.dataset.k + "NR"]) vista.borrador[i.dataset.k + "NR"] = "";  // C-16: escribir desmarca
   });
   document.querySelectorAll("#vista [data-act]").forEach(i => {
     vista.borrador.actividades[+i.dataset.act][i.dataset.f] = i.value.trim();
@@ -645,6 +651,7 @@ document.addEventListener("click", ev => {
     else { v[d.chip] = v[d.chip] === d.v ? "" : d.v; if(vista.otra === d.chip) vista.otra = null; }
     if(d.chip === "condicion" && vista.sec === "cronicas" && !vista.sensTocado) v.sensible = SALUD_MENTAL.includes(v.condicion);
     if(d.chip === "ajenoNunca" && v.ajenoNunca) v.ajenoDonde = [];
+    if(d.chip.endsWith("NR") && v[d.chip]) v[d.chip.slice(0, -2)] = "";
     if(d.chip === "expoNinguna" && v.expoNinguna) v.exposiciones = [];
     return pintar();
   }

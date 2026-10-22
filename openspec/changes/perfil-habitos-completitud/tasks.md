@@ -19,34 +19,34 @@ are `single`. `make tdd-check` requires one `test:` commit per `test→impl` gro
 
   El agente lo recorre primero en Chrome. Verificación: "plan approved" significa "navegué el prototipo y esto es lo
   que quiero".
-- [ ] 0.2 **Base.** `make up` con la rama al día con `origin/main`; `openspec validate perfil-habitos-completitud
+- [x] 0.2 **Base.** `make up` con la rama al día con `origin/main`; `openspec validate perfil-habitos-completitud
   --strict` limpio.
 
 ## 1. Backend: "unknown" y obligatoriedad · test→impl
 
-- [ ] 1.1 **Tester.** Actualiza y amplía `backend/tests/api/routes/test_profile_habits.py` a partir de dos fuentes: la
+- [x] 1.1 **Tester.** Actualiza y amplía `backend/tests/api/routes/test_profile_habits.py` a partir de dos fuentes: la
   parte pytest del test plan (filas 1, 2, 4, 5, 7–10, 13) y el Interface contract. Completa las semillas y casos que
   hoy guardan a medias. Verificación: rojo porque faltan los tipos y las reglas, no porque un test esté roto. Commit
   `test:` solo.
-- [ ] 1.2 **Implementer.** Tipos y reglas en `backend/app/models.py`. Verificación: los tests de 1.1 verdes sin
+- [x] 1.2 **Implementer.** Tipos y reglas en `backend/app/models.py`. Verificación: los tests de 1.1 verdes sin
   tocarlos; mypy limpio.
-- [ ] 1.3 **Orquestador.** Suite backend completa desde limpio (cero fallos, errores y skips; cobertura ≥ 90 %);
+- [x] 1.3 **Orquestador.** Suite backend completa desde limpio (cero fallos, errores y skips; cobertura ≥ 90 %);
   regenerar el cliente (`scripts/generate-client.sh`); números en evidence.md; `make tdd-check`.
 
 ## 2. Frontend: "No recuerdo", obligatorias y el error que se va · test→impl
 
-- [ ] 2.1 **Tester.** Actualiza y amplía `frontend/tests/profile-habits.spec.ts` a partir de dos fuentes: la parte
+- [x] 2.1 **Tester.** Actualiza y amplía `frontend/tests/profile-habits.spec.ts` a partir de dos fuentes: la parte
   Playwright del test plan (filas 1–7, 10–12) y el Interface contract. Completa las semillas y recorridos que hoy
   guardan a medias. Verificación: rojo por lo que falta. Commit `test:` solo.
-- [ ] 2.2 **Implementer.** `HabitsForm.tsx` y `profile.json`. Verificación: los tests de 2.1 verdes sin tocarlos
+- [x] 2.2 **Implementer.** `HabitsForm.tsx` y `profile.json`. Verificación: los tests de 2.1 verdes sin tocarlos
   (chromium y s26-ultra); `tsc` y `biome` limpios; `grep` sin límites literales en `HabitsForm.tsx`.
-- [ ] 2.3 **Orquestador.** Rojo y verde de nuevo, `make tdd-check`, números en evidence.md.
+- [x] 2.3 **Orquestador.** Rojo y verde de nuevo, `make tdd-check`, números en evidence.md.
 
 ## 3. Verificación final y entrega · single
 
-- [ ] 3.1 **Producto.** `product/dominio.md` § Hábitos y la pantalla de hábitos de
+- [x] 3.1 **Producto.** `product/dominio.md` § Hábitos y la pantalla de hábitos de
   `product/prototipos/perfil-secciones.html`.
-- [ ] 3.2 **Exploración en Chrome por el agente.** Guardar a medias, "No recuerdo" en cada bloque, escribir sobre
+- [x] 3.2 **Exploración en Chrome por el agente.** Guardar a medias, "No recuerdo" en cada bloque, escribir sobre
   "No recuerdo", corregir un error, lo guardado a medias, doble clic, 580 px. Verificación: tabla en evidence.md.
 - [ ] 3.3 **Entregables.** `evidence.md`, `validation.md` (no técnico, para Saúl Pérez), el journal y el PR.
 - [ ] 3.4 **Revisión y archivo** (`/epe-4-review` → `/epe-5-apply` → `/epe-6-archive` como último commit del PR).

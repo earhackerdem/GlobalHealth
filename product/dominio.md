@@ -405,6 +405,13 @@ estado, fechas y humo ajeno son lo que los campos estructurados de los expedient
 | movimiento del día | ronda 7, forma del GPAQ (OMS): en el trabajo o actividad principal (casi todo sentado · de pie o caminando · esfuerzo físico pesado), desplazamiento activo (caminar o bici para ir a algún lado: sí/no + días por semana) y horas sentado al día. **No se suma al total de ejercicio** (paradoja de la actividad física, research.md § ocupación) |
 | sueño | ronda 7 (antes fuera): horas por noche + ¿te cuesta dormir o te despiertas? (nunca · a veces · casi siempre). Sin diagnóstico ni puntaje |
 
+**Completitud (Saúl Pérez, 2026-10-22, perfil-habitos-completitud):** cada hábito sigue siendo opcional, pero la
+respuesta elegida pide sus preguntas: con "lo dejé", "antes" o "actual", las edades, las cantidades y, en el alcohol
+actual, las tres del AUDIT-C y "sobre todo fines de semana"; con humo ajeno, dónde y los días. "Guardar" marca lo que
+falta. **"No recuerdo"** es una respuesta propia (FHIR `asked-unknown`), distinta de "sin respuesta", y solo existe en lo
+que pasó: las edades, y los cigarros y las horas de leña con "antes"; el AUDIT-C no la tiene y lo actual se estima
+(research `habitos.md#no-recuerdo`). Lo guardado a medias antes de este cambio se lee igual y se completa al guardar.
+
 ### Trabajo — se suma al Perfil básico (Story C)
 Ronda 7 (Saúl Pérez: "también te preguntan por tu profesión… paso mucho tiempo sentado… hay oficios que implican
 movimiento diario"). Las plantillas mexicanas de historia clínica ponen la ocupación en la ficha de
