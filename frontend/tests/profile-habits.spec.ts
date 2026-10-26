@@ -3200,6 +3200,31 @@ test.describe("Perfil médico — hábitos: ejercicio, movimiento del día y sue
     expect(saved.sleep ?? null).toBeNull()
   })
 
+  // Exploración en Chrome (3.2): salir de una caja con un clic en otra y salir
+  // de esa otra antes de que termine el clic dejaba sin error a la primera.
+  test("C-14 (fila 8) dos cajas dejadas seguidas: 25 horas sentado, clic en las horas de sueño, 0 y Tab enseguida; las dos marcan su error", async ({
+    page,
+    request,
+  }) => {
+    await freshPatient(page, request)
+    await openHabitsFromProfile(page)
+
+    const sitting = numberField(page, SITTING_HOURS)
+    const sleep = numberField(page, SLEEP_HOURS)
+    await sitting.click()
+    await page.keyboard.type("25")
+    await sleep.click()
+    await page.keyboard.type("0")
+    await page.keyboard.press("Tab")
+
+    await expectFieldError(page, sitting, "Debe estar entre 0 y 24", {
+      focused: false,
+    })
+    await expectFieldError(page, sleep, "Debe estar entre 1 y 24", {
+      focused: false,
+    })
+  })
+
   test("fila 9 contesta solo 7 horas de sueño: se guarda, la tarjeta 'Hábitos' dice 'Con datos' y los demás bloques quedan sin contestar", async ({
     page,
     request,
