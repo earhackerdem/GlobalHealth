@@ -335,12 +335,14 @@
   },
   "habits": {
     "title": "Hábitos",
-    "intro": "Contesta solo lo que quieras. «Nunca» también le sirve a tu médico. La app no califica tus respuestas.",
+    "intro": "Contesta los hábitos que quieras. Si eliges una respuesta, completa sus preguntas; si no recuerdas un dato del pasado, marca «No recuerdo». «Nunca» también le sirve a tu médico. La app no califica tus respuestas.",
     "status": {
       "filled": "Con datos"
     },
     "saveHint": "Tus respuestas se guardan cuando tocas «Guardar».",
     "saving": "Guardando…",
+    "dontRemember": "No recuerdo",
+    "dontRememberFor": "No recuerdo: {{label}}",
     "savedToast": "Hábitos guardados",
     "discardedToast": "Se descartaron los cambios",
     "leave": {
@@ -431,7 +433,10 @@
       "outOfRange": "Debe estar entre {{min}} y {{max}}",
       "ageOverCurrent": "La edad no puede ser mayor que tu edad actual",
       "startAfterQuit": "No puede ser mayor que la edad en que lo dejaste",
-      "startAfterEnd": "No puede ser mayor que la edad en que terminó"
+      "startAfterEnd": "No puede ser mayor que la edad en que terminó",
+      "missing": "Contesta esta pregunta.",
+      "missingOrUnknown": "Contesta esta pregunta o marca «No recuerdo».",
+      "missingPlaces": "Elige dónde, o «No me expongo»"
     }
   },
   "validation": {

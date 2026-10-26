@@ -85,6 +85,29 @@ test.use({ storageState: { cookies: [], origins: [] } })
 //   "No puede ser mayor que la edad en que terminó" (leña); "Escribe solo el
 //   número.". Al elegir una opción se borran solo los errores de las
 //   preguntas que se ocultan; un campo que sigue a la vista conserva su marca.
+//
+// perfil-habitos-completitud (openspec/changes/perfil-habitos-completitud/
+// design.md → Interface contract → Frontend; C-15…C-17):
+// Introducción: "Contesta los hábitos que quieras. Si eliges una respuesta,
+//   completa sus preguntas; si no recuerdas un dato del pasado, marca «No
+//   recuerdo». «Nunca» también le sirve a tu médico. La app no califica tus
+//   respuestas."
+// "No recuerdo": un chip (botón con aria-pressed) debajo de cada número que
+//   lo admite: las edades siempre; "Cigarros al día" y "¿Cuántas horas al
+//   día, en promedio?" solo con "Antes". Nombre accesible
+//   "No recuerdo: <label del número>". Marcarlo vacía el número y quita su
+//   error; escribir en el número lo desmarca. Cuenta como cambio sin guardar
+//   y, mientras guarda, aria-disabled="true" (D20). Se guarda "unknown".
+// Obligatorias (al tocar "Guardar", no al salir del campo): lo que abre una
+//   respuesta se contesta; si falta, "Contesta esta pregunta." o, donde admite
+//   "No recuerdo", "Contesta esta pregunta o marca «No recuerdo».". El error
+//   va junto a su pregunta (el número, o la descripción accesible del grupo
+//   de chips), el foco al primero y no sale ningún PUT. Al ocultarse la
+//   pregunta se va su error. Lo guardado a medias abre sin errores.
+// C-17: con un error ya marcado en un número, cada cambio lo revisa y quita
+//   mensaje y aria-invalid si el valor es válido o el campo quedó vacío;
+//   mientras se escribe no aparece un error nuevo (los de formato siguen al
+//   salir del campo, C-14).
 // ---------------------------------------------------------------------------
 
 const API = `${process.env.VITE_API_URL}/api/v1`
@@ -117,6 +140,12 @@ const WOOD_HOURS = "¿Cuántas horas al día, en promedio?"
 const OLD_WOOD_YEARS = "Años con humo de leña, aprox."
 
 const SAVE_HINT = "Tus respuestas se guardan cuando tocas «Guardar»."
+const INTRO =
+  "Contesta los hábitos que quieras. Si eliges una respuesta, completa sus preguntas; si no recuerdas un dato del pasado, marca «No recuerdo». «Nunca» también le sirve a tu médico. La app no califica tus respuestas."
+/** Falta una pregunta que no admite "No recuerdo" (C-15). */
+const MISSING = "Contesta esta pregunta."
+/** Falta una pregunta que admite "No recuerdo" (C-15). */
+const MISSING_OR_UNKNOWN = "Contesta esta pregunta o marca «No recuerdo»."
 const LEAVE_TITLE = "¿Salir sin guardar?"
 const LEAVE_TEXT = "Los cambios que hiciste en Hábitos se van a perder."
 
@@ -350,6 +379,37 @@ async function expectFieldError(
     .toContain(message)
 }
 
+/** El chip "No recuerdo" del número `label` (C-16). */
+function dontRemember(page: Page, label: string): Locator {
+  return page.getByRole("button", {
+    name: `No recuerdo: ${label}`,
+    exact: true,
+  })
+}
+
+/** Ningún error a la vista junto a `field` con ese mensaje (C-17). */
+async function expectNoFieldError(page: Page, field: Locator, message: string) {
+  await expect(field).not.toHaveAttribute("aria-invalid", "true")
+  await expect(page.getByText(message, { exact: true })).toHaveCount(0)
+}
+
+/**
+ * Error de una pregunta de chips (C-15): el mensaje es parte de la
+ * descripción accesible de su grupo (junto a la ayuda que ya tuviera).
+ */
+async function expectGroupError(page: Page, name: string, message: string) {
+  const escaped = message.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
+  await expect(group(page, name)).toHaveAccessibleDescription(
+    new RegExp(`(^|\\s)${escaped}(\\s|$)`),
+  )
+}
+
+/** Que no salga ningún PUT /profile/habits en la ventana de espera. */
+async function expectNoPut(page: Page, puts: unknown[]) {
+  await page.waitForTimeout(NO_PUT_WINDOW_MS)
+  expect(puts).toEqual([])
+}
+
 /** El diálogo de la app al salir con cambios sin guardar. */
 function leaveDialog(page: Page): Locator {
   return page.getByRole("dialog", { name: LEAVE_TITLE })
@@ -517,16 +577,18 @@ const RACE_RUNS = 5
 const formAlert = (page: Page) => page.locator("form").getByRole("alert")
 
 test.describe("Perfil médico — hábitos (perfil-habitos, grupo 2)", () => {
-  test("fila 1 (C-1) alcohol actual con las preguntas del AUDIT-C: con 'Guardar', tarjeta 'Con datos' y al reabrir siguen elegidas", async ({
+  test("fila 1 (C-1) alcohol actual desde los 18 con las preguntas del AUDIT-C: con 'Guardar', tarjeta 'Con datos' y al reabrir ve 18 y siguen elegidas", async ({
     page,
     request,
   }) => {
-    await freshPatient(page, request)
+    const api = await freshPatient(page, request)
+    await setAge36(api)
     await openHabitsFromProfile(page)
 
     await chip(page, ALCOHOL, "Actual").click()
     await expect(numberField(page, ALCOHOL_START)).toBeVisible()
     await expect(page.getByText("Sin contar probaditas.")).toBeVisible()
+    await numberField(page, ALCOHOL_START).fill("18")
     await chip(page, FREQUENCY, "2 a 3 veces por semana").click()
     await chip(page, DRINKS, "3 o 4").click()
     await chip(page, SIX_OR_MORE, "Cada mes").click()
@@ -537,6 +599,7 @@ test.describe("Perfil médico — hábitos (perfil-habitos, grupo 2)", () => {
 
     await reopen(page)
     await expectPressed(chip(page, ALCOHOL, "Actual"), true)
+    await expect(numberField(page, ALCOHOL_START)).toHaveValue("18")
     await expectPressed(chip(page, FREQUENCY, "2 a 3 veces por semana"), true)
     await expectPressed(chip(page, DRINKS, "3 o 4"), true)
     await expectPressed(chip(page, SIX_OR_MORE, "Cada mes"), true)
@@ -576,13 +639,15 @@ test.describe("Perfil médico — hábitos (perfil-habitos, grupo 2)", () => {
     request,
   }) => {
     const api = await freshPatient(page, request)
-    await seedHabits(api, { alcohol: { status: "quit" } })
+    await seedHabits(api, {
+      alcohol: { status: "quit", start_age: 17, quit_age: 30 },
+    })
     await openHabitsFromProfile(page)
     await expectPressed(chip(page, ALCOHOL, "Lo dejé"), true)
     const puts = trackHabitPuts(page)
 
     const start = numberField(page, ALCOHOL_START)
-    await expect(start).toBeVisible()
+    await expect(start).toHaveValue("17")
     await start.fill("30")
     await numberField(page, ALCOHOL_QUIT_AGE).fill("18")
     await numberField(page, ALCOHOL_QUIT_AGE).press("Tab")
@@ -605,10 +670,11 @@ test.describe("Perfil médico — hábitos (perfil-habitos, grupo 2)", () => {
     await expect(page).toHaveURL(HABITS_URL)
     const saved = await getHabits(api)
     expect(saved.alcohol?.status).toBe("quit")
-    expect(saved.alcohol?.quit_age ?? null).toBeNull()
+    expect(saved.alcohol?.start_age).toBe(17)
+    expect(saved.alcohol?.quit_age).toBe(30)
   })
 
-  test("fila 4 (C-1, C-2) una edad mayor que la actual: 40 con 36 años, error junto al campo con el foco y nada guardado", async ({
+  test("fila 4 (C-1, C-2) una edad mayor que la actual: empezó a los 17 y lo dejó a los 40 con 36 años, error junto al campo con el foco y nada guardado", async ({
     page,
     request,
   }) => {
@@ -617,6 +683,7 @@ test.describe("Perfil médico — hábitos (perfil-habitos, grupo 2)", () => {
     await openHabitsFromProfile(page)
 
     await chip(page, ALCOHOL, "Lo dejé").click()
+    await numberField(page, ALCOHOL_START).fill("17")
     const quitAge = numberField(page, ALCOHOL_QUIT_AGE)
     await quitAge.fill("40")
     await page.getByRole("button", { name: "Guardar", exact: true }).click()
@@ -643,6 +710,7 @@ test.describe("Perfil médico — hábitos (perfil-habitos, grupo 2)", () => {
         frequency: "two_to_three_weekly",
         typical_drinks: "three_four",
         six_or_more: "monthly",
+        mostly_weekends: true,
       },
     })
     await openHabitsFromProfile(page)
@@ -670,7 +738,7 @@ test.describe("Perfil médico — hábitos (perfil-habitos, grupo 2)", () => {
     expect(saved.alcohol?.mostly_weekends ?? null).toBeNull()
   })
 
-  test("fila 6 (C-2) tabaco que dejó (10 al día, de 18 a 30) y vapeador actual 'Todos los días': al reabrir ve esas respuestas", async ({
+  test("fila 6 (C-2) tabaco que dejó (10 al día, de 18 a 30) y vapeador actual desde los 30 'Todos los días': al reabrir ve esas respuestas", async ({
     page,
     request,
   }) => {
@@ -683,6 +751,7 @@ test.describe("Perfil médico — hábitos (perfil-habitos, grupo 2)", () => {
     await numberField(page, TOBACCO_START).fill("18")
     await numberField(page, TOBACCO_QUIT).fill("30")
     await chip(page, VAPING, "Actual").click()
+    await numberField(page, VAPING_START).fill("30")
     await expect(group(page, VAPING_FREQUENCY)).toBeVisible()
     await chip(page, VAPING_FREQUENCY, "Todos los días").click()
     await saveOk(page)
@@ -693,15 +762,17 @@ test.describe("Perfil médico — hábitos (perfil-habitos, grupo 2)", () => {
     await expect(numberField(page, TOBACCO_START)).toHaveValue("18")
     await expect(numberField(page, TOBACCO_QUIT)).toHaveValue("30")
     await expectPressed(chip(page, VAPING, "Actual"), true)
+    await expect(numberField(page, VAPING_START)).toHaveValue("30")
     await expectPressed(chip(page, VAPING_FREQUENCY, "Todos los días"), true)
     await expect(numberField(page, VAPING_DAYS)).toHaveCount(0)
 
     const saved = await getHabits(api)
     expect(saved.vaping?.status).toBe("current")
+    expect(saved.vaping?.start_age).toBe(30)
     expect(saved.vaping?.frequency).toBe("daily")
   })
 
-  test("fila 7 (C-2) empezó a los 30 y lo dejó a los 18: error junto a la edad de inicio y nada guardado", async ({
+  test("fila 7 (C-2) 10 al día, empezó a los 30 y lo dejó a los 18: error junto a la edad de inicio y nada guardado", async ({
     page,
     request,
   }) => {
@@ -709,6 +780,7 @@ test.describe("Perfil médico — hábitos (perfil-habitos, grupo 2)", () => {
     await openHabitsFromProfile(page)
 
     await chip(page, TOBACCO, "Antes").click()
+    await numberField(page, CIGARETTES).fill("10")
     const start = numberField(page, TOBACCO_START)
     await start.fill("30")
     await numberField(page, TOBACCO_QUIT).fill("18")
@@ -767,7 +839,12 @@ test.describe("Perfil médico — hábitos (perfil-habitos, grupo 2)", () => {
     const api = await freshPatient(page, request)
     await setAge36(api)
     await seedHabits(api, {
-      vaping: { status: "current", frequency: "some_days", days_last_30: 12 },
+      vaping: {
+        status: "current",
+        start_age: 25,
+        frequency: "some_days",
+        days_last_30: 12,
+      },
     })
     await openHabitsFromProfile(page)
     await expectPressed(chip(page, VAPING_FREQUENCY, "Algunos días"), true)
@@ -920,19 +997,24 @@ test.describe("Perfil médico — hábitos (perfil-habitos, grupo 2)", () => {
     expect(saved.wood_smoke ?? null).toBeNull()
   })
 
-  test("fila 15 (C-6) sin puntaje ni riesgo: tras guardar el caso extremo (con leña actual desde los 5, 8 horas), ni la pantalla ni 'Mi perfil médico' ni la respuesta dicen 'riesgo', 'puntaje', 'AUDIT' u 'horas-año'", async ({
+  test("fila 15 (C-6; completitud fila 10) sin puntaje ni riesgo: tras guardar el caso extremo (alcohol actual desde los 15 con el AUDIT-C al máximo y 'No' en fines de semana, tabaco actual 20 al día desde 'No recuerdo', leña actual desde los 5, 8 horas), ni la pantalla ni 'Mi perfil médico' ni la respuesta dicen 'riesgo', 'puntaje', 'AUDIT' u 'horas-año'", async ({
     page,
     request,
   }) => {
     const api = await freshPatient(page, request)
+    await setAge36(api)
     await openHabitsFromProfile(page)
 
     await chip(page, ALCOHOL, "Actual").click()
+    await numberField(page, ALCOHOL_START).fill("15")
     await chip(page, FREQUENCY, "4 o más veces por semana").click()
     await chip(page, DRINKS, "10 o más").click()
     await chip(page, SIX_OR_MORE, "A diario o casi").click()
+    await chip(page, WEEKENDS, "No").click()
     await chip(page, TOBACCO, "Actual").click()
     await numberField(page, CIGARETTES).fill("20")
+    await dontRemember(page, TOBACCO_START).click()
+    await expectPressed(dontRemember(page, TOBACCO_START), true)
     await chip(page, WOOD, "Actual").click()
     await expect(numberField(page, WOOD_START)).toBeVisible()
     await numberField(page, WOOD_START).fill("5")
@@ -945,14 +1027,19 @@ test.describe("Perfil médico — hábitos (perfil-habitos, grupo 2)", () => {
 
     await reopen(page)
     await expectPressed(chip(page, ALCOHOL, "Actual"), true)
+    await expect(numberField(page, ALCOHOL_START)).toHaveValue("15")
     await expectPressed(chip(page, DRINKS, "10 o más"), true)
+    await expectPressed(chip(page, WEEKENDS, "No"), true)
     await expect(numberField(page, CIGARETTES)).toHaveValue("20")
+    await expectPressed(dontRemember(page, TOBACCO_START), true)
+    await expect(numberField(page, TOBACCO_START)).toHaveValue("")
     await expectPressed(chip(page, WOOD, "Actual"), true)
     await expect(numberField(page, WOOD_START)).toHaveValue("5")
     await expect(numberField(page, WOOD_HOURS)).toHaveValue("8")
     expect(await page.locator("body").innerText()).not.toMatch(forbidden)
 
     const saved = await getHabits(api)
+    expect(saved.tobacco?.start_age).toBe("unknown")
     expect(JSON.stringify(saved)).not.toMatch(forbidden)
   })
 
@@ -1255,7 +1342,9 @@ test.describe("Perfil médico — hábitos (perfil-habitos, grupo 2)", () => {
   }) => {
     const api = await freshPatient(page, request)
     await setAge36(api)
-    await seedHabits(api, { wood_smoke: { status: "current" } })
+    await seedHabits(api, {
+      wood_smoke: { status: "current", start_age: 5, hours_per_day: 3 },
+    })
     await openHabitsFromProfile(page)
     await expectPressed(chip(page, WOOD, "Actual"), true)
     // Con "Actual": edad de inicio y horas, sin edad de fin.
@@ -1273,7 +1362,7 @@ test.describe("Perfil médico — hábitos (perfil-habitos, grupo 2)", () => {
     })
     await page.waitForTimeout(NO_PUT_WINDOW_MS)
     expect(puts).toEqual([])
-    expect((await getHabits(api)).wood_smoke?.hours_per_day ?? null).toBeNull()
+    expect((await getHabits(api)).wood_smoke?.hours_per_day).toBe(3)
 
     // Una edad mayor que la actual (36).
     const woodStart = numberField(page, WOOD_START)
@@ -1339,7 +1428,9 @@ test.describe("Perfil médico — hábitos (perfil-habitos, grupo 2)", () => {
     request,
   }) => {
     const api = await freshPatient(page, request)
-    await seedHabits(api, { tobacco: { status: "current" } })
+    await seedHabits(api, {
+      tobacco: { status: "current", cigarettes_per_day: 12, start_age: 18 },
+    })
     await openHabitsFromProfile(page)
     await expectPressed(chip(page, TOBACCO, "Actual"), true)
 
@@ -1365,7 +1456,7 @@ test.describe("Perfil médico — hábitos (perfil-habitos, grupo 2)", () => {
   }) => {
     const api = await freshPatient(page, request)
     await seedHabits(api, {
-      tobacco: { status: "current", cigarettes_per_day: 12 },
+      tobacco: { status: "current", cigarettes_per_day: 12, start_age: 18 },
     })
     await openHabitsFromProfile(page)
     await expectPressed(chip(page, TOBACCO, "Actual"), true)
@@ -1419,6 +1510,7 @@ test.describe("Perfil médico — hábitos (perfil-habitos, grupo 2)", () => {
     // A: tabaco "Actual" con 20 y "Guardar", que queda en curso.
     await chip(page, TOBACCO, "Actual").click()
     await numberField(page, CIGARETTES).fill("20")
+    await numberField(page, TOBACCO_START).fill("18")
     await page.getByRole("button", { name: "Guardar", exact: true }).click()
     await expect.poll(() => puts.length).toBe(1)
 
@@ -1493,6 +1585,7 @@ test.describe("Perfil médico — hábitos (perfil-habitos, grupo 2)", () => {
     await chip(page, TOBACCO, "Actual").click()
     const cigarettes = numberField(page, CIGARETTES)
     await cigarettes.fill("20")
+    await numberField(page, TOBACCO_START).fill("18")
     await page.getByRole("button", { name: "Guardar", exact: true }).click()
     await expect.poll(() => puts.length).toBe(1)
 
@@ -1563,6 +1656,7 @@ test.describe("Perfil médico — hábitos (perfil-habitos, grupo 2)", () => {
     const hold = await holdFirstHabitsPut(page)
 
     await chip(page, ALCOHOL, "Lo dejé").click()
+    await numberField(page, ALCOHOL_START).fill("17")
     const quitAge = numberField(page, ALCOHOL_QUIT_AGE)
     await quitAge.fill("40")
     await page.getByRole("button", { name: "Guardar", exact: true }).click()
@@ -1636,6 +1730,7 @@ test.describe("Perfil médico — hábitos (perfil-habitos, grupo 2)", () => {
     await chip(page, TOBACCO, "Actual").click()
     const cigarettes = numberField(page, CIGARETTES)
     await cigarettes.fill("20")
+    await numberField(page, TOBACCO_START).fill("18")
     await page.getByRole("button", { name: "Guardar", exact: true }).click()
     await expect.poll(() => puts.length).toBe(1)
 
@@ -1682,6 +1777,7 @@ test.describe("Perfil médico — hábitos (perfil-habitos, grupo 2)", () => {
 
         await chip(page, TOBACCO, "Actual").click()
         await numberField(page, CIGARETTES).fill("20")
+        await numberField(page, TOBACCO_START).fill("18")
         await page.getByRole("button", { name: "Guardar", exact: true }).click()
         await expect.poll(() => puts.length).toBe(1)
 
@@ -1732,6 +1828,7 @@ test.describe("Perfil médico — hábitos (perfil-habitos, grupo 2)", () => {
 
     await chip(page, TOBACCO, "Actual").click()
     await numberField(page, CIGARETTES).fill("20")
+    await numberField(page, TOBACCO_START).fill("18")
     await page.getByRole("button", { name: "Guardar", exact: true }).click()
     await expect.poll(() => puts.length).toBe(1)
 
@@ -1786,8 +1883,8 @@ test.describe("Perfil médico — hábitos (perfil-habitos, grupo 2)", () => {
   }) => {
     const apiA = await freshPatient(page, request)
     await seedHabits(apiA, {
-      tobacco: { status: "current", cigarettes_per_day: 20 },
-      vaping: { status: "current" },
+      tobacco: { status: "current", cigarettes_per_day: 20, start_age: 18 },
+      vaping: { status: "current", start_age: 20, frequency: "daily" },
     })
     await openHabitsFromProfile(page)
     await expect(numberField(page, CIGARETTES)).toHaveValue("20")
@@ -1846,8 +1943,8 @@ test.describe("Perfil médico — hábitos (perfil-habitos, grupo 2)", () => {
   }) => {
     const apiA = await freshPatient(page, request)
     await seedHabits(apiA, {
-      tobacco: { status: "current", cigarettes_per_day: 20 },
-      vaping: { status: "current" },
+      tobacco: { status: "current", cigarettes_per_day: 20, start_age: 18 },
+      vaping: { status: "current", start_age: 20, frequency: "daily" },
     })
     await openHabitsFromProfile(page)
     await expect(numberField(page, CIGARETTES)).toHaveValue("20")
@@ -1891,6 +1988,7 @@ test.describe("Perfil médico — hábitos (perfil-habitos, grupo 2)", () => {
     await setAge36(api)
 
     await chip(page, ALCOHOL, "Lo dejé").click()
+    await numberField(page, ALCOHOL_START).fill("17")
     const quitAge = numberField(page, ALCOHOL_QUIT_AGE)
     await quitAge.fill("40")
     // Se espera el PUT de "Guardar", el que lleva el 40.
@@ -1922,6 +2020,7 @@ test.describe("Perfil médico — hábitos (perfil-habitos, grupo 2)", () => {
     await openHabitsFromProfile(page)
 
     await chip(page, TOBACCO, "Antes").click()
+    await numberField(page, CIGARETTES).fill("10")
     const start = numberField(page, TOBACCO_START)
     await start.fill("30")
     await numberField(page, TOBACCO_QUIT).fill("18")
@@ -1950,7 +2049,7 @@ test.describe("Perfil médico — hábitos (perfil-habitos, grupo 2)", () => {
     )
   })
 
-  test("R14 'Sobre todo fines de semana' con chips 'Sí' / 'No': tocar 'Sí' otra vez lo deja sin contestar", async ({
+  test("R14 (C-15) 'Sobre todo fines de semana' con chips 'Sí' / 'No': tocar 'Sí' otra vez lo deja sin contestar, y 'Guardar' pide contestarla sin mandar nada", async ({
     page,
     request,
   }) => {
@@ -1958,6 +2057,10 @@ test.describe("Perfil médico — hábitos (perfil-habitos, grupo 2)", () => {
     await openHabitsFromProfile(page)
 
     await chip(page, ALCOHOL, "Actual").click()
+    await numberField(page, ALCOHOL_START).fill("18")
+    await chip(page, FREQUENCY, "2 a 3 veces por semana").click()
+    await chip(page, DRINKS, "3 o 4").click()
+    await chip(page, SIX_OR_MORE, "Cada mes").click()
     await chip(page, WEEKENDS, "Sí").click()
     await saveOk(page)
     expect((await getHabits(api)).alcohol?.mostly_weekends).toBe(true)
@@ -1967,11 +2070,16 @@ test.describe("Perfil médico — hábitos (perfil-habitos, grupo 2)", () => {
     await chip(page, WEEKENDS, "Sí").click()
     await expectPressed(chip(page, WEEKENDS, "Sí"), false)
     await expectPressed(chip(page, WEEKENDS, "No"), false)
-    await saveOk(page)
+
+    const puts = trackHabitPuts(page)
+    await page.getByRole("button", { name: "Guardar", exact: true }).click()
+    await expectGroupError(page, WEEKENDS, MISSING)
+    await expectNoPut(page, puts)
+    await expect(page).toHaveURL(HABITS_URL)
 
     const saved = await getHabits(api)
     expect(saved.alcohol?.status).toBe("current")
-    expect(saved.alcohol?.mostly_weekends ?? null).toBeNull()
+    expect(saved.alcohol?.mostly_weekends).toBe(true)
   })
 
   test("N3 (ronda 2) 'Sobre todo fines de semana' en 'No' se guarda como false y al reabrir 'No' sigue elegido", async ({
@@ -1982,6 +2090,10 @@ test.describe("Perfil médico — hábitos (perfil-habitos, grupo 2)", () => {
     await openHabitsFromProfile(page)
 
     await chip(page, ALCOHOL, "Actual").click()
+    await numberField(page, ALCOHOL_START).fill("18")
+    await chip(page, FREQUENCY, "2 a 3 veces por semana").click()
+    await chip(page, DRINKS, "3 o 4").click()
+    await chip(page, SIX_OR_MORE, "Cada mes").click()
     await chip(page, WEEKENDS, "No").click()
     await saveOk(page)
     expect((await getHabits(api)).alcohol?.mostly_weekends).toBe(false)
@@ -1997,8 +2109,13 @@ test.describe("Perfil médico — hábitos (perfil-habitos, grupo 2)", () => {
   }) => {
     await freshPatient(page, request)
     await openHabitsFromProfile(page)
+    // Completo (C-15): si faltara algo, la pantalla no mandaría el PUT.
     await chip(page, ALCOHOL, "Actual").click()
+    await numberField(page, ALCOHOL_START).fill("18")
     await chip(page, FREQUENCY, "2 a 3 veces por semana").click()
+    await chip(page, DRINKS, "3 o 4").click()
+    await chip(page, SIX_OR_MORE, "Cada mes").click()
+    await chip(page, WEEKENDS, "Sí").click()
     await page.route("**/api/v1/profile/habits", async (route) => {
       if (route.request().method() !== "PUT") return route.continue()
       await route.fulfill({
@@ -2036,5 +2153,589 @@ test.describe("Perfil médico — hábitos (perfil-habitos, grupo 2)", () => {
     await expect(group(page, ALCOHOL)).not.toHaveAttribute("data-invalid")
     await expect(formAlert(page)).toHaveCount(0)
     await expect(page).toHaveURL(HABITS_URL)
+  })
+})
+
+test.describe("Perfil médico — hábitos completos (perfil-habitos-completitud, grupo 2)", () => {
+  test("C-15 (completitud) la introducción pide completar lo que abre una respuesta y menciona «No recuerdo»", async ({
+    page,
+    request,
+  }) => {
+    await freshPatient(page, request)
+    await openHabitsFromProfile(page)
+
+    await expect(page.getByText(INTRO, { exact: true })).toBeVisible()
+    await expect(page.getByText(SAVE_HINT, { exact: true })).toBeVisible()
+  })
+
+  test("C-15 (completitud fila 2) falta la edad de inicio: alcohol 'Lo dejé' con solo 30 en la edad en que lo dejó → 'Guardar' → 'Contesta esta pregunta o marca «No recuerdo».' junto a la edad de inicio, con el foco ahí, y ningún PUT", async ({
+    page,
+    request,
+  }) => {
+    const api = await freshPatient(page, request)
+    await setAge36(api)
+    await openHabitsFromProfile(page)
+    const puts = trackHabitPuts(page)
+
+    await chip(page, ALCOHOL, "Lo dejé").click()
+    const start = numberField(page, ALCOHOL_START)
+    const quit = numberField(page, ALCOHOL_QUIT_AGE)
+    // Pasar por la edad de inicio sin contestarla no regaña: lo que falta se
+    // revisa al tocar "Guardar".
+    await start.focus()
+    await start.press("Tab")
+    await quit.fill("30")
+    await quit.press("Tab")
+    await expectNoFieldError(page, start, MISSING_OR_UNKNOWN)
+
+    await page.getByRole("button", { name: "Guardar", exact: true }).click()
+    await expectFieldError(page, start, MISSING_OR_UNKNOWN)
+    await expect(quit).not.toHaveAttribute("aria-invalid", "true")
+    await expectNoPut(page, puts)
+    await expect(page).toHaveURL(HABITS_URL)
+    expect((await getHabits(api)).alcohol ?? null).toBeNull()
+  })
+
+  // Fila 2 en pantalla, por cada fila de HABITS_REQUIRED (design.md, tabla de
+  // obligatoriedad): con todas las demás contestadas, falta solo una. Los
+  // lugares del humo ajeno no se alcanzan en pantalla (estar expuesto sale de
+  // elegir un lugar), así que su fila solo prueba los días.
+  type RequiredQuestion = {
+    label: string
+    kind: "number" | "group"
+    message: string
+    answer: (page: Page) => Promise<void>
+  }
+  const numberAnswer = (
+    label: string,
+    value: string,
+    message: string,
+  ): RequiredQuestion => ({
+    label,
+    kind: "number",
+    message,
+    answer: (page) => numberField(page, label).fill(value),
+  })
+  const chipAnswer = (label: string, option: string): RequiredQuestion => ({
+    label,
+    kind: "group",
+    message: MISSING,
+    answer: (page) => chip(page, label, option).click(),
+  })
+  const REQUIRED_ROWS: {
+    title: string
+    choose: (page: Page) => Promise<void>
+    questions: RequiredQuestion[]
+  }[] = [
+    {
+      title: "alcohol 'Lo dejé'",
+      choose: (page) => chip(page, ALCOHOL, "Lo dejé").click(),
+      questions: [
+        numberAnswer(ALCOHOL_START, "18", MISSING_OR_UNKNOWN),
+        numberAnswer(ALCOHOL_QUIT_AGE, "30", MISSING_OR_UNKNOWN),
+      ],
+    },
+    {
+      title: "alcohol 'Actual'",
+      choose: (page) => chip(page, ALCOHOL, "Actual").click(),
+      questions: [
+        chipAnswer(FREQUENCY, "2 a 3 veces por semana"),
+        chipAnswer(DRINKS, "3 o 4"),
+        chipAnswer(SIX_OR_MORE, "Cada mes"),
+        chipAnswer(WEEKENDS, "Sí"),
+        numberAnswer(ALCOHOL_START, "18", MISSING_OR_UNKNOWN),
+      ],
+    },
+    {
+      title: "tabaco 'Antes'",
+      choose: (page) => chip(page, TOBACCO, "Antes").click(),
+      questions: [
+        numberAnswer(CIGARETTES, "10", MISSING_OR_UNKNOWN),
+        numberAnswer(TOBACCO_START, "18", MISSING_OR_UNKNOWN),
+        numberAnswer(TOBACCO_QUIT, "30", MISSING_OR_UNKNOWN),
+      ],
+    },
+    {
+      title: "tabaco 'Actual'",
+      choose: (page) => chip(page, TOBACCO, "Actual").click(),
+      questions: [
+        numberAnswer(CIGARETTES, "10", MISSING),
+        numberAnswer(TOBACCO_START, "18", MISSING_OR_UNKNOWN),
+      ],
+    },
+    {
+      title: "vapeador 'Antes'",
+      choose: (page) => chip(page, VAPING, "Antes").click(),
+      questions: [
+        numberAnswer(VAPING_START, "25", MISSING_OR_UNKNOWN),
+        numberAnswer(VAPING_QUIT, "28", MISSING_OR_UNKNOWN),
+      ],
+    },
+    {
+      title: "vapeador 'Actual'",
+      choose: (page) => chip(page, VAPING, "Actual").click(),
+      questions: [
+        chipAnswer(VAPING_FREQUENCY, "Todos los días"),
+        numberAnswer(VAPING_START, "25", MISSING_OR_UNKNOWN),
+      ],
+    },
+    {
+      title: "vapeador 'Actual' 'Algunos días'",
+      choose: async (page) => {
+        await chip(page, VAPING, "Actual").click()
+        await chip(page, VAPING_FREQUENCY, "Algunos días").click()
+      },
+      questions: [
+        numberAnswer(VAPING_DAYS, "12", MISSING),
+        numberAnswer(VAPING_START, "25", MISSING_OR_UNKNOWN),
+      ],
+    },
+    {
+      title: "humo ajeno en 'Casa'",
+      choose: (page) => chip(page, WHERE, "Casa").click(),
+      questions: [numberAnswer(DAYS, "2", MISSING)],
+    },
+    {
+      title: "leña 'Antes'",
+      choose: (page) => chip(page, WOOD, "Antes").click(),
+      questions: [
+        numberAnswer(WOOD_START, "5", MISSING_OR_UNKNOWN),
+        numberAnswer(WOOD_QUIT, "20", MISSING_OR_UNKNOWN),
+        numberAnswer(WOOD_HOURS, "3", MISSING_OR_UNKNOWN),
+      ],
+    },
+    {
+      title: "leña 'Actual'",
+      choose: (page) => chip(page, WOOD, "Actual").click(),
+      questions: [
+        numberAnswer(WOOD_HOURS, "3", MISSING),
+        numberAnswer(WOOD_START, "5", MISSING_OR_UNKNOWN),
+      ],
+    },
+  ]
+  for (const row of REQUIRED_ROWS) {
+    test(`C-15 (completitud fila 2) cada pregunta que abre ${row.title}: con las demás contestadas y solo esa sin contestar, 'Guardar' pone su mensaje junto a ella, ningún otro, y ningún PUT`, async ({
+      page,
+      request,
+    }) => {
+      await freshPatient(page, request)
+      const puts = trackHabitPuts(page)
+
+      for (const missing of row.questions) {
+        await openHabitsFromProfile(page)
+        await row.choose(page)
+        for (const question of row.questions) {
+          if (question !== missing) await question.answer(page)
+        }
+        await page.getByRole("button", { name: "Guardar", exact: true }).click()
+
+        if (missing.kind === "number") {
+          await expectFieldError(
+            page,
+            numberField(page, missing.label),
+            missing.message,
+          )
+        } else {
+          await expectGroupError(page, missing.label, missing.message)
+        }
+        const other = missing.message === MISSING ? MISSING_OR_UNKNOWN : MISSING
+        await expect(
+          page.getByText(missing.message, { exact: true }),
+        ).toHaveCount(1)
+        await expect(page.getByText(other, { exact: true })).toHaveCount(0)
+        await expect(page).toHaveURL(HABITS_URL)
+
+        // Descarta y vuelve a abrir para la siguiente pregunta.
+        await page
+          .getByRole("button", { name: "Cancelar", exact: true })
+          .click()
+        await page.waitForURL(PROFILE_URL)
+      }
+      await expectNoPut(page, puts)
+    })
+  }
+
+  test("C-15 (completitud fila 3) alcohol 'Actual' desde los 18 sin las preguntas de frecuencia: 'Guardar' → 'Contesta esta pregunta.' bajo las tres del AUDIT-C y 'Sobre todo fines de semana', ninguna ofrece 'No recuerdo', foco en la primera y ningún PUT; al cambiar a 'Nunca' se van esos errores y se guarda", async ({
+    page,
+    request,
+  }) => {
+    const api = await freshPatient(page, request)
+    await setAge36(api)
+    await openHabitsFromProfile(page)
+    const puts = trackHabitPuts(page)
+    const questions = [FREQUENCY, DRINKS, SIX_OR_MORE, WEEKENDS]
+
+    await chip(page, ALCOHOL, "Actual").click()
+    await numberField(page, ALCOHOL_START).fill("18")
+    await page.getByRole("button", { name: "Guardar", exact: true }).click()
+
+    for (const name of questions) {
+      await expectGroupError(page, name, MISSING)
+    }
+    // En toda la pantalla, el único "No recuerdo" es el de la edad de inicio.
+    await expect(
+      page.getByRole("button", { name: /^No recuerdo/ }),
+    ).toHaveCount(1)
+    await expect(dontRemember(page, ALCOHOL_START)).toBeVisible()
+    await expect(
+      page.getByText(MISSING_OR_UNKNOWN, { exact: true }),
+    ).toHaveCount(0)
+    await expect(numberField(page, ALCOHOL_START)).not.toHaveAttribute(
+      "aria-invalid",
+      "true",
+    )
+    await expect(chip(page, FREQUENCY, "Una vez al mes o menos")).toBeFocused()
+    await expectNoPut(page, puts)
+    await expect(page).toHaveURL(HABITS_URL)
+    expect((await getHabits(api)).alcohol ?? null).toBeNull()
+
+    // Al ocultarse las preguntas se van sus errores.
+    await chip(page, ALCOHOL, "Nunca").click()
+    await expect(page.getByText(MISSING, { exact: true })).toHaveCount(0)
+    await saveOk(page)
+    expect((await getHabits(api)).alcohol?.status).toBe("never")
+  })
+
+  test("C-16 (completitud fila 4) no recuerda cuándo empezó: alcohol 'Lo dejé', 'No recuerdo' en la edad de inicio (vacía el 40 y quita su error) y 18 en la edad en que lo dejó → se guarda sin error; al reabrir, 'No recuerdo' marcado y 18", async ({
+    page,
+    request,
+  }) => {
+    const api = await freshPatient(page, request)
+    await setAge36(api)
+    await openHabitsFromProfile(page)
+
+    await chip(page, ALCOHOL, "Lo dejé").click()
+    const start = numberField(page, ALCOHOL_START)
+    const unknownStart = dontRemember(page, ALCOHOL_START)
+    await expectPressed(unknownStart, false)
+    const tooOld = "La edad no puede ser mayor que tu edad actual"
+    await start.fill("40")
+    await start.press("Tab")
+    await expectFieldError(page, start, tooOld, { focused: false })
+
+    await unknownStart.click()
+    await expectPressed(unknownStart, true)
+    await expect(start).toHaveValue("")
+    await expectNoFieldError(page, start, tooOld)
+
+    await numberField(page, ALCOHOL_QUIT_AGE).fill("18")
+    await saveOk(page)
+
+    expect((await getHabits(api)).alcohol).toMatchObject({
+      status: "quit",
+      start_age: "unknown",
+      quit_age: 18,
+    })
+
+    await reopen(page)
+    await expectPressed(chip(page, ALCOHOL, "Lo dejé"), true)
+    await expectPressed(dontRemember(page, ALCOHOL_START), true)
+    await expect(numberField(page, ALCOHOL_START)).toHaveValue("")
+    await expect(numberField(page, ALCOHOL_QUIT_AGE)).toHaveValue("18")
+    await expectPressed(dontRemember(page, ALCOHOL_QUIT_AGE), false)
+  })
+
+  test("C-16 (completitud fila 5) 'No recuerdo' solo en lo que pasó: tabaco 'Actual' → los cigarros no lo ofrecen y la edad de inicio sí; 'Antes' → cigarros, inicio y fin lo ofrecen; igual con las horas de leña; los días del vapeador y del humo ajeno nunca", async ({
+    page,
+    request,
+  }) => {
+    await freshPatient(page, request)
+    await openHabitsFromProfile(page)
+
+    await chip(page, TOBACCO, "Actual").click()
+    await expect(numberField(page, CIGARETTES)).toBeVisible()
+    await expect(dontRemember(page, TOBACCO_START)).toBeVisible()
+    await expect(dontRemember(page, CIGARETTES)).toHaveCount(0)
+
+    await chip(page, TOBACCO, "Antes").click()
+    for (const label of [CIGARETTES, TOBACCO_START, TOBACCO_QUIT]) {
+      await expect(dontRemember(page, label)).toBeVisible()
+    }
+
+    await chip(page, WOOD, "Actual").click()
+    await expect(numberField(page, WOOD_HOURS)).toBeVisible()
+    await expect(dontRemember(page, WOOD_START)).toBeVisible()
+    await expect(dontRemember(page, WOOD_HOURS)).toHaveCount(0)
+
+    await chip(page, WOOD, "Antes").click()
+    for (const label of [WOOD_HOURS, WOOD_START, WOOD_QUIT]) {
+      await expect(dontRemember(page, label)).toBeVisible()
+    }
+
+    await chip(page, VAPING, "Actual").click()
+    await chip(page, VAPING_FREQUENCY, "Algunos días").click()
+    await expect(numberField(page, VAPING_DAYS)).toBeVisible()
+    await expect(dontRemember(page, VAPING_START)).toBeVisible()
+    await expect(dontRemember(page, VAPING_DAYS)).toHaveCount(0)
+
+    await chip(page, WHERE, "Casa").click()
+    await expect(numberField(page, DAYS)).toBeVisible()
+    await expect(dontRemember(page, DAYS)).toHaveCount(0)
+  })
+
+  test("C-16 (completitud fila 6) escribir un número quita 'No recuerdo': con 'No recuerdo' guardado en la edad de inicio del tabaco, escribir 16 lo desmarca; al guardar y reabrir ve 16", async ({
+    page,
+    request,
+  }) => {
+    const api = await freshPatient(page, request)
+    await seedHabits(api, {
+      tobacco: {
+        status: "current",
+        cigarettes_per_day: 10,
+        start_age: "unknown",
+      },
+    })
+    await openHabitsFromProfile(page)
+    await expectPressed(chip(page, TOBACCO, "Actual"), true)
+    const start = numberField(page, TOBACCO_START)
+    const unknownStart = dontRemember(page, TOBACCO_START)
+    await expectPressed(unknownStart, true)
+    await expect(start).toHaveValue("")
+
+    await start.pressSequentially("16")
+    await expect(start).toHaveValue("16")
+    await expectPressed(unknownStart, false)
+    await saveOk(page)
+
+    expect((await getHabits(api)).tobacco?.start_age).toBe(16)
+    await reopen(page)
+    await expect(numberField(page, TOBACCO_START)).toHaveValue("16")
+    await expectPressed(dontRemember(page, TOBACCO_START), false)
+  })
+
+  test("C-15 (completitud fila 7) lo guardado a medias pide completar al guardar: alcohol 'Lo dejé' con solo 30 (servidor simulado en el GET: el PUT ya no deja guardarlo así) abre sin errores ni 'No recuerdo'; 'Guardar' → 'Contesta esta pregunta o marca «No recuerdo».' junto a la edad de inicio, ningún PUT y lo guardado no cambia", async ({
+    page,
+    request,
+  }) => {
+    const api = await freshPatient(page, request)
+    await setAge36(api)
+    await seedHabits(api, { tobacco: { status: "never" } })
+    const before = await getHabits(api)
+    // Una fila de antes de este cambio: el GET real con el alcohol a medias.
+    await page.route("**/api/v1/profile/habits", async (route) => {
+      if (route.request().method() !== "GET") return route.fallback()
+      const response = await route.fetch()
+      const body = await response.json()
+      await route.fulfill({
+        response,
+        json: {
+          ...body,
+          alcohol: {
+            status: "quit",
+            start_age: null,
+            quit_age: 30,
+            frequency: null,
+            typical_drinks: null,
+            six_or_more: null,
+            mostly_weekends: null,
+          },
+        },
+      })
+    })
+    await openHabitsFromProfile(page)
+    const puts = trackHabitPuts(page)
+
+    await expectPressed(chip(page, ALCOHOL, "Lo dejé"), true)
+    const start = numberField(page, ALCOHOL_START)
+    await expect(start).toHaveValue("")
+    await expect(numberField(page, ALCOHOL_QUIT_AGE)).toHaveValue("30")
+    await expectPressed(dontRemember(page, ALCOHOL_START), false)
+    await expect(page.locator('[aria-invalid="true"]')).toHaveCount(0)
+    await expect(
+      page.getByText(MISSING_OR_UNKNOWN, { exact: true }),
+    ).toHaveCount(0)
+
+    await page.getByRole("button", { name: "Guardar", exact: true }).click()
+    await expectFieldError(page, start, MISSING_OR_UNKNOWN)
+    await expectNoPut(page, puts)
+    await expect(page).toHaveURL(HABITS_URL)
+    expect(await getHabits(api)).toEqual(before)
+  })
+
+  test("C-17 (completitud fila 11) el error se va al corregirlo: '12a' en la edad de inicio del alcohol y Tab → 'Escribe solo el número.'; de vuelta en el campo, borrar la 'a' deja 12 y, sin salir, se van el mensaje y aria-invalid; escribir '1a' en la edad en que lo dejó no marca nada hasta salir del campo", async ({
+    page,
+    request,
+  }) => {
+    await freshPatient(page, request)
+    await openHabitsFromProfile(page)
+    const notANumber = "Escribe solo el número."
+
+    await chip(page, ALCOHOL, "Lo dejé").click()
+    const start = numberField(page, ALCOHOL_START)
+    await start.fill("12a")
+    await start.press("Tab")
+    await expectFieldError(page, start, notANumber, { focused: false })
+
+    // Vuelve al campo y borra la "a", sin salir.
+    await start.click()
+    await start.press("End")
+    await start.press("Backspace")
+    await expect(start).toHaveValue("12")
+    await expectNoFieldError(page, start, notANumber)
+    await expect(start).toBeFocused()
+
+    // Mientras escribe en un campo limpio no aparece un error nuevo.
+    const quit = numberField(page, ALCOHOL_QUIT_AGE)
+    await quit.pressSequentially("1a")
+    await expect(quit).toHaveValue("1a")
+    await page.waitForTimeout(300)
+    await expect(quit).toBeFocused()
+    await expectNoFieldError(page, quit, notANumber)
+    await expect(
+      page.getByText("No puede ser mayor que la edad en que lo dejaste", {
+        exact: true,
+      }),
+    ).toHaveCount(0)
+
+    // Al salir del campo, sí (C-14).
+    await quit.press("Tab")
+    await expectFieldError(page, quit, notANumber, { focused: false })
+  })
+
+  test("C-17 (completitud fila 11) la salida diferida no marca la pareja que se escribe: 12 en la edad de inicio del alcohol; con el botón apretado sobre la edad en que lo dejó (la salida de la de inicio queda pendiente) se escribe '1a' y se suelta → sin mensaje ni aria-invalid mientras sigue en el campo; con Tab, 'Escribe solo el número.'", async ({
+    page,
+    request,
+  }) => {
+    await freshPatient(page, request)
+    await openHabitsFromProfile(page)
+    const notANumber = "Escribe solo el número."
+
+    await chip(page, ALCOHOL, "Lo dejé").click()
+    const start = numberField(page, ALCOHOL_START)
+    const quit = numberField(page, ALCOHOL_QUIT_AGE)
+    await start.fill("12")
+    await expect(start).toBeFocused()
+    await quit.scrollIntoViewIfNeeded()
+    await expect(start).toBeFocused()
+
+    // Entrada real: el foco pasa al apretar el botón y la salida de la edad de
+    // inicio se resuelve al soltarlo, ya con "1a" escrito en la otra.
+    const box = await quit.boundingBox()
+    if (!box) throw new Error("La edad en que lo dejó no está a la vista")
+    await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2)
+    await page.mouse.down()
+    await expect(quit).toBeFocused()
+    await page.keyboard.type("1a")
+    await expect(quit).toHaveValue("1a")
+    await page.mouse.up()
+    await page.waitForTimeout(300)
+    await expect(quit).toBeFocused()
+    await expectNoFieldError(page, quit, notANumber)
+
+    await quit.press("Tab")
+    await expectFieldError(page, quit, notANumber, { focused: false })
+  })
+
+  test("C-17 (completitud fila 11) borrar todo también quita el error: 101 en 'Cigarros al día' y Tab → 'Debe estar entre 1 y 100'; al vaciar el campo, sin salir, se va; al salir sigue sin error hasta 'Guardar', que pide contestarla", async ({
+    page,
+    request,
+  }) => {
+    await freshPatient(page, request)
+    await openHabitsFromProfile(page)
+    const puts = trackHabitPuts(page)
+    const outOfScale = "Debe estar entre 1 y 100"
+
+    await chip(page, TOBACCO, "Actual").click()
+    const cigarettes = numberField(page, CIGARETTES)
+    await cigarettes.fill("101")
+    await cigarettes.press("Tab")
+    await expectFieldError(page, cigarettes, outOfScale, { focused: false })
+
+    await cigarettes.fill("")
+    await expect(cigarettes).toHaveValue("")
+    await expect(cigarettes).toBeFocused()
+    await expectNoFieldError(page, cigarettes, outOfScale)
+
+    await cigarettes.press("Tab")
+    await page.waitForTimeout(300)
+    await expect(cigarettes).not.toHaveAttribute("aria-invalid", "true")
+    await expect(page.getByText(MISSING, { exact: true })).toHaveCount(0)
+
+    await page.getByRole("button", { name: "Guardar", exact: true }).click()
+    await expectFieldError(page, cigarettes, MISSING)
+    await expectNoPut(page, puts)
+  })
+
+  test("C-16 (completitud fila 12) accesibilidad de 'No recuerdo': con tabaco 'Antes', los tres chips visibles tienen nombres distintos; con el PUT retenido, aria-disabled='true' y su clic no cambia nada; al soltarlo se guarda «No recuerdo» en los cigarros", async ({
+    page,
+    request,
+  }) => {
+    const api = await freshPatient(page, request)
+    await setAge36(api)
+    await openHabitsFromProfile(page)
+
+    await chip(page, TOBACCO, "Antes").click()
+    for (const label of [CIGARETTES, TOBACCO_START, TOBACCO_QUIT]) {
+      await expect(dontRemember(page, label)).toHaveCount(1)
+      await expect(dontRemember(page, label)).toBeVisible()
+    }
+    await expect(
+      page.getByRole("button", { name: "No recuerdo", exact: true }),
+    ).toHaveCount(0)
+
+    const puts = trackHabitPuts(page)
+    const hold = await holdFirstHabitsPut(page)
+    await dontRemember(page, CIGARETTES).click()
+    await numberField(page, TOBACCO_START).fill("18")
+    await numberField(page, TOBACCO_QUIT).fill("30")
+    await markShownToasts(page)
+    await page.getByRole("button", { name: "Guardar", exact: true }).click()
+    await expect.poll(() => puts.length).toBe(1)
+
+    const unknownStart = dontRemember(page, TOBACCO_START)
+    await expect(unknownStart).toHaveAttribute("aria-disabled", "true")
+    await expect(dontRemember(page, CIGARETTES)).toHaveAttribute(
+      "aria-disabled",
+      "true",
+    )
+    await unknownStart.click({ force: true })
+    await page.waitForTimeout(300)
+    await expectPressed(unknownStart, false)
+    await expect(numberField(page, TOBACCO_START)).toHaveValue("18")
+    await expectPressed(dontRemember(page, CIGARETTES), true)
+
+    const putResponse = await hold.releaseAndWait()
+    expect(putResponse.status()).toBe(200)
+    await page.waitForURL(PROFILE_URL)
+    await expect(newToast(page, "Hábitos guardados")).toBeVisible()
+    expect(puts).toHaveLength(1)
+    expect((await getHabits(api)).tobacco).toMatchObject({
+      status: "former",
+      cigarettes_per_day: "unknown",
+      start_age: 18,
+      quit_age: 30,
+    })
+  })
+
+  test("C-16 (completitud) marcar 'No recuerdo' es un cambio sin guardar: tabaco 'Antes' guardado desde los 18; marcar 'No recuerdo' en esa edad la vacía y '‹ Mi perfil médico' pregunta '¿Salir sin guardar?'; 'Salir sin guardar' deja los 18", async ({
+    page,
+    request,
+  }) => {
+    const api = await freshPatient(page, request)
+    await seedHabits(api, {
+      tobacco: {
+        status: "former",
+        cigarettes_per_day: 10,
+        start_age: 18,
+        quit_age: 30,
+      },
+    })
+    await openHabitsFromProfile(page)
+    const puts = trackHabitPuts(page)
+    await expect(numberField(page, TOBACCO_START)).toHaveValue("18")
+
+    await dontRemember(page, TOBACCO_START).click()
+    await expectPressed(dontRemember(page, TOBACCO_START), true)
+    await expect(numberField(page, TOBACCO_START)).toHaveValue("")
+
+    await backLink(page).click()
+    const dialog = leaveDialog(page)
+    await expect(dialog).toBeVisible()
+    await dialog
+      .getByRole("button", { name: "Salir sin guardar", exact: true })
+      .click()
+    await page.waitForURL(PROFILE_URL)
+    await expectNoPut(page, puts)
+    expect((await getHabits(api)).tobacco?.start_age).toBe(18)
   })
 })
