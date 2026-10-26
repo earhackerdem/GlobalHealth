@@ -26,12 +26,12 @@ are `single`. `make tdd-check` requires one `test:` commit per `test→impl` gro
 
 ## 1. Backend: los tres bloques · test→impl
 
-- [ ] 1.1 **Tester.** Amplía `backend/tests/api/routes/test_profile_habits.py` a partir de la parte pytest del test plan
+- [x] 1.1 **Tester.** Amplía `backend/tests/api/routes/test_profile_habits.py` a partir de la parte pytest del test plan
   (filas 1–11) y del Interface contract. Verificación: rojo porque faltan los bloques y las reglas, no porque un test
   esté roto. Commit `test:` solo.
-- [ ] 1.2 **Implementer.** Bloques, normalización y obligatoriedad en `backend/app/models.py` (incluido el `loc` de
+- [x] 1.2 **Implementer.** Bloques, normalización y obligatoriedad en `backend/app/models.py` (incluido el `loc` de
   cuatro niveles). Verificación: los tests de 1.1 verdes sin tocarlos; mypy limpio.
-- [ ] 1.3 **Orquestador.** Suite backend completa desde limpio (cero fallos, errores y skips; cobertura ≥ 90 %);
+- [x] 1.3 **Orquestador.** Suite backend completa desde limpio (cero fallos, errores y skips; cobertura ≥ 90 %);
   regenerar el cliente (`scripts/generate-client.sh`); números en evidence.md; `make tdd-check`.
 
 ## 2. Frontend: los tres bloques en la pantalla · test→impl
@@ -45,7 +45,7 @@ are `single`. `make tdd-check` requires one `test:` commit per `test→impl` gro
 
 ## 3. Verificación final y entrega · single
 
-- [ ] 3.1 **Producto.** `product/dominio.md` § Hábitos y la pantalla de hábitos de
+- [x] 3.1 **Producto.** `product/dominio.md` § Hábitos y la pantalla de hábitos de
   `product/prototipos/perfil-secciones.html` (C-5, C-7, C-8 y su leyenda).
 - [ ] 3.2 **Exploración en Chrome por el agente.** Cada bloque: elegir y quitar actividades, "No hago ejercicio",
   "Otra" sin nombre, total con valores a medias, desplazamiento *Sí*/*No*, sueño, valores fuera de escala y corregirlos,
