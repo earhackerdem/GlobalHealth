@@ -47,9 +47,9 @@ are `single`. `make tdd-check` requires one `test:` commit per `test→impl` gro
 
 - [x] 3.1 **Producto.** `product/dominio.md` § Hábitos y la pantalla de hábitos de
   `product/prototipos/perfil-secciones.html` (C-5, C-7, C-8 y su leyenda).
-- [ ] 3.2 **Exploración en Chrome por el agente.** Cada bloque: elegir y quitar actividades, "No hago ejercicio",
+- [x] 3.2 **Exploración en Chrome por el agente.** Cada bloque: elegir y quitar actividades, "No hago ejercicio",
   "Otra" sin nombre, total con valores a medias, desplazamiento *Sí*/*No*, sueño, valores fuera de escala y corregirlos,
   doble clic en "Guardar", salir con cambios, 384 y 580 px. Verificación: tabla en evidence.md.
-- [ ] 3.3 **Entregables.** `evidence.md`, `validation.md` (no técnico, para Saúl Pérez), el journal y el PR.
+- [x] 3.3 **Entregables.** `evidence.md`, `validation.md` (no técnico, para Saúl Pérez), el journal y el PR.
 - [ ] 3.4 **Revisión y archivo** (`/epe-4-review` → `/epe-5-apply` → `/epe-6-archive` como último commit del PR), con la
   regla de cierre de la Decision 7.
