@@ -11,7 +11,7 @@ are `single`. `make tdd-check` requires one `test:` commit per `test→impl` gro
 
 ## 0. Base · single
 
-- [ ] 0.1 **Prototipo** `openspec/changes/perfil-habitos-actividad-sueno/prototipo.html`, local y navegable:
+- [x] 0.1 **Prototipo** `openspec/changes/perfil-habitos-actividad-sueno/prototipo.html`, local y navegable:
   - ejercicio con chips por actividad, "No hago ejercicio", días y minutos por actividad, "¿Cuál?" en "Otra" y el total
     "de lo anotado";
   - movimiento del día con los 4 niveles, el desplazamiento con sus días y las horas sentado;
