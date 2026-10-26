@@ -112,13 +112,17 @@
 - **Fact (duración del sueño):** las encuestas de referencia preguntan **una sola cifra promedio**. NHIS 2024
   `SLPHOURS_A` y BRFSS 2022 `SLEPTIM1`: "On average, how many hours of sleep do you get in a 24-hour period?"; en
   español (NHIS 2024): "En promedio, ¿cuántas horas duerme en un período de 24 horas?" (BRFSS 2020: "…en un periodo
-  de 24 horas?"). Ambas en **horas enteras de 1 a 24**: 30 minutos o más suben a la hora siguiente, 29 o menos se
-  descartan, y menos de 1 hora se anota como 1. Códigos aparte: NHIS 97 Refused · 98 Not Ascertained · 99 Don't Know (DK
-  0.29 %, 94 de 32 629); BRFSS 77 No sabe · 99 Se negó. NHIS tiene un **aviso de verificación, no un bloqueo**, si la
-  respuesta es de 1 a 5 horas ("Please verify"). PSQI ítem 4: "During the past month, how many hours of actual sleep did
+  de 24 horas?"). Ambas en **horas enteras de 1 a 24** con el mismo redondeo: 30 minutos o más suben a la hora
+  siguiente y 29 o menos se descartan; NHIS además anota 1 si es menos de 1 hora (NHIS 2024 adult codebook, p. 517;
+  BRFSS 2022, C06.01, p. 25, solo tiene el redondeo; consultados 2026-10-26). Códigos aparte: NHIS 97 Refused · 98
+  Not Ascertained · 99 Don't Know (DK 0.29 %, 94 de 32 629); BRFSS 77 No sabe · 99 Se negó. NHIS tiene un **aviso de
+  verificación, no un bloqueo**, si la respuesta es de 1 a 5 horas ("Please verify"). PSQI ítem 4: "During the past month, how many hours of actual sleep did
   you get at night? (This may be different than the number of hours you spent in bed.)", respuesta abierta "HOURS OF
   SLEEP PER NIGHT"; su puntuación admite fracciones (cortes >7, 6–7, 5–6, <5). ENSANUT Continua 2022 (cuestionario de
-  actividad física en adultos, "Hábitos de sueño"): "4. Cuántas HORAS en promedio duerme en un día?".
+  actividad física en adultos, "Hábitos de sueño"): "4. Cuántas HORAS en promedio duerme en un día?"; en su catálogo
+  (`ensafisica2022_adultos_entrega_w.Catálogo.xlsx`, variable `FA0400`) la respuesta tiene **5 categorías**: 1 ≤5
+  horas · 2 6 horas · 3 7 horas · 4 8 horas · 5 ≥9 horas, más 88 No responde · 99 No sabe. Las horas enteras (las de
+  NHIS, BRFSS o la app) se agrupan en esas categorías; al revés no se puede.
 - **Fact (día laboral y día libre):** el MCTQ pregunta los horarios de sueño **por separado en días de trabajo y días
   libres**, porque difieren mucho salvo en los cronotipos más tempranos (Roenneberg 2003). NHANES 2017-2018 lo adoptó
   (`SLD012` días entre semana o de trabajo, `SLD013` fines de semana o días libres), calculado a partir de las horas de
@@ -166,7 +170,8 @@
   minutos seguidos en sus desplazamientos?" (Sí/No), P8 "En una semana normal, ¿cuántos días camina o utiliza bicicleta
   durante al menos 10 minutos seguidos en sus desplazamientos?" (número de días), P9 "En un día normal, ¿cuánto tiempo
   camina o usa la bicicleta para desplazarse?" (horas:minutos). Antes va una introducción ("al trabajo, de compras, al
-  mercado, al templo…") que la guía de análisis pide no omitir. Sedentarismo: P16 "En un día normal, ¿cuánto tiempo suele
+  mercado, al templo…") que la guía de análisis pide no omitir ("This statement should not be omitted", GPAQ
+  Analysis Guide, p. 8 del PDF). Sedentarismo: P16 "En un día normal, ¿cuánto tiempo suele
   pasar sentado o reclinado?" (horas:minutos), que incluye trabajo, casa, transporte, lectura y televisión y "No se
   incluye el tiempo que pasa durmiendo". En esta versión P16 está en el cuestionario **ampliado**. Con la OMS, la
   redacción es "sentado o reclinado", no "recostado". ENSANUT 2022 usa otra forma, de tipo IPAQ: "Durante los últimos 7
@@ -195,14 +200,15 @@
   enfermedad y la del tiempo libre a menos (Holtermann 2012, n = 7 144).
 - **Source:** NHIS 2024 adult codebook (pp. 517–520), https://ftp.cdc.gov/pub/Health_Statistics/NCHS/Dataset_Documentation/NHIS/2024/adult-codebook.pdf
   · NHIS 2024 cuestionario en español (pp. 493–496), https://ftp.cdc.gov/pub/Health_Statistics/NCHS/Survey_Questionnaires/NHIS/2024/SpanishQuest.pdf
-  · BRFSS 2022 (sueño), https://www.cdc.gov/brfss/questionnaires/pdf-ques/2022-BRFSS-Questionnaire-508.pdf · BRFSS 2020
+  · BRFSS 2022 (sueño, C06.01, p. 25), https://www.cdc.gov/brfss/questionnaires/pdf-ques/2022-BRFSS-Questionnaire-508.pdf · BRFSS 2020
   en español, https://www.cdc.gov/brfss/questionnaires/pdf-ques/2020-BRFSS-Questionnaire-Spanish-Verison-508.pdf · BRFSS
   2023 (ejercicio, pp. 22–24 y apéndice 1), https://www.cdc.gov/brfss/questionnaires/pdf-ques/2023-BRFSS-Questionnaire-508.pdf
   · BRFSS 2019 en español (C11.01–C11.08), https://www.cdc.gov/brfss/questionnaires/pdf-ques/2019-BRFSS-Questionnaire-Spanish-Verison-508.pdf
   · BRFSS 2023 variables calculadas, https://www.cdc.gov/brfss/annual_data/2023/pdf/2023-calculated-variables-version4-508.pdf
   · BRFSS 2023 codebook, https://www.cdc.gov/brfss/annual_data/2023/zip/codebook23_llcp-v2-508.zip · PSQI y su
   puntuación, https://www.sleep.pitt.edu/psqi (instrumento: https://www.sleep.pitt.edu/sites/default/files/assets/Instrument%20Materials/PSQI-Instrument.pdf)
-  · ENSANUT Continua 2022, cuestionario de actividad física en adultos (`ensafisica2022_adultos_entrega_w.Cuestionarios.pdf`),
+  · ENSANUT Continua 2022, cuestionario de actividad física en adultos (`ensafisica2022_adultos_entrega_w.Cuestionarios.pdf`)
+  y su catálogo (`ensafisica2022_adultos_entrega_w.Catálogo.xlsx`, `FA0400`),
   https://ensanut.insp.mx/encuestas/ensanutcontinua2022/descargas.php · NHANES 2017-18 SLQ_J,
   https://wwwn.cdc.gov/Nchs/Data/Nhanes/Public/2017/DataFiles/SLQ_J.htm · Roenneberg 2003, J Biol Rhythms 18:80-90, PMID
   12568247 · Lauderdale 2008, Epidemiology 19:838-845, PMC2785092 · Fernandez-Mendoza 2012, Sleep Med 13:207-210, PMID
@@ -220,8 +226,9 @@
   NHIS, BRFSS, NHANES, PSQI, ENSANUT 2022, EVS (Coleman), GPAQ/STEPS en español y la guía GPAQ, la Escala Atenas en
   México y el aviso de la OPS. Leído solo el resumen (Europe PMC): Roenneberg, Lauderdale, Fernandez-Mendoza, Grimby,
   Holtermann (BJSM). PROMIS y el ítem del CCHS se leyeron mediante un extractor web de la página de PMC, no el PDF
-  completo. El IPAQ se leyó en una copia de UK Biobank, no en el sitio del IPAQ. **[NOT VERIFIED]**: el formato de
-  respuesta del ítem de sueño de ENSANUT 2022 (el texto del PDF no lo muestra); la redacción del sueño en ENSANUT MC 2016
+  completo. El IPAQ se leyó en una copia de UK Biobank, no en el sitio del IPAQ. El formato de respuesta del ítem de
+  sueño de ENSANUT 2022, que el PDF del cuestionario no muestra, se verificó en su catálogo (`FA0400`, 2026-10-26).
+  **[NOT VERIFIED]**: la redacción del sueño en ENSANUT MC 2016
   (solo el resumen de Guerrero-Zúñiga 2018, Salud Publica Mex 60:347-355, doi 10.21149/9280, que reporta 7.6 ± 3 h,
   28.4 % <7 h e insomnio 18.8 %; el texto completo estaba bloqueado); la disponibilidad de PROMIS Sleep en español; el
   ítem 3 del PHQ-9 ("dificultad para dormir o permanecer dormido, o dormir demasiado", 4 puntos, 2 semanas), que es el
@@ -258,5 +265,5 @@
      0–24 con "menos de 1" = 1, como NHIS). Las reglas de truncar a 180 min o descartar lo de menos de 10 min son de
      **puntuación**, no de captura: no aplican a una app que no puntúa.
 - **Re-check if:** se diseña un aviso FR-021 sobre sueño o actividad (ahí fijar fuentes y cortes); aparece el
-  cuestionario de sueño de ENSANUT MC 2016/2018 o el formato del ítem de ENSANUT 2022; se decide exportar a LOINC/FHIR
+  cuestionario de sueño de ENSANUT MC 2016/2018; se decide exportar a LOINC/FHIR
   (buscar los códigos de NHIS/BRFSS); o el CDC cambia `SLPFLL_A`/`SLPSTY_A` en NHIS 2025+.

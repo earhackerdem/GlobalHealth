@@ -38,7 +38,7 @@ cualquiera de estas preguntas.
 - **GIVEN** un paciente que elige "Otra" con 1 día por semana y 90 minutos
 - **WHEN** toca "Guardar" sin escribir cuál
 - **THEN** no se guarda y junto a "¿Cuál?" ve "Escribe cuál."; con "Senderismo" se guarda y al volver a abrir ve
-  "Otra: Senderismo"
+  "Otra" elegida con "Senderismo" en "¿Cuál?"
 
 #### Scenario: Falta un dato de una actividad (C-5, C-15)
 - **GIVEN** un paciente que elige "Correr" con 3 días por semana y sin los minutos
@@ -104,5 +104,5 @@ recomendación ni meta, y sin guardarse.
   sueño y "Todos los días" en las dos frecuencias del sueño
 - **WHEN** vuelve a abrir la pantalla, y cuando la app pide sus hábitos
 - **THEN** la pantalla muestra "Total de lo anotado: 20 minutos por semana" y ni la pantalla ni la respuesta del sistema
-  contienen un total guardado, "150", "OMS", "recomend", "insuficiente", "sedentari", "insomnio", "riesgo" ni
-  "puntaje"
+  contienen un total guardado, "150", "OMS", "recomend", "meta", "insuficiente", "sedentari", "insomnio", "riesgo"
+  ni "puntaje"

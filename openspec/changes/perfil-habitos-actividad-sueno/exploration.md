@@ -65,4 +65,9 @@ sentado 0–24 sin contar el sueño; ninguna pregunta de estos bloques admite "N
 **Citadores que vencen:** `product/dominio.md` § Hábitos (filas ejercicio, movimiento del día, sueño: la escala de 3
 del sueño y del día, "horas por noche" y "sin actividades = no hago ejercicio" cambian); el prototipo de producto
 `product/prototipos/perfil-secciones.html` (C-5, C-7, C-8 y su leyenda, `:134-137`, `:507-540`); la spec canónica vía la
-delta.
+delta. Faltaban en este inventario y se actualizaron en la ronda 1 de la revisión del PR #34 (2026-10-26):
+`proposal.md` (C-5 "lista de actividades" y "ejercicio (lista)" → un chip por tipo de actividad, Decision 2 del diseño;
+C-8 "horas por noche" y "se despierta en la noche" → horas en un día de 24 horas, enteras, y por separado le costó
+dormirse y le costó seguir durmiendo o despertó demasiado temprano, últimos 30 días); `product/dominio.md` § Partición
+("lista anidada" → un chip por actividad con sus días y minutos) y el encabezado de § Hábitos ("cada hábito tiene
+'Nunca'", que ya no vale para el ejercicio, el movimiento del día ni el sueño).

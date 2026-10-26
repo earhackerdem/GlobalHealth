@@ -2,6 +2,9 @@
 
 Status: APPROVED
 Approved by: Saúl Pérez (author) on 2026-10-26, después de navegar el prototipo
+Enmendado tras la aprobación (2026-10-26, por el agente orquestador, durante el grupo 1): `routes/profile.py` pasa a «Se
+toca» (una línea del `loc`) y el nombre de «Otra» queda sin mínimo en el esquema (vacío = sin contestar). Saúl Pérez lo
+vio en la revisión del PR #34 y aprobó seguir.
 
 **En una frase:** el cuestionario de hábitos suma ejercicio (actividades con días y minutos, o "No hago ejercicio", con
 el total semanal a la vista), movimiento del día y sueño, con las formas de NHANES, GPAQ y NHIS, las mismas reglas de
@@ -54,7 +57,8 @@ exercise: {
   activities: {                              # cerrado; una propiedad por tipo, null si no se eligió
     walking | running | cycling | swimming | weights_gym | football_other_sport | yoga_pilates | dance:
       { days_per_week: int 1..7 | null, minutes_per_session: int 1..600 | null } | null,
-    other: { name: str ..60 (recortado; vacío = sin contestar, "Escribe cuál.") | null, days_per_week: int 1..7 | null,
+    other: { name: str ..60 (recortado; vacío = sin contestar, "Escribe cuál."; antes 1..60, enmienda tras la
+                   aprobación) | null, days_per_week: int 1..7 | null,
              minutes_per_session: int 1..600 | null } | null
   }
 } | null
@@ -116,8 +120,17 @@ El `loc` de un campo de actividad es `["body", "exercise", "activities", "<tipo>
 4. **El total semanal se calcula en la pantalla y no se guarda.** Es la suma de lo anotado (EVS), no un dato nuevo; se
    rotula "de lo anotado" porque mezcla fuerza y aeróbico (el CDC no suma pesas ni yoga) y nunca se compara (C-6).
 5. **Formas estándar:** insomnio con los dos ítems de NHIS y su escala de 4; el día con los 4 niveles de NHANES
-   `PAQ180`; horas de sueño enteras en 24 h (NHIS/BRFSS/ENSANUT); desplazamiento y tiempo sentado del GPAQ panamericano
-   (`habitos.md#actividad-sueno`). Así lo anotado se puede comparar con encuestas sin convertir.
+   `PAQ180`; horas de sueño enteras en 24 h (NHIS/BRFSS; ENSANUT 2022 pregunta "en un día" y usa 5 categorías, de ≤5
+   a ≥9 h, en las que las horas enteras se agrupan, pero no al revés); desplazamiento y tiempo sentado del GPAQ
+   panamericano (`habitos.md#actividad-sueno`). Así lo anotado se compara con NHIS, BRFSS y NHANES `PAQ180` sin
+   convertir; con ENSANUT, agrupando; y con el GPAQ, de forma aproximada (horas sentado enteras frente a sus
+   horas:minutos, y el desplazamiento, abajo).
+   **El desplazamiento omite la introducción del GPAQ.** La guía de análisis pide no omitirla ("This statement should
+   not be omitted", GPAQ Analysis Guide, OMS, p. 8 del PDF,
+   https://www.who.int/docs/default-source/ncds/ncd-surveillance/gpaq-analysis-guide.pdf, consultada 2026-10-26).
+   [OPINION] Se omite porque la pregunta ya lleva el propósito ("para ir a algún lado") y el caminar por gusto va en el
+   chip "Caminar" del ejercicio, así que no se cuenta dos veces. Lo pierde: la comparación con el desplazamiento del
+   GPAQ es aproximada, no exacta.
 6. **Sin "No recuerdo" en estos bloques.** Todo describe el presente (Decision 2 de perfil-habitos-completitud).
 7. **Regla de cierre de la revisión, decidida antes de la primera ronda** (lección de los PR #32 y #33): si una ronda
    después de la primera trae solo hallazgos bajos, quedan como deuda registrada y se archiva.

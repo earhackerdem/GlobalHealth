@@ -635,7 +635,9 @@ document.addEventListener("click", ev => {
   if(d.multi){
     ev.preventDefault(); leerInputs();
     const arr = vista.borrador[d.multi], i = arr.indexOf(d.v);
-    if(i < 0){ arr.push(d.v); vista.borrador.ajenoNunca = ""; vista.borrador.expoNinguna = ""; vista.borrador.noEjercicio = ""; } else arr.splice(i, 1);
+    // cada chip múltiple quita solo el exclusivo de su propio grupo
+    const excl = {ajenoDonde:"ajenoNunca", acts:"noEjercicio", exposiciones:"expoNinguna"}[d.multi];
+    if(i < 0){ arr.push(d.v); if(excl) vista.borrador[excl] = ""; } else arr.splice(i, 1);
     return pintar();
   }
   if(d.modo){

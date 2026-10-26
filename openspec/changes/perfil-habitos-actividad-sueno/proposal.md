@@ -25,11 +25,12 @@ para que no quede en un "sí hago ejercicio" o "duermo bien".
 
 ## Acceptance criteria (los Given/When/Then con datos concretos van en la spec delta)
 
-- **C-5 Ejercicio como lista de actividades:** cada actividad con su tipo, días por semana y minutos por vez; la
-  pantalla muestra el total de minutos por semana, sin compararlo con ninguna recomendación.
+- **C-5 Ejercicio por actividad:** un chip por tipo de actividad (varios a la vez), cada uno con días por semana y
+  minutos por vez; la pantalla muestra el total de minutos por semana, sin compararlo con ninguna recomendación.
 - **C-7 Movimiento del día, aparte del ejercicio:** cómo pasa el día en su trabajo o actividad principal, si camina o va
   en bici para ir a algún lado (con los días por semana) y las horas sentado al día; no se suma al ejercicio.
-- **C-8 Sueño:** horas por noche y si le cuesta dormir o se despierta en la noche, con su frecuencia.
+- **C-8 Sueño:** horas que duerme en un día de 24 horas (enteras) y, por separado, con qué frecuencia en los últimos
+  30 días le costó dormirse y le costó seguir durmiendo o despertó demasiado temprano.
 - Lo que una respuesta abre se contesta antes de guardar (C-15), sin "No recuerdo" (todo describe el presente, C-16);
   los errores se marcan al salir del campo y se van al corregir (C-14, C-17).
 - La app no califica nada de esto (C-6, NFR-008).
@@ -38,8 +39,8 @@ para que no quede en un "sí hago ejercicio" o "duermo bien".
 
 ## What Changes
 
-- El cuestionario de hábitos suma tres bloques: ejercicio (lista), movimiento del día y sueño, con sus límites,
-  obligatoriedad y normalización en el servidor.
+- El cuestionario de hábitos suma tres bloques: ejercicio (un chip por actividad), movimiento del día y sueño, con sus
+  límites, obligatoriedad y normalización en el servidor.
 - La pantalla de hábitos suma esos bloques después del humo de leña, con el total semanal del ejercicio.
 
 ## Capabilities

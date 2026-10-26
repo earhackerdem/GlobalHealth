@@ -19,7 +19,8 @@ cómo se mueve tu día y cómo duermes, con las mismas reglas de "Guardar" que e
   "Escribe cuál." y el cursor queda ahí. Escribo "Senderismo", guardo y al volver a abrir lo veo.
 - [ ] Elijo "Correr" con 3 días y sin minutos, y "Guardar": junto a los minutos de correr dice "Contesta esta
   pregunta.". Ninguna pregunta del ejercicio tiene "No recuerdo".
-- [ ] Con actividades guardadas, elijo "No hago ejercicio": se quitan los chips de actividades, sus números y el total.
+- [ ] Con actividades guardadas, elijo "No hago ejercicio": se desmarcan los chips de actividades y se quitan sus
+  números y el total.
   Guardo y al volver a abrir solo está "No hago ejercicio".
 
 ## C-7 · Movimiento del día, aparte del ejercicio
@@ -42,8 +43,9 @@ cómo se mueve tu día y cómo duermes, con las mismas reglas de "Guardar" que e
 ## Fuera de escala, y el error que se va al corregir
 - [ ] Al salir del campo: 8 días dice "Debe estar entre 1 y 7"; 601 minutos, "Debe estar entre 1 y 600"; 25 horas
   sentado, "Debe estar entre 0 y 24"; 0 horas de sueño, "Debe estar entre 1 y 24". Con eso, "Guardar" no guarda.
-- [ ] Escribo 25 en horas sentado, toco las horas de sueño, escribo 0 y salgo enseguida: las **dos** cajas marcan su
-  error (esto fallaba y lo arreglé durante la exploración).
+- Que las **dos** cajas marquen su error al dejarlas seguidas (25 horas sentado, clic en las horas de sueño, 0 y salir
+  enseguida; esto fallaba y lo arreglé durante la exploración) no se ve a mano: a mano el clic termina antes de salir
+  de la segunda caja, y el defecto no aparece. Lo revisa la prueba automática de C-14 de dos cajas (commit 641e976).
 - [ ] Vuelvo a una caja con error y corrijo el número: el mensaje se va sin salir del campo.
 
 ## C-6 · Sin calificación
@@ -53,7 +55,9 @@ cómo se mueve tu día y cómo duermes, con las mismas reglas de "Guardar" que e
 
 ## Lo de siempre, en los bloques nuevos
 - [ ] Elegir una actividad cuenta como cambio: si salgo sin guardar, la app pregunta "¿Salir sin guardar?".
-- [ ] Doble clic en "Guardar": se guarda una sola vez. Mientras dice "Guardando…", los chips nuevos no responden.
+- [ ] Doble clic en "Guardar": se guarda una sola vez.
+- Que los chips nuevos no respondan mientras dice "Guardando…" no se ve a mano: en tu computadora el guardado dura
+  milisegundos. Lo revisa la prueba automática de la fila 12, que retiene el guardado.
 - [ ] En el teléfono, los chips largos del día parten su texto y la pantalla no se mueve de lado.
 
 ## Lo que todavía NO hace

@@ -314,7 +314,8 @@ registros de secciones distintas, enlace tratamiento↔medicinas de receta.
 - **Story A — eventos:** enfermedades pasadas e infecciosas, cirugías y hospitalizaciones, fracturas y lesiones,
   transfusiones + grupo sanguíneo, y el mecanismo "ninguna" común a todas (4 de las 6 tarjetas cobran vida). **✅ Entregada en el PR #20 (2026-10-20); spec en `openspec/specs/records/patient-profile/spec.md`.**
 - **Story B — crónicas:** con enlace opcional al diagnóstico del expediente. **✅ Entregada en el PR #26 (2026-10-20); spec en `openspec/specs/records/patient-profile/spec.md` (B-5 en `records/clinical-records`).**
-- **Story C — hábitos + trabajo:** cuestionario con lista anidada (ejercicio), movimiento del día y sueño, más
+- **Story C — hábitos + trabajo:** cuestionario con un chip por actividad del ejercicio (cada una con sus días y
+  minutos), movimiento del día y sueño, más
   el bloque "Trabajo" del Perfil básico. Se separó de B en la ronda 6 al crecer: no comparte forma con crónicas.
   Saúl Pérez la partió en dos el 2026-10-20 (exploración de perfil-habitos): **C1 — sustancias y humo** (alcohol,
   tabaco y vapeador, humo ajeno, leña; C-1…C-4, C-6), **✅ entregada en el PR #30 (2026-10-21); spec en
@@ -389,7 +390,7 @@ Mecánica común a las secciones de lista (todas salvo hábitos):
 | diagnóstico que la respalda | **enlace opcional** a un diagnóstico del expediente (ronda 1: "aparte, enlazable") |
 | nota | texto opcional |
 
-### Hábitos (APNP + tabaquismo) — Story C, cuestionario (no lista; sin "ninguna": cada hábito tiene "Nunca")
+### Hábitos (APNP + tabaquismo) — Story C, cuestionario (no lista; sin "ninguna": cada hábito tiene su "Nunca", "No me expongo" o "No hago ejercicio", salvo el movimiento del día y el sueño, que no lo llevan)
 Ronda 6 (Saúl Pérez al clickear el prototipo v1: "hábitos puede o debe crecer más… consumo de alcohol puede ser
 fines de semana… me expongo a humo de cigarro dos veces por semana… varios ejercicios con su propia frecuencia",
 y pidió investigar cómo se maneja). La evidencia (research.md § hábitos) dice que justo frecuencia, cantidad,

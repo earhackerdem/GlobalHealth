@@ -71,7 +71,7 @@ baja de su ancho mínimo.
 | Desplazamiento *Sí* → *No* | la pregunta de días y su error se van; se guarda `active_travel: false`, sin días |
 | Doble clic en "Guardar" | un solo `PUT` (200), "Hábitos guardados", vuelve al perfil |
 | Reabrir | "Caminar" y "Otra" en el orden del catálogo, sus números, el nombre, total 240, *No*, 9 horas sentado, 6 de sueño, "Algunos días" y "Casi todos los días" cada uno en su pregunta |
-| "No hago ejercicio" con actividades guardadas | quita los chips, las cajas y el total; se guarda `does_exercise: false` con las actividades en `null` |
+| "No hago ejercicio" con actividades guardadas | desmarca los chips de actividades y quita sus cajas y el total; se guarda `does_exercise: false` con las actividades en `null` |
 | Salir por el menú con cambios sin guardar | "¿Salir sin guardar?" con "Seguir editando" |
 | 384 y 580 px con "Otra", "Fútbol u otro deporte", *Sí*, el nivel más largo del día y "Guardar" con faltantes | `scrollWidth` = ancho de la ventana en los dos; el chip largo parte su texto; consola sin errores |
 | Consola de la app en Chrome | sin errores propios; solo el 401 de la extensión de Chrome |
