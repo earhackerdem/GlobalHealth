@@ -1,3 +1,4 @@
+import unicodedata
 import uuid
 from collections.abc import Sequence
 from datetime import UTC, date, datetime
@@ -924,9 +925,13 @@ class WoodSmokeHabit(_ClosedSchema):
 # "unknown" anywhere in these blocks (they describe the present).
 DaysPerWeek = Annotated[int, Field(ge=1, le=7)]
 MinutesPerSession = Annotated[int, Field(ge=1, le=600)]
-# Trimmed before its bound; an empty name is not a schema error but a missing
-# one ("Escribe cuál."), so the 1 of 1..60 is checked after normalizing.
+# Trimmed before its bound; an empty (or invisible) name is not a schema error
+# but a missing one ("Escribe cuál."), so the 1 of 1..60 is checked after
+# normalizing.
 ActivityName = Annotated[str, StringConstraints(strip_whitespace=True, max_length=60)]
+# Not whitespace nor format characters, yet they show nothing: the Hangul
+# fillers and the braille blank.
+BLANK_FILLERS = frozenset("\u115f\u1160\u3164\uffa0\u2800")
 SleepTrouble = Literal["never", "some_days", "most_days", "every_day"]
 
 
@@ -1053,13 +1058,25 @@ def _normalize_wood(wood: WoodSmokeHabit) -> WoodSmokeHabit:
     return wood.model_copy(update=updates)
 
 
+def _is_blank(text: str) -> bool:
+    """Nothing visible: only whitespace, controls, format characters (Cf, such
+    as U+200B) or blank fillers (an empty text too)."""
+    return all(
+        char.isspace()
+        or unicodedata.category(char) in ("Cc", "Cf")
+        or char in BLANK_FILLERS
+        for char in text
+    )
+
+
 def _normalize_exercise(exercise: ExerciseHabit) -> ExerciseHabit:
     if not exercise.does_exercise:
         return exercise.model_copy(update={"activities": ExerciseActivities()})
     other = exercise.activities.other
-    if other is None or other.name != "":
+    if other is None or other.name is None or not _is_blank(other.name):
         return exercise
-    # Already trimmed by the schema (ActivityName): empty is unanswered.
+    # Already trimmed by the schema (ActivityName): empty or invisible is
+    # unanswered.
     activities = exercise.activities.model_copy(
         update={"other": other.model_copy(update={"name": None})}
     )
@@ -1070,6 +1087,10 @@ def _normalize_movement(movement: DailyMovement) -> DailyMovement:
     if movement.active_travel is not True:
         return movement.model_copy(update={"active_travel_days": None})
     return movement
+
+
+def _all_null(block: DailyMovement | SleepHabit) -> bool:
+    return all(value is None for value in block.model_dump().values())
 
 
 def normalize_habits(habits: Habits) -> Habits:
@@ -1089,8 +1110,13 @@ def normalize_habits(habits: Habits) -> Habits:
         updates["wood_smoke"] = _normalize_wood(habits.wood_smoke)
     if habits.exercise is not None:
         updates["exercise"] = _normalize_exercise(habits.exercise)
+    # A block with nothing answered is an unanswered block (null), not one
+    # with every field null.
     if habits.daily_movement is not None:
-        updates["daily_movement"] = _normalize_movement(habits.daily_movement)
+        movement = _normalize_movement(habits.daily_movement)
+        updates["daily_movement"] = None if _all_null(movement) else movement
+    if habits.sleep is not None and _all_null(habits.sleep):
+        updates["sleep"] = None
     return habits.model_copy(update=updates)
 
 

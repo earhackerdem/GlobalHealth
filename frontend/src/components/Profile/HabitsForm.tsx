@@ -138,6 +138,13 @@ const OTHER_NAME = "exercise.activities.other.name"
 const OTHER_NAME_MAX =
   zOtherExerciseActivity.shape.name.unwrap().unwrap().maxLength ?? undefined
 /**
+ * A name that shows nothing is a missing one, as in the server (models.py
+ * `_is_blank`): only whitespace, controls, format characters (U+200B) or the
+ * Hangul and braille blank fillers.
+ */
+const BLANK = /^[\s\p{Cc}\p{Cf}\u115F\u1160\u3164\uFFA0\u2800]*$/u
+const isBlank = (text: string) => BLANK.test(text)
+/**
  * "No recuerdo" (perfil-habitos-completitud design.md, Decision 1), stored in
  * the number's own field.
  */
@@ -664,7 +671,7 @@ function missingOf(draft: Draft, t: TFunction): Record<string, string> {
       answered =
         !!draft[NUMBER_FIELDS[key].draft].trim() || isUnknown(draft, key)
     } else if (loc === OTHER_NAME) {
-      answered = !!draft.otherName.trim()
+      answered = !isBlank(draft.otherName)
     } else {
       const answer = CHIP_ANSWERS[loc]?.(draft)
       answered = answer != null && !(Array.isArray(answer) && !answer.length)
@@ -881,7 +888,9 @@ function buildBody(
       minutes_per_session: count(minutesKey(activity)),
     }
   }
-  if (chosen.other) chosen.other.name = draft.otherName.trim() || null
+  if (chosen.other) {
+    chosen.other.name = isBlank(draft.otherName) ? null : draft.otherName.trim()
+  }
   let exercise: Habits["exercise"] = null
   if (draft.activities.includes("none")) exercise = { does_exercise: false }
   else if (Object.keys(chosen).length) {
@@ -1328,7 +1337,7 @@ function HabitsForm() {
   const changeOtherName = (text: string) => {
     if (sending.current) return
     update({ ...draftRef.current, otherName: text })
-    if (!text.trim()) return
+    if (isBlank(text)) return
     setErrors((prev) => {
       const kept = { ...prev }
       delete kept[OTHER_NAME]
@@ -1761,8 +1770,9 @@ function HabitsForm() {
       )}
 
       {/* Each chosen activity, in catalog order, asks its own days and
-          minutes; the total sums what is written and is a live region, so
-          it is heard as it changes (C-5, C-6). */}
+          minutes; the total sums what is written and is a live region that
+          stays in the accessibility tree while empty (only hidden from view),
+          so even the first total is heard as a change (C-5, C-6). */}
       {block(
         t("habits.blocks.exercise"),
         null,
@@ -1799,7 +1809,7 @@ function HabitsForm() {
               {numberField(minutesKey(activity))}
             </div>
           ))}
-          <p role="status" className="text-sm font-medium empty:hidden">
+          <p role="status" className="text-sm font-medium empty:sr-only">
             {total === null ? null : t("habits.weeklyTotal", { count: total })}
           </p>
         </>,
