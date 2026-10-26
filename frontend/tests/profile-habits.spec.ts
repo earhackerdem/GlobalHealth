@@ -2871,12 +2871,20 @@ test.describe("Perfil médico — hábitos: ejercicio, movimiento del día y sue
     expect(chipNames.filter((name) => name !== NO_EXERCISE)).toEqual(ACTIVITIES)
     await expect(chip(page, EXERCISE, NO_EXERCISE)).toHaveCount(1)
     await expect(anyWeeklyTotal(page)).toHaveCount(0)
+    // Sin total, la región viva del total ya existe (vacía): el primer total
+    // es un cambio dentro de ella, y se oye.
+    const totalRegion = page.locator("main").last().getByRole("status")
+    await expect(totalRegion).toHaveCount(1)
+    await expect(totalRegion).toHaveText("")
 
     await chip(page, EXERCISE, "Caminar").click()
     await expectPressed(chip(page, EXERCISE, "Caminar"), true)
     await activityDays(page, "Caminar").fill("5")
     await activityMinutes(page, "Caminar").fill("30")
     await expect(weeklyTotal(page, 150)).toBeVisible()
+    await expect(totalRegion).toHaveText(
+      "Total de lo anotado: 150 minutos por semana",
+    )
 
     await chip(page, EXERCISE, "Pesas o gimnasio").click()
     await expectPressed(chip(page, EXERCISE, "Caminar"), true)
@@ -2954,6 +2962,27 @@ test.describe("Perfil médico — hábitos: ejercicio, movimiento del día y sue
       days_per_week: 1,
       minutes_per_session: 90,
     })
+  })
+
+  test("C-5 (fila 2) 'Otra' con un '¿Cuál?' que solo lleva un carácter invisible (U+200B): 'Guardar' → 'Escribe cuál.' junto a '¿Cuál?' y ningún PUT", async ({
+    page,
+    request,
+  }) => {
+    const api = await freshPatient(page, request)
+    await openHabitsFromProfile(page)
+    const puts = trackHabitPuts(page)
+
+    await chip(page, EXERCISE, "Otra").click()
+    const name = numberField(page, OTHER_NAME)
+    await name.fill("\u200b")
+    await activityDays(page, "Otra").fill("1")
+    await activityMinutes(page, "Otra").fill("90")
+    await page.getByRole("button", { name: "Guardar", exact: true }).click()
+
+    await expectFieldError(page, name, OTHER_MISSING)
+    await expectNoPut(page, puts)
+    await expect(page).toHaveURL(HABITS_URL)
+    expect((await getHabits(api)).exercise ?? null).toBeNull()
   })
 
   test("C-5, C-15 (fila 3) falta un dato de una actividad: 'Correr' con 3 días y sin minutos → 'Guardar' → 'Contesta esta pregunta.' junto a 'Minutos cada vez: Correr', con el foco ahí, y ningún PUT; ningún 'No recuerdo' en el ejercicio", async ({
@@ -3289,8 +3318,9 @@ test.describe("Perfil médico — hábitos: ejercicio, movimiento del día y sue
     await expectPressed(chip(page, FALLING_ASLEEP, "Todos los días"), true)
     await expectPressed(chip(page, STAYING_ASLEEP, "Todos los días"), true)
 
+    // "meta", como palabra entera (no dentro de otra).
     const forbidden =
-      /150|OMS|recomend|insuficiente|sedentari|insomnio|riesgo|puntaje/i
+      /150|OMS|recomend|insuficiente|sedentari|insomnio|riesgo|puntaje|\bmeta\b/i
     // El layout anida dos <main> (SidebarInset y el de _layout); el último, el
     // más interno, es el contenido de la pantalla de hábitos.
     const screen = page.locator("main").last()

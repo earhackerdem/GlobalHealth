@@ -85,7 +85,9 @@ gains three optional blocks, each null when unanswered:
   never|some_days|most_days|every_day|null} | null
 - No new field admits "unknown" nor text outside its scale (schema 422).
 - Normalization: does_exercise false -> every activity null; active_travel not
-  true -> active_travel_days null; other.name trimmed, empty -> null.
+  true -> active_travel_days null; other.name trimmed, empty or invisible
+  (U+200B, blank fillers) -> null; daily_movement or sleep with every field
+  null -> the block null.
 - Validation after normalizing (value_error, same 422 shape): does_exercise true
   without any activity -> "Elige al menos una actividad, o «No hago ejercicio»"
   at ["body", "exercise", "activities"]; a chosen activity without days or
@@ -98,6 +100,7 @@ gains three optional blocks, each null when unanswered:
 
 import json
 import logging
+import re
 import uuid
 from datetime import datetime
 from typing import Any
@@ -2159,13 +2162,22 @@ def test_c5_each_activity_type_complete_saved(
             {"name": "   ", "days_per_week": 1, "minutes_per_session": 90},
             id="whitespace-only",
         ),
+        pytest.param(
+            {"name": "\u200b", "days_per_week": 1, "minutes_per_session": 90},
+            id="zero-width-space-only",
+        ),
+        pytest.param(
+            {"name": "\u3164\u2800", "days_per_week": 1, "minutes_per_session": 90},
+            id="blank-fillers-only",
+        ),
     ],
 )
 def test_c5_other_without_name_rejected_habits_unchanged(
     client: TestClient, db: Session, other: dict[str, Any]
 ) -> None:
-    """Elige "Otra" con 1 día y 90 minutos sin escribir cuál (omitido, null o
-    solo espacios) -> 422 "Escribe cuál." en su nombre, y nada cambia."""
+    """Elige "Otra" con 1 día y 90 minutos sin escribir cuál (omitido, null,
+    solo espacios o solo caracteres invisibles: U+200B, los rellenos U+3164 y
+    U+2800) -> 422 "Escribe cuál." en su nombre, y nada cambia."""
     headers, _ = consented_user(client, db)
     save(client, headers, SEED)
 
@@ -2203,6 +2215,24 @@ def test_c5_other_name_saved_trimmed(client: TestClient, db: Session) -> None:
     assert saved == expected
     assert stored_habits(client, headers) == expected
     assert saved["exercise"]["activities"]["other"]["name"] == "Senderismo"
+
+
+def test_c5_activities_at_the_limits_accepted(client: TestClient, db: Session) -> None:
+    """Caminar 7 días × 1 minuto, correr 1 día × 600 minutos y "Otra" con un
+    nombre de exactamente 60 caracteres -> 200, PUT y GET iguales (los
+    extremos de las escalas se aceptan)."""
+    headers, _ = consented_user(client, db)
+    chosen: dict[str, dict[str, Any]] = {
+        "walking": {"days_per_week": 7, "minutes_per_session": 1},
+        "running": {"days_per_week": 1, "minutes_per_session": 600},
+        "other": {"name": "S" * 60, "days_per_week": 1, "minutes_per_session": 30},
+    }
+    expected = habits(exercise=exercise(True, **chosen))
+
+    saved = save(client, headers, doing(**chosen))
+
+    assert saved == expected
+    assert stored_habits(client, headers) == expected
 
 
 # --- row 3: Falta un dato de una actividad (C-5, C-15) ----------------------------
@@ -2301,6 +2331,31 @@ def test_c5_exercise_without_any_activity_rejected_habits_unchanged(
     r = put_habits(client, headers, doing(**chosen))
 
     assert_single_error(r, ["body", "exercise", "activities"], ACTIVITY_REQUIRED)
+    assert stored_habits(client, headers) == SEED_STORED
+
+
+@pytest.mark.parametrize("how", ["omitted", "null"])
+def test_c5_exercise_without_does_exercise_rejected_habits_unchanged(
+    client: TestClient, db: Session, how: str
+) -> None:
+    """Ejercicio con caminar 5 × 30 pero sin decir si hace ejercicio (omitido o
+    null) -> 422 del esquema en exercise.does_exercise, y nada cambia (no se
+    guarda un null ni se descarta la actividad)."""
+    headers, _ = consented_user(client, db)
+    save(client, headers, SEED)
+    answers = without_answer(
+        {"does_exercise": True, "activities": {"walking": WALKING_5X30}},
+        "does_exercise",
+        how,
+    )
+
+    r = put_habits(client, headers, {"exercise": answers})
+
+    assert r.status_code == 422, r.text
+    detail = r.json()["detail"]
+    assert isinstance(detail, list), detail
+    assert len(detail) == 1, detail
+    assert detail[0]["loc"] == ["body", "exercise", "does_exercise"], detail
     assert stored_habits(client, headers) == SEED_STORED
 
 
@@ -2750,6 +2805,35 @@ def test_c8_only_sleep_hours_answered_rest_stays_null(
     assert all(saved[key] is None for key in TOP_LEVEL_KEYS - {"sleep"}), saved
 
 
+@pytest.mark.parametrize(
+    ("block", "answers"),
+    [
+        pytest.param("sleep", {}, id="sleep-empty"),
+        pytest.param("sleep", dict.fromkeys(SLEEP_KEYS), id="sleep-all-null"),
+        pytest.param("daily_movement", {}, id="daily_movement-empty"),
+        pytest.param(
+            "daily_movement",
+            {"active_travel_days": 3},
+            id="daily_movement-only-a-dropped-answer",
+        ),
+    ],
+)
+def test_c7_c8_block_with_nothing_answered_stored_as_null(
+    client: TestClient, db: Session, block: str, answers: dict[str, Any]
+) -> None:
+    """Con un hábito guardado: el sueño o el movimiento del día sin nada
+    contestado (vacío, todo null, o solo días de traslado sin "Sí") -> 200, y
+    PUT y GET traen ese bloque null, no un bloque con todo null."""
+    headers, _ = consented_user(client, db)
+    save(client, headers, SEED)
+
+    saved = save(client, headers, {**SEED, block: answers})
+
+    assert saved == SEED_STORED
+    assert stored_habits(client, headers) == SEED_STORED
+    assert saved[block] is None, saved
+
+
 # --- Test plan row 15: Sin puntaje ni riesgo (C-6) --------------------------------
 
 
@@ -2825,8 +2909,8 @@ def test_c5_c6_weekly_total_without_verdict(client: TestClient, db: Session) -> 
     """Caminar 1 día × 20 minutos, "Casi todo sentado", 12 horas sentado, 4
     horas de sueño y "Todos los días" en las dos frecuencias: PUT y GET traen
     exactamente las llaves del contrato, sin total guardado, y ni "150", "OMS",
-    "recomend", "insuficiente", "sedentari", "insomnio", "riesgo" ni
-    "puntaje"."""
+    "recomend", "insuficiente", "sedentari", "insomnio", "riesgo", "puntaje"
+    ni la palabra "meta"."""
     headers, _ = consented_user(client, db)
     body = {
         "exercise": {
@@ -2873,6 +2957,8 @@ def test_c5_c6_weekly_total_without_verdict(client: TestClient, db: Session) -> 
             "puntaje",
         ):
             assert word not in text_lower, (word, r.text)
+        # A whole word: "meta" inside another word is not a goal.
+        assert not re.search(r"\bmeta\b", text_lower), r.text
 
 
 # --- Test plan row 22: Hábitos solo del paciente y cifrados -----------------------
