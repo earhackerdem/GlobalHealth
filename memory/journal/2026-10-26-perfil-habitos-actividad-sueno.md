@@ -36,3 +36,34 @@ s26-ultra). `tsc` y `biome` limpios, `make tdd-check` ✓. Suite completa como C
 
 **Siguiente:** revisión adversarial con la regla de cierre de la Decision 7, archivo como último commit del PR, y
 después la validación de Saúl Pérez con `validation.md`.
+
+## Revisión, ronda 1 (2026-10-26)
+
+**Quién:** cinco finders y tres validadores automáticos (`/epe-4-review`); Saúl Pérez (author) aprobó "Todo lo
+recomendado".
+
+**Qué salió:** 13 hallazgos tras deduplicar, todos bajos. 12 confirmados; D4 (el plan enmendado) quedó casi todo como
+falso positivo, porque el commit, la evidencia y el journal sí lo registraban.
+
+**Aplicado:**
+- **Código (b083b89, pruebas 2c99c8f):** el nombre invisible de "Otra" cuenta como sin contestar (B2, en API y
+  pantalla); un bloque de sueño o de movimiento sin respuestas se guarda `null` (B3); la región viva del total queda en
+  el árbol de accesibilidad (P1).
+- **Pruebas:** casos en los extremos (B4), `does_exercise` obligatorio (B5) y "meta" como palabra prohibida (D3).
+- **Documentos (36da16d):** la spec dice lo que se ve ("Otra" con "Senderismo" en "¿Cuál?"); citadores de la propuesta
+  y el dominio al día; `validation.md` sin pasos imposibles a mano; nota de la enmienda en `design.md`; el prototipo del
+  producto con los exclusivos por grupo.
+- **Investigación:** la regla de "menos de 1 hora" es solo de NHIS. ENSANUT 2022 mide el sueño en 5 categorías, así
+  que la Decision 5 ya no dice "sin convertir". La introducción omitida del GPAQ queda como decisión [OPINION].
+
+**Deuda (memory/closed):**
+- B1: un surrogate suelto da 500 y deja el texto en el log, en toda la API; queda como historia propia en la tarea de
+  deudas.
+- B2 del historial: el mismo texto invisible en "¿Cuál fue?".
+
+**Verificación:** backend 560 passed (cobertura 96 %), perfil 231 passed, `tsc`, `biome`, mypy y ruff limpios,
+`tdd-check` ✓ (2c99c8f). El fixer vio dos intermitencias en las suites de perfil, en pruebas que no tocó
+(`profile-history.spec.ts:415` y un "socket hang up" en la fila 4); las dos pasaron solas 6/6, y la corrida del
+orquestador salió limpia.
+
+**Siguiente:** ronda 2 con la regla de cierre de la Decision 7.
