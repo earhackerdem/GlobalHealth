@@ -67,3 +67,20 @@ falso positivo, porque el commit, la evidencia y el journal sí lo registraban.
 orquestador salió limpia.
 
 **Siguiente:** ronda 2 con la regla de cierre de la Decision 7.
+
+## Revisión, ronda 2 y cierre (2026-10-26)
+
+**Qué salió:** dos finders sobre lo que tocó la ronda 1 (`a95570c..d3f114b`), validados por otros dos agentes por
+reproducción. Once hallazgos bajos (C1–C4, M1, M2, M4–M6, M8, M10) y dos falsos positivos (M3, M7). El único que llegó
+como medio (M1) bajó a bajo: el "socket hang up" de la fila 4 ocurre en `createUser` del helper compartido
+`privateApi.ts`, antes de cualquier código de hábitos. Se reprodujo sobre la pila estable, así que la hipótesis de la
+recarga quedó descartada.
+
+**Decisión:** se aplicó la regla de cierre de la Decision 7, aprobada con el plan. Los bajos quedan como deuda en
+`memory/closed/2026-10-26-ronda-2-de-perfil-habitos-actividad-sueno.md`, los falsos positivos de las dos rondas
+congelados en `memory/closed/2026-10-26-falsos-positivos-revision-perfil-habitos-actividad-sueno.md`, y se archiva. Al
+cerrar solo se tocó el registro de M1 (fila en `evidence.md` y línea en el inbox de e2e intermitentes), porque la
+evidencia debe decir los números reales.
+
+**Corrección en línea:** la sección de la ronda 1 dice que la Decision 5 "ya no dice 'sin convertir'"; lo dice, acotado a
+NHIS, BRFSS y NHANES `PAQ180`.
