@@ -646,7 +646,11 @@ def _validate_habits(habits_in: Habits, profile: PatientProfile) -> None:
     if errors:
         raise RequestValidationError(
             [
-                {"loc": ("body", block, field), "msg": msg, "type": "value_error"}
+                {
+                    "loc": ("body", block, *field.split(".")),
+                    "msg": msg,
+                    "type": "value_error",
+                }
                 for block, field, msg in errors
             ]
         )

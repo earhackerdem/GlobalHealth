@@ -31,7 +31,7 @@ ejercicio; datos de wearables; una vista para el médico.
 
 | Se toca | NO se toca |
 |---|---|
-| `backend/app/models.py` (bloques `exercise`, `daily_movement`, `sleep`; normalización; filas de obligatoriedad; `loc` de cuatro niveles) | `routes/profile.py`, la columna, migraciones, `upgrade_stored_habits` |
+| `backend/app/models.py` (bloques `exercise`, `daily_movement`, `sleep`; normalización; filas de obligatoriedad; `loc` de cuatro niveles) y una línea de `routes/profile.py` (el `loc` del 422 parte el campo en sus niveles; corrección del plan durante el grupo 1: la ruta armaba siempre tres elementos y el contrato pide cinco) | El resto de `routes/profile.py`, la columna, migraciones, `upgrade_stored_habits` |
 | Cliente regenerado (`types.gen.ts`, `zod.gen.ts`), `HabitsForm.tsx`, `frontend/src/locales/es-MX/profile.json` | `ChipGroup.tsx`, `ui/*`, `history.ts` (`hasHabits` ya cuenta los bloques nuevos), las demás pantallas |
 | Tests: `backend/tests/api/routes/test_profile_habits.py`, `frontend/tests/profile-habits.spec.ts` | Las suites de las demás secciones |
 | `product/dominio.md` § Hábitos, `product/prototipos/perfil-secciones.html` (C-5, C-7, C-8) | Las decisiones |
@@ -54,7 +54,7 @@ exercise: {
   activities: {                              # cerrado; una propiedad por tipo, null si no se eligió
     walking | running | cycling | swimming | weights_gym | football_other_sport | yoga_pilates | dance:
       { days_per_week: int 1..7 | null, minutes_per_session: int 1..600 | null } | null,
-    other: { name: str 1..60 (recortado) | null, days_per_week: int 1..7 | null,
+    other: { name: str ..60 (recortado; vacío = sin contestar, "Escribe cuál.") | null, days_per_week: int 1..7 | null,
              minutes_per_session: int 1..600 | null } | null
   }
 } | null
