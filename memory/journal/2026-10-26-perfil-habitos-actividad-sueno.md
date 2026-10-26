@@ -84,3 +84,12 @@ evidencia debe decir los números reales.
 
 **Corrección en línea:** la sección de la ronda 1 dice que la Decision 5 "ya no dice 'sin convertir'"; lo dice, acotado a
 NHIS, BRFSS y NHANES `PAQ180`.
+
+## Archivo (2026-10-26)
+
+`openspec archive perfil-habitos-actividad-sueno` aplicó el delta a `records/patient-profile` (1 requisito agregado, 1
+modificado). `openspec validate --specs`: 6/6. Se quitó otra vez la línea en blanco final. La carpeta quedó en
+`openspec/changes/archive/2026-10-26-perfil-habitos-actividad-sueno/`. Se agregó el fragmento `changelog.d`, la US-18
+del PRD con la C2a entregada y la C2b pendiente, y el dominio. **Pendiente de Saúl Pérez:** recorrer `validation.md` y
+mergear. **Siguiente:** antes de la C2b, decidir la propuesta de `lint.py` (harness first); después la C2b, luego la
+tarea de deudas y la investigación de UX.

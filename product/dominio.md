@@ -321,7 +321,7 @@ registros de secciones distintas, enlace tratamiento↔medicinas de receta.
   tabaco y vapeador, humo ajeno, leña; C-1…C-4, C-6), **✅ entregada en el PR #30 (2026-10-21); spec en
   `openspec/specs/records/patient-profile/spec.md`**, y **C2 — cuerpo, descanso y trabajo** (ejercicio, movimiento
   del día, sueño y Trabajo; C-5, C-7, C-8, C-9), después. Saúl Pérez partió la C2 el 2026-10-26: **C2a** (ejercicio,
-  movimiento del día y sueño; C-5, C-7, C-8) en perfil-habitos-actividad-sueno, y **C2b** ("Trabajo" en el Perfil
+  movimiento del día y sueño; C-5, C-7, C-8), **✅ entregada en el PR #34 (2026-10-26)**, y **C2b** ("Trabajo" en el Perfil
   básico; C-9) después.
 
 ## Catálogos (en las palabras de Saúl / del borrador que aceptó)

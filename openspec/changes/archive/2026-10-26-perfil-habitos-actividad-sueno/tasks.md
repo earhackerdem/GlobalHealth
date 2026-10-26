@@ -51,5 +51,5 @@ are `single`. `make tdd-check` requires one `test:` commit per `test→impl` gro
   "Otra" sin nombre, total con valores a medias, desplazamiento *Sí*/*No*, sueño, valores fuera de escala y corregirlos,
   doble clic en "Guardar", salir con cambios, 384 y 580 px. Verificación: tabla en evidence.md.
 - [x] 3.3 **Entregables.** `evidence.md`, `validation.md` (no técnico, para Saúl Pérez), el journal y el PR.
-- [ ] 3.4 **Revisión y archivo** (`/epe-4-review` → `/epe-5-apply` → `/epe-6-archive` como último commit del PR), con la
+- [x] 3.4 **Revisión y archivo** (`/epe-4-review` → `/epe-5-apply` → `/epe-6-archive` como último commit del PR), con la
   regla de cierre de la Decision 7.
