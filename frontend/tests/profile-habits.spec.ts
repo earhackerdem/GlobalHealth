@@ -3266,7 +3266,11 @@ test.describe("Perfil médico — hábitos: ejercicio, movimiento del día y sue
 
     const forbidden =
       /150|OMS|recomend|insuficiente|sedentari|insomnio|riesgo|puntaje/i
-    expect(await page.locator("main").innerText()).not.toMatch(forbidden)
+    // El layout anida dos <main> (SidebarInset y el de _layout); el último, el
+    // más interno, es el contenido de la pantalla de hábitos.
+    const screen = page.locator("main").last()
+    await expect(screen).toContainText(SLEEP_HOURS)
+    expect(await screen.innerText()).not.toMatch(forbidden)
 
     const saved = await getHabits(api)
     expect(JSON.stringify(saved)).not.toMatch(forbidden)
