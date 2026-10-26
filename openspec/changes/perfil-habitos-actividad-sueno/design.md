@@ -1,6 +1,7 @@
 # Design
 
-Status: DRAFT
+Status: APPROVED
+Approved by: Saúl Pérez (author) on 2026-10-26, después de navegar el prototipo
 
 **En una frase:** el cuestionario de hábitos suma ejercicio (actividades con días y minutos, o "No hago ejercicio", con
 el total semanal a la vista), movimiento del día y sueño, con las formas de NHANES, GPAQ y NHIS, las mismas reglas de
