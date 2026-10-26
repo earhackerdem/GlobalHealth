@@ -70,6 +70,30 @@ perfil-habitos-completitud (design.md, "## Interface contract"):
   pregunta no admite «No recuerdo».". The age rules compare numbers only.
 - Rows saved before with partial data stay readable; nothing comes back as
   "unknown" unless it was saved as "unknown".
+
+perfil-habitos-actividad-sueno (design.md, "## Interface contract"): Habits
+gains three optional blocks, each null when unanswered:
+- exercise: {does_exercise: bool, activities: {walking | running | cycling |
+  swimming | weights_gym | football_other_sport | yoga_pilates | dance:
+  {days_per_week: 1..7|null, minutes_per_session: 1..600|null} | null, other:
+  {name: str 1..60 (trimmed)|null, days_per_week, minutes_per_session} | null}}
+  | null (closed: one property per type, null when not chosen)
+- daily_movement: {main_activity: sitting|standing_walking|light_loads|
+  heavy_work|null, active_travel: bool|null, active_travel_days: 1..7|null,
+  sitting_hours: 0..24|null} | null
+- sleep: {hours: 1..24|null, trouble_falling_asleep and trouble_staying_asleep:
+  never|some_days|most_days|every_day|null} | null
+- No new field admits "unknown" nor text outside its scale (schema 422).
+- Normalization: does_exercise false -> every activity null; active_travel not
+  true -> active_travel_days null; other.name trimmed, empty -> null.
+- Validation after normalizing (value_error, same 422 shape): does_exercise true
+  without any activity -> "Elige al menos una actividad, o «No hago ejercicio»"
+  at ["body", "exercise", "activities"]; a chosen activity without days or
+  minutes -> "Contesta esta pregunta." at ["body", "exercise", "activities",
+  <type>, <field>]; other chosen without name -> "Escribe cuál." on its name;
+  active_travel true without days -> "Contesta esta pregunta." on
+  active_travel_days.
+- The weekly total is neither stored nor returned.
 """
 
 import json
@@ -111,9 +135,21 @@ ANSWER_REQUIRED = "Contesta esta pregunta."
 ANSWER_OR_UNKNOWN_REQUIRED = "Contesta esta pregunta o marca «No recuerdo»."
 UNKNOWN_NOT_ADMITTED = "Esta pregunta no admite «No recuerdo»."
 
+ACTIVITY_REQUIRED = "Elige al menos una actividad, o «No hago ejercicio»"
+NAME_REQUIRED = "Escribe cuál."
+
 UNKNOWN = "unknown"
 
-TOP_LEVEL_KEYS = {"alcohol", "tobacco", "vaping", "secondhand_smoke", "wood_smoke"}
+TOP_LEVEL_KEYS = {
+    "alcohol",
+    "tobacco",
+    "vaping",
+    "secondhand_smoke",
+    "wood_smoke",
+    "exercise",
+    "daily_movement",
+    "sleep",
+}
 ALCOHOL_KEYS = {
     "status",
     "start_age",
@@ -127,6 +163,31 @@ TOBACCO_KEYS = {"status", "cigarettes_per_day", "start_age", "quit_age"}
 VAPING_KEYS = {"status", "frequency", "days_last_30", "start_age", "quit_age"}
 SECONDHAND_KEYS = {"exposed", "places", "days_per_week"}
 WOOD_KEYS = {"status", "start_age", "quit_age", "hours_per_day"}
+
+# perfil-habitos-actividad-sueno
+ACTIVITY_TYPES = [
+    "walking",
+    "running",
+    "cycling",
+    "swimming",
+    "weights_gym",
+    "football_other_sport",
+    "yoga_pilates",
+    "dance",
+    "other",
+]
+EXERCISE_KEYS = {"does_exercise", "activities"}
+ACTIVITY_KEYS = {"days_per_week", "minutes_per_session"}
+OTHER_ACTIVITY_KEYS = {"name", "days_per_week", "minutes_per_session"}
+DAILY_MOVEMENT_KEYS = {
+    "main_activity",
+    "active_travel",
+    "active_travel_days",
+    "sitting_hours",
+}
+SLEEP_KEYS = {"hours", "trouble_falling_asleep", "trouble_staying_asleep"}
+MAIN_ACTIVITY_LEVELS = ["sitting", "standing_walking", "light_loads", "heavy_work"]
+SLEEP_FREQUENCIES = ["never", "some_days", "most_days", "every_day"]
 
 
 # --- helpers ----------------------------------------------------------------------
@@ -160,6 +221,33 @@ def secondhand(**fields: Any) -> dict[str, Any]:
 
 def wood(**fields: Any) -> dict[str, Any]:
     return {**dict.fromkeys(WOOD_KEYS), **fields}
+
+
+def activity(activity_type: str, **fields: Any) -> dict[str, Any]:
+    """A full (normalized) activity of the given type: the given fields, the
+    rest null ("other" also has a name)."""
+    keys = OTHER_ACTIVITY_KEYS if activity_type == "other" else ACTIVITY_KEYS
+    return {**dict.fromkeys(keys), **fields}
+
+
+def exercise(does_exercise: bool, **chosen: dict[str, Any]) -> dict[str, Any]:
+    """A full (normalized) exercise block: every activity type present, the
+    chosen ones with their fields, the rest null."""
+    return {
+        "does_exercise": does_exercise,
+        "activities": {
+            **dict.fromkeys(ACTIVITY_TYPES),
+            **{t: activity(t, **fields) for t, fields in chosen.items()},
+        },
+    }
+
+
+def movement(**fields: Any) -> dict[str, Any]:
+    return {**dict.fromkeys(DAILY_MOVEMENT_KEYS), **fields}
+
+
+def sleep_block(**fields: Any) -> dict[str, Any]:
+    return {**dict.fromkeys(SLEEP_KEYS), **fields}
 
 
 def get_habits(client: TestClient, headers: dict[str, str]) -> Any:
@@ -1983,6 +2071,685 @@ def test_c16_unknown_where_never_admitted_is_schema_error(
     assert stored_habits(client, headers) == SEED_STORED
 
 
+# --- perfil-habitos-actividad-sueno -----------------------------------------------
+
+WALKING_5X30 = {"days_per_week": 5, "minutes_per_session": 30}
+
+
+def complete_activity(activity_type: str) -> dict[str, Any]:
+    """A chosen activity with every question answered (3 days, 30 minutes;
+    "other" also named)."""
+    answers: dict[str, Any] = {"days_per_week": 3, "minutes_per_session": 30}
+    if activity_type == "other":
+        answers["name"] = "Senderismo"
+    return answers
+
+
+def doing(**chosen: dict[str, Any]) -> dict[str, Any]:
+    """A PUT body that does exercise with the given activities (only the chosen
+    ones are sent)."""
+    return {"exercise": {"does_exercise": True, "activities": chosen}}
+
+
+# --- row 1: Dos actividades con su total (C-5) ------------------------------------
+
+
+def test_c5_two_activities_round_trip_without_total(
+    client: TestClient, db: Session
+) -> None:
+    """Sin hábitos: caminar 5 días × 30 minutos y pesas o gimnasio 2 × 45 ->
+    200, PUT y GET iguales, y ni la respuesta ni el GET traen un total (ni la
+    llave ni 240)."""
+    headers, _ = consented_user(client, db)
+    expected = habits(
+        exercise=exercise(
+            True,
+            walking=WALKING_5X30,
+            weights_gym={"days_per_week": 2, "minutes_per_session": 45},
+        )
+    )
+
+    r_put = put_habits(
+        client,
+        headers,
+        doing(
+            walking=WALKING_5X30,
+            weights_gym={"days_per_week": 2, "minutes_per_session": 45},
+        ),
+    )
+    assert r_put.status_code == 200, r_put.text
+    r_get = get_habits(client, headers)
+    assert r_get.status_code == 200, r_get.text
+
+    for r in (r_put, r_get):
+        assert r.json() == expected
+        assert set(r.json()["exercise"]) == EXERCISE_KEYS, r.text
+        assert "total" not in r.text.lower(), r.text
+        assert "240" not in r.text, r.text
+
+
+@pytest.mark.parametrize("activity_type", ACTIVITY_TYPES)
+def test_c5_each_activity_type_complete_saved(
+    client: TestClient, db: Session, activity_type: str
+) -> None:
+    """Cada tipo de actividad del catálogo, con sus días y minutos (y "Otra" con
+    su nombre) -> 200, PUT y GET iguales (el control de los casos sin un
+    dato)."""
+    headers, _ = consented_user(client, db)
+    answers = complete_activity(activity_type)
+    expected = habits(exercise=exercise(True, **{activity_type: answers}))
+
+    saved = save(client, headers, doing(**{activity_type: answers}))
+
+    assert saved == expected
+    assert stored_habits(client, headers) == expected
+
+
+# --- row 2: Otra actividad con su nombre (C-5) ------------------------------------
+
+
+@pytest.mark.parametrize(
+    "other",
+    [
+        pytest.param({"days_per_week": 1, "minutes_per_session": 90}, id="omitted"),
+        pytest.param(
+            {"name": None, "days_per_week": 1, "minutes_per_session": 90}, id="null"
+        ),
+        pytest.param(
+            {"name": "   ", "days_per_week": 1, "minutes_per_session": 90},
+            id="whitespace-only",
+        ),
+    ],
+)
+def test_c5_other_without_name_rejected_habits_unchanged(
+    client: TestClient, db: Session, other: dict[str, Any]
+) -> None:
+    """Elige "Otra" con 1 día y 90 minutos sin escribir cuál (omitido, null o
+    solo espacios) -> 422 "Escribe cuál." en su nombre, y nada cambia."""
+    headers, _ = consented_user(client, db)
+    save(client, headers, SEED)
+
+    r = put_habits(client, headers, doing(other=other))
+
+    assert_single_error(
+        r, ["body", "exercise", "activities", "other", "name"], NAME_REQUIRED
+    )
+    assert stored_habits(client, headers) == SEED_STORED
+
+
+def test_c5_other_name_saved_trimmed(client: TestClient, db: Session) -> None:
+    """Elige "Otra" con "  Senderismo ", 1 día y 90 minutos -> 200 y PUT y GET
+    traen "Senderismo" recortado."""
+    headers, _ = consented_user(client, db)
+    expected = habits(
+        exercise=exercise(
+            True,
+            other={"name": "Senderismo", "days_per_week": 1, "minutes_per_session": 90},
+        )
+    )
+
+    saved = save(
+        client,
+        headers,
+        doing(
+            other={
+                "name": "  Senderismo ",
+                "days_per_week": 1,
+                "minutes_per_session": 90,
+            }
+        ),
+    )
+
+    assert saved == expected
+    assert stored_habits(client, headers) == expected
+    assert saved["exercise"]["activities"]["other"]["name"] == "Senderismo"
+
+
+# --- row 3: Falta un dato de una actividad (C-5, C-15) ----------------------------
+
+MISSING_ACTIVITY_FIELD_CASES = [
+    pytest.param(t, field, how, id=f"{t}-{field}-{how}")
+    for t in ACTIVITY_TYPES
+    for field in ("days_per_week", "minutes_per_session")
+    for how in ("omitted", "null")
+]
+
+
+@pytest.mark.parametrize(
+    ("activity_type", "field", "how"), MISSING_ACTIVITY_FIELD_CASES
+)
+def test_c5_c15_activity_without_days_or_minutes_rejected_habits_unchanged(
+    client: TestClient, db: Session, activity_type: str, field: str, how: str
+) -> None:
+    """Por cada actividad y por cada dato (días, minutos), elegida sin él
+    (omitido o null; p. ej. correr con 3 días y sin minutos) -> 422 "Contesta
+    esta pregunta." en su loc de cuatro niveles, y nada cambia."""
+    headers, _ = consented_user(client, db)
+    save(client, headers, SEED)
+    answers = without_answer(complete_activity(activity_type), field, how)
+
+    r = put_habits(client, headers, doing(**{activity_type: answers}))
+
+    assert_single_error(
+        r, ["body", "exercise", "activities", activity_type, field], ANSWER_REQUIRED
+    )
+    assert stored_habits(client, headers) == SEED_STORED
+
+
+# --- row 4: No hago ejercicio (C-5) -----------------------------------------------
+
+
+def test_c5_no_exercise_drops_saved_activities(client: TestClient, db: Session) -> None:
+    """Con caminar 5 × 30 guardado: "No hago ejercicio" (con caminar aún en el
+    cuerpo) -> 200, PUT y GET con does_exercise false y ninguna actividad."""
+    headers, _ = consented_user(client, db)
+    first = save(client, headers, doing(walking=WALKING_5X30))
+    assert first["exercise"] == exercise(True, walking=WALKING_5X30), first
+
+    saved = save(
+        client,
+        headers,
+        {"exercise": {"does_exercise": False, "activities": {"walking": WALKING_5X30}}},
+    )
+
+    expected = habits(exercise=exercise(False))
+    assert saved == expected
+    assert stored_habits(client, headers) == expected
+
+
+def test_c5_no_exercise_drops_incomplete_activities_before_validating(
+    client: TestClient, db: Session
+) -> None:
+    """Elige "No hago ejercicio" con correr sin minutos y "Otra" sin nombre en
+    el cuerpo -> 200 (se descartan antes de validar) y ninguna actividad."""
+    headers, _ = consented_user(client, db)
+
+    saved = save(
+        client,
+        headers,
+        {
+            "exercise": {
+                "does_exercise": False,
+                "activities": {
+                    "running": {"days_per_week": 3},
+                    "other": {"days_per_week": 1, "minutes_per_session": 90},
+                },
+            }
+        },
+    )
+
+    expected = habits(exercise=exercise(False))
+    assert saved == expected
+    assert stored_habits(client, headers) == expected
+
+
+@pytest.mark.parametrize(
+    "chosen",
+    [
+        pytest.param({}, id="empty-object"),
+        pytest.param(dict.fromkeys(ACTIVITY_TYPES), id="all-null"),
+    ],
+)
+def test_c5_exercise_without_any_activity_rejected_habits_unchanged(
+    client: TestClient, db: Session, chosen: dict[str, Any]
+) -> None:
+    """Hace ejercicio sin ninguna actividad -> 422 "Elige al menos una
+    actividad, o «No hago ejercicio»" en exercise.activities, y nada cambia."""
+    headers, _ = consented_user(client, db)
+    save(client, headers, SEED)
+
+    r = put_habits(client, headers, doing(**chosen))
+
+    assert_single_error(r, ["body", "exercise", "activities"], ACTIVITY_REQUIRED)
+    assert stored_habits(client, headers) == SEED_STORED
+
+
+# --- row 5: Movimiento del día aparte del ejercicio (C-7) -------------------------
+
+MOVEMENT_ROUND_TRIP_CASES = [
+    *[
+        pytest.param(
+            {
+                "main_activity": level,
+                "active_travel": True,
+                "active_travel_days": 5,
+                "sitting_hours": 9,
+            },
+            id=f"{level}-travel-5-days-9-hours",
+        )
+        for level in MAIN_ACTIVITY_LEVELS
+    ],
+    pytest.param(
+        {"main_activity": "heavy_work", "active_travel": False, "sitting_hours": 0},
+        id="no-travel-0-hours",
+    ),
+    pytest.param(
+        {
+            "main_activity": "sitting",
+            "active_travel": True,
+            "active_travel_days": 7,
+            "sitting_hours": 24,
+        },
+        id="travel-7-days-24-hours",
+    ),
+    pytest.param(
+        {"active_travel": True, "active_travel_days": 1}, id="only-travel-1-day"
+    ),
+]
+
+
+@pytest.mark.parametrize("answers", MOVEMENT_ROUND_TRIP_CASES)
+def test_c7_daily_movement_round_trip(
+    client: TestClient, db: Session, answers: dict[str, Any]
+) -> None:
+    """Los cuatro niveles de la actividad principal, el desplazamiento (Sí con
+    días, No) y 0 y 24 horas sentado -> 200, PUT y GET iguales."""
+    headers, _ = consented_user(client, db)
+    expected = habits(daily_movement=movement(**answers))
+
+    saved = save(client, headers, {"daily_movement": answers})
+
+    assert saved == expected
+    assert stored_habits(client, headers) == expected
+
+
+def test_c7_daily_movement_apart_from_exercise(client: TestClient, db: Session) -> None:
+    """Caminar 5 × 30, "Casi todo sentado", Sí al desplazamiento con 5 días y 9
+    horas sentado -> 200; el ejercicio queda igual (el movimiento no se suma),
+    sin total, y el GET trae las tres respuestas del movimiento."""
+    headers, _ = consented_user(client, db)
+    day = {
+        "main_activity": "sitting",
+        "active_travel": True,
+        "active_travel_days": 5,
+        "sitting_hours": 9,
+    }
+    expected = habits(
+        exercise=exercise(True, walking=WALKING_5X30), daily_movement=movement(**day)
+    )
+
+    r_put = put_habits(
+        client, headers, {**doing(walking=WALKING_5X30), "daily_movement": day}
+    )
+    assert r_put.status_code == 200, r_put.text
+    r_get = get_habits(client, headers)
+    assert r_get.status_code == 200, r_get.text
+
+    for r in (r_put, r_get):
+        assert r.json() == expected
+        assert "total" not in r.text.lower(), r.text
+        assert "150" not in r.text, r.text
+
+
+# --- row 6: Desplazamiento sin días (C-7, C-15) -----------------------------------
+
+
+@pytest.mark.parametrize("how", ["omitted", "null"])
+def test_c7_c15_active_travel_without_days_rejected_habits_unchanged(
+    client: TestClient, db: Session, how: str
+) -> None:
+    """Sí a caminar o ir en bici para ir a algún lado sin los días (omitidos o
+    null) -> 422 "Contesta esta pregunta." en active_travel_days, y nada
+    cambia."""
+    headers, _ = consented_user(client, db)
+    save(client, headers, SEED)
+    answers = without_answer(
+        {"main_activity": "sitting", "active_travel": True, "active_travel_days": 5},
+        "active_travel_days",
+        how,
+    )
+
+    r = put_habits(client, headers, {"daily_movement": answers})
+
+    assert_single_error(
+        r, ["body", "daily_movement", "active_travel_days"], ANSWER_REQUIRED
+    )
+    assert stored_habits(client, headers) == SEED_STORED
+
+
+@pytest.mark.parametrize(
+    "active_travel",
+    [pytest.param(False, id="no"), pytest.param(None, id="unanswered")],
+)
+def test_c7_active_travel_not_yes_drops_days(
+    client: TestClient, db: Session, active_travel: bool | None
+) -> None:
+    """Desplazamiento No (o sin contestar) con 5 días en el cuerpo -> 200 y los
+    días se descartan."""
+    headers, _ = consented_user(client, db)
+
+    saved = save(
+        client,
+        headers,
+        {
+            "daily_movement": {
+                "main_activity": "sitting",
+                "active_travel": active_travel,
+                "active_travel_days": 5,
+            }
+        },
+    )
+
+    expected = habits(
+        daily_movement=movement(main_activity="sitting", active_travel=active_travel)
+    )
+    assert saved == expected
+    assert stored_habits(client, headers) == expected
+
+
+# --- row 7: Sueño con las dos frecuencias (C-8) -----------------------------------
+
+
+def test_c8_sleep_with_both_frequencies_round_trip(
+    client: TestClient, db: Session
+) -> None:
+    """6 horas, "Algunos días" a que le costó dormirse y "Casi todos los días" a
+    que le costó seguir durmiendo -> 200, PUT y GET iguales, cada una en su
+    campo."""
+    headers, _ = consented_user(client, db)
+    answers = {
+        "hours": 6,
+        "trouble_falling_asleep": "some_days",
+        "trouble_staying_asleep": "most_days",
+    }
+    expected = habits(sleep=sleep_block(**answers))
+
+    saved = save(client, headers, {"sleep": answers})
+
+    assert saved == expected
+    assert stored_habits(client, headers) == expected
+
+
+@pytest.mark.parametrize("frequency", SLEEP_FREQUENCIES)
+def test_c8_each_sleep_frequency_accepted(
+    client: TestClient, db: Session, frequency: str
+) -> None:
+    """Cada valor de la escala (nunca · algunos días · casi todos · todos) en las
+    dos frecuencias, con 1 y 24 horas -> 200 y GET igual."""
+    headers, _ = consented_user(client, db)
+    for hours in (1, 24):
+        answers = {
+            "hours": hours,
+            "trouble_falling_asleep": frequency,
+            "trouble_staying_asleep": frequency,
+        }
+        expected = habits(sleep=sleep_block(**answers))
+
+        saved = save(client, headers, {"sleep": answers})
+
+        assert saved == expected
+        assert stored_habits(client, headers) == expected
+
+
+# --- row 8: Fuera de escala en los bloques nuevos ---------------------------------
+
+COMPLETE_MOVEMENT = {
+    "main_activity": "sitting",
+    "active_travel": True,
+    "active_travel_days": 5,
+    "sitting_hours": 9,
+}
+COMPLETE_SLEEP = {
+    "hours": 6,
+    "trouble_falling_asleep": "some_days",
+    "trouble_staying_asleep": "most_days",
+}
+COMPLETE_OTHER = complete_activity("other")
+
+ACTIVITY_LOC = ["body", "exercise", "activities"]
+MOVEMENT_LOC = ["body", "daily_movement"]
+SLEEP_LOC = ["body", "sleep"]
+
+
+def walking_with(**fields: Any) -> dict[str, Any]:
+    return doing(walking={**WALKING_5X30, **fields})
+
+
+def other_with(**fields: Any) -> dict[str, Any]:
+    return doing(other={**COMPLETE_OTHER, **fields})
+
+
+def moving_with(**fields: Any) -> dict[str, Any]:
+    return {"daily_movement": {**COMPLETE_MOVEMENT, **fields}}
+
+
+def sleeping_with(**fields: Any) -> dict[str, Any]:
+    return {"sleep": {**COMPLETE_SLEEP, **fields}}
+
+
+# Each body is otherwise complete, so the field outside its scale is the only
+# problem: a schema 422 on that loc, never the required-answer value_error.
+NEW_BLOCKS_OUT_OF_SCALE_CASES = [
+    # Exercise: days 1..7, minutes 1..600, the name 1..60.
+    pytest.param(
+        walking_with(days_per_week=0),
+        [*ACTIVITY_LOC, "walking", "days_per_week"],
+        id="walking-days-0",
+    ),
+    pytest.param(
+        walking_with(days_per_week=8),
+        [*ACTIVITY_LOC, "walking", "days_per_week"],
+        id="walking-days-8",
+    ),
+    pytest.param(
+        other_with(days_per_week=8),
+        [*ACTIVITY_LOC, "other", "days_per_week"],
+        id="other-days-8",
+    ),
+    pytest.param(
+        walking_with(minutes_per_session=0),
+        [*ACTIVITY_LOC, "walking", "minutes_per_session"],
+        id="walking-minutes-0",
+    ),
+    pytest.param(
+        walking_with(minutes_per_session=601),
+        [*ACTIVITY_LOC, "walking", "minutes_per_session"],
+        id="walking-minutes-601",
+    ),
+    pytest.param(
+        other_with(minutes_per_session=601),
+        [*ACTIVITY_LOC, "other", "minutes_per_session"],
+        id="other-minutes-601",
+    ),
+    pytest.param(
+        other_with(name="a" * 61),
+        [*ACTIVITY_LOC, "other", "name"],
+        id="other-name-61-chars",
+    ),
+    # Daily movement: travel days 1..7, sitting hours 0..24.
+    pytest.param(
+        moving_with(active_travel_days=0),
+        [*MOVEMENT_LOC, "active_travel_days"],
+        id="travel-days-0",
+    ),
+    pytest.param(
+        moving_with(active_travel_days=8),
+        [*MOVEMENT_LOC, "active_travel_days"],
+        id="travel-days-8",
+    ),
+    pytest.param(
+        moving_with(sitting_hours=-1),
+        [*MOVEMENT_LOC, "sitting_hours"],
+        id="sitting-hours--1",
+    ),
+    pytest.param(
+        moving_with(sitting_hours=25),
+        [*MOVEMENT_LOC, "sitting_hours"],
+        id="sitting-hours-25",
+    ),
+    # Sleep: whole hours 1..24.
+    pytest.param(sleeping_with(hours=0), [*SLEEP_LOC, "hours"], id="sleep-hours-0"),
+    pytest.param(sleeping_with(hours=25), [*SLEEP_LOC, "hours"], id="sleep-hours-25"),
+    pytest.param(
+        sleeping_with(hours=6.5), [*SLEEP_LOC, "hours"], id="sleep-hours-not-whole"
+    ),
+    # "No recuerdo" in any new question.
+    pytest.param(
+        walking_with(days_per_week=UNKNOWN),
+        [*ACTIVITY_LOC, "walking", "days_per_week"],
+        id="walking-days-unknown",
+    ),
+    pytest.param(
+        walking_with(minutes_per_session=UNKNOWN),
+        [*ACTIVITY_LOC, "walking", "minutes_per_session"],
+        id="walking-minutes-unknown",
+    ),
+    pytest.param(
+        other_with(days_per_week=UNKNOWN),
+        [*ACTIVITY_LOC, "other", "days_per_week"],
+        id="other-days-unknown",
+    ),
+    pytest.param(
+        other_with(minutes_per_session=UNKNOWN),
+        [*ACTIVITY_LOC, "other", "minutes_per_session"],
+        id="other-minutes-unknown",
+    ),
+    pytest.param(
+        {
+            "exercise": {
+                "does_exercise": UNKNOWN,
+                "activities": {"walking": WALKING_5X30},
+            }
+        },
+        ["body", "exercise", "does_exercise"],
+        id="does_exercise-unknown",
+    ),
+    pytest.param(
+        moving_with(active_travel_days=UNKNOWN),
+        [*MOVEMENT_LOC, "active_travel_days"],
+        id="travel-days-unknown",
+    ),
+    pytest.param(
+        moving_with(sitting_hours=UNKNOWN),
+        [*MOVEMENT_LOC, "sitting_hours"],
+        id="sitting-hours-unknown",
+    ),
+    pytest.param(
+        moving_with(active_travel=UNKNOWN),
+        [*MOVEMENT_LOC, "active_travel"],
+        id="active_travel-unknown",
+    ),
+    pytest.param(
+        moving_with(main_activity=UNKNOWN),
+        [*MOVEMENT_LOC, "main_activity"],
+        id="main_activity-unknown",
+    ),
+    pytest.param(
+        sleeping_with(hours=UNKNOWN), [*SLEEP_LOC, "hours"], id="sleep-hours-unknown"
+    ),
+    pytest.param(
+        sleeping_with(trouble_falling_asleep=UNKNOWN),
+        [*SLEEP_LOC, "trouble_falling_asleep"],
+        id="falling-asleep-unknown",
+    ),
+    pytest.param(
+        sleeping_with(trouble_staying_asleep=UNKNOWN),
+        [*SLEEP_LOC, "trouble_staying_asleep"],
+        id="staying-asleep-unknown",
+    ),
+    # Outside the catalogs.
+    pytest.param(
+        doing(walking=WALKING_5X30, hiking=WALKING_5X30),
+        [*ACTIVITY_LOC, "hiking"],
+        id="activity-type-outside-catalog",
+    ),
+    pytest.param(
+        {"exercise": {"does_exercise": True, "activities": ["walking"]}},
+        ACTIVITY_LOC,
+        id="activities-as-a-list",
+    ),
+    pytest.param(
+        moving_with(main_activity="sedentary"),
+        [*MOVEMENT_LOC, "main_activity"],
+        id="main_activity-outside-scale",
+    ),
+    pytest.param(
+        sleeping_with(trouble_falling_asleep="always"),
+        [*SLEEP_LOC, "trouble_falling_asleep"],
+        id="falling-asleep-outside-scale",
+    ),
+    pytest.param(
+        sleeping_with(trouble_staying_asleep="sometimes"),
+        [*SLEEP_LOC, "trouble_staying_asleep"],
+        id="staying-asleep-outside-scale",
+    ),
+    # Closed blocks: an extra property.
+    pytest.param(
+        {
+            "exercise": {
+                "does_exercise": True,
+                "activities": {"walking": WALKING_5X30},
+                "total_minutes_per_week": 150,
+            }
+        },
+        ["body", "exercise", "total_minutes_per_week"],
+        id="exercise-extra-property",
+    ),
+    pytest.param(
+        walking_with(total=150),
+        [*ACTIVITY_LOC, "walking", "total"],
+        id="activity-extra-property",
+    ),
+    pytest.param(
+        other_with(notes="con mi perro"),
+        [*ACTIVITY_LOC, "other", "notes"],
+        id="other-extra-property",
+    ),
+    pytest.param(
+        moving_with(level="sedentary"),
+        [*MOVEMENT_LOC, "level"],
+        id="daily_movement-extra-property",
+    ),
+    pytest.param(
+        sleeping_with(quality="bad"),
+        [*SLEEP_LOC, "quality"],
+        id="sleep-extra-property",
+    ),
+]
+
+
+@pytest.mark.parametrize(("body", "loc"), NEW_BLOCKS_OUT_OF_SCALE_CASES)
+def test_c5_c7_c8_out_of_scale_in_new_blocks_rejected_habits_unchanged(
+    client: TestClient, db: Session, body: dict[str, Any], loc: list[str]
+) -> None:
+    """8 días, 601 minutos, 25 horas sentado, 0 horas de sueño, un nombre de 61,
+    "No recuerdo", un valor fuera del catálogo o una propiedad extra en los
+    bloques nuevos -> 422 del esquema en ese campo (no la regla de respuesta
+    obligatoria), y los hábitos guardados no cambian."""
+    headers, _ = consented_user(client, db)
+    save(client, headers, SEED)
+
+    r = put_habits(client, headers, body)
+
+    assert r.status_code == 422, r.text
+    detail = r.json()["detail"]
+    assert isinstance(detail, list), detail
+    assert detail, detail
+    assert all(
+        e["loc"][: len(loc)] == loc and e["type"] != "value_error" for e in detail
+    ), detail
+    assert stored_habits(client, headers) == SEED_STORED
+
+
+# --- row 9: Solo el sueño ---------------------------------------------------------
+
+
+def test_c8_only_sleep_hours_answered_rest_stays_null(
+    client: TestClient, db: Session
+) -> None:
+    """Sin hábitos: solo 7 horas de sueño -> 200, sleep con 7 horas y todos los
+    demás bloques null."""
+    headers, _ = consented_user(client, db)
+    assert stored_habits(client, headers) == empty_habits()
+
+    saved = save(client, headers, {"sleep": {"hours": 7}})
+
+    expected = habits(sleep=sleep_block(hours=7))
+    assert saved == expected
+    assert stored_habits(client, headers) == expected
+    assert all(saved[key] is None for key in TOP_LEVEL_KEYS - {"sleep"}), saved
+
+
 # --- Test plan row 15: Sin puntaje ni riesgo (C-6) --------------------------------
 
 
@@ -2039,6 +2806,75 @@ def test_c6_no_score_or_risk_in_the_response(client: TestClient, db: Session) ->
             assert word not in text_lower, (word, r.text)
 
 
+def assert_new_blocks_keys_only(body: dict[str, Any]) -> None:
+    """The three new blocks carry exactly the contract's keys (no total, no
+    derived field)."""
+    assert set(body) == TOP_LEVEL_KEYS, body
+    assert set(body["exercise"]) == EXERCISE_KEYS, body["exercise"]
+    activities = body["exercise"]["activities"]
+    assert set(activities) == set(ACTIVITY_TYPES), activities
+    for activity_type, answers in activities.items():
+        if answers is not None:
+            keys = OTHER_ACTIVITY_KEYS if activity_type == "other" else ACTIVITY_KEYS
+            assert set(answers) == keys, (activity_type, answers)
+    assert set(body["daily_movement"]) == DAILY_MOVEMENT_KEYS, body["daily_movement"]
+    assert set(body["sleep"]) == SLEEP_KEYS, body["sleep"]
+
+
+def test_c5_c6_weekly_total_without_verdict(client: TestClient, db: Session) -> None:
+    """Caminar 1 día × 20 minutos, "Casi todo sentado", 12 horas sentado, 4
+    horas de sueño y "Todos los días" en las dos frecuencias: PUT y GET traen
+    exactamente las llaves del contrato, sin total guardado, y ni "150", "OMS",
+    "recomend", "insuficiente", "sedentari", "insomnio", "riesgo" ni
+    "puntaje"."""
+    headers, _ = consented_user(client, db)
+    body = {
+        "exercise": {
+            "does_exercise": True,
+            "activities": {"walking": {"days_per_week": 1, "minutes_per_session": 20}},
+        },
+        "daily_movement": {"main_activity": "sitting", "sitting_hours": 12},
+        "sleep": {
+            "hours": 4,
+            "trouble_falling_asleep": "every_day",
+            "trouble_staying_asleep": "every_day",
+        },
+    }
+    expected = habits(
+        exercise=exercise(
+            True, walking={"days_per_week": 1, "minutes_per_session": 20}
+        ),
+        daily_movement=movement(main_activity="sitting", sitting_hours=12),
+        sleep=sleep_block(
+            hours=4,
+            trouble_falling_asleep="every_day",
+            trouble_staying_asleep="every_day",
+        ),
+    )
+
+    r_put = put_habits(client, headers, body)
+    assert r_put.status_code == 200, r_put.text
+    r_get = get_habits(client, headers)
+    assert r_get.status_code == 200, r_get.text
+
+    for r in (r_put, r_get):
+        assert r.json() == expected
+        assert_new_blocks_keys_only(r.json())
+        text_lower = r.text.lower()
+        for word in (
+            "total",
+            "150",
+            "oms",
+            "recomend",
+            "insuficiente",
+            "sedentari",
+            "insomnio",
+            "riesgo",
+            "puntaje",
+        ):
+            assert word not in text_lower, (word, r.text)
+
+
 # --- Test plan row 22: Hábitos solo del paciente y cifrados -----------------------
 
 
@@ -2046,9 +2882,10 @@ def test_c_habits_isolated_and_encrypted_at_rest(
     client: TestClient, db: Session
 ) -> None:
     """A con alcohol current, vapeador some_days (ambos desde "No recuerdo") y
-    humo ajeno en home: B recibe todo null; en BD los hábitos de A son un token
-    Fernet sin respuestas ni nombres de campo en claro (tampoco "some_days" ni
-    "unknown"), que descifra al objeto normalizado."""
+    humo ajeno en home, "Otra: Senderismo", movimiento y sueño: B recibe todo
+    null; en BD los hábitos de A son un token Fernet sin respuestas ni nombres
+    de campo en claro (tampoco "some_days", "unknown", "Senderismo" ni
+    "trouble_falling_asleep"), que descifra al objeto normalizado."""
     headers_a, user_a = consented_user(client, db)
     headers_b, _ = consented_user(client, db)
     saved_a = save(
@@ -2074,6 +2911,23 @@ def test_c_habits_isolated_and_encrypted_at_rest(
                 "places": ["home"],
                 "days_per_week": 3,
             },
+            # perfil-habitos-actividad-sueno: the new blocks, same treatment.
+            "exercise": {
+                "does_exercise": True,
+                "activities": {
+                    "other": {
+                        "name": "Senderismo",
+                        "days_per_week": 1,
+                        "minutes_per_session": 90,
+                    }
+                },
+            },
+            "daily_movement": {"main_activity": "light_loads", "sitting_hours": 6},
+            "sleep": {
+                "hours": 6,
+                "trouble_falling_asleep": "most_days",
+                "trouble_staying_asleep": "never",
+            },
         },
     )
 
@@ -2093,11 +2947,20 @@ def test_c_habits_isolated_and_encrypted_at_rest(
         "days_last_30",
         UNKNOWN,
         "start_age",
+        "Senderismo",
+        "exercise",
+        "minutes_per_session",
+        "light_loads",
+        "sleep",
+        "trouble_falling_asleep",
+        "most_days",
     ):
         assert plain not in raw, plain
     decrypted = decrypt_str(raw)
     assert decrypted is not None
     assert UNKNOWN in decrypted
+    assert "Senderismo" in decrypted
+    assert "trouble_falling_asleep" in decrypted
     assert without_nulls(json.loads(decrypted)) == without_nulls(saved_a)
 
 
