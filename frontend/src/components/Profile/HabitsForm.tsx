@@ -21,15 +21,22 @@ import { useTranslation } from "react-i18next"
 
 import {
   type AlcoholHabit,
+  type DailyMovement,
+  type ExerciseActivities,
   type Habits,
   ProfileService,
   type SecondhandSmoke,
+  type SleepHabit,
   type TobaccoHabit,
   type VapingHabit,
 } from "@/client"
 import {
   zAlcoholHabit,
+  zDailyMovement,
+  zExerciseActivity,
+  zOtherExerciseActivity,
   zSecondhandSmoke,
+  zSleepHabit,
   zTobaccoHabit,
   zVapingHabit,
   zWoodSmokeHabit,
@@ -61,6 +68,14 @@ type VapingFrequency = NonNullable<VapingHabit["frequency"]>
 type Place = NonNullable<SecondhandSmoke["places"]>[number]
 /** "No me expongo": the exclusive chip of "¿Dónde?", sent as `exposed: false`. */
 type PlaceChoice = Place | "none"
+type Activity = keyof ExerciseActivities
+/** "No hago ejercicio": the exclusive chip of the exercise, sent as `does_exercise: false`. */
+type ActivityChoice = Activity | "none"
+type MainActivity = NonNullable<DailyMovement["main_activity"]>
+type Trouble = NonNullable<SleepHabit["trouble_falling_asleep"]>
+/** An activity's days and minutes, keyed by their 422 `loc` (design.md, Interface contract). */
+type ActivityNumberKey =
+  `exercise.activities.${Activity}.${"days_per_week" | "minutes_per_session"}`
 
 const ALCOHOL_STATUSES: readonly AlcoholStatus[] = ["never", "quit", "current"]
 const SMOKE_STATUSES: readonly SmokeStatus[] = ["never", "former", "current"]
@@ -87,6 +102,41 @@ const SIX_OR_MORE: readonly SixOrMore[] = [
 const VAPING_FREQUENCIES: readonly VapingFrequency[] = ["daily", "some_days"]
 const PLACES: readonly Place[] = ["home", "work_school", "other"]
 const YES_NO = ["yes", "no"] as const
+/** The catalog of activities, in its order (design.md, Interface contract). */
+const ACTIVITIES: readonly Activity[] = [
+  "walking",
+  "running",
+  "cycling",
+  "swimming",
+  "weights_gym",
+  "football_other_sport",
+  "yoga_pilates",
+  "dance",
+  "other",
+]
+const MAIN_ACTIVITIES: readonly MainActivity[] = [
+  "sitting",
+  "standing_walking",
+  "light_loads",
+  "heavy_work",
+]
+const TROUBLES: readonly Trouble[] = [
+  "never",
+  "some_days",
+  "most_days",
+  "every_day",
+]
+/** The active travel asks "No" before "Sí" (prototipo.html). */
+const NO_YES = ["no", "yes"] as const
+const daysKey = (activity: Activity): ActivityNumberKey =>
+  `exercise.activities.${activity}.days_per_week`
+const minutesKey = (activity: Activity): ActivityNumberKey =>
+  `exercise.activities.${activity}.minutes_per_session`
+/** "¿Cuál?" of "Otra": a text box, keyed by its `loc` like the numbers. */
+const OTHER_NAME = "exercise.activities.other.name"
+/** Its length, from the generated schema like the scales. */
+const OTHER_NAME_MAX =
+  zOtherExerciseActivity.shape.name.unwrap().unwrap().maxLength ?? undefined
 /**
  * "No recuerdo" (perfil-habitos-completitud design.md, Decision 1), stored in
  * the number's own field.
@@ -96,8 +146,9 @@ const UNKNOWN = "unknown" as const
 /**
  * What the screen holds while editing; numbers stay text until sent, and
  * `unknown` lists the boxes marked "No recuerdo" (their text stays empty).
+ * Each activity's days and minutes are held under their `loc`.
  */
-type Draft = {
+type Draft = Record<ActivityNumberKey, string> & {
   alcoholStatus: AlcoholStatus | null
   alcoholStartAge: string
   alcoholQuitAge: string
@@ -120,8 +171,21 @@ type Draft = {
   woodStartAge: string
   woodQuitAge: string
   woodHours: string
+  activities: ActivityChoice[]
+  otherName: string
+  mainActivity: MainActivity | null
+  activeTravel: boolean | null
+  activeTravelDays: string
+  sittingHours: string
+  sleepHours: string
+  troubleFallingAsleep: Trouble | null
+  troubleStayingAsleep: Trouble | null
   unknown: readonly NumberKey[]
 }
+
+/** The activities chosen, in catalog order ("No hago ejercicio" is not one). */
+const chosenActivities = (draft: Draft) =>
+  ACTIVITIES.filter((activity) => draft.activities.includes(activity))
 
 /** The draft entries that hold a number box's text. */
 type NumberDraftKey = {
@@ -148,10 +212,30 @@ function draftFrom(habits: Habits): Draft {
     vaping,
     secondhand_smoke: smoke,
     wood_smoke,
+    exercise,
+    daily_movement: movement,
+    sleep,
   } = habits
   let places: PlaceChoice[] = []
   if (smoke) places = smoke.exposed ? [...(smoke.places ?? [])] : ["none"]
+  const done = exercise?.activities ?? {}
+  let activities: ActivityChoice[] = []
+  if (exercise) {
+    activities = exercise.does_exercise
+      ? ACTIVITIES.filter((activity) => done[activity] != null)
+      : ["none"]
+  }
+  const activityNumbers = {} as Record<ActivityNumberKey, string>
+  for (const activity of ACTIVITIES) {
+    activityNumbers[daysKey(activity)] = numberText(
+      done[activity]?.days_per_week,
+    )
+    activityNumbers[minutesKey(activity)] = numberText(
+      done[activity]?.minutes_per_session,
+    )
+  }
   return {
+    ...activityNumbers,
     alcoholStatus: alcohol?.status ?? null,
     alcoholStartAge: numberText(alcohol?.start_age),
     alcoholQuitAge: numberText(alcohol?.quit_age),
@@ -174,6 +258,15 @@ function draftFrom(habits: Habits): Draft {
     woodStartAge: numberText(wood_smoke?.start_age),
     woodQuitAge: numberText(wood_smoke?.quit_age),
     woodHours: numberText(wood_smoke?.hours_per_day),
+    activities,
+    otherName: done.other?.name ?? "",
+    mainActivity: movement?.main_activity ?? null,
+    activeTravel: movement?.active_travel ?? null,
+    activeTravelDays: numberText(movement?.active_travel_days),
+    sittingHours: numberText(movement?.sitting_hours),
+    sleepHours: numberText(sleep?.hours),
+    troubleFallingAsleep: sleep?.trouble_falling_asleep ?? null,
+    troubleStayingAsleep: sleep?.trouble_staying_asleep ?? null,
     unknown: unknownOf(habits),
   }
 }
@@ -183,9 +276,14 @@ function draftFrom(habits: Habits): Draft {
  * client error and a server one land on the same box. Each scale comes from
  * the generated schema (src/client/zod.gen.ts, design.md Decision 6), never
  * written here; `age` ones are also checked against the patient's current
- * age. `hint`: a help line under the label, linked to the box.
+ * age. `hint`: a help line under the label, linked to the box. An
+ * activity's boxes (`activity`) are four levels deep, like their `loc`.
  */
 type NumberKey =
+  | ActivityNumberKey
+  | "daily_movement.active_travel_days"
+  | "daily_movement.sitting_hours"
+  | "sleep.hours"
   | "alcohol.start_age"
   | "alcohol.quit_age"
   | "tobacco.cigarettes_per_day"
@@ -227,6 +325,7 @@ type NumberField = {
   max: number
   age: boolean
   hint?: string
+  activity?: Activity
 }
 
 function numberFieldOf(
@@ -245,7 +344,44 @@ function numberFieldOf(
   }
 }
 
+/**
+ * Each activity's days and minutes, with the scale of its own schema ("Otra"
+ * has one of its own); they share their question and are named after their
+ * activity on screen (R7).
+ */
+function activityFields(): Record<ActivityNumberKey, NumberField> {
+  const fields = {} as Record<ActivityNumberKey, NumberField>
+  for (const activity of ACTIVITIES) {
+    const { shape } =
+      activity === "other" ? zOtherExerciseActivity : zExerciseActivity
+    fields[daysKey(activity)] = {
+      ...numberFieldOf(daysKey(activity), shape.days_per_week),
+      label: "daysPerWeek",
+      activity,
+    }
+    fields[minutesKey(activity)] = {
+      ...numberFieldOf(minutesKey(activity), shape.minutes_per_session),
+      label: "minutesPerSession",
+      activity,
+    }
+  }
+  return fields
+}
+
 const NUMBER_FIELDS: Record<NumberKey, NumberField> = {
+  ...activityFields(),
+  "daily_movement.active_travel_days": numberFieldOf(
+    "activeTravelDays",
+    zDailyMovement.shape.active_travel_days,
+  ),
+  "daily_movement.sitting_hours": numberFieldOf(
+    "sittingHours",
+    zDailyMovement.shape.sitting_hours,
+    { hint: "sittingHoursHint" },
+  ),
+  "sleep.hours": numberFieldOf("sleepHours", zSleepHabit.shape.hours, {
+    hint: "sleepHoursHint",
+  }),
   "alcohol.start_age": numberFieldOf(
     "alcoholStartAge",
     zAlcoholHabit.shape.start_age,
@@ -323,7 +459,10 @@ function blurKeys(key: NumberKey): NumberKey[] {
 
 const ongoing = (status: string | null) => !!status && status !== "never"
 
-/** The number boxes on screen: only the questions that apply (C-1…C-4, C-10…C-12). */
+/**
+ * The number boxes on screen: only the questions that apply (C-1…C-5,
+ * C-10…C-12; the day's movement and the sleep of actividad-sueno).
+ */
 function visibleNumbers(draft: Draft): NumberKey[] {
   const keys: NumberKey[] = []
   if (ongoing(draft.alcoholStatus)) keys.push("alcohol.start_age")
@@ -348,6 +487,11 @@ function visibleNumbers(draft: Draft): NumberKey[] {
     if (draft.woodStatus === "former") keys.push("wood_smoke.quit_age")
     keys.push("wood_smoke.hours_per_day")
   }
+  for (const activity of chosenActivities(draft)) {
+    keys.push(daysKey(activity), minutesKey(activity))
+  }
+  if (draft.activeTravel) keys.push("daily_movement.active_travel_days")
+  keys.push("daily_movement.sitting_hours", "sleep.hours")
   return keys
 }
 
@@ -361,6 +505,9 @@ const BLOCK_ANCHOR: Record<string, string> = {
   vaping: "vaping.status",
   secondhand_smoke: "secondhand_smoke.places",
   wood_smoke: "wood_smoke.status",
+  exercise: "exercise.activities",
+  daily_movement: "daily_movement.main_activity",
+  sleep: "sleep.hours",
 }
 
 const ANCHOR_KEYS = new Set(Object.values(BLOCK_ANCHOR))
@@ -373,11 +520,20 @@ const DRINKING_CHIPS = [
   "alcohol.mostly_weekends",
 ] as const
 
+/** The chip questions always on screen that are not their block's anchor. */
+const STANDING_CHIPS = [
+  "daily_movement.active_travel",
+  "sleep.trouble_falling_asleep",
+  "sleep.trouble_staying_asleep",
+] as const
+
 /** Every control on screen with its own error slot, besides the anchors. */
 function visibleFields(draft: Draft): string[] {
   const fields: string[] = visibleNumbers(draft)
   if (draft.alcoholStatus === "current") fields.push(...DRINKING_CHIPS)
   if (draft.vapingStatus === "current") fields.push("vaping.frequency")
+  if (chosenActivities(draft).includes("other")) fields.push(OTHER_NAME)
+  fields.push(...STANDING_CHIPS)
   return fields
 }
 
@@ -415,11 +571,24 @@ const HABITS_REQUIRED: Record<
     former: [[], ["start_age", "quit_age", "hours_per_day"]],
     current: [["hours_per_day"], ["start_age"]],
   },
+  // perfil-habitos-actividad-sueno; the sleep requires nothing.
+  exercise: { does_exercise: [["activities"], []] },
+  daily_movement: { active_travel: [["active_travel_days"], []] },
 }
 
-/** A missing answer whose message predates the table keeps it (backend's HABITS_MISSING_MESSAGE). */
+/**
+ * What each chosen activity requires, one level deeper than its block
+ * (backend's ACTIVITY_REQUIRED and OTHER_ACTIVITY_REQUIRED); none admits "No
+ * recuerdo" (actividad-sueno design.md, Decision 6).
+ */
+const ACTIVITY_REQUIRED = ["days_per_week", "minutes_per_session"] as const
+const OTHER_ACTIVITY_REQUIRED = ["name", ...ACTIVITY_REQUIRED] as const
+
+/** A missing answer whose message is not the generic one keeps its own (backend's HABITS_MISSING_MESSAGE, ACTIVITY_MISSING_MESSAGE). */
 const MISSING_MESSAGE: Record<string, string> = {
   "secondhand_smoke.places": "habits.validation.missingPlaces",
+  "exercise.activities": "habits.validation.missingActivities",
+  [OTHER_NAME]: "habits.validation.missingOtherName",
 }
 
 /** `exposed` comes from the chips: a place → true, "No me expongo" → false. */
@@ -436,6 +605,8 @@ function answersOf(draft: Draft): [string, string | null][] {
     ["vaping", someDays ? "current_some_days" : draft.vapingStatus],
     ["secondhand_smoke", exposedOf(draft) ? "exposed" : null],
     ["wood_smoke", draft.woodStatus],
+    ["exercise", chosenActivities(draft).length ? "does_exercise" : null],
+    ["daily_movement", draft.activeTravel ? "active_travel" : null],
   ]
 }
 
@@ -449,6 +620,13 @@ function requiredOf(draft: Draft): Map<string, boolean> {
     ]
     for (const field of plain) required.set(`${block}.${field}`, false)
     for (const field of orUnknown) required.set(`${block}.${field}`, true)
+  }
+  for (const activity of chosenActivities(draft)) {
+    const fields =
+      activity === "other" ? OTHER_ACTIVITY_REQUIRED : ACTIVITY_REQUIRED
+    for (const field of fields) {
+      required.set(`exercise.activities.${activity}.${field}`, false)
+    }
   }
   return required
 }
@@ -470,6 +648,7 @@ const CHIP_ANSWERS: Record<string, (draft: Draft) => unknown> = {
   "vaping.frequency": (draft) => draft.vapingFrequency,
   "secondhand_smoke.places": (draft) =>
     draft.places.filter((place) => place !== "none"),
+  "exercise.activities": chosenActivities,
 }
 
 /**
@@ -484,6 +663,8 @@ function missingOf(draft: Draft, t: TFunction): Record<string, string> {
       const key = loc as NumberKey
       answered =
         !!draft[NUMBER_FIELDS[key].draft].trim() || isUnknown(draft, key)
+    } else if (loc === OTHER_NAME) {
+      answered = !!draft.otherName.trim()
     } else {
       const answer = CHIP_ANSWERS[loc]?.(draft)
       answered = answer != null && !(Array.isArray(answer) && !answer.length)
@@ -525,6 +706,12 @@ function screenOf(draft: Draft): string {
       draft.vapingStatus === "current" ? draft.vapingFrequency : null,
     places: [...draft.places].sort(),
     wood: draft.woodStatus,
+    activities: [...draft.activities].sort(),
+    otherName: chosenActivities(draft).includes("other")
+      ? draft.otherName
+      : null,
+    movement: [draft.mainActivity, draft.activeTravel],
+    sleep: [draft.troubleFallingAsleep, draft.troubleStayingAsleep],
     numbers: visibleNumbers(draft).map(
       (key) =>
         [
@@ -585,7 +772,9 @@ const currentToken = () => localStorage.getItem("access_token")
  * (`fields`: a number box or a chip group, review R18), ["body", block] or a
  * field that is hidden or has no control of its own (`exposed`) to the
  * block's anchor, anything else under the form. Null when the error is not a
- * 422 with a `detail` list.
+ * 422 with a `detail` list. An activity's field is deeper (["body",
+ * "exercise", "activities", type, field]): the longest `loc` with a control
+ * on screen wins.
  */
 function serverErrors(
   err: unknown,
@@ -598,11 +787,12 @@ function serverErrors(
   const errors: Record<string, string> = {}
   for (const item of detail as { loc?: unknown[]; msg?: string }[]) {
     const loc = (item.loc ?? []).map(String)
-    const key = loc.slice(1, 3).join(".")
     let target = "_form"
-    if (fields.includes(key) || ANCHOR_KEYS.has(key)) {
-      target = key
-    } else if (loc[0] === "body" && BLOCK_ANCHOR[loc[1]]) {
+    for (let end = loc.length; end >= 3 && target === "_form"; end--) {
+      const key = loc.slice(1, end).join(".")
+      if (fields.includes(key) || ANCHOR_KEYS.has(key)) target = key
+    }
+    if (target === "_form" && loc[0] === "body" && BLOCK_ANCHOR[loc[1]]) {
       target = BLOCK_ANCHOR[loc[1]]
     }
     errors[target] ??= item.msg ?? ""
@@ -673,7 +863,8 @@ function buildBody(
   }
 
   const number = (key: NumberKey) => numbers[key] ?? null
-  // The boxes that never admit "No recuerdo" (days).
+  // The boxes that never admit "No recuerdo" (days, and every box of the
+  // exercise, the day and the sleep).
   const count = (key: NumberKey) => {
     const value = numbers[key]
     return typeof value === "number" ? value : null
@@ -681,6 +872,23 @@ function buildBody(
   const exposed = exposedOf(draft)
   const drinksNow = draft.alcoholStatus === "current"
   const vapesNow = draft.vapingStatus === "current"
+  // An activity not chosen is not sent; with none chosen and no "No hago
+  // ejercicio" the block is unanswered (null), like "¿Dónde?".
+  const chosen: ExerciseActivities = {}
+  for (const activity of chosenActivities(draft)) {
+    chosen[activity] = {
+      days_per_week: count(daysKey(activity)),
+      minutes_per_session: count(minutesKey(activity)),
+    }
+  }
+  if (chosen.other) chosen.other.name = draft.otherName.trim() || null
+  let exercise: Habits["exercise"] = null
+  if (draft.activities.includes("none")) exercise = { does_exercise: false }
+  else if (Object.keys(chosen).length) {
+    exercise = { does_exercise: true, activities: chosen }
+  }
+  const sittingHours = count("daily_movement.sitting_hours")
+  const sleepHours = count("sleep.hours")
   const body: Habits = {
     alcohol: draft.alcoholStatus
       ? {
@@ -728,13 +936,54 @@ function buildBody(
           hours_per_day: number("wood_smoke.hours_per_day"),
         }
       : null,
+    exercise,
+    daily_movement:
+      draft.mainActivity !== null ||
+      draft.activeTravel !== null ||
+      sittingHours !== null
+        ? {
+            main_activity: draft.mainActivity,
+            active_travel: draft.activeTravel,
+            active_travel_days: count("daily_movement.active_travel_days"),
+            sitting_hours: sittingHours,
+          }
+        : null,
+    sleep:
+      sleepHours !== null ||
+      draft.troubleFallingAsleep !== null ||
+      draft.troubleStayingAsleep !== null
+        ? {
+            hours: sleepHours,
+            trouble_falling_asleep: draft.troubleFallingAsleep,
+            trouble_staying_asleep: draft.troubleStayingAsleep,
+          }
+        : null,
   }
   return { body, errors, missing: missingOf(draft, t) }
 }
 
 /**
+ * "Total de lo anotado" (actividad-sueno design.md, Decision 4): days ×
+ * minutes of each chosen activity whose two numbers are valid, as they would
+ * be sent; null when none has them. Shown on screen only, never sent nor
+ * compared with anything (C-6).
+ */
+function weeklyTotalOf(body: Habits): number | null {
+  let total: number | null = null
+  for (const answer of Object.values(body.exercise?.activities ?? {})) {
+    const days = answer?.days_per_week
+    const minutes = answer?.minutes_per_session
+    if (typeof days === "number" && typeof minutes === "number") {
+      total = (total ?? 0) + days * minutes
+    }
+  }
+  return total
+}
+
+/**
  * The habits questionnaire, /perfil/habitos (design.md, Interface contract →
- * Frontend): four blocks, each question only when it applies. Nothing is
+ * Frontend): four blocks, and the exercise, the day's movement and the sleep
+ * of perfil-habitos-actividad-sueno, each question only when it applies. Nothing is
  * sent until "Guardar" (Decision 8): one PUT through the mutation, so the
  * 401/403 handling of main.tsx applies. "Guardar" and "Cancelar" are
  * aria-disabled while that PUT is in flight (D20), "Guardar" reads
@@ -948,9 +1197,13 @@ function HabitsForm() {
     const hiddenPairs = AGE_PAIRS.filter(([, end]) => !shown.has(end))
     const missing = missingOf(next, t)
     const missingTexts = new Set(
-      ["missing", "missingOrUnknown", "missingPlaces"].map((k) =>
-        t(`habits.validation.${k}`),
-      ),
+      [
+        "missing",
+        "missingOrUnknown",
+        "missingPlaces",
+        "missingActivities",
+        "missingOtherName",
+      ].map((k) => t(`habits.validation.${k}`)),
     )
     setErrors((prev) => {
       const kept: Record<string, string> = {}
@@ -1058,6 +1311,22 @@ function HabitsForm() {
     settle(key, next)
   }
 
+  /**
+   * "¿Cuál?" of "Otra": its only error is the missing name from "Guardar",
+   * which goes as soon as something is written (C-17); nothing is checked on
+   * leaving it.
+   */
+  const changeOtherName = (text: string) => {
+    if (sending.current) return
+    update({ ...draftRef.current, otherName: text })
+    if (!text.trim()) return
+    setErrors((prev) => {
+      const kept = { ...prev }
+      delete kept[OTHER_NAME]
+      return kept
+    })
+  }
+
   const handleSubmit = (event: FormEvent) => {
     event.preventDefault()
     if (sending.current) return
@@ -1129,7 +1398,8 @@ function HabitsForm() {
 
   /**
    * The box, and under it "No recuerdo" where the table admits it (C-16): a
-   * toggle named after its question so each one is told apart (R7).
+   * toggle named after its question so each one is told apart (R7). An
+   * activity's box is named after its activity too, for the same reason.
    */
   const numberField = (key: NumberKey) => {
     if (!visible.includes(key)) return null
@@ -1137,6 +1407,12 @@ function HabitsForm() {
     const id = `${idPrefix}-${key}`
     const hintId = field.hint ? `${id}-hint` : undefined
     const label = t(`habits.fields.${field.label}`)
+    const spoken = field.activity
+      ? t("habits.activityField", {
+          field: label,
+          activity: t(`habits.options.activities.${field.activity}`),
+        })
+      : undefined
     const unknown = isUnknown(draft, key)
     return (
       <div key={key} className="grid gap-1.5">
@@ -1154,6 +1430,7 @@ function HabitsForm() {
           value={draft[field.draft]}
           // While saving the box keeps what was sent (R2-3).
           readOnly={busy}
+          aria-label={spoken}
           aria-invalid={!!errors[key] || undefined}
           aria-describedby={
             [hintId, errors[key] ? errorId(key) : undefined]
@@ -1192,7 +1469,34 @@ function HabitsForm() {
     )
   }
 
-  /** Single-choice chips with their error under them (`key` = its `loc`). */
+  /** "¿Cuál?" of "Otra", before its days and minutes (no "No recuerdo"). */
+  const otherNameField = () => {
+    const id = `${idPrefix}-${OTHER_NAME}`
+    const invalid = !!errors[OTHER_NAME]
+    return (
+      <div className="grid gap-1.5">
+        <Label htmlFor={id}>{t("habits.fields.otherName")}</Label>
+        <Input
+          id={id}
+          autoComplete="off"
+          className="max-w-xs"
+          maxLength={OTHER_NAME_MAX}
+          value={draft.otherName}
+          readOnly={busy}
+          aria-invalid={invalid || undefined}
+          aria-describedby={invalid ? errorId(OTHER_NAME) : undefined}
+          onChange={(e) => changeOtherName(e.target.value)}
+        />
+        {fieldError(OTHER_NAME)}
+      </div>
+    )
+  }
+
+  /**
+   * Single-choice chips with their error under them (`key` = its `loc`).
+   * `long`: options longer than a phone's width wrap inside their chip
+   * instead of widening the page (ChipGroup stays untouched).
+   */
   const chips = <V extends string>(
     key: string,
     label: string,
@@ -1200,10 +1504,19 @@ function HabitsForm() {
     optionKey: string,
     value: V | null,
     onChange: (next: V | null) => void,
-    { showLabel = true, hintId }: { showLabel?: boolean; hintId?: string } = {},
+    {
+      showLabel = true,
+      hintId,
+      long = false,
+    }: { showLabel?: boolean; hintId?: string; long?: boolean } = {},
   ) => (
     <div className="grid gap-2">
       <ChipGroup
+        className={
+          long
+            ? "[&_button]:h-auto [&_button]:max-w-full [&_button]:whitespace-normal [&_button]:py-1.5 [&_button]:text-left"
+            : undefined
+        }
         label={label}
         showLabel={showLabel}
         options={options.map((option) => ({
@@ -1249,6 +1562,11 @@ function HabitsForm() {
   // second tap on the chosen one takes the answer back (D18; review R14).
   const weekends =
     draft.mostlyWeekends === null ? null : draft.mostlyWeekends ? "yes" : "no"
+  const movementHintId = `${idPrefix}-movement-hint`
+  // The active travel too: true | false | null, No / Sí chips.
+  const travel =
+    draft.activeTravel === null ? null : draft.activeTravel ? "yes" : "no"
+  const total = weeklyTotalOf(build(draft).body)
 
   return (
     <form
@@ -1430,6 +1748,102 @@ function HabitsForm() {
           {numberField("wood_smoke.start_age")}
           {numberField("wood_smoke.quit_age")}
           {numberField("wood_smoke.hours_per_day")}
+        </>,
+      )}
+
+      {/* Each chosen activity, in catalog order, asks its own days and
+          minutes; the total sums what is written and is a live region, so
+          it is heard as it changes (C-5, C-6). */}
+      {block(
+        t("habits.blocks.exercise"),
+        null,
+        <>
+          <div className="grid gap-2">
+            <ChipMultiGroup
+              label={t("habits.fields.exercise")}
+              options={ACTIVITIES.map((activity) => ({
+                value: activity,
+                label: t(`habits.options.activities.${activity}`),
+              }))}
+              exclusive={{
+                value: "none" as const,
+                label: t("habits.options.activities.none"),
+              }}
+              values={draft.activities}
+              onChange={(next) => choose("activities", next)}
+              invalid={!!errors["exercise.activities"]}
+              describedBy={
+                errors["exercise.activities"]
+                  ? errorId("exercise.activities")
+                  : undefined
+              }
+            />
+            {fieldError("exercise.activities")}
+          </div>
+          {chosenActivities(draft).map((activity) => (
+            <div key={activity} className="grid gap-4 border-l-2 pl-3">
+              <p className="text-sm font-semibold">
+                {t(`habits.options.activities.${activity}`)}
+              </p>
+              {activity === "other" && otherNameField()}
+              {numberField(daysKey(activity))}
+              {numberField(minutesKey(activity))}
+            </div>
+          ))}
+          <p role="status" className="text-sm font-medium empty:hidden">
+            {total === null ? null : t("habits.weeklyTotal", { count: total })}
+          </p>
+        </>,
+      )}
+
+      {block(
+        t("habits.blocks.movement"),
+        { id: movementHintId, text: t("habits.fields.movementHint") },
+        <>
+          {chips(
+            "daily_movement.main_activity",
+            t("habits.fields.mainActivity"),
+            MAIN_ACTIVITIES,
+            "mainActivity",
+            draft.mainActivity,
+            (next) => choose("mainActivity", next),
+            { hintId: movementHintId, long: true },
+          )}
+          {chips(
+            "daily_movement.active_travel",
+            t("habits.fields.activeTravel"),
+            NO_YES,
+            "yesNo",
+            travel,
+            (next) =>
+              choose("activeTravel", next === null ? null : next === "yes"),
+          )}
+          {numberField("daily_movement.active_travel_days")}
+          {numberField("daily_movement.sitting_hours")}
+        </>,
+      )}
+
+      {block(
+        t("habits.blocks.sleep"),
+        null,
+        <>
+          {numberField("sleep.hours")}
+          {chips(
+            "sleep.trouble_falling_asleep",
+            t("habits.fields.troubleFallingAsleep"),
+            TROUBLES,
+            "trouble",
+            draft.troubleFallingAsleep,
+            (next) => choose("troubleFallingAsleep", next),
+          )}
+          {chips(
+            "sleep.trouble_staying_asleep",
+            t("habits.fields.troubleStayingAsleep"),
+            TROUBLES,
+            "trouble",
+            draft.troubleStayingAsleep,
+            (next) => choose("troubleStayingAsleep", next),
+          )}
         </>,
       )}
 

@@ -343,6 +343,9 @@
     "saving": "Guardando…",
     "dontRemember": "No recuerdo",
     "dontRememberFor": "No recuerdo: {{label}}",
+    "activityField": "{{field}}: {{activity}}",
+    "weeklyTotal_one": "Total de lo anotado: {{count}} minuto por semana",
+    "weeklyTotal_other": "Total de lo anotado: {{count}} minutos por semana",
     "savedToast": "Hábitos guardados",
     "discardedToast": "Se descartaron los cambios",
     "leave": {
@@ -355,7 +358,10 @@
       "alcohol": "Alcohol",
       "tobacco": "Tabaco",
       "secondhand": "Humo de tabaco de otras personas",
-      "wood": "Humo de leña"
+      "wood": "Humo de leña",
+      "exercise": "Ejercicio",
+      "movement": "Movimiento en tu día",
+      "sleep": "Sueño"
     },
     "fields": {
       "alcoholStartAge": "¿A qué edad empezaste a tomar?",
@@ -380,7 +386,20 @@
       "woodHint": "Cocinar o calentar la casa con leña o carbón.",
       "woodStartAge": "¿A qué edad empezaste a exponerte?",
       "woodQuitAge": "¿A qué edad dejaste de exponerte?",
-      "woodHours": "¿Cuántas horas al día, en promedio?"
+      "woodHours": "¿Cuántas horas al día, en promedio?",
+      "exercise": "¿Qué ejercicio haces?",
+      "otherName": "¿Cuál?",
+      "minutesPerSession": "Minutos cada vez",
+      "movementHint": "Esto no se suma a tu ejercicio: el médico lo lee aparte.",
+      "mainActivity": "En tu trabajo o actividad principal (casa, escuela…), ¿cómo pasas el día?",
+      "activeTravel": "¿Caminas o vas en bici al menos 10 minutos seguidos para ir a algún lado?",
+      "activeTravelDays": "¿Cuántos días por semana?",
+      "sittingHours": "En un día normal, ¿cuántas horas pasas sentado o reclinado?",
+      "sittingHoursHint": "Sin contar el tiempo que duermes.",
+      "sleepHours": "En promedio, ¿cuántas horas duermes en un día?",
+      "sleepHoursHint": "Cuenta las siestas. Si son 6 y media, escribe 7.",
+      "troubleFallingAsleep": "En los últimos 30 días, ¿con qué frecuencia te costó dormirte?",
+      "troubleStayingAsleep": "En los últimos 30 días, ¿con qué frecuencia te costó seguir durmiendo o despertaste demasiado temprano?"
     },
     "options": {
       "alcoholStatus": {
@@ -426,6 +445,30 @@
       "yesNo": {
         "yes": "Sí",
         "no": "No"
+      },
+      "activities": {
+        "walking": "Caminar",
+        "running": "Correr",
+        "cycling": "Bicicleta",
+        "swimming": "Nadar",
+        "weights_gym": "Pesas o gimnasio",
+        "football_other_sport": "Fútbol u otro deporte",
+        "yoga_pilates": "Yoga o pilates",
+        "dance": "Baile",
+        "other": "Otra",
+        "none": "No hago ejercicio"
+      },
+      "mainActivity": {
+        "sitting": "Casi todo sentado",
+        "standing_walking": "De pie o caminando, sin cargar cosas",
+        "light_loads": "Cargando cosas ligeras o subiendo escaleras seguido",
+        "heavy_work": "Trabajo pesado o cargando cosas pesadas"
+      },
+      "trouble": {
+        "never": "Nunca",
+        "some_days": "Algunos días",
+        "most_days": "Casi todos los días",
+        "every_day": "Todos los días"
       }
     },
     "validation": {
@@ -436,7 +479,9 @@
       "startAfterEnd": "No puede ser mayor que la edad en que terminó",
       "missing": "Contesta esta pregunta.",
       "missingOrUnknown": "Contesta esta pregunta o marca «No recuerdo».",
-      "missingPlaces": "Elige dónde, o «No me expongo»"
+      "missingPlaces": "Elige dónde, o «No me expongo»",
+      "missingActivities": "Elige al menos una actividad, o «No hago ejercicio»",
+      "missingOtherName": "Escribe cuál."
     }
   },
   "validation": {
