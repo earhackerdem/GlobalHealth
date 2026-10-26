@@ -1270,8 +1270,17 @@ function HabitsForm() {
         return next
       })
     }
-    if (pressing.current) afterPress.current = refresh
-    else refresh()
+    if (pressing.current) {
+      // A second box left before the press ends (keys can beat the timer)
+      // keeps the first one's refresh instead of replacing it.
+      const pending = afterPress.current
+      afterPress.current = pending
+        ? () => {
+            pending()
+            refresh()
+          }
+        : refresh
+    } else refresh()
   }
 
   /**
