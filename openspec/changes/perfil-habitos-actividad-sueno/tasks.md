@@ -36,9 +36,9 @@ are `single`. `make tdd-check` requires one `test:` commit per `test→impl` gro
 
 ## 2. Frontend: los tres bloques en la pantalla · test→impl
 
-- [ ] 2.1 **Tester.** Amplía `frontend/tests/profile-habits.spec.ts` a partir de la parte Playwright del test plan
+- [x] 2.1 **Tester.** Amplía `frontend/tests/profile-habits.spec.ts` a partir de la parte Playwright del test plan
   (filas 1–10, 12, 13) y del Interface contract. Verificación: rojo por lo que falta. Commit `test:` solo.
-- [ ] 2.2 **Implementer.** `HabitsForm.tsx` y `profile.json`. Verificación: los tests de 2.1 verdes sin tocarlos
+- [x] 2.2 **Implementer.** `HabitsForm.tsx` y `profile.json`. Verificación: los tests de 2.1 verdes sin tocarlos
   (chromium y s26-ultra); `tsc` y `biome` limpios; `grep` sin límites literales en `HabitsForm.tsx`.
 - [ ] 2.3 **Orquestador.** Rojo y verde de nuevo, `make tdd-check`, imagen reconstruida y suite completa como CI,
   números en evidence.md.
