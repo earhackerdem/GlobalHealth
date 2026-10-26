@@ -1,0 +1,554 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Ejercicio, día y sueño</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<style>
+/* Mismos tokens que product/prototipos/perfil-secciones.html */
+:root{
+  --bg:#f7f5f2; --surface:#ffffff; --fg:#2b2a27; --muted:#6f6a61;
+  --accent:#0f766e; --accent-fg:#ffffff; --line:#e4e0d8; --warn-bg:#fdf3e2; --warn-fg:#7a5410;
+  --chip:#eef4f3; --danger:#b42318; --b-tag:#5b4bb7; --ok:#166534;
+  --font-body:"Atkinson Hyperlegible",system-ui,sans-serif;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#171a19; --surface:#202423; --fg:#e8e6e1; --muted:#a39d92;
+  --accent:#2dd4bf; --accent-fg:#0c2b27; --line:#343a38; --warn-bg:#3a2f14; --warn-fg:#e8c27a;
+  --chip:#263230; --danger:#f97066; --b-tag:#a99bf5; --ok:#86efac; color-scheme:dark
+}}
+:root[data-theme="dark"]{
+  --bg:#171a19; --surface:#202423; --fg:#e8e6e1; --muted:#a39d92;
+  --accent:#2dd4bf; --accent-fg:#0c2b27; --line:#343a38; --warn-bg:#3a2f14; --warn-fg:#e8c27a;
+  --chip:#263230; --danger:#f97066; --b-tag:#a99bf5; --ok:#86efac; color-scheme:dark
+}
+body{background:var(--bg); color:var(--fg); font:16px/1.5 var(--font-body);
+  padding-left:max(16px, env(safe-area-inset-left, 0px)); padding-right:max(16px, env(safe-area-inset-right, 0px));
+  padding-block:8px 64px; max-width:620px; margin:0 auto}
+h1{font-size:1.35rem; margin:.4rem 0 0; text-wrap:balance}
+h2{font-size:1.05rem; margin:0 0 4px; text-wrap:balance}
+p{margin:.35rem 0}
+.sub{color:var(--muted); font-size:.9rem}
+.banner{background:var(--warn-bg); color:var(--warn-fg); border-radius:8px; padding:8px 12px; font-size:.85rem; margin:12px 0}
+button{font:inherit; border:1px solid var(--line); background:var(--surface); color:var(--fg);
+  border-radius:10px; padding:10px 14px; cursor:pointer}
+button.primary{background:var(--accent); color:var(--accent-fg); border-color:transparent; font-weight:700}
+button.link{border:none; background:none; color:var(--accent); padding:4px; font-weight:600}
+button:focus-visible,input:focus-visible{outline:2px solid var(--accent); outline-offset:2px}
+.actions{display:flex; flex-wrap:wrap; gap:8px; margin:14px 0; align-items:center}
+.card{background:var(--surface); border:1px solid var(--line); border-radius:12px; padding:14px; min-width:0; margin:10px 0}
+.pill{display:inline-block; border-radius:999px; padding:1px 10px; font-size:.78rem; font-weight:700}
+.pill.vacia{background:var(--chip); color:var(--muted)}
+.pill.datos{background:var(--accent); color:var(--accent-fg)}
+label,.lbl{font-size:.85rem; font-weight:700; display:block; margin-bottom:3px}
+input{font:inherit; width:100%; max-width:12rem; box-sizing:border-box; border:1px solid var(--line);
+  border-radius:8px; padding:8px 10px; background:var(--bg); color:var(--fg)}
+input[aria-invalid="true"]{border-color:var(--danger)}
+.campo{margin:12px 0}
+.unk{margin-top:6px}
+.unk button{border-radius:999px; padding:4px 12px; font-size:.82rem}
+.unk button[aria-pressed="true"]{background:var(--accent); color:var(--accent-fg); border-color:transparent}
+.err-grupo{font-size:.82rem; color:var(--danger); margin-top:4px}
+.hint{font-size:.8rem; color:var(--muted); margin-top:2px}
+.err{font-size:.82rem; color:var(--danger); margin-top:3px}
+fieldset{border:none; padding:0; margin:12px 0}
+legend{font-size:.85rem; font-weight:700; padding:0; margin-bottom:3px}
+.chips{display:flex; flex-wrap:wrap; gap:6px}
+.chips button{border-radius:999px; padding:5px 12px; font-size:.85rem}
+.chips button[aria-pressed="true"]{background:var(--accent); color:var(--accent-fg); border-color:transparent}
+.sub-bloque{border-left:3px solid var(--line); padding-left:12px; margin-top:8px}
+.aviso-guardar{font-size:.9rem; font-weight:600; color:var(--fg); background:var(--chip); border-radius:8px; padding:6px 10px}
+button[aria-disabled="true"]{opacity:.55; cursor:not-allowed}
+.velo{position:fixed; inset:0; background:color-mix(in srgb, var(--fg) 45%, transparent); display:grid; place-items:center;
+  padding-left:max(16px, env(safe-area-inset-left, 0px)); padding-right:max(16px, env(safe-area-inset-right, 0px))}
+.dialogo{background:var(--surface); color:var(--fg); border-radius:14px; padding:18px; max-width:24rem; width:100%;
+  box-sizing:border-box; border:1px solid var(--line)}
+.dialogo h2{font-size:1.1rem}
+.toast{position:fixed; left:50%; transform:translateX(-50%); bottom:calc(16px + env(safe-area-inset-bottom, 0px));
+  background:var(--fg); color:var(--bg); border-radius:10px; padding:10px 16px; font-size:.9rem}
+.ac{display:none; font-size:.7rem; font-weight:700; letter-spacing:.03em; background:var(--b-tag); color:var(--bg);
+  border-radius:6px; padding:0 6px; margin-left:6px; vertical-align:middle}
+.show-ac .ac{display:inline-block}
+.panel{font-size:.82rem; color:var(--muted); border:1px dashed var(--line); border-radius:10px; padding:8px 12px; margin:10px 0}
+.panel label{display:inline; font-weight:400; font-size:.82rem}
+.panel input{width:auto}
+details{margin:8px 0} summary{cursor:pointer; font-weight:700}
+ul{padding-left:1.2rem; margin:.3rem 0}
+</style>
+
+<div class="banner">Prototipo local de <strong>perfil-habitos-actividad-sueno</strong> (C2a: C-5, C-7, C-8). Datos de
+ejemplo: paciente nacida el 15/03/1990, hoy con 36 años. El "servidor" es simulado en la página. Los bloques nuevos van
+después del humo de leña.</div>
+
+<details>
+  <summary>Historia y criterios</summary>
+  <p><em>Como paciente, quiero contar mi ejercicio, cómo se mueve mi día y cómo duermo, con el detalle que el médico
+  pregunta, para que no quede en un "sí hago ejercicio" o "duermo bien".</em></p>
+  <ul>
+    <li><strong>C-5</strong> Ejercicio como lista de actividades, cada una con días por semana y minutos cada vez, o
+      «No hago ejercicio»; se ve el total de lo anotado en minutos por semana, sin compararlo con nada.</li>
+    <li><strong>C-7</strong> Movimiento del día, aparte del ejercicio y sin sumarse: cómo pasas el día (4 niveles,
+      NHANES), si caminas o vas en bici para ir a algún lado (con los días) y las horas sentado.</li>
+    <li><strong>C-8</strong> Sueño: horas en un día (24 h) y, por separado, qué tan seguido te costó dormirte y seguir
+      durmiendo en los últimos 30 días (NHIS).</li>
+    <li><strong>C-15</strong> Lo que una respuesta abre se contesta antes de guardar; nada de esto tiene «No recuerdo».</li>
+    <li><strong>C-6</strong> La app no califica: ni el total ni el sueño se comparan con ninguna recomendación.</li>
+  </ul>
+</details>
+
+<div class="panel">
+  <label><input type="checkbox" id="ver-ac"> Mostrar criterios</label> ·
+  <label><input type="checkbox" id="lento"> Guardado lento (3 s)</label> ·
+  Guardados recibidos por el servidor: <strong id="contador">0</strong> ·
+  <button class="link" id="a-medias">Simular: caminar 5 × 30 ya guardado</button>
+</div>
+
+<main id="app"></main>
+
+<script>
+// "Contrato" (lo que el frontend tomará de zod.gen.ts): límites de cada número.
+const ESCALA = {
+  "alcohol.start_age": [0, 130], "alcohol.quit_age": [0, 130],
+  "tobacco.cigarettes_per_day": [1, 100], "tobacco.start_age": [0, 130], "tobacco.quit_age": [0, 130],
+  "vaping.start_age": [0, 130], "vaping.quit_age": [0, 130], "vaping.days_last_30": [1, 30],
+  "secondhand.days_per_week": [1, 7],
+  "wood.start_age": [0, 130], "wood.quit_age": [0, 130], "wood.hours_per_day": [1, 24],
+  "move.travel_days": [1, 7], "move.sitting_hours": [0, 24], "sleep.hours": [1, 24],
+};
+// Ejercicio (C-5): un chip por actividad; cada una con días (1 a 7) y minutos cada vez (1 a 600).
+const ACTIVIDADES = [["walking","Caminar"],["running","Correr"],["cycling","Bicicleta"],["swimming","Nadar"],
+  ["weights_gym","Pesas o gimnasio"],["football_other_sport","Fútbol u otro deporte"],["yoga_pilates","Yoga o pilates"],
+  ["dance","Baile"],["other","Otra"]];
+for (const [a] of ACTIVIDADES) { ESCALA[`ex.${a}.days`] = [1, 7]; ESCALA[`ex.${a}.minutes`] = [1, 600]; }
+// Preguntas sin obligación propia: se pueden dejar sin contestar (no las abre otra respuesta).
+const OPCIONALES = ["move.sitting_hours", "sleep.hours"];
+const EDADES = ["alcohol.start_age","alcohol.quit_age","tobacco.start_age","tobacco.quit_age",
+  "vaping.start_age","vaping.quit_age","wood.start_age","wood.quit_age"];
+const EDAD_ACTUAL = 36;
+const PARES = [ // [inicio, fin, mensaje]
+  ["alcohol.start_age","alcohol.quit_age","No puede ser mayor que la edad en que lo dejaste"],
+  ["tobacco.start_age","tobacco.quit_age","No puede ser mayor que la edad en que lo dejaste"],
+  ["vaping.start_age","vaping.quit_age","No puede ser mayor que la edad en que lo dejaste"],
+  ["wood.start_age","wood.quit_age","No puede ser mayor que la edad en que terminó"],
+];
+const PREGUNTA = {
+  "alcohol.start_age": "¿A qué edad empezaste a tomar?", "alcohol.quit_age": "¿A qué edad dejaste de tomar?",
+  "tobacco.cigarettes_per_day": "Cigarros al día", "tobacco.start_age": "¿A qué edad empezaste a fumar?",
+  "tobacco.quit_age": "¿A qué edad dejaste de fumar?", "vaping.start_age": "¿A qué edad empezaste a vapear?",
+  "vaping.quit_age": "¿A qué edad dejaste de vapear?", "vaping.days_last_30": "¿Cuántos días de los últimos 30?",
+  "secondhand.days_per_week": "Días por semana", "wood.start_age": "¿A qué edad empezaste a exponerte?",
+  "wood.quit_age": "¿A qué edad dejaste de exponerte?", "wood.hours_per_day": "¿Cuántas horas al día, en promedio?",
+  "move.travel_days": "¿Cuántos días por semana?",
+  "move.sitting_hours": "En un día normal, ¿cuántas horas pasas sentado o reclinado?",
+  "sleep.hours": "En promedio, ¿cuántas horas duermes en un día?",
+};
+// Nombre accesible distinto por actividad (R7): "Días por semana: Caminar".
+const ACCESIBLE = {};
+for (const [a, t] of ACTIVIDADES) {
+  PREGUNTA[`ex.${a}.days`] = "Días por semana"; ACCESIBLE[`ex.${a}.days`] = `Días por semana: ${t}`;
+  PREGUNTA[`ex.${a}.minutes`] = "Minutos cada vez"; ACCESIBLE[`ex.${a}.minutes`] = `Minutos cada vez: ${t}`;
+}
+const NOMBRE_OTRA = "ex.other.name";
+const FALTA = "Contesta esta pregunta.", FALTA_NR = "Contesta esta pregunta o marca «No recuerdo».";
+
+let servidor = {};               // lo guardado
+let guardados = 0;
+let vista = "perfil";            // "perfil" | "habitos"
+let d = {};                      // borrador: textos de los números, opciones, y d.unk[k] = "No recuerdo"
+let huellaAlAbrir = "";
+let errores = {};                // por número (k) o por grupo ("chip:<clave>")
+let tocados = new Set();
+let enVuelo = false;
+let saliendoPorCodigo = false;
+
+const $ = (s) => document.querySelector(s);
+const ac = (id) => `<span class="ac">${id}</span>`;
+const conDatos = () => Object.values(servidor).some((v) => v !== null && v !== undefined && v !== "" &&
+  !(Array.isArray(v) && !v.length));
+
+function toast(texto) {
+  const t = document.createElement("div"); t.className = "toast"; t.textContent = texto;
+  document.body.append(t); setTimeout(() => t.remove(), 2500);
+}
+
+// ---------- qué se ve, qué es obligatorio, dónde va "No recuerdo" ----------
+function visibles() {
+  const v = [];
+  if (d.alcohol === "quit" || d.alcohol === "current") v.push("alcohol.start_age");
+  if (d.alcohol === "quit") v.push("alcohol.quit_age");
+  if (d.tobacco && d.tobacco !== "never") v.push("tobacco.cigarettes_per_day", "tobacco.start_age");
+  if (d.tobacco === "former") v.push("tobacco.quit_age");
+  if (d.vaping && d.vaping !== "never") v.push("vaping.start_age");
+  if (d.vaping === "former") v.push("vaping.quit_age");
+  if (d.vaping === "current" && d.vapingFreq === "some_days") v.push("vaping.days_last_30");
+  if ((d.places || []).some((p) => p !== "none")) v.push("secondhand.days_per_week");
+  if (d.wood && d.wood !== "never") v.push("wood.start_age", "wood.hours_per_day");
+  if (d.wood === "former") v.push("wood.quit_age");
+  for (const a of actividades()) v.push(`ex.${a}.days`, `ex.${a}.minutes`);
+  if (d.travel === "yes") v.push("move.travel_days");
+  v.push("move.sitting_hours", "sleep.hours");
+  return v;
+}
+// Las actividades elegidas, en el orden del catálogo ("No hago ejercicio" no es una actividad).
+const actividades = () => ACTIVIDADES.map(([a]) => a).filter((a) => (d.acts || []).includes(a));
+// Total de lo anotado (C-5): solo las actividades con días y minutos válidos; no se guarda.
+function totalSemanal() {
+  let t = 0, alguna = false;
+  for (const a of actividades()) {
+    const dk = `ex.${a}.days`, mk = `ex.${a}.minutes`;
+    if ((d[dk] || "").trim() && (d[mk] || "").trim() && !validarCampo(dk) && !validarCampo(mk)) {
+      t += Number(d[dk]) * Number(d[mk]); alguna = true;
+    }
+  }
+  return alguna ? t : null;
+}
+// "No recuerdo": las edades siempre; cigarros y horas solo con "Antes" (C-16).
+function admiteNoRecuerdo(k) {
+  if (EDADES.includes(k)) return true;
+  if (k === "tobacco.cigarettes_per_day") return d.tobacco === "former";
+  if (k === "wood.hours_per_day") return d.wood === "former";
+  return false;
+}
+// Grupos de chips obligatorios según lo elegido (sin "No recuerdo").
+function gruposObligatorios() {
+  const g = [];
+  if (d.alcohol === "current") g.push("alcFreq", "alcDrinks", "alcSix", "alcWeekend");
+  if (d.vaping === "current") g.push("vapingFreq");
+  return g;
+}
+function validarCampo(k) {
+  if (k === NOMBRE_OTRA) return null;
+  const texto = (d[k] || "").trim();
+  if (!texto) return null;
+  if (!/^\d+$/.test(texto)) return "Escribe solo el número.";
+  const n = Number(texto), [min, max] = ESCALA[k];
+  if (n < min || n > max) return `Debe estar entre ${min} y ${max}`;
+  if (EDADES.includes(k) && n > EDAD_ACTUAL) return "La edad no puede ser mayor que tu edad actual";
+  return null;
+}
+function validarTodo(alGuardar) {
+  const e = {};
+  const vis = visibles();
+  for (const k of vis) {
+    if (!alGuardar && !tocados.has(k)) continue;
+    const m = validarCampo(k); if (m) { e[k] = m; continue; }
+    // C-15: lo que se ve es obligatorio (solo al guardar). Un "No recuerdo" cuenta como respuesta solo donde se admite
+    // (uno que quedó marcado en cigarros u horas al pasar de "Antes" a "Actual" no la contesta).
+    if (alGuardar && !OPCIONALES.includes(k) && !(d[k] || "").trim() && !(d.unk?.[k] && admiteNoRecuerdo(k))) e[k] = admiteNoRecuerdo(k) ? FALTA_NR : FALTA;
+  }
+  if (alGuardar && actividades().includes("other") && !(d[NOMBRE_OTRA] || "").trim()) e[NOMBRE_OTRA] = "Escribe cuál.";
+  for (const [a, b, msg] of PARES) {
+    if (!vis.includes(a) || !vis.includes(b) || e[a] || e[b]) continue;
+    if (!alGuardar && !tocados.has(a) && !tocados.has(b)) continue;
+    // "No recuerdo" (campo vacío marcado) no se compara
+    if (d[a] && d[b] && Number(d[a]) > Number(d[b])) e[a] = msg;
+  }
+  if (alGuardar) for (const g of gruposObligatorios()) if (!d[g]) e["chip:" + g] = FALTA;
+  return e;
+}
+
+// ---------- cambios sin guardar ----------
+function huella() {
+  const o = { alcohol: d.alcohol || null, tobacco: d.tobacco || null, vaping: d.vaping || null,
+    vapingFreq: d.vaping === "current" ? d.vapingFreq || null : null, places: [...(d.places || [])].sort(),
+    wood: d.wood || null, acts: [...(d.acts || [])].sort(), moveMain: d.moveMain || null, travel: d.travel || null,
+    sleepFall: d.sleepFall || null, sleepStay: d.sleepStay || null,
+    otherName: actividades().includes("other") ? (d[NOMBRE_OTRA] || "").trim() : null };
+  for (const g of ["alcFreq", "alcDrinks", "alcSix", "alcWeekend"]) o[g] = d.alcohol === "current" ? d[g] || null : null;
+  for (const k of visibles()) o[k] = d.unk?.[k] && admiteNoRecuerdo(k) ? "unknown" : (d[k] || "").trim();
+  return JSON.stringify(o);
+}
+const sucio = () => vista === "habitos" && huella() !== huellaAlAbrir;
+window.addEventListener("beforeunload", (ev) => { if (sucio() && !enVuelo) { ev.preventDefault(); ev.returnValue = ""; } });
+
+// ---------- guardado (simulado), solo con "Guardar" ----------
+function cuerpo() {
+  const o = {};
+  for (const k of ["alcohol","tobacco","vaping","wood"]) o[k] = d[k] || null;
+  o.vapingFreq = d.vaping === "current" ? d.vapingFreq || null : null;
+  for (const g of ["alcFreq", "alcDrinks", "alcSix", "alcWeekend"]) o[g] = d.alcohol === "current" ? d[g] || null : null;
+  o.places = (d.places || []).length ? d.places : null;
+  o.exercise = (d.acts || []).includes("none") ? "No hago ejercicio" : actividades().length ? actividades() : null;
+  if (actividades().includes("other")) o[NOMBRE_OTRA] = d[NOMBRE_OTRA].trim();
+  for (const g of ["moveMain", "travel", "sleepFall", "sleepStay"]) o[g] = d[g] || null;
+  for (const k of visibles()) o[k] = d.unk?.[k] && admiteNoRecuerdo(k) ? "unknown" : (d[k] ? Number(d[k]) : null);
+  return o;
+}
+function mandar(body) {
+  enVuelo = true; refrescar();
+  return new Promise((ok) => setTimeout(() => {
+    servidor = body; guardados++; enVuelo = false;
+    $("#contador").textContent = guardados; ok();
+  }, $("#lento").checked ? 3000 : 900));
+}
+
+// Actualiza en su lugar los botones y los errores, sin redibujar.
+function refrescar() {
+  const g = $("[data-guardar]"), c = $("[data-cancelar]");
+  if (g) { g.setAttribute("aria-disabled", String(enVuelo)); g.textContent = enVuelo ? "Guardando…" : "Guardar"; }
+  if (c) c.setAttribute("aria-disabled", String(enVuelo));
+  for (const ch of document.querySelectorAll("[data-chip],[data-lugar],[data-unk],[data-act]")) ch.setAttribute("aria-disabled", String(enVuelo));
+  for (const i of document.querySelectorAll("input[data-num]")) i.readOnly = enVuelo;
+  for (const input of document.querySelectorAll("input[data-num]")) {
+    const k = input.dataset.num, e = errores[k];
+    input.setAttribute("aria-invalid", String(!!e));
+    let div = document.getElementById(`e-${k}`);
+    if (e && !div) { div = document.createElement("div"); div.className = "err"; div.id = `e-${k}`; input.closest(".campo").append(div); }
+    if (div) { if (e) div.textContent = e; else div.remove(); }
+    const ids = [document.getElementById(`h-${k}`) ? `h-${k}` : "", e ? `e-${k}` : ""].filter(Boolean).join(" ");
+    if (ids) input.setAttribute("aria-describedby", ids); else input.removeAttribute("aria-describedby");
+  }
+  const tot = $("#total"); if (tot) pintarTotal(tot);
+  for (const fs of document.querySelectorAll("fieldset[data-grupo]")) {
+    const key = "chip:" + fs.dataset.grupo, e = errores[key];
+    let div = fs.querySelector(".err-grupo");
+    if (e && !div) { div = document.createElement("div"); div.className = "err-grupo"; div.id = `e-${fs.dataset.grupo}`; fs.append(div); }
+    if (div) { if (e) div.textContent = e; else div.remove(); }
+  }
+}
+
+// ---------- vistas y salidas ----------
+function abrirHabitos() {
+  d = desdeServidor(servidor); errores = {}; tocados = new Set(); vista = "habitos";
+  huellaAlAbrir = huella();
+  history.pushState({ v: "habitos" }, "");
+  pintar();
+}
+function desdeServidor(s) {
+  const o = { ...s, places: s.places || [], unk: {},
+    acts: s.exercise === "No hago ejercicio" ? ["none"] : (s.exercise || []) };
+  for (const k of Object.keys(PREGUNTA)) {
+    const v = s[k];
+    if (v === "unknown") { o[k] = ""; o.unk[k] = true; } else o[k] = v === null || v === undefined ? "" : String(v);
+  }
+  return o;
+}
+function volver(texto) {
+  vista = "perfil"; pintar(); if (texto) toast(texto);
+  if (history.state && history.state.v === "habitos") { saliendoPorCodigo = true; history.back(); }
+}
+let salidaPendiente = false;
+function intentarSalir() {
+  if (enVuelo) { salidaPendiente = true; return; }
+  if (sucio()) preguntar(); else volver();
+}
+window.addEventListener("popstate", () => {
+  if (saliendoPorCodigo) { saliendoPorCodigo = false; return; }
+  if (vista !== "habitos") return;
+  if (enVuelo) { history.pushState({ v: "habitos" }, ""); salidaPendiente = true; return; }
+  if (sucio()) { history.pushState({ v: "habitos" }, ""); preguntar(); }
+  else { vista = "perfil"; pintar(); }
+});
+function preguntar() {
+  const antes = document.activeElement;
+  const velo = document.createElement("div"); velo.className = "velo";
+  velo.innerHTML = `<div class="dialogo" role="dialog" aria-modal="true" aria-labelledby="dlg-t" aria-describedby="dlg-d">
+    <h2 id="dlg-t">¿Salir sin guardar?</h2>
+    <p id="dlg-d">Los cambios que hiciste en Hábitos se van a perder.</p>
+    <div class="actions"><button class="primary" data-seguir>Seguir editando</button>
+      <button data-salir>Salir sin guardar</button></div></div>`;
+  document.body.append(velo);
+  const cerrar = () => { velo.remove(); antes?.focus?.(); };
+  velo.querySelector("[data-seguir]").onclick = cerrar;
+  velo.querySelector("[data-salir]").onclick = () => { velo.remove(); volver(); };
+  velo.addEventListener("keydown", (ev) => { if (ev.key === "Escape") cerrar(); });
+  velo.querySelector("[data-seguir]").focus();
+}
+
+async function alGuardar() {
+  if (enVuelo) return;
+  for (const k of visibles()) tocados.add(k);
+  errores = validarTodo(true);
+  if (Object.keys(errores).length) {
+    refrescar();
+    document.querySelector('[aria-invalid="true"], fieldset:has(.err-grupo) button')?.focus(); return;
+  }
+  await mandar(cuerpo());
+  salidaPendiente = false;
+  volver("Hábitos guardados");
+}
+function alCancelar() { if (!enVuelo) volver(sucio() ? "Se descartaron los cambios" : null); }
+
+function chips(nombre, clave, opciones, id) {
+  return `<fieldset data-grupo="${clave}"><legend>${nombre}${id ? ac(id) : ""}</legend><div class="chips">${opciones.map(([v, t]) =>
+    `<button type="button" data-chip="${clave}" data-v="${v}" aria-pressed="${d[clave] === v}">${t}</button>`).join("")}</div>
+    ${errores["chip:" + clave] ? `<div class="err-grupo" id="e-${clave}">${errores["chip:" + clave]}</div>` : ""}</fieldset>`;
+}
+function numero(k, hint, id) {
+  const e = errores[k], etiqueta = PREGUNTA[k];
+  const nr = admiteNoRecuerdo(k)
+    ? `<div class="unk"><button type="button" data-unk="${k}" aria-pressed="${!!d.unk?.[k]}" aria-label="No recuerdo: ${etiqueta}">No recuerdo</button>${ac("C-16")}</div>` : "";
+  const acc = ACCESIBLE[k] ? ` aria-label="${ACCESIBLE[k]}"` : "";
+  return `<div class="campo"><label for="f-${k}">${etiqueta}${id ? ac(id) : ""}</label>
+    <input id="f-${k}" data-num="${k}" inputmode="numeric" value="${d[k] || ""}"${acc} aria-invalid="${!!e}"
+      ${hint || e ? `aria-describedby="${hint ? `h-${k} ` : ""}${e ? `e-${k}` : ""}"` : ""}>
+    ${hint ? `<div class="hint" id="h-${k}">${hint}</div>` : ""}
+    ${nr}
+    ${e ? `<div class="err" id="e-${k}">${e}</div>` : ""}</div>`;
+}
+
+function nombreOtra() {
+  const k = NOMBRE_OTRA, e = errores[k];
+  return `<div class="campo"><label for="f-${k}">¿Cuál?</label>
+    <input id="f-${k}" data-num="${k}" maxlength="60" autocomplete="off" value="${(d[k] || "").replace(/"/g, "&quot;")}"
+      aria-label="¿Cuál otra actividad?" aria-invalid="${!!e}" ${e ? `aria-describedby="e-${k}"` : ""}>
+    ${e ? `<div class="err" id="e-${k}">${e}</div>` : ""}</div>`;
+}
+function pintarTotal(el) {
+  const t = totalSemanal();
+  el.hidden = t === null;
+  el.textContent = t === null ? "" : `Total de lo anotado: ${t} minutos por semana`;
+}
+const FRECUENCIA = [["never","Nunca"],["some_days","Algunos días"],["most_days","Casi todos los días"],["every_day","Todos los días"]];
+
+function pintar() {
+  document.body.classList.toggle("show-ac", $("#ver-ac").checked);
+  const app = $("#app");
+  if (vista === "perfil") {
+    app.innerHTML = `<h1>Mi perfil médico</h1>
+      <div class="card"><button class="link" data-abrir style="font-size:1rem">Hábitos ›</button>
+        <span class="pill ${conDatos() ? "datos" : "vacia"}">${conDatos() ? "Con datos" : "Sin llenar"}</span></div>`;
+    return;
+  }
+  const lugares = d.places || [];
+  app.innerHTML = `<button class="link" data-volver-menu>‹ Mi perfil médico</button>
+    <h1>Hábitos</h1>
+    <p class="sub">Contesta los hábitos que quieras. Si eliges una respuesta, completa sus preguntas; si no recuerdas un
+      dato del pasado, marca «No recuerdo». «Nunca» también le sirve a tu médico. La app no califica tus respuestas.${ac("C-15")}</p>
+    <p class="aviso-guardar">Tus respuestas se guardan cuando tocas «Guardar».</p>
+
+    <section class="card"><h2>Alcohol</h2>
+      ${chips("Alcohol", "alcohol", [["never","Nunca"],["quit","Lo dejé"],["current","Actual"]])}
+      ${d.alcohol === "quit" || d.alcohol === "current" ? numero("alcohol.start_age", "Sin contar probaditas.") : ""}
+      ${d.alcohol === "quit" ? numero("alcohol.quit_age") : ""}
+      ${d.alcohol === "current" ? chips("¿Con qué frecuencia tomas?", "alcFreq", [["m","Una vez al mes o menos"],["2-4m","2 a 4 veces al mes"],["2-3s","2 a 3 veces por semana"],["4s","4 o más veces por semana"]], "C-15")
+        + chips("En un día que tomas, ¿cuántas bebidas?", "alcDrinks", [["1-2","1 o 2"],["3-4","3 o 4"],["5-6","5 o 6"],["7-9","7 a 9"],["10","10 o más"]])
+        + chips("¿Cada cuándo tomas 6 o más bebidas en una sola ocasión?", "alcSix", [["n","Nunca"],["<m","Menos de una vez al mes"],["m","Cada mes"],["s","Cada semana"],["d","A diario o casi"]])
+        + chips("Sobre todo fines de semana", "alcWeekend", [["si","Sí"],["no","No"]]) : ""}
+    </section>
+
+    <section class="card"><h2>Tabaco y vapeador</h2>
+      ${chips("Tabaco", "tobacco", [["never","Nunca"],["former","Antes"],["current","Actual"]])}
+      ${d.tobacco && d.tobacco !== "never" ? numero("tobacco.cigarettes_per_day") + numero("tobacco.start_age") : ""}
+      ${d.tobacco === "former" ? numero("tobacco.quit_age") : ""}
+      <div class="sub-bloque">
+        ${chips("Vapeador o cigarro electrónico", "vaping", [["never","Nunca"],["former","Antes"],["current","Actual"]])}
+        ${d.vaping && d.vaping !== "never" ? numero("vaping.start_age") : ""}
+        ${d.vaping === "former" ? numero("vaping.quit_age") : ""}
+        ${d.vaping === "current" ? chips("¿Con qué frecuencia vapeas?", "vapingFreq", [["daily","Todos los días"],["some_days","Algunos días"]]) : ""}
+        ${d.vaping === "current" && d.vapingFreq === "some_days" ? numero("vaping.days_last_30") : ""}
+      </div>
+    </section>
+
+    <section class="card"><h2>Humo de tabaco de otras personas</h2>
+      <p class="hint">Estar cerca de quien fuma, aunque tú no fumes.</p>
+      <fieldset><legend>¿Dónde?</legend><div class="chips">
+        ${[["home","Casa"],["work_school","Trabajo o escuela"],["other","Otro lugar"],["none","No me expongo"]].map(([v, t]) =>
+          `<button type="button" data-lugar="${v}" aria-pressed="${lugares.includes(v)}">${t}</button>`).join("")}</div></fieldset>
+      ${lugares.some((p) => p !== "none") ? numero("secondhand.days_per_week") : ""}
+    </section>
+
+    <section class="card"><h2>Humo de leña</h2>
+      <p class="hint">Cocinar o calentar la casa con leña o carbón.</p>
+      ${chips("Humo de leña", "wood", [["never","Nunca"],["former","Antes"],["current","Actual"]])}
+      ${d.wood && d.wood !== "never" ? numero("wood.start_age") : ""}
+      ${d.wood === "former" ? numero("wood.quit_age") : ""}
+      ${d.wood && d.wood !== "never" ? numero("wood.hours_per_day") : ""}
+    </section>
+
+    <section class="card"><h2>Ejercicio${ac("C-5")}</h2>
+      <fieldset><legend>¿Qué ejercicio haces?</legend><div class="chips">
+        ${[...ACTIVIDADES, ["none","No hago ejercicio"]].map(([v, t]) =>
+          `<button type="button" data-act="${v}" aria-pressed="${(d.acts || []).includes(v)}">${t}</button>`).join("")}</div>
+        ${errores["chip:acts"] ? `<div class="err-grupo" id="e-acts">${errores["chip:acts"]}</div>` : ""}</fieldset>
+      ${actividades().map((a) => `<div class="sub-bloque"><p class="lbl" style="margin:8px 0 0">${Object.fromEntries(ACTIVIDADES)[a]}</p>
+        ${a === "other" ? nombreOtra() : ""}${numero(`ex.${a}.days`)}${numero(`ex.${a}.minutes`)}</div>`).join("")}
+      <p class="aviso-guardar" id="total" role="status" ${totalSemanal() === null ? "hidden" : ""}>${totalSemanal() === null ? "" : `Total de lo anotado: ${totalSemanal()} minutos por semana`}</p>${ac("C-6")}
+    </section>
+
+    <section class="card"><h2>Movimiento en tu día${ac("C-7")}</h2>
+      <p class="hint">Esto no se suma a tu ejercicio: el médico lo lee aparte.</p>
+      ${chips("En tu trabajo o actividad principal (casa, escuela…), ¿cómo pasas el día?", "moveMain", [["sitting","Casi todo sentado"],["standing_walking","De pie o caminando, sin cargar cosas"],["light_loads","Cargando cosas ligeras o subiendo escaleras seguido"],["heavy_work","Trabajo pesado o cargando cosas pesadas"]])}
+      ${chips("¿Caminas o vas en bici al menos 10 minutos seguidos para ir a algún lado?", "travel", [["no","No"],["yes","Sí"]])}
+      ${d.travel === "yes" ? numero("move.travel_days", "", "C-15") : ""}
+      ${numero("move.sitting_hours", "Sin contar el tiempo que duermes.")}
+    </section>
+
+    <section class="card"><h2>Sueño${ac("C-8")}</h2>
+      ${numero("sleep.hours", "Cuenta las siestas. Si son 6 y media, escribe 7.")}
+      ${chips("En los últimos 30 días, ¿con qué frecuencia te costó dormirte?", "sleepFall", FRECUENCIA)}
+      ${chips("En los últimos 30 días, ¿con qué frecuencia te costó seguir durmiendo o despertaste demasiado temprano?", "sleepStay", FRECUENCIA)}
+    </section>
+
+    <div class="actions">
+      <button class="primary" data-guardar aria-disabled="${enVuelo}">${enVuelo ? "Guardando…" : "Guardar"}</button>
+      <button data-cancelar aria-disabled="${enVuelo}">Cancelar</button>
+    </div>`;
+}
+
+// ---------- eventos ----------
+document.addEventListener("click", (ev) => {
+  const b = ev.target.closest("button"); if (!b || b.closest(".velo")) return;
+  if (b.getAttribute("aria-disabled") === "true") return;
+  if (b.dataset.abrir !== undefined) return abrirHabitos();
+  if (b.dataset.volverMenu !== undefined) { if (vista === "habitos") return intentarSalir(); return; }
+  if (b.dataset.guardar !== undefined) return alGuardar();
+  if (b.dataset.cancelar !== undefined) return alCancelar();
+  if (b.dataset.unk) {
+    const k = b.dataset.unk; d.unk = d.unk || {};
+    d.unk[k] = !d.unk[k];
+    if (d.unk[k]) { d[k] = ""; delete errores[k]; }
+    pintar(); document.querySelector(`[data-unk="${CSS.escape(k)}"]`)?.focus(); return;
+  }
+  if (b.dataset.chip) {
+    const k = b.dataset.chip, v = b.dataset.v;
+    d[k] = d[k] === v ? null : v;
+    delete errores["chip:" + k];
+    for (const e of Object.keys(errores)) {
+      if (e.startsWith("chip:")) { if (!gruposObligatorios().includes(e.slice(5))) delete errores[e]; }
+      else if (!visibles().includes(e)) delete errores[e];
+    }
+    pintar(); document.querySelector(`[data-chip="${k}"][data-v="${v}"]`)?.focus(); return;
+  }
+  if (b.dataset.act) {
+    const v = b.dataset.act; let l = d.acts || [];
+    if (v === "none") l = l.includes("none") ? [] : ["none"];
+    else { l = l.filter((x) => x !== "none"); l = l.includes(v) ? l.filter((x) => x !== v) : [...l, v]; }
+    d.acts = l;
+    for (const e of Object.keys(errores)) if (!e.startsWith("chip:") && e !== NOMBRE_OTRA && !visibles().includes(e)) delete errores[e];
+    if (!l.includes("other")) delete errores[NOMBRE_OTRA];
+    pintar(); document.querySelector(`[data-act="${v}"]`)?.focus(); return;
+  }
+  if (b.dataset.lugar) {
+    const v = b.dataset.lugar; let l = d.places || [];
+    if (v === "none") l = l.includes("none") ? [] : ["none"];
+    else { l = l.filter((p) => p !== "none"); l = l.includes(v) ? l.filter((p) => p !== v) : [...l, v]; }
+    d.places = l;
+    for (const e of Object.keys(errores)) if (!e.startsWith("chip:") && !visibles().includes(e)) delete errores[e];
+    pintar(); document.querySelector(`[data-lugar="${v}"]`)?.focus();
+  }
+});
+// Al escribir: se desmarca "No recuerdo" y un error ya marcado se va si el valor ya es válido (C-17).
+document.addEventListener("input", (ev) => {
+  const k = ev.target.dataset?.num; if (!k) return;
+  d[k] = ev.target.value;
+  if (d.unk?.[k]) { d.unk[k] = false; const u = document.querySelector(`[data-unk="${CSS.escape(k)}"]`); if (u) u.setAttribute("aria-pressed", "false"); }
+  if (errores[k] && !validarCampo(k) && (k !== NOMBRE_OTRA || d[k].trim())) delete errores[k];
+  refrescar();
+});
+document.addEventListener("focusout", (ev) => {
+  const k = ev.target.dataset?.num; if (!k) return;
+  tocados.add(k);
+  const nuevos = validarTodo(false);
+  for (const key of Object.keys(errores)) if (!key.startsWith("chip:") && key !== NOMBRE_OTRA && !nuevos[key] && validarCampo(key) === null
+    && !(errores[key] === FALTA || errores[key] === FALTA_NR)) delete errores[key];
+  for (const [key, m] of Object.entries(nuevos)) errores[key] = m;
+  refrescar();
+});
+// Lo guardado antes de este cambio, a medias: alcohol "Lo dejé" con solo la edad en que lo dejó.
+$("#a-medias").addEventListener("click", () => {
+  servidor = { exercise: ["walking"], "ex.walking.days": 5, "ex.walking.minutes": 30 };
+  if (vista === "habitos") abrirHabitos(); else pintar();
+  toast("Sembrado: caminar 5 días × 30 minutos");
+});
+$("#ver-ac").addEventListener("change", pintar);
+pintar();
+</script>
