@@ -131,10 +131,10 @@ dd{margin:0; min-width:0; overflow-wrap:anywhere}
     <li><strong>C-2</strong> Tabaco (nunca/antes/actual, cigarros al día, a qué edad empezaste y a qué edad lo dejaste) y vapeador como el tabaco: edades y, si es actual, «Todos los días» o «Algunos días» con cuántos de los últimos 30 (C-11).</li>
     <li><strong>C-3</strong> Humo de tabaco ajeno: dónde (casa, trabajo o escuela, otro lugar) y cuántos días por semana.</li>
     <li><strong>C-4</strong> Humo de leña: nunca/antes/actual, a qué edad empezó, a qué edad terminó (si es antes) y horas al día en promedio (C-12; reemplaza los años aproximados).</li>
-    <li><strong>C-5</strong> Ejercicio como lista de actividades, cada una con días por semana y minutos por vez; se muestra el total semanal.</li>
+    <li><strong>C-5</strong> Ejercicio: eliges una o varias actividades (con «Otra», cuál), cada una con días por semana y minutos cada vez, o «No hago ejercicio»; se muestra el total de lo anotado en minutos por semana, sin compararlo con nada.</li>
     <li><strong>C-6</strong> La app no calcula puntajes ni riesgos con estas respuestas: interpretarlas es del médico (NFR-008).</li>
-    <li><strong>C-7</strong> Movimiento del día, aparte del ejercicio y sin sumarse a su total: cómo pasas el día en tu trabajo (casi todo sentado / de pie o caminando / esfuerzo físico pesado), si caminas o vas en bici para ir a algún lado (días por semana) y horas sentado al día.</li>
-    <li><strong>C-8</strong> Sueño: horas por noche y si te cuesta dormir o te despiertas (nunca / a veces / casi siempre).</li>
+    <li><strong>C-7</strong> Movimiento del día, aparte del ejercicio y sin sumarse a su total: cómo pasas el día en tu trabajo o actividad principal (casi todo sentado / de pie o caminando, sin cargar cosas / cargando cosas ligeras o subiendo escaleras seguido / trabajo pesado o cargando cosas pesadas), si caminas o vas en bici al menos 10 minutos seguidos para ir a algún lado (con «Sí», días por semana) y horas sentado o reclinado en un día normal, sin contar el sueño.</li>
+    <li><strong>C-8</strong> Sueño: horas que duermes en un día (24 horas, enteras) y, por separado, en los últimos 30 días qué tan seguido te costó dormirte y seguir durmiendo (nunca / algunos días / casi todos los días / todos los días). El detalle navegable está en el prototipo del cambio perfil-habitos-actividad-sueno.</li>
     <li><strong>C-15</strong> Si eliges una respuesta, completa sus preguntas: «Guardar» marca lo que falta junto a su pregunta (el detalle navegable está en el prototipo del cambio perfil-habitos-completitud).</li>
     <li><strong>C-16</strong> «No recuerdo» solo en lo que pasó: las edades, y los cigarros y las horas de leña con «Antes». Las preguntas del AUDIT-C y lo actual no lo ofrecen.</li>
     <li><strong>C-17</strong> Un error marcado se va en cuanto corriges el dato, sin salir del campo.</li>
@@ -442,6 +442,8 @@ const ALC_FREC = ["Una vez al mes o menos","2 a 4 veces al mes","2 a 3 veces por
 const ALC_TIPICAS = ["1 o 2","3 o 4","5 o 6","7 a 9","10 o más"];
 const ALC_SEIS = ["Nunca","Menos de una vez al mes","Cada mes","Cada semana","Diario o casi diario"];
 const ACTIVIDADES = ["Caminar","Correr","Bicicleta","Nadar","Pesas o gimnasio","Fútbol u otro deporte","Yoga o pilates","Baile","Otra"];
+const DIA = ["Casi todo sentado","De pie o caminando, sin cargar cosas","Cargando cosas ligeras o subiendo escaleras seguido","Trabajo pesado o cargando cosas pesadas"];
+const FRECUENCIA = ["Nunca","Algunos días","Casi todos los días","Todos los días"];
 const AJENO_DONDE = ["Casa","Trabajo o escuela","Otro lugar"];
 
 function chipsDe(k, opts, v, lbl){
@@ -452,13 +454,15 @@ const numH = (k, ph, v) => `<input id="h-${k}" data-k="${k}" inputmode="numeric"
 // perfil-habitos-completitud C-16: «No recuerdo» solo en lo que pasó (edades; cigarros y horas con «Antes»)
 const numNR = (k, ph, v) => `${numH(k, ph, v)}<button data-chip="${k}NR" data-v="Sí" aria-pressed="${v[k + "NR"] === "Sí"}" aria-label="No recuerdo: ${esc(ph)}">No recuerdo</button>`;
 const subLbl = t => `<span class="lbl" style="margin-top:10px; font-weight:400">${esc(t)}</span>`;
-function totalSemanal(acts){
-  return acts.reduce((t, a) => t + (Number(a.dias) || 0) * (Number(a.min) || 0), 0);
+// perfil-habitos-actividad-sueno C-5: un chip por actividad; el total suma lo anotado y no se guarda
+const actIdx = a => ACTIVIDADES.indexOf(a);
+function totalSemanal(v){
+  return v.acts.reduce((t, a) => t + (Number(v[`act${actIdx(a)}Dias`]) || 0) * (Number(v[`act${actIdx(a)}Min`]) || 0), 0);
 }
 
 function pintarHabitos(s){
-  const v = vista.borrador || (vista.borrador = JSON.parse(JSON.stringify(estado.habitos.datos || {actividades:[], ajenoDonde:[]})));
-  const tot = totalSemanal(v.actividades);
+  const v = vista.borrador || (vista.borrador = JSON.parse(JSON.stringify(estado.habitos.datos || {acts:[], ajenoDonde:[]})));
+  const tot = totalSemanal(v);
   return `
     <p class="migas"><button class="link" data-volver>‹ Mi perfil médico</button></p>
     <h2>${esc(s.titulo)} <span class="story">Story C</span></h2>
@@ -505,35 +509,37 @@ function pintarHabitos(s){
 
       <div class="habito">
         <span class="lbl">Ejercicio${ac("C-5", true)}</span>
-        ${v.actividades.map((a, i) => `
-          <div class="fila-act">
-            <select id="act-${i}-tipo" data-act="${i}" data-f="tipo" aria-label="Actividad ${i + 1}">
-              <option value="">Elige la actividad</option>${ACTIVIDADES.map(o => `<option ${a.tipo === o ? "selected" : ""}>${o}</option>`).join("")}</select>
-            <input id="act-${i}-dias" data-act="${i}" data-f="dias" inputmode="numeric" placeholder="Días por semana" value="${esc(a.dias || "")}" aria-label="Días por semana">
-            <input id="act-${i}-min" data-act="${i}" data-f="min" inputmode="numeric" placeholder="Minutos por vez" value="${esc(a.min || "")}" aria-label="Minutos por vez">
-            <button class="link danger" data-act-del="${i}" aria-label="Quitar actividad ${i + 1}">Quitar</button>
-          </div>`).join("")}
-        <div class="actions" style="margin:8px 0 0"><button data-act-add>+ Agregar actividad</button>
-          ${v.actividades.length ? `<span class="sub">Total: <strong>${tot}</strong> minutos por semana</span>` : `<span class="sub">Sin actividades = no hago ejercicio</span>`}</div>
+        ${subLbl("¿Qué ejercicio haces?")}
+        <div class="chips" role="group" aria-label="¿Qué ejercicio haces?">${ACTIVIDADES.map(o =>
+          `<button data-multi="acts" data-v="${esc(o)}" aria-pressed="${v.acts.includes(o)}">${esc(o)}</button>`).join("")}<button data-chip="noEjercicio" data-v="Sí" aria-pressed="${v.noEjercicio === "Sí"}">No hago ejercicio</button></div>
+        ${ACTIVIDADES.filter(a => v.acts.includes(a)).map(a => `
+          ${subLbl(a)}
+          <div class="cuando" style="margin-top:6px">${a === "Otra" ? `<input id="h-actOtra" data-k="actOtra" placeholder="¿Cuál?" value="${esc(v.actOtra || "")}" aria-label="¿Cuál?">` : ""}${numH(`act${actIdx(a)}Dias`, `Días por semana: ${a}`, v)}${numH(`act${actIdx(a)}Min`, `Minutos cada vez: ${a}`, v)}</div>`).join("")}
+        ${tot ? `<p class="sub" style="margin-top:8px">Total de lo anotado: <strong>${tot}</strong> minutos por semana</p>` : ""}
       </div>
 
       <div class="habito">
         <span class="lbl">Movimiento en tu día${ac("C-7", true)}</span>
         <p class="hint">Esto no se suma a tu ejercicio: el médico lo lee aparte.</p>
-        ${subLbl("En tu trabajo o actividad principal, ¿cómo pasas el día?")}
-        ${chipsDe("enTrabajo", ["Casi todo sentado","De pie o caminando","Con esfuerzo físico pesado"], v, "En tu trabajo")}
-        ${subLbl("¿Caminas o vas en bici para ir a algún lado?")}
+        ${subLbl("En tu trabajo o actividad principal (casa, escuela…), ¿cómo pasas el día?")}
+        ${chipsDe("enTrabajo", DIA, v, "Cómo pasas el día")}
+        ${subLbl("¿Caminas o vas en bici al menos 10 minutos seguidos para ir a algún lado?")}
         ${chipsDe("desplaza", ["No","Sí"], v, "Desplazamiento activo")}
-        ${v.desplaza === "Sí" ? `<div class="cuando" style="margin-top:6px">${numH("despDias", "Días por semana", v)}</div>` : ""}
-        ${subLbl("Horas sentado al día (trabajo, traslados, pantallas)")}
+        ${v.desplaza === "Sí" ? `<div class="cuando" style="margin-top:6px">${numH("despDias", "¿Cuántos días por semana?", v)}</div>` : ""}
+        ${subLbl("En un día normal, ¿cuántas horas pasas sentado o reclinado?")}
+        <p class="hint">Sin contar el tiempo que duermes.</p>
         <div class="cuando">${numH("horasSentado", "Horas al día", v)}</div>
       </div>
 
       <div class="habito">
         <span class="lbl">Sueño${ac("C-8", true)}</span>
-        <div class="cuando" style="margin-top:4px">${numH("suenoHoras", "Horas por noche", v)}</div>
-        ${subLbl("¿Te cuesta dormir o te despiertas en la noche?")}
-        ${chipsDe("suenoCuesta", ["Nunca","A veces","Casi siempre"], v, "Dificultad para dormir")}
+        ${subLbl("En promedio, ¿cuántas horas duermes en un día?")}
+        <p class="hint">Cuenta las siestas. Si son 6 y media, escribe 7.</p>
+        <div class="cuando" style="margin-top:4px">${numH("suenoHoras", "Horas", v)}</div>
+        ${subLbl("En los últimos 30 días, ¿con qué frecuencia te costó dormirte?")}
+        ${chipsDe("suenoDormirse", FRECUENCIA, v, "Te costó dormirte")}
+        ${subLbl("En los últimos 30 días, ¿con qué frecuencia te costó seguir durmiendo o despertaste demasiado temprano?")}
+        ${chipsDe("suenoSeguir", FRECUENCIA, v, "Te costó seguir durmiendo")}
       </div>
 
       <div class="actions"><button class="primary" type="submit">Guardar</button><button type="button" data-volver>Cancelar</button></div>
@@ -576,9 +582,6 @@ function leerInputs(){
     }
     vista.borrador[i.dataset.k] = v;
     if(v && vista.borrador[i.dataset.k + "NR"]) vista.borrador[i.dataset.k + "NR"] = "";  // C-16: escribir desmarca
-  });
-  document.querySelectorAll("#vista [data-act]").forEach(i => {
-    vista.borrador.actividades[+i.dataset.act][i.dataset.f] = i.value.trim();
   });
 }
 
@@ -632,11 +635,9 @@ document.addEventListener("click", ev => {
   if(d.multi){
     ev.preventDefault(); leerInputs();
     const arr = vista.borrador[d.multi], i = arr.indexOf(d.v);
-    if(i < 0){ arr.push(d.v); vista.borrador.ajenoNunca = ""; vista.borrador.expoNinguna = ""; } else arr.splice(i, 1);
+    if(i < 0){ arr.push(d.v); vista.borrador.ajenoNunca = ""; vista.borrador.expoNinguna = ""; vista.borrador.noEjercicio = ""; } else arr.splice(i, 1);
     return pintar();
   }
-  if("actAdd" in d){ ev.preventDefault(); leerInputs(); vista.borrador.actividades.push({}); return pintar(); }
-  if(d.actDel){ ev.preventDefault(); leerInputs(); vista.borrador.actividades.splice(+d.actDel, 1); return pintar(); }
   if(d.modo){
     ev.preventDefault(); leerInputs();
     const m = vista.modo || (vista.modo = {});
@@ -651,6 +652,7 @@ document.addEventListener("click", ev => {
     else { v[d.chip] = v[d.chip] === d.v ? "" : d.v; if(vista.otra === d.chip) vista.otra = null; }
     if(d.chip === "condicion" && vista.sec === "cronicas" && !vista.sensTocado) v.sensible = SALUD_MENTAL.includes(v.condicion);
     if(d.chip === "ajenoNunca" && v.ajenoNunca) v.ajenoDonde = [];
+    if(d.chip === "noEjercicio" && v.noEjercicio) v.acts = [];
     if(d.chip.endsWith("NR") && v[d.chip]) v[d.chip.slice(0, -2)] = "";
     if(d.chip === "expoNinguna" && v.expoNinguna) v.exposiciones = [];
     return pintar();
@@ -662,7 +664,8 @@ document.addEventListener("submit", ev => {
   if(vista.nombre === "trabajo"){ estado.trabajo = vista.borrador; toast("Trabajo guardado"); return ir({nombre:"perfil"}); }
   const s = SECCIONES.find(x => x.id === vista.sec), v = vista.borrador;
   if(s.habitos){
-    v.actividades = v.actividades.filter(a => a.tipo || a.dias || a.min);
+    for(const a of ACTIVIDADES) if(!v.acts.includes(a)){ delete v[`act${actIdx(a)}Dias`]; delete v[`act${actIdx(a)}Min`]; if(a === "Otra") delete v.actOtra; }
+    if(v.desplaza !== "Sí") delete v.despDias;
     if(!Object.values(v).some(x => Array.isArray(x) ? x.length : Boolean(x))){ toast("No contestaste nada; no se guardó"); return; }
     estado.habitos.datos = {...v}; toast("Hábitos guardados"); return ir({nombre:"perfil"});
   }

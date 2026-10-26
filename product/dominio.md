@@ -319,7 +319,9 @@ registros de secciones distintas, enlace tratamiento↔medicinas de receta.
   Saúl Pérez la partió en dos el 2026-10-20 (exploración de perfil-habitos): **C1 — sustancias y humo** (alcohol,
   tabaco y vapeador, humo ajeno, leña; C-1…C-4, C-6), **✅ entregada en el PR #30 (2026-10-21); spec en
   `openspec/specs/records/patient-profile/spec.md`**, y **C2 — cuerpo, descanso y trabajo** (ejercicio, movimiento
-  del día, sueño y Trabajo; C-5, C-7, C-8, C-9), después.
+  del día, sueño y Trabajo; C-5, C-7, C-8, C-9), después. Saúl Pérez partió la C2 el 2026-10-26: **C2a** (ejercicio,
+  movimiento del día y sueño; C-5, C-7, C-8) en perfil-habitos-actividad-sueno, y **C2b** ("Trabajo" en el Perfil
+  básico; C-9) después.
 
 ## Catálogos (en las palabras de Saúl / del borrador que aceptó)
 
@@ -400,10 +402,9 @@ estado, fechas y humo ajeno son lo que los campos estructurados de los expedient
 | vapeador | nunca / antes / actual; con "antes" o "actual", a qué edad empezó, y con "antes", a qué edad lo dejó; con "actual", **todos los días / algunos días** + con "algunos días", **cuántos de los últimos 30** (Saúl Pérez, 2026-10-21; medida de PATH, research `habitos.md#vapeo-inicio`) |
 | humo de tabaco ajeno | **hábito propio** (ronda 6): dónde (casa · trabajo o escuela · otro lugar, varios) + días por semana, o "no me expongo" |
 | humo de leña | nunca / antes / actual; con "antes" o "actual", **a qué edad empezó** y **horas al día en promedio**, y con "antes", a qué edad terminó (Saúl Pérez, 2026-10-21). Forma [VERIFIED]: la exposición se mide en horas-año = años × horas al día (Pérez-Padilla 1996, research `humo-lena.md`); la app no la calcula (C-6) |
-| ejercicio | **lista de actividades** (caminar, correr, bicicleta, nadar, pesas o gimnasio, fútbol u otro deporte, yoga o pilates, baile, otra), cada una con días por semana + minutos por vez (forma del Exercise Vital Sign, por actividad); se muestra el total semanal **sin veredicto** contra la OMS. El tipo permite distinguir aeróbico de fuerza (OMS 2020) sin preguntar intensidad |
-
-| movimiento del día | ronda 7, forma del GPAQ (OMS): en el trabajo o actividad principal (casi todo sentado · de pie o caminando · esfuerzo físico pesado), desplazamiento activo (caminar o bici para ir a algún lado: sí/no + días por semana) y horas sentado al día. **No se suma al total de ejercicio** (paradoja de la actividad física, research.md § ocupación) |
-| sueño | ronda 7 (antes fuera): horas por noche + ¿te cuesta dormir o te despiertas? (nunca · a veces · casi siempre). Sin diagnóstico ni puntaje |
+| ejercicio | **un chip por actividad, varias a la vez** (caminar, correr, bicicleta, nadar, pesas o gimnasio, fútbol u otro deporte, yoga o pilates, baile, otra con "¿Cuál?"), cada una con días por semana (1–7) + minutos cada vez (1–600) (forma del Exercise Vital Sign, por actividad), **o "No hago ejercicio"**, explícito (Saúl Pérez, 2026-10-26, perfil-habitos-actividad-sueno). Se muestra el "total de lo anotado" en minutos por semana, calculado en la pantalla, sin guardarse y **sin veredicto** contra la OMS. El tipo permite distinguir aeróbico de fuerza (OMS 2020) sin preguntar intensidad |
+| movimiento del día | ronda 7; los 4 niveles de NHANES `PAQ180` para el trabajo o actividad principal (casi todo sentado · de pie o caminando, sin cargar cosas · cargando cosas ligeras o subiendo escaleras seguido · trabajo pesado o cargando cosas pesadas; Saúl Pérez, 2026-10-26), y del GPAQ panamericano el desplazamiento activo (caminar o bici al menos 10 minutos seguidos para ir a algún lado: sí/no + días por semana) y las horas sentado o reclinado en un día normal sin contar el sueño (0–24). **No se suma al total de ejercicio** (paradoja de la actividad física, research.md § ocupación; research `habitos.md#actividad-sueno`) |
+| sueño | ronda 7 (antes fuera): horas que duerme en un día de 24 horas, enteras (1–24, NHIS `SLPHOURS_A`), y por separado, en los últimos 30 días, con qué frecuencia le costó dormirse y seguir durmiendo o despertó demasiado temprano (nunca · algunos días · casi todos los días · todos los días; NHIS `SLPFLL_A`, `SLPSTY_A`; Saúl Pérez, 2026-10-26). Sin diagnóstico ni puntaje; sin "No recuerdo" (todo es presente) |
 
 **Completitud (Saúl Pérez, 2026-10-22, perfil-habitos-completitud):** cada hábito sigue siendo opcional, pero la
 respuesta elegida pide sus preguntas: con "lo dejé", "antes" o "actual", las edades, las cantidades y, en el alcohol

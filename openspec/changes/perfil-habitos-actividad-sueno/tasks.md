@@ -21,7 +21,7 @@ are `single`. `make tdd-check` requires one `test:` commit per `test→impl` gro
 
   El agente lo recorre primero en Chrome. Verificación: "plan approved" significa "navegué el prototipo y esto es lo
   que quiero".
-- [ ] 0.2 **Base.** `make up` con la rama al día con `origin/main`; `openspec validate perfil-habitos-actividad-sueno
+- [x] 0.2 **Base.** `make up` con la rama al día con `origin/main`; `openspec validate perfil-habitos-actividad-sueno
   --strict` limpio.
 
 ## 1. Backend: los tres bloques · test→impl
