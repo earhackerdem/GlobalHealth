@@ -36,6 +36,11 @@ curso = "curso"
 doble = "doble"
 # "el PUT responde 500" (títulos de la fila 31 de profile-habits.spec.ts)
 responde = "responde"
+# perfil-habitos-actividad-sueno: "¿Caminas o vas en bici…?", "recomend" (raíz
+# prohibida de C-6) y "antes de que termine el clic" en sus pruebas
+vas = "vas"
+recomend = "recomend"
+termine = "termine"
 # nombre real de la action re-actors/alls-green (workflows del template)
 alls = "alls"
 
