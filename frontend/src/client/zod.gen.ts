@@ -120,6 +120,29 @@ export const zConsentStatusPublic = z.object({
 });
 
 /**
+ * DailyMovement
+ */
+export const zDailyMovement = z.object({
+    main_activity: z.enum([
+        'sitting',
+        'standing_walking',
+        'light_loads',
+        'heavy_work'
+    ]).nullish(),
+    active_travel: z.boolean().nullish(),
+    active_travel_days: z.int().gte(1).lte(7).nullish(),
+    sitting_hours: z.int().gte(0).lte(24).nullish()
+});
+
+/**
+ * ExerciseActivity
+ */
+export const zExerciseActivity = z.object({
+    days_per_week: z.int().gte(1).lte(7).nullish(),
+    minutes_per_session: z.int().gte(1).lte(600).nullish()
+});
+
+/**
  * FamilyHistoryCreate
  */
 export const zFamilyHistoryCreate = z.object({
@@ -328,6 +351,38 @@ export const zOnboardingClose = z.object({
 });
 
 /**
+ * OtherExerciseActivity
+ */
+export const zOtherExerciseActivity = z.object({
+    days_per_week: z.int().gte(1).lte(7).nullish(),
+    minutes_per_session: z.int().gte(1).lte(600).nullish(),
+    name: z.string().max(60).nullish()
+});
+
+/**
+ * ExerciseActivities
+ */
+export const zExerciseActivities = z.object({
+    walking: zExerciseActivity.nullish(),
+    running: zExerciseActivity.nullish(),
+    cycling: zExerciseActivity.nullish(),
+    swimming: zExerciseActivity.nullish(),
+    weights_gym: zExerciseActivity.nullish(),
+    football_other_sport: zExerciseActivity.nullish(),
+    yoga_pilates: zExerciseActivity.nullish(),
+    dance: zExerciseActivity.nullish(),
+    other: zOtherExerciseActivity.nullish()
+});
+
+/**
+ * ExerciseHabit
+ */
+export const zExerciseHabit = z.object({
+    does_exercise: z.boolean(),
+    activities: zExerciseActivities.optional()
+});
+
+/**
  * PatientProfilePublic
  */
 export const zPatientProfilePublic = z.object({
@@ -402,6 +457,25 @@ export const zSecondhandSmoke = z.object({
         'other'
     ])).max(3).optional(),
     days_per_week: z.int().gte(1).lte(7).nullish()
+});
+
+/**
+ * SleepHabit
+ */
+export const zSleepHabit = z.object({
+    hours: z.int().gte(1).lte(24).nullish(),
+    trouble_falling_asleep: z.enum([
+        'never',
+        'some_days',
+        'most_days',
+        'every_day'
+    ]).nullish(),
+    trouble_staying_asleep: z.enum([
+        'never',
+        'some_days',
+        'most_days',
+        'every_day'
+    ]).nullish()
 });
 
 /**
@@ -950,7 +1024,10 @@ export const zHabits = z.object({
     tobacco: zTobaccoHabit.nullish(),
     vaping: zVapingHabit.nullish(),
     secondhand_smoke: zSecondhandSmoke.nullish(),
-    wood_smoke: zWoodSmokeHabit.nullish()
+    wood_smoke: zWoodSmokeHabit.nullish(),
+    exercise: zExerciseHabit.nullish(),
+    daily_movement: zDailyMovement.nullish(),
+    sleep: zSleepHabit.nullish()
 });
 
 export const zLoginLoginAccessTokenBody = zBodyLoginLoginAccessToken;

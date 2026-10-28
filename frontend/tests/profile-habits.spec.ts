@@ -2739,3 +2739,695 @@ test.describe("Perfil médico — hábitos completos (perfil-habitos-completitud
     expect((await getHabits(api)).tobacco?.start_age).toBe(18)
   })
 })
+
+// --- perfil-habitos-actividad-sueno (openspec/changes/perfil-habitos-actividad-
+// sueno/design.md → Interface contract → Frontend; C-5…C-8, C-13…C-17) -------
+// Grupos (role "group", nombre exacto = la pregunta), chips con aria-pressed:
+//   "¿Qué ejercicio haces?" (varios): "Caminar" · "Correr" · "Bicicleta" ·
+//     "Nadar" · "Pesas o gimnasio" · "Fútbol u otro deporte" ·
+//     "Yoga o pilates" · "Baile" · "Otra", y "No hago ejercicio" (excluyente:
+//     elegirlo apaga las actividades; elegir una actividad lo apaga).
+//   Por actividad elegida, en el orden del catálogo: números "Días por semana:
+//     <actividad>" (1 a 7) y "Minutos cada vez: <actividad>" (1 a 600); con
+//     "Otra", antes el texto "¿Cuál?" ("Escribe cuál." si falta).
+//   Debajo: "Total de lo anotado: N minutos por semana" (suma de días × minutos
+//     de las actividades con los dos datos válidos; sin ninguna, no se muestra).
+//   "En tu trabajo o actividad principal (casa, escuela…), ¿cómo pasas el
+//     día?": "Casi todo sentado" · "De pie o caminando, sin cargar cosas" ·
+//     "Cargando cosas ligeras o subiendo escaleras seguido" · "Trabajo pesado
+//     o cargando cosas pesadas".
+//   "¿Caminas o vas en bici al menos 10 minutos seguidos para ir a algún
+//     lado?": "No" · "Sí"; con "Sí", el número "¿Cuántos días por semana?".
+//   Número "En un día normal, ¿cuántas horas pasas sentado o reclinado?"
+//     (0 a 24), ayuda "Sin contar el tiempo que duermes.".
+//   Número "En promedio, ¿cuántas horas duermes en un día?" (1 a 24), ayuda
+//     "Cuenta las siestas. Si son 6 y media, escribe 7.".
+//   "En los últimos 30 días, ¿con qué frecuencia te costó dormirte?" y "En los
+//     últimos 30 días, ¿con qué frecuencia te costó seguir durmiendo o
+//     despertaste demasiado temprano?": "Nunca" · "Algunos días" · "Casi todos
+//     los días" · "Todos los días".
+// Sin "No recuerdo" en estos bloques. Obligatorias, escala, C-17, cambios sin
+//   guardar y D20 como el resto de la pantalla (contrato de arriba).
+// ---------------------------------------------------------------------------
+
+const EXERCISE = "¿Qué ejercicio haces?"
+const NO_EXERCISE = "No hago ejercicio"
+const ACTIVITIES = [
+  "Caminar",
+  "Correr",
+  "Bicicleta",
+  "Nadar",
+  "Pesas o gimnasio",
+  "Fútbol u otro deporte",
+  "Yoga o pilates",
+  "Baile",
+  "Otra",
+]
+const OTHER_NAME = "¿Cuál?"
+const MAIN_ACTIVITY =
+  "En tu trabajo o actividad principal (casa, escuela…), ¿cómo pasas el día?"
+const MAIN_ACTIVITY_OPTIONS = [
+  "Casi todo sentado",
+  "De pie o caminando, sin cargar cosas",
+  "Cargando cosas ligeras o subiendo escaleras seguido",
+  "Trabajo pesado o cargando cosas pesadas",
+]
+const ACTIVE_TRAVEL =
+  "¿Caminas o vas en bici al menos 10 minutos seguidos para ir a algún lado?"
+const TRAVEL_DAYS = "¿Cuántos días por semana?"
+const SITTING_HOURS =
+  "En un día normal, ¿cuántas horas pasas sentado o reclinado?"
+const SITTING_HINT = "Sin contar el tiempo que duermes."
+const SLEEP_HOURS = "En promedio, ¿cuántas horas duermes en un día?"
+const SLEEP_HINT = "Cuenta las siestas. Si son 6 y media, escribe 7."
+const FALLING_ASLEEP =
+  "En los últimos 30 días, ¿con qué frecuencia te costó dormirte?"
+const STAYING_ASLEEP =
+  "En los últimos 30 días, ¿con qué frecuencia te costó seguir durmiendo o despertaste demasiado temprano?"
+const FREQUENCY_OPTIONS = [
+  "Nunca",
+  "Algunos días",
+  "Casi todos los días",
+  "Todos los días",
+]
+const OTHER_MISSING = "Escribe cuál."
+
+/** "Días por semana: <actividad>" (R7: nombre distinto por actividad). */
+function activityDays(page: Page, activity: string): Locator {
+  return numberField(page, `Días por semana: ${activity}`)
+}
+
+/** "Minutos cada vez: <actividad>". */
+function activityMinutes(page: Page, activity: string): Locator {
+  return numberField(page, `Minutos cada vez: ${activity}`)
+}
+
+/** El total semanal con ese número exacto. */
+function weeklyTotal(page: Page, minutes: number): Locator {
+  return page.getByText(`Total de lo anotado: ${minutes} minutos por semana`, {
+    exact: true,
+  })
+}
+
+/** Cualquier total semanal a la vista. */
+function anyWeeklyTotal(page: Page): Locator {
+  return page.getByText(/Total de lo anotado/)
+}
+
+/** `first` va antes que `second` en el DOM. */
+async function expectBefore(first: Locator, second: Locator) {
+  const handle = await second.elementHandle()
+  const following = await first.evaluate(
+    (el, other) =>
+      Boolean(
+        el.compareDocumentPosition(other as Node) &
+          Node.DOCUMENT_POSITION_FOLLOWING,
+      ),
+    handle,
+  )
+  expect(following).toBe(true)
+}
+
+/** Paciente que ya guardó "Caminar" 5 días por semana, 30 minutos cada vez. */
+const WALKING_5x30 = {
+  exercise: {
+    does_exercise: true,
+    activities: { walking: { days_per_week: 5, minutes_per_session: 30 } },
+  },
+}
+
+test.describe("Perfil médico — hábitos: ejercicio, movimiento del día y sueño (perfil-habitos-actividad-sueno, grupo 2)", () => {
+  test("C-5 (fila 1) dos actividades con su total: 'Caminar' 5×30 y 'Pesas o gimnasio' 2×45 → antes de guardar 'Total de lo anotado: 240 minutos por semana'; al reabrir ve las dos con sus días y minutos", async ({
+    page,
+    request,
+  }) => {
+    const api = await freshPatient(page, request)
+    await openHabitsFromProfile(page)
+
+    // Los chips del catálogo, en su orden, y "No hago ejercicio".
+    const chipNames = (
+      await group(page, EXERCISE).getByRole("button").allTextContents()
+    ).map((text) => text.trim())
+    expect(chipNames.filter((name) => name !== NO_EXERCISE)).toEqual(ACTIVITIES)
+    await expect(chip(page, EXERCISE, NO_EXERCISE)).toHaveCount(1)
+    await expect(anyWeeklyTotal(page)).toHaveCount(0)
+    // Sin total, la región viva del total ya existe (vacía): el primer total
+    // es un cambio dentro de ella, y se oye.
+    const totalRegion = page.locator("main").last().getByRole("status")
+    await expect(totalRegion).toHaveCount(1)
+    await expect(totalRegion).toHaveText("")
+
+    await chip(page, EXERCISE, "Caminar").click()
+    await expectPressed(chip(page, EXERCISE, "Caminar"), true)
+    await activityDays(page, "Caminar").fill("5")
+    await activityMinutes(page, "Caminar").fill("30")
+    await expect(weeklyTotal(page, 150)).toBeVisible()
+    await expect(totalRegion).toHaveText(
+      "Total de lo anotado: 150 minutos por semana",
+    )
+
+    await chip(page, EXERCISE, "Pesas o gimnasio").click()
+    await expectPressed(chip(page, EXERCISE, "Caminar"), true)
+    await expectPressed(chip(page, EXERCISE, "Pesas o gimnasio"), true)
+    // Una actividad sin sus datos no suma (ni rompe el total).
+    await expect(weeklyTotal(page, 150)).toBeVisible()
+    await activityDays(page, "Pesas o gimnasio").fill("2")
+    await activityMinutes(page, "Pesas o gimnasio").fill("45")
+    await expect(weeklyTotal(page, 240)).toBeVisible()
+    await saveOk(page)
+
+    await reopen(page)
+    await expectPressed(chip(page, EXERCISE, "Caminar"), true)
+    await expectPressed(chip(page, EXERCISE, "Pesas o gimnasio"), true)
+    await expectPressed(chip(page, EXERCISE, "Correr"), false)
+    await expectPressed(chip(page, EXERCISE, NO_EXERCISE), false)
+    await expect(activityDays(page, "Caminar")).toHaveValue("5")
+    await expect(activityMinutes(page, "Caminar")).toHaveValue("30")
+    await expect(activityDays(page, "Pesas o gimnasio")).toHaveValue("2")
+    await expect(activityMinutes(page, "Pesas o gimnasio")).toHaveValue("45")
+    await expect(weeklyTotal(page, 240)).toBeVisible()
+
+    const saved = await getHabits(api)
+    expect(saved.exercise?.does_exercise).toBe(true)
+    expect(saved.exercise?.activities?.walking).toMatchObject({
+      days_per_week: 5,
+      minutes_per_session: 30,
+    })
+    expect(saved.exercise?.activities?.weights_gym).toMatchObject({
+      days_per_week: 2,
+      minutes_per_session: 45,
+    })
+    expect(saved.exercise?.activities?.running ?? null).toBeNull()
+  })
+
+  test("C-5 (fila 2) 'Otra' con 1 día y 90 minutos sin escribir cuál: 'Guardar' → 'Escribe cuál.' junto a '¿Cuál?', con el foco ahí, y ningún PUT; con 'Senderismo' se guarda y al reabrir ve 'Otra' con 'Senderismo'", async ({
+    page,
+    request,
+  }) => {
+    const api = await freshPatient(page, request)
+    await openHabitsFromProfile(page)
+    const puts = trackHabitPuts(page)
+
+    await chip(page, EXERCISE, "Otra").click()
+    const name = numberField(page, OTHER_NAME)
+    await expect(name).toBeVisible()
+    // "¿Cuál?" va antes que sus días y minutos.
+    await expectBefore(name, activityDays(page, "Otra"))
+    await expectBefore(
+      activityDays(page, "Otra"),
+      activityMinutes(page, "Otra"),
+    )
+    await activityDays(page, "Otra").fill("1")
+    await activityMinutes(page, "Otra").fill("90")
+    await page.getByRole("button", { name: "Guardar", exact: true }).click()
+
+    await expectFieldError(page, name, OTHER_MISSING)
+    await expectNoPut(page, puts)
+    await expect(page).toHaveURL(HABITS_URL)
+    expect((await getHabits(api)).exercise ?? null).toBeNull()
+
+    await name.fill("Senderismo")
+    await saveOk(page)
+    expect(puts).toHaveLength(1)
+
+    await reopen(page)
+    await expectPressed(chip(page, EXERCISE, "Otra"), true)
+    await expect(numberField(page, OTHER_NAME)).toHaveValue("Senderismo")
+    await expect(activityDays(page, "Otra")).toHaveValue("1")
+    await expect(activityMinutes(page, "Otra")).toHaveValue("90")
+
+    const saved = await getHabits(api)
+    expect(saved.exercise?.activities?.other).toMatchObject({
+      name: "Senderismo",
+      days_per_week: 1,
+      minutes_per_session: 90,
+    })
+  })
+
+  test("C-5 (fila 2) 'Otra' con un '¿Cuál?' que solo lleva un carácter invisible (U+200B): 'Guardar' → 'Escribe cuál.' junto a '¿Cuál?' y ningún PUT", async ({
+    page,
+    request,
+  }) => {
+    const api = await freshPatient(page, request)
+    await openHabitsFromProfile(page)
+    const puts = trackHabitPuts(page)
+
+    await chip(page, EXERCISE, "Otra").click()
+    const name = numberField(page, OTHER_NAME)
+    await name.fill("\u200b")
+    await activityDays(page, "Otra").fill("1")
+    await activityMinutes(page, "Otra").fill("90")
+    await page.getByRole("button", { name: "Guardar", exact: true }).click()
+
+    await expectFieldError(page, name, OTHER_MISSING)
+    await expectNoPut(page, puts)
+    await expect(page).toHaveURL(HABITS_URL)
+    expect((await getHabits(api)).exercise ?? null).toBeNull()
+  })
+
+  test("C-5, C-15 (fila 3) falta un dato de una actividad: 'Correr' con 3 días y sin minutos → 'Guardar' → 'Contesta esta pregunta.' junto a 'Minutos cada vez: Correr', con el foco ahí, y ningún PUT; ningún 'No recuerdo' en el ejercicio", async ({
+    page,
+    request,
+  }) => {
+    const api = await freshPatient(page, request)
+    await openHabitsFromProfile(page)
+    const puts = trackHabitPuts(page)
+
+    await chip(page, EXERCISE, "Correr").click()
+    await activityDays(page, "Correr").fill("3")
+    await page.getByRole("button", { name: "Guardar", exact: true }).click()
+
+    await expectFieldError(page, activityMinutes(page, "Correr"), MISSING)
+    await expect(activityDays(page, "Correr")).not.toHaveAttribute(
+      "aria-invalid",
+      "true",
+    )
+    await expectNoPut(page, puts)
+    await expect(page).toHaveURL(HABITS_URL)
+    expect((await getHabits(api)).exercise ?? null).toBeNull()
+
+    // Ninguna pregunta del ejercicio ofrece "No recuerdo" (tampoco "Otra").
+    await chip(page, EXERCISE, "Otra").click()
+    await expect(numberField(page, OTHER_NAME)).toBeVisible()
+    await expect(
+      page.getByRole("button", { name: /^No recuerdo/ }),
+    ).toHaveCount(0)
+    await expect(
+      page.getByText(MISSING_OR_UNKNOWN, { exact: true }),
+    ).toHaveCount(0)
+  })
+
+  test("C-5 (fila 4) 'No hago ejercicio': con 'Caminar' 5×30 guardado, elegirlo apaga 'Caminar' → 'Guardar' → al reabrir ve 'No hago ejercicio' elegido, ninguna actividad ni total; elegir una actividad lo apaga", async ({
+    page,
+    request,
+  }) => {
+    const api = await freshPatient(page, request)
+    await seedHabits(api, WALKING_5x30)
+    await openHabitsFromProfile(page)
+    await expectPressed(chip(page, EXERCISE, "Caminar"), true)
+    await expect(weeklyTotal(page, 150)).toBeVisible()
+
+    await chip(page, EXERCISE, NO_EXERCISE).click()
+    await expectPressed(chip(page, EXERCISE, NO_EXERCISE), true)
+    await expectPressed(chip(page, EXERCISE, "Caminar"), false)
+    await expect(activityDays(page, "Caminar")).toHaveCount(0)
+    await expect(anyWeeklyTotal(page)).toHaveCount(0)
+    await saveOk(page)
+
+    await reopen(page)
+    await expectPressed(chip(page, EXERCISE, NO_EXERCISE), true)
+    for (const activity of ACTIVITIES) {
+      await expectPressed(chip(page, EXERCISE, activity), false)
+    }
+    await expect(page.getByLabel(/^Días por semana: /)).toHaveCount(0)
+    await expect(page.getByLabel(/^Minutos cada vez: /)).toHaveCount(0)
+    await expect(anyWeeklyTotal(page)).toHaveCount(0)
+
+    const saved = await getHabits(api)
+    expect(saved.exercise?.does_exercise).toBe(false)
+    for (const activity of Object.values(saved.exercise?.activities ?? {})) {
+      expect(activity ?? null).toBeNull()
+    }
+
+    // Elegir una actividad apaga "No hago ejercicio" (sin guardar).
+    await chip(page, EXERCISE, "Caminar").click()
+    await expectPressed(chip(page, EXERCISE, "Caminar"), true)
+    await expectPressed(chip(page, EXERCISE, NO_EXERCISE), false)
+  })
+
+  test("C-7 (fila 5) movimiento del día aparte del ejercicio: con 'Caminar' 5×30, 'Casi todo sentado', 'Sí' con 5 días y 9 horas sentado → el total sigue en 150; al reabrir ve las tres respuestas", async ({
+    page,
+    request,
+  }) => {
+    const api = await freshPatient(page, request)
+    await seedHabits(api, WALKING_5x30)
+    await openHabitsFromProfile(page)
+    await expect(weeklyTotal(page, 150)).toBeVisible()
+
+    for (const option of MAIN_ACTIVITY_OPTIONS) {
+      await expect(chip(page, MAIN_ACTIVITY, option)).toHaveCount(1)
+    }
+    await expect(page.getByText(SITTING_HINT, { exact: true })).toBeVisible()
+
+    await chip(page, MAIN_ACTIVITY, "Casi todo sentado").click()
+    await expectPressed(chip(page, MAIN_ACTIVITY, "Casi todo sentado"), true)
+    await chip(page, ACTIVE_TRAVEL, "Sí").click()
+    await expectPressed(chip(page, ACTIVE_TRAVEL, "Sí"), true)
+    await numberField(page, TRAVEL_DAYS).fill("5")
+    await numberField(page, SITTING_HOURS).fill("9")
+    await numberField(page, SITTING_HOURS).press("Tab")
+
+    await expect(weeklyTotal(page, 150)).toBeVisible()
+    await saveOk(page)
+
+    await reopen(page)
+    await expect(weeklyTotal(page, 150)).toBeVisible()
+    await expectPressed(chip(page, MAIN_ACTIVITY, "Casi todo sentado"), true)
+    await expectPressed(chip(page, ACTIVE_TRAVEL, "Sí"), true)
+    await expectPressed(chip(page, ACTIVE_TRAVEL, "No"), false)
+    await expect(numberField(page, TRAVEL_DAYS)).toHaveValue("5")
+    await expect(numberField(page, SITTING_HOURS)).toHaveValue("9")
+
+    const saved = await getHabits(api)
+    expect(saved.daily_movement).toMatchObject({
+      main_activity: "sitting",
+      active_travel: true,
+      active_travel_days: 5,
+      sitting_hours: 9,
+    })
+    expect(saved.exercise?.activities?.walking).toMatchObject({
+      days_per_week: 5,
+      minutes_per_session: 30,
+    })
+  })
+
+  test("C-7, C-15 (fila 6) desplazamiento sin días: 'Sí' → 'Guardar' → 'Contesta esta pregunta.' junto a '¿Cuántos días por semana?' y ningún PUT; con 'No' se van la pregunta y el error, y se guarda sin días", async ({
+    page,
+    request,
+  }) => {
+    const api = await freshPatient(page, request)
+    await openHabitsFromProfile(page)
+    const puts = trackHabitPuts(page)
+
+    await expect(numberField(page, TRAVEL_DAYS)).toHaveCount(0)
+    await chip(page, ACTIVE_TRAVEL, "Sí").click()
+    const days = numberField(page, TRAVEL_DAYS)
+    await expect(days).toBeVisible()
+    await page.getByRole("button", { name: "Guardar", exact: true }).click()
+
+    await expectFieldError(page, days, MISSING)
+    await expectNoPut(page, puts)
+    await expect(page).toHaveURL(HABITS_URL)
+    expect((await getHabits(api)).daily_movement ?? null).toBeNull()
+
+    await chip(page, ACTIVE_TRAVEL, "No").click()
+    await expectPressed(chip(page, ACTIVE_TRAVEL, "No"), true)
+    await expect(numberField(page, TRAVEL_DAYS)).toHaveCount(0)
+    await expect(page.getByText(MISSING, { exact: true })).toHaveCount(0)
+    await saveOk(page)
+    expect(puts).toHaveLength(1)
+
+    const saved = await getHabits(api)
+    expect(saved.daily_movement?.active_travel).toBe(false)
+    expect(saved.daily_movement?.active_travel_days ?? null).toBeNull()
+
+    await reopen(page)
+    await expectPressed(chip(page, ACTIVE_TRAVEL, "No"), true)
+    await expect(numberField(page, TRAVEL_DAYS)).toHaveCount(0)
+  })
+
+  test("C-8 (fila 7) sueño con las dos frecuencias: 6 horas, 'Algunos días' a que le costó dormirse y 'Casi todos los días' a seguir durmiendo → al reabrir ve 6 y cada respuesta en su pregunta", async ({
+    page,
+    request,
+  }) => {
+    const api = await freshPatient(page, request)
+    await openHabitsFromProfile(page)
+
+    await expect(page.getByText(SLEEP_HINT, { exact: true })).toBeVisible()
+    for (const question of [FALLING_ASLEEP, STAYING_ASLEEP]) {
+      for (const option of FREQUENCY_OPTIONS) {
+        await expect(chip(page, question, option)).toHaveCount(1)
+      }
+    }
+
+    await numberField(page, SLEEP_HOURS).fill("6")
+    await chip(page, FALLING_ASLEEP, "Algunos días").click()
+    await chip(page, STAYING_ASLEEP, "Casi todos los días").click()
+    await expectPressed(chip(page, FALLING_ASLEEP, "Algunos días"), true)
+    await expectPressed(chip(page, STAYING_ASLEEP, "Casi todos los días"), true)
+    await saveOk(page)
+
+    await reopen(page)
+    await expect(numberField(page, SLEEP_HOURS)).toHaveValue("6")
+    for (const option of FREQUENCY_OPTIONS) {
+      await expectPressed(
+        chip(page, FALLING_ASLEEP, option),
+        option === "Algunos días",
+      )
+      await expectPressed(
+        chip(page, STAYING_ASLEEP, option),
+        option === "Casi todos los días",
+      )
+    }
+
+    const saved = await getHabits(api)
+    expect(saved.sleep).toMatchObject({
+      hours: 6,
+      trouble_falling_asleep: "some_days",
+      trouble_staying_asleep: "most_days",
+    })
+  })
+
+  test("C-14 (fila 8) fuera de escala en los bloques nuevos, al salir del campo: 8 días ('Debe estar entre 1 y 7'), 601 minutos ('Debe estar entre 1 y 600'), 25 horas sentado ('Debe estar entre 0 y 24') y 0 horas de sueño ('Debe estar entre 1 y 24'); ningún PUT ni al tocar 'Guardar'", async ({
+    page,
+    request,
+  }) => {
+    const api = await freshPatient(page, request)
+    await openHabitsFromProfile(page)
+    const puts = trackHabitPuts(page)
+
+    await chip(page, EXERCISE, "Caminar").click()
+    const days = activityDays(page, "Caminar")
+    await days.fill("8")
+    await days.press("Tab")
+    await expectFieldError(page, days, "Debe estar entre 1 y 7", {
+      focused: false,
+    })
+
+    const minutes = activityMinutes(page, "Caminar")
+    await minutes.fill("601")
+    await minutes.press("Tab")
+    await expectFieldError(page, minutes, "Debe estar entre 1 y 600", {
+      focused: false,
+    })
+
+    const sitting = numberField(page, SITTING_HOURS)
+    await sitting.fill("25")
+    await sitting.press("Tab")
+    await expectFieldError(page, sitting, "Debe estar entre 0 y 24", {
+      focused: false,
+    })
+
+    const sleep = numberField(page, SLEEP_HOURS)
+    await sleep.fill("0")
+    await sleep.press("Tab")
+    await expectFieldError(page, sleep, "Debe estar entre 1 y 24", {
+      focused: false,
+    })
+
+    // Con valores fuera de escala no hay total (ninguna actividad válida).
+    await expect(anyWeeklyTotal(page)).toHaveCount(0)
+    await expectNoPut(page, puts)
+
+    await page.getByRole("button", { name: "Guardar", exact: true }).click()
+    await expectNoPut(page, puts)
+    await expect(page).toHaveURL(HABITS_URL)
+
+    const saved = await getHabits(api)
+    expect(saved.exercise ?? null).toBeNull()
+    expect(saved.daily_movement ?? null).toBeNull()
+    expect(saved.sleep ?? null).toBeNull()
+  })
+
+  // Exploración en Chrome (3.2): salir de una caja con un clic en otra y salir
+  // de esa otra antes de que termine el clic dejaba sin error a la primera.
+  test("C-14 (fila 8) dos cajas dejadas seguidas: 25 horas sentado, clic en las horas de sueño, 0 y Tab enseguida; las dos marcan su error", async ({
+    page,
+    request,
+  }) => {
+    await freshPatient(page, request)
+    await openHabitsFromProfile(page)
+
+    const sitting = numberField(page, SITTING_HOURS)
+    const sleep = numberField(page, SLEEP_HOURS)
+    await sitting.click()
+    await page.keyboard.type("25")
+    await sleep.click()
+    await page.keyboard.type("0")
+    await page.keyboard.press("Tab")
+
+    await expectFieldError(page, sitting, "Debe estar entre 0 y 24", {
+      focused: false,
+    })
+    await expectFieldError(page, sleep, "Debe estar entre 1 y 24", {
+      focused: false,
+    })
+  })
+
+  test("fila 9 contesta solo 7 horas de sueño: se guarda, la tarjeta 'Hábitos' dice 'Con datos' y los demás bloques quedan sin contestar", async ({
+    page,
+    request,
+  }) => {
+    const api = await freshPatient(page, request)
+    await openHabitsFromProfile(page)
+
+    await numberField(page, SLEEP_HOURS).fill("7")
+    await saveOk(page)
+    await expect(card(page)).toContainText("Con datos")
+
+    await reopen(page)
+    await expect(numberField(page, SLEEP_HOURS)).toHaveValue("7")
+    for (const option of [...ACTIVITIES, NO_EXERCISE]) {
+      await expectPressed(chip(page, EXERCISE, option), false)
+    }
+    for (const option of MAIN_ACTIVITY_OPTIONS) {
+      await expectPressed(chip(page, MAIN_ACTIVITY, option), false)
+    }
+    for (const option of ["No", "Sí"]) {
+      await expectPressed(chip(page, ACTIVE_TRAVEL, option), false)
+    }
+    await expect(numberField(page, SITTING_HOURS)).toHaveValue("")
+    for (const option of FREQUENCY_OPTIONS) {
+      await expectPressed(chip(page, FALLING_ASLEEP, option), false)
+      await expectPressed(chip(page, STAYING_ASLEEP, option), false)
+    }
+
+    const saved = await getHabits(api)
+    expect(saved.sleep?.hours).toBe(7)
+    expect(saved.sleep?.trouble_falling_asleep ?? null).toBeNull()
+    expect(saved.sleep?.trouble_staying_asleep ?? null).toBeNull()
+    expect(saved.exercise ?? null).toBeNull()
+    expect(saved.daily_movement ?? null).toBeNull()
+    expect(saved.alcohol ?? null).toBeNull()
+    expect(saved.tobacco ?? null).toBeNull()
+  })
+
+  test("C-6 (fila 10) total semanal sin veredicto: con 'Caminar' 1×20, 'Casi todo sentado', 12 horas sentado, 4 horas de sueño y 'Todos los días' en las dos frecuencias, la pantalla dice 'Total de lo anotado: 20 minutos por semana' y ni ella ni la respuesta dicen '150', 'OMS', 'recomend', 'insuficiente', 'sedentari', 'insomnio', 'riesgo' o 'puntaje'", async ({
+    page,
+    request,
+  }) => {
+    const api = await freshPatient(page, request)
+    await seedHabits(api, {
+      exercise: {
+        does_exercise: true,
+        activities: { walking: { days_per_week: 1, minutes_per_session: 20 } },
+      },
+      daily_movement: { main_activity: "sitting", sitting_hours: 12 },
+      sleep: {
+        hours: 4,
+        trouble_falling_asleep: "every_day",
+        trouble_staying_asleep: "every_day",
+      },
+    })
+    await openHabitsFromProfile(page)
+
+    await expect(weeklyTotal(page, 20)).toBeVisible()
+    await expectPressed(chip(page, MAIN_ACTIVITY, "Casi todo sentado"), true)
+    await expect(numberField(page, SITTING_HOURS)).toHaveValue("12")
+    await expect(numberField(page, SLEEP_HOURS)).toHaveValue("4")
+    await expectPressed(chip(page, FALLING_ASLEEP, "Todos los días"), true)
+    await expectPressed(chip(page, STAYING_ASLEEP, "Todos los días"), true)
+
+    // "meta", como palabra entera (no dentro de otra).
+    const forbidden =
+      /150|OMS|recomend|insuficiente|sedentari|insomnio|riesgo|puntaje|\bmeta\b/i
+    // El layout anida dos <main> (SidebarInset y el de _layout); el último, el
+    // más interno, es el contenido de la pantalla de hábitos.
+    const screen = page.locator("main").last()
+    await expect(screen).toContainText(SLEEP_HOURS)
+    expect(await screen.innerText()).not.toMatch(forbidden)
+
+    const saved = await getHabits(api)
+    expect(JSON.stringify(saved)).not.toMatch(forbidden)
+    expect(JSON.stringify(saved)).not.toMatch(/total/i)
+  })
+
+  test("fila 12 (R7, C-13, D20) accesibilidad y no disponibles mientras guarda: elegir 'Caminar' es un cambio sin guardar; los números de 'Caminar' y 'Correr' tienen nombres distintos y van en el orden del catálogo; con el PUT retenido, los chips nuevos tienen aria-disabled='true', su clic no cambia nada y los números son de solo lectura", async ({
+    page,
+    request,
+  }) => {
+    const api = await freshPatient(page, request)
+    await openHabitsFromProfile(page)
+    const puts = trackHabitPuts(page)
+
+    // Elegir una actividad cuenta como cambio sin guardar.
+    await chip(page, EXERCISE, "Correr").click()
+    await backLink(page).click()
+    const dialog = leaveDialog(page)
+    await expect(dialog).toBeVisible()
+    await expect(dialog).toContainText(LEAVE_TEXT)
+    await dialog
+      .getByRole("button", { name: "Seguir editando", exact: true })
+      .click()
+    await expect(page).toHaveURL(HABITS_URL)
+    await expectPressed(chip(page, EXERCISE, "Correr"), true)
+
+    // Nombres accesibles distintos, en el orden del catálogo aunque "Correr"
+    // se eligió primero.
+    await chip(page, EXERCISE, "Caminar").click()
+    for (const activity of ["Caminar", "Correr"]) {
+      await expect(activityDays(page, activity)).toHaveCount(1)
+      await expect(activityMinutes(page, activity)).toHaveCount(1)
+    }
+    await expectBefore(
+      activityMinutes(page, "Caminar"),
+      activityDays(page, "Correr"),
+    )
+    await activityDays(page, "Caminar").fill("2")
+    await activityMinutes(page, "Caminar").fill("30")
+    await activityDays(page, "Correr").fill("3")
+    await activityMinutes(page, "Correr").fill("40")
+    await expect(weeklyTotal(page, 180)).toBeVisible()
+
+    const hold = await holdFirstHabitsPut(page)
+    await markShownToasts(page)
+    await page.getByRole("button", { name: "Guardar", exact: true }).click()
+    await expect.poll(() => puts.length).toBe(1)
+
+    const newChips = [
+      chip(page, EXERCISE, "Caminar"),
+      chip(page, EXERCISE, "Nadar"),
+      chip(page, EXERCISE, NO_EXERCISE),
+      chip(page, MAIN_ACTIVITY, "Casi todo sentado"),
+      chip(page, ACTIVE_TRAVEL, "Sí"),
+      chip(page, FALLING_ASLEEP, "Nunca"),
+      chip(page, STAYING_ASLEEP, "Todos los días"),
+    ]
+    for (const locator of newChips) {
+      await expect(locator).toHaveAttribute("aria-disabled", "true")
+    }
+    const swimming = chip(page, EXERCISE, "Nadar")
+    await swimming.click({ force: true })
+    await page.waitForTimeout(300)
+    await expectPressed(swimming, false)
+    await expect(activityDays(page, "Nadar")).toHaveCount(0)
+    await expect(activityDays(page, "Caminar")).not.toBeEditable()
+    await expect(numberField(page, SLEEP_HOURS)).not.toBeEditable()
+
+    const putResponse = await hold.releaseAndWait()
+    expect(putResponse.status()).toBe(200)
+    await page.waitForURL(PROFILE_URL)
+    await expect(newToast(page, "Hábitos guardados")).toBeVisible()
+    expect(puts).toHaveLength(1)
+    const saved = await getHabits(api)
+    expect(saved.exercise?.activities?.walking).toMatchObject({
+      days_per_week: 2,
+      minutes_per_session: 30,
+    })
+    expect(saved.exercise?.activities?.running).toMatchObject({
+      days_per_week: 3,
+      minutes_per_session: 40,
+    })
+    expect(saved.exercise?.activities?.swimming ?? null).toBeNull()
+  })
+
+  test("C-17 (fila 13) el error se va al corregirlo: 601 en 'Minutos cada vez: Caminar' y Tab → 'Debe estar entre 1 y 600'; de vuelta en el campo, 60 sin salir → se van el mensaje y aria-invalid", async ({
+    page,
+    request,
+  }) => {
+    await freshPatient(page, request)
+    await openHabitsFromProfile(page)
+    const outOfScale = "Debe estar entre 1 y 600"
+
+    await chip(page, EXERCISE, "Caminar").click()
+    const minutes = activityMinutes(page, "Caminar")
+    await minutes.fill("601")
+    await minutes.press("Tab")
+    await expectFieldError(page, minutes, outOfScale, { focused: false })
+
+    await minutes.fill("60")
+    await expect(minutes).toHaveValue("60")
+    await expect(minutes).toBeFocused()
+    await expectNoFieldError(page, minutes, outOfScale)
+  })
+})

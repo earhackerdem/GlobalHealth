@@ -1,9 +1,10 @@
+import unicodedata
 import uuid
 from collections.abc import Sequence
 from datetime import UTC, date, datetime
 from typing import Annotated, Any, Literal
 
-from pydantic import ConfigDict, Discriminator, EmailStr
+from pydantic import ConfigDict, Discriminator, EmailStr, StringConstraints
 from sqlalchemy import Column
 from sqlmodel import Field, Relationship, SQLModel
 
@@ -920,12 +921,75 @@ class WoodSmokeHabit(_ClosedSchema):
     hours_per_day: HoursPerDay | HabitUnknown | None = None
 
 
+# perfil-habitos-actividad-sueno design.md §Interface contract. Decision 6: no
+# "unknown" anywhere in these blocks (they describe the present).
+DaysPerWeek = Annotated[int, Field(ge=1, le=7)]
+MinutesPerSession = Annotated[int, Field(ge=1, le=600)]
+# Trimmed before its bound; an empty (or invisible) name is not a schema error
+# but a missing one ("Escribe cuál."), so the 1 of 1..60 is checked after
+# normalizing.
+ActivityName = Annotated[str, StringConstraints(strip_whitespace=True, max_length=60)]
+# Not whitespace nor format characters, yet they show nothing: the Hangul
+# fillers and the braille blank.
+BLANK_FILLERS = frozenset("\u115f\u1160\u3164\uffa0\u2800")
+SleepTrouble = Literal["never", "some_days", "most_days", "every_day"]
+
+
+class ExerciseActivity(_ClosedSchema):
+    days_per_week: DaysPerWeek | None = None
+    minutes_per_session: MinutesPerSession | None = None
+
+
+class OtherExerciseActivity(ExerciseActivity):
+    name: ActivityName | None = None
+
+
+# Decision 2: one property per type (catalog order), null when not chosen; a
+# closed object, not a list or a free dict, so an unknown type is a 422.
+class ExerciseActivities(_ClosedSchema):
+    walking: ExerciseActivity | None = None
+    running: ExerciseActivity | None = None
+    cycling: ExerciseActivity | None = None
+    swimming: ExerciseActivity | None = None
+    weights_gym: ExerciseActivity | None = None
+    football_other_sport: ExerciseActivity | None = None
+    yoga_pilates: ExerciseActivity | None = None
+    dance: ExerciseActivity | None = None
+    other: OtherExerciseActivity | None = None
+
+
+class ExerciseHabit(_ClosedSchema):
+    # Decision 3: false is "No hago ejercicio", not "unanswered".
+    does_exercise: bool
+    activities: ExerciseActivities = Field(default_factory=ExerciseActivities)
+
+
+class DailyMovement(_ClosedSchema):
+    # Decision 5: the 4 levels of NHANES PAQ180; travel and sitting from GPAQ.
+    main_activity: (
+        Literal["sitting", "standing_walking", "light_loads", "heavy_work"] | None
+    ) = None
+    active_travel: bool | None = None
+    active_travel_days: DaysPerWeek | None = None
+    sitting_hours: int | None = Field(default=None, ge=0, le=24)
+
+
+class SleepHabit(_ClosedSchema):
+    # Whole hours in 24 (naps included); the two NHIS insomnia items.
+    hours: HoursPerDay | None = None
+    trouble_falling_asleep: SleepTrouble | None = None
+    trouble_staying_asleep: SleepTrouble | None = None
+
+
 class Habits(_ClosedSchema):
     alcohol: AlcoholHabit | None = None
     tobacco: TobaccoHabit | None = None
     vaping: VapingHabit | None = None
     secondhand_smoke: SecondhandSmoke | None = None
     wood_smoke: WoodSmokeHabit | None = None
+    exercise: ExerciseHabit | None = None
+    daily_movement: DailyMovement | None = None
+    sleep: SleepHabit | None = None
 
 
 def upgrade_stored_habits(raw: dict[str, Any]) -> dict[str, Any]:
@@ -994,6 +1058,41 @@ def _normalize_wood(wood: WoodSmokeHabit) -> WoodSmokeHabit:
     return wood.model_copy(update=updates)
 
 
+def _is_blank(text: str) -> bool:
+    """Nothing visible: only whitespace, controls, format characters (Cf, such
+    as U+200B) or blank fillers (an empty text too)."""
+    return all(
+        char.isspace()
+        or unicodedata.category(char) in ("Cc", "Cf")
+        or char in BLANK_FILLERS
+        for char in text
+    )
+
+
+def _normalize_exercise(exercise: ExerciseHabit) -> ExerciseHabit:
+    if not exercise.does_exercise:
+        return exercise.model_copy(update={"activities": ExerciseActivities()})
+    other = exercise.activities.other
+    if other is None or other.name is None or not _is_blank(other.name):
+        return exercise
+    # Already trimmed by the schema (ActivityName): empty or invisible is
+    # unanswered.
+    activities = exercise.activities.model_copy(
+        update={"other": other.model_copy(update={"name": None})}
+    )
+    return exercise.model_copy(update={"activities": activities})
+
+
+def _normalize_movement(movement: DailyMovement) -> DailyMovement:
+    if movement.active_travel is not True:
+        return movement.model_copy(update={"active_travel_days": None})
+    return movement
+
+
+def _all_null(block: DailyMovement | SleepHabit) -> bool:
+    return all(value is None for value in block.model_dump().values())
+
+
 def normalize_habits(habits: Habits) -> Habits:
     """What gets stored: whatever does not apply to the chosen answer is
     dropped (perfil-habitos Decision 3, like chronic `until`), and `places`
@@ -1009,6 +1108,15 @@ def normalize_habits(habits: Habits) -> Habits:
         updates["secondhand_smoke"] = _normalize_secondhand(habits.secondhand_smoke)
     if habits.wood_smoke is not None:
         updates["wood_smoke"] = _normalize_wood(habits.wood_smoke)
+    if habits.exercise is not None:
+        updates["exercise"] = _normalize_exercise(habits.exercise)
+    # A block with nothing answered is an unanswered block (null), not one
+    # with every field null.
+    if habits.daily_movement is not None:
+        movement = _normalize_movement(habits.daily_movement)
+        updates["daily_movement"] = None if _all_null(movement) else movement
+    if habits.sleep is not None and _all_null(habits.sleep):
+        updates["sleep"] = None
     return habits.model_copy(update=updates)
 
 
@@ -1016,7 +1124,13 @@ def normalize_habits(habits: Habits) -> Habits:
 # requires once normalized. block -> answer -> (required, "unknown" NOT
 # admitted; required, "unknown" admitted). An answer not listed requires nothing.
 HabitAnswer = (
-    AlcoholHabit | TobaccoHabit | VapingHabit | SecondhandSmoke | WoodSmokeHabit
+    AlcoholHabit
+    | TobaccoHabit
+    | VapingHabit
+    | SecondhandSmoke
+    | WoodSmokeHabit
+    | ExerciseHabit
+    | DailyMovement
 )
 HABITS_REQUIRED: dict[str, dict[str, tuple[tuple[str, ...], tuple[str, ...]]]] = {
     "alcohol": {
@@ -1040,16 +1154,29 @@ HABITS_REQUIRED: dict[str, dict[str, tuple[tuple[str, ...], tuple[str, ...]]]] =
         "former": ((), ("start_age", "quit_age", "hours_per_day")),
         "current": (("hours_per_day",), ("start_age",)),
     },
+    # perfil-habitos-actividad-sueno; the sleep requires nothing.
+    "exercise": {"does_exercise": (("activities",), ())},
+    "daily_movement": {"active_travel": (("active_travel_days",), ())},
 }
-# A missing answer whose message predates the table keeps it.
+# A missing answer whose message is not the generic one keeps its own.
 HABITS_MISSING_MESSAGE = {
-    ("secondhand_smoke", "places"): "Elige dónde, o «No me expongo»"
+    ("secondhand_smoke", "places"): "Elige dónde, o «No me expongo»",
+    ("exercise", "activities"): "Elige al menos una actividad, o «No hago ejercicio»",
 }
+# What each chosen activity requires, and the message of the one that differs.
+ACTIVITY_REQUIRED = ("days_per_week", "minutes_per_session")
+OTHER_ACTIVITY_REQUIRED = ("name", *ACTIVITY_REQUIRED)
+ACTIVITY_MISSING_MESSAGE = {"name": "Escribe cuál."}
 
 
 def _habit_answer_key(answer: HabitAnswer) -> str:
-    """The HABITS_REQUIRED row of an answer: its status, except the two that
-    depend on another field (the exposure, the vaping frequency)."""
+    """The HABITS_REQUIRED row of an answer: its status, except those that
+    depend on another field (the exposure, the vaping frequency, exercising,
+    the active travel)."""
+    if isinstance(answer, ExerciseHabit):
+        return "does_exercise" if answer.does_exercise else "no_exercise"
+    if isinstance(answer, DailyMovement):
+        return "active_travel" if answer.active_travel else "no_active_travel"
     if isinstance(answer, SecondhandSmoke):
         return "exposed" if answer.exposed else "not_exposed"
     if isinstance(answer, VapingHabit) and answer.frequency == "some_days":
@@ -1063,7 +1190,9 @@ def habits_errors(
     """(block, field, es-MX message) per missing or impossible answer of a
     NORMALIZED Habits (a dropped field is never checked). Ages are compared to
     the current one only with a birth date, and only between numbers ("unknown"
-    is never compared); at most one error per field."""
+    is never compared); at most one error per field. A field nested deeper
+    than its block is a dotted path (an activity's: "activities.walking.
+    days_per_week"), one `loc` level per segment."""
     age_now = _age_on(birth_date, today) if birth_date is not None else None
     errors: dict[tuple[str, str], str] = {}
 
@@ -1101,6 +1230,8 @@ def habits_errors(
         "vaping": habits.vaping,
         "secondhand_smoke": habits.secondhand_smoke,
         "wood_smoke": habits.wood_smoke,
+        "exercise": habits.exercise,
+        "daily_movement": habits.daily_movement,
     }
     for block, given in answers.items():
         if given is None:
@@ -1110,7 +1241,7 @@ def habits_errors(
         )
         for field in no_unknown:
             value = getattr(given, field)
-            if value is None or value == []:
+            if _unanswered(value):
                 message = HABITS_MISSING_MESSAGE.get((block, field), missing)
                 errors.setdefault((block, field), message)
             elif value == HABIT_UNKNOWN:
@@ -1118,7 +1249,36 @@ def habits_errors(
         for field in with_unknown:
             if getattr(given, field) is None:
                 errors.setdefault((block, field), missing_or_unknown)
+    # Each chosen activity, one level deeper: its field is the dotted path
+    # under the block ("activities.<type>.<field>").
+    if habits.exercise is not None:
+        for kind, chosen in _chosen_activities(habits.exercise.activities):
+            required = (
+                OTHER_ACTIVITY_REQUIRED
+                if isinstance(chosen, OtherExerciseActivity)
+                else ACTIVITY_REQUIRED
+            )
+            for field in required:
+                if getattr(chosen, field) is None:
+                    message = ACTIVITY_MISSING_MESSAGE.get(field, missing)
+                    path = f"activities.{kind}.{field}"
+                    errors.setdefault(("exercise", path), message)
     return [(block, field, message) for (block, field), message in errors.items()]
+
+
+def _chosen_activities(
+    activities: ExerciseActivities,
+) -> list[tuple[str, ExerciseActivity]]:
+    """(type, answers) of every chosen activity, in catalog order."""
+    kinds = ExerciseActivities.model_fields
+    chosen = ((kind, getattr(activities, kind)) for kind in kinds)
+    return [(kind, answers) for kind, answers in chosen if answers is not None]
+
+
+def _unanswered(value: Any) -> bool:
+    if isinstance(value, ExerciseActivities):
+        return not _chosen_activities(value)
+    return value is None or value == []
 
 
 # Partial update: absent = "do not touch", explicit null clears the field.

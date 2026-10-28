@@ -317,6 +317,68 @@ export type ConsentStatusPublic = {
 };
 
 /**
+ * DailyMovement
+ */
+export type DailyMovement = {
+    /**
+     * Main Activity
+     */
+    main_activity?: 'sitting' | 'standing_walking' | 'light_loads' | 'heavy_work' | null;
+    /**
+     * Active Travel
+     */
+    active_travel?: boolean | null;
+    /**
+     * Active Travel Days
+     */
+    active_travel_days?: number | null;
+    /**
+     * Sitting Hours
+     */
+    sitting_hours?: number | null;
+};
+
+/**
+ * ExerciseActivities
+ */
+export type ExerciseActivities = {
+    walking?: ExerciseActivity | null;
+    running?: ExerciseActivity | null;
+    cycling?: ExerciseActivity | null;
+    swimming?: ExerciseActivity | null;
+    weights_gym?: ExerciseActivity | null;
+    football_other_sport?: ExerciseActivity | null;
+    yoga_pilates?: ExerciseActivity | null;
+    dance?: ExerciseActivity | null;
+    other?: OtherExerciseActivity | null;
+};
+
+/**
+ * ExerciseActivity
+ */
+export type ExerciseActivity = {
+    /**
+     * Days Per Week
+     */
+    days_per_week?: number | null;
+    /**
+     * Minutes Per Session
+     */
+    minutes_per_session?: number | null;
+};
+
+/**
+ * ExerciseHabit
+ */
+export type ExerciseHabit = {
+    /**
+     * Does Exercise
+     */
+    does_exercise: boolean;
+    activities?: ExerciseActivities;
+};
+
+/**
  * FamilyHistoriesPublic
  */
 export type FamilyHistoriesPublic = {
@@ -489,6 +551,9 @@ export type Habits = {
     vaping?: VapingHabit | null;
     secondhand_smoke?: SecondhandSmoke | null;
     wood_smoke?: WoodSmokeHabit | null;
+    exercise?: ExerciseHabit | null;
+    daily_movement?: DailyMovement | null;
+    sleep?: SleepHabit | null;
 };
 
 /**
@@ -884,6 +949,24 @@ export type OnboardingClose = {
 };
 
 /**
+ * OtherExerciseActivity
+ */
+export type OtherExerciseActivity = {
+    /**
+     * Days Per Week
+     */
+    days_per_week?: number | null;
+    /**
+     * Minutes Per Session
+     */
+    minutes_per_session?: number | null;
+    /**
+     * Name
+     */
+    name?: string | null;
+};
+
+/**
  * PastHistoryContent
  */
 export type PastHistoryContent = {
@@ -1067,6 +1150,24 @@ export type SecondhandSmoke = {
      * Days Per Week
      */
     days_per_week?: number | null;
+};
+
+/**
+ * SleepHabit
+ */
+export type SleepHabit = {
+    /**
+     * Hours
+     */
+    hours?: number | null;
+    /**
+     * Trouble Falling Asleep
+     */
+    trouble_falling_asleep?: 'never' | 'some_days' | 'most_days' | 'every_day' | null;
+    /**
+     * Trouble Staying Asleep
+     */
+    trouble_staying_asleep?: 'never' | 'some_days' | 'most_days' | 'every_day' | null;
 };
 
 /**
