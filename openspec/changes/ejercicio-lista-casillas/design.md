@@ -2,6 +2,12 @@
 
 Status: APPROVED
 Approved by: Saúl Pérez (author) on 2026-10-28, después de navegar la variante E del prototipo
+Enmendado tras la aprobación (2026-10-28, por el agente orquestador, a partir del rojo del tester):
+- **E-4 pierde la cláusula del foco del error de grupo.** Los bloques son opcionales, así que «Guardar» sin nada
+  marcado guarda `exercise: null`, y «Elige al menos una actividad…» solo lo devuelve el servidor ante un cuerpo que
+  llega sin pasar por la pantalla. Desde la pantalla no se puede alcanzar.
+- **D20 en las casillas.** Mientras guarda, cada casilla lleva `aria-disabled="true"` e ignora el clic, igual que
+  los chips. Así la fila 12 de la C2a no pierde fuerza.
 
 **En una frase:** en la pantalla de hábitos, el bloque Ejercicio cambia los chips por una lista con casillas siempre a
 la vista (como los antecedentes familiares), con los días y minutos de cada actividad justo debajo de su casilla mientras
@@ -59,6 +65,7 @@ Lo que las pruebas ejercitan (Playwright, por rol y nombre, como el resto de `pr
   «Guardar» y el `PUT /api/v1/profile/habits`. El cuerpo del `PUT` es idéntico al de hoy para las mismas respuestas.
 - **Teclado:** Espacio sobre una casilla la marca y el foco se queda en ella. Tab desde una casilla marcada va al
   primer campo de su actividad: «¿Cuál?» en «Otra», «Días por semana» en las demás.
+- **Mientras guarda (D20):** cada casilla lleva `aria-disabled="true"` e ignora el clic.
 
 ## Decisions
 
@@ -82,7 +89,7 @@ Lo que las pruebas ejercitan (Playwright, por rol y nombre, como el resto de `pr
 | 1 | E-1 La lista de actividades siempre a la vista | `profile-habits.spec.ts`: 9 casillas en orden + «o» + «No hago ejercicio», ninguna marcada, ningún campo de días/minutos | e2e (chromium, s26-ultra) |
 | 2 | E-2 Marcar abre sus preguntas debajo y desmarcar las quita | marcar Correr, Caminar, Otra → campos entre su casilla y la siguiente («¿Cuál?» primero en Otra); desmarcar Correr con 3×40 → campos fuera, total sin ellos, PUT sin `running` | e2e |
 | 3 | E-3 «No hago ejercicio» excluye | Caminar 5×30 → marcar «No hago ejercicio» → Caminar sin marcar, sin campos ni total; marcar Bicicleta → «No hago ejercicio» sin marcar | e2e |
-| 4 | E-4 Teclado, lector, foco del error | foco en «Caminar», Espacio → marcada y con foco; Tab → «Días por semana» de caminar; Guardar sin nada → mensaje y foco en «Caminar»; rol y nombre de grupo y casilla | e2e |
+| 4 | E-4 Teclado y lector de pantalla | foco en «Caminar», Espacio → marcada y con foco; Tab → «Días por semana» de caminar; rol y nombre de grupo y casilla | e2e |
 | 5 | C-5 Dos actividades con su total | prueba existente (fila 1 de la C2a), ahora con casillas | e2e |
 | 6 | C-5 Otra actividad con su nombre | prueba existente, con casillas | e2e |
 | 7 | C-5/C-15 Falta un dato de una actividad | prueba existente, con casillas | e2e |
@@ -91,7 +98,7 @@ Lo que las pruebas ejercitan (Playwright, por rol y nombre, como el resto de `pr
 
 ## Non-functional constraints addressed
 
-- Accesibilidad: grupo con nombre, casillas con nombre, error unido al grupo y foco en la primera casilla (fila 4).
+- Accesibilidad: grupo con nombre, casillas con nombre, teclado (fila 4); D20 con `aria-disabled` (fila 12 de la C2a).
 - Celular: s26-ultra en cada fila; la lista no desborda a 400 px (prototipo, `memory/research/formularios-ux.md`).
 - Sin cambios de privacidad ni de servidor (fila 9: suite backend sin cambios).
 

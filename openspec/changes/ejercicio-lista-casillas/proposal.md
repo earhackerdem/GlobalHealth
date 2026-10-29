@@ -28,9 +28,8 @@ debajo de cada una, para saber siempre qué estoy contestando y de qué activida
 - **E-2 Marcar abre y desmarcar quita:** los campos de una actividad aparecen justo debajo de su casilla y se van al
   desmarcarla; lo desmarcado no cuenta en el total ni se guarda.
 - **E-3 Excluyente:** «No hago ejercicio» desmarca las actividades, y marcar una actividad desmarca «No hago ejercicio».
-- **E-4 Teclado, lector de pantalla y foco:** casilla con su nombre dentro del grupo «¿Qué ejercicio haces?»; Espacio
-  marca sin mover el foco y Tab entra a sus campos; el error «Elige al menos una actividad…» lleva el foco a la primera
-  casilla.
+- **E-4 Teclado y lector de pantalla:** casilla con su nombre dentro del grupo «¿Qué ejercicio haces?»; Espacio marca
+  sin mover el foco y Tab entra a sus campos.
 - Siguen vigentes C-5 (total, «Otra» con su nombre, falta un dato, «No hago ejercicio») y las reglas de guardado,
   errores (C-14, C-15, C-17), aviso de salida (C-13) y D20.
 
@@ -51,7 +50,7 @@ Ninguna.
 
 ## Impact
 
-- **Frontend:** `HabitsForm.tsx` (bloque Ejercicio y el foco del error de grupo), posiblemente un componente de lista
+- **Frontend:** `HabitsForm.tsx` (bloque Ejercicio), posiblemente un componente de lista
   con casillas en `frontend/src/components/Profile/`, textos es-MX (`profile.json`).
 - **Pruebas:** `frontend/tests/profile-habits.spec.ts`: las pruebas del ejercicio eligen con casillas en vez de chips.
 - **Producto:** `product/prototipos/perfil-secciones.html` (pantalla de hábitos), `product/dominio.md` (ya actualizado

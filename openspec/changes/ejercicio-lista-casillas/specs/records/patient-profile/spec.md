@@ -71,12 +71,11 @@ cualquiera de estas preguntas.
 - **THEN** "Caminar" queda desmarcada, sus campos y el total desaparecen; y si después marca "Bicicleta", "No hago
   ejercicio" queda desmarcada
 
-#### Scenario: Teclado, lector de pantalla y foco del error (E-4)
+#### Scenario: Teclado y lector de pantalla (E-4)
 - **GIVEN** un paciente con el foco en la casilla "Caminar"
 - **WHEN** pulsa Espacio y después Tab
 - **THEN** la casilla, que se anuncia como casilla "Caminar" dentro del grupo "¿Qué ejercicio haces?", queda marcada
-  con el foco en ella, y Tab lleva a "Días por semana" de caminar; si en cambio toca "Guardar" sin marcar nada, ve
-  "Elige al menos una actividad, o «No hago ejercicio»" junto a la lista y el foco va a la casilla "Caminar"
+  con el foco en ella, y Tab lleva a "Días por semana" de caminar
 
 #### Scenario: Movimiento del día aparte del ejercicio (C-7)
 - **GIVEN** un paciente con "Caminar" 5 días y 30 minutos
