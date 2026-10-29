@@ -44,3 +44,4 @@ status: accepted
   - los prototipos que se hagan desde ahora.
 
   Los prototipos ya hechos no se repintan.
+- **Applied:** 2026-10-29 en `openspec/changes/archive/2026-10-29-paleta-azul-clinico/` (PR #37). La prueba `frontend/tests/visual-accessibility.spec.ts` mide los contrastes y la casilla.

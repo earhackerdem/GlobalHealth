@@ -31,3 +31,5 @@ pagar deuda en pantallas que van a cambiar.
 **Hilo 3 hecho (2026-10-29):** Saúl Pérez fijó el orden, primero la captura, después los colores y al final la mascota. La captura quedó decidida en D21 (`product/prototipos/captura-hibrida.html`, FR-029..031). Siguen la paleta y después la mascota (`memory/research/mascota-color.md`).
 
 **Paleta decidida (2026-10-29):** Saúl Pérez eligió B · Azul clínico en `product/prototipos/paleta.html`, que queda como D22. Se aplica ya, como el cambio `paleta-azul-clinico`, junto con las casillas de 20 px. Sigue la mascota.
+
+**Paleta aplicada (2026-10-29):** el cambio archivado `openspec/changes/archive/2026-10-29-paleta-azul-clinico/` (PR #37) también resolvió la deuda de las casillas. Del hilo 2 queda la mascota.
