@@ -13,7 +13,7 @@ are `single`. `make tdd-check` requires one `test:` commit per `test→impl` gro
 
 - [x] 0.1 **Prototipo** `product/prototipos/ejercicio-variantes.html`, variante E, con insignias E-1 a E-4. Saúl Pérez
   la eligió («ok procede con la E»).
-- [ ] 0.2 **Base.** `openspec validate ejercicio-lista-casillas --strict` limpio; rama al día con `origin/main`;
+- [x] 0.2 **Base.** `openspec validate ejercicio-lista-casillas --strict` limpio; rama al día con `origin/main`;
   `make up`.
 
 ## 1. Frontend: la lista con casillas · test→impl
@@ -36,7 +36,7 @@ are `single`. `make tdd-check` requires one `test:` commit per `test→impl` gro
 
 ## 2. Verificación final y entrega · single
 
-- [ ] 2.1 **Producto.** La pantalla de hábitos de `product/prototipos/perfil-secciones.html` pasa a la lista con
+- [x] 2.1 **Producto.** La pantalla de hábitos de `product/prototipos/perfil-secciones.html` pasa a la lista con
   casillas (C-5 y su leyenda).
 - [ ] 2.2 **Pase exploratorio del agente.**
   - marcar y desmarcar;

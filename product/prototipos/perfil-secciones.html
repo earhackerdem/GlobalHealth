@@ -70,6 +70,15 @@ input,select{font:inherit; width:100%; box-sizing:border-box; border:1px solid v
 .fila-act{display:grid; grid-template-columns:minmax(0,2fr) minmax(0,1fr) minmax(0,1fr) auto; gap:6px; margin-top:8px; align-items:center}
 @media (max-width:480px){ .fila-act{grid-template-columns:1fr 1fr auto} .fila-act select{grid-column:1 / -1} }
 .habito{border-top:1px solid var(--line); padding-top:10px; margin-top:12px}
+/* ejercicio-lista-casillas (D18 revisada): lista con casillas; los campos van debajo de su casilla */
+fieldset.lista{border:none; margin:4px 0 0; padding:0; min-width:0}
+fieldset.lista legend{font-size:.85rem; font-weight:700; padding:0}
+.lista .item{border-bottom:1px solid var(--line); padding:4px 0}
+button.casilla{display:flex; align-items:center; gap:10px; border:none; background:none; padding:8px 0; width:100%; text-align:left}
+button.casilla .box{width:20px; height:20px; border:2px solid var(--muted); border-radius:4px; flex:none; display:grid; place-content:center; font-size:.8rem}
+button.casilla[aria-checked="true"] .box{background:var(--accent); border-color:var(--accent); color:var(--accent-fg)}
+.lista .rev{margin:0 0 8px 30px; padding-left:10px; border-left:3px solid var(--line)}
+.lista .o{color:var(--muted); font-size:.85rem; margin:6px 0 0}
 .migas{color:var(--muted); font-size:.85rem; margin:8px 0}
 #toast{position:fixed; left:50%; transform:translateX(-50%); bottom:calc(14px + env(safe-area-inset-bottom,0px));
   background:var(--fg); color:var(--bg); border-radius:999px; padding:8px 18px; font-size:.9rem; transition:opacity .3s}
@@ -131,7 +140,10 @@ dd{margin:0; min-width:0; overflow-wrap:anywhere}
     <li><strong>C-2</strong> Tabaco (nunca/antes/actual, cigarros al día, a qué edad empezaste y a qué edad lo dejaste) y vapeador como el tabaco: edades y, si es actual, «Todos los días» o «Algunos días» con cuántos de los últimos 30 (C-11).</li>
     <li><strong>C-3</strong> Humo de tabaco ajeno: dónde (casa, trabajo o escuela, otro lugar) y cuántos días por semana.</li>
     <li><strong>C-4</strong> Humo de leña: nunca/antes/actual, a qué edad empezó, a qué edad terminó (si es antes) y horas al día en promedio (C-12; reemplaza los años aproximados).</li>
-    <li><strong>C-5</strong> Ejercicio: eliges una o varias actividades (con «Otra», cuál), cada una con días por semana y minutos cada vez, o «No hago ejercicio»; se muestra el total de lo anotado en minutos por semana, sin compararlo con nada.</li>
+    <li><strong>C-5</strong> Ejercicio: marcas una o varias actividades en una lista con casillas (con «Otra», cuál), cada una con días por semana y minutos cada vez, o «No hago ejercicio»; se muestra el total de lo anotado en minutos por semana, sin compararlo con nada.</li>
+    <li><strong>E-1</strong> La lista de actividades siempre a la vista: nueve casillas y, separada con «o», «No hago ejercicio».</li>
+    <li><strong>E-2</strong> Al marcar una actividad, sus días y minutos aparecen justo debajo; al desmarcarla se quitan y no cuentan.</li>
+    <li><strong>E-3</strong> «No hago ejercicio» desmarca las actividades; marcar una actividad desmarca «No hago ejercicio».</li>
     <li><strong>C-6</strong> La app no calcula puntajes ni riesgos con estas respuestas: interpretarlas es del médico (NFR-008).</li>
     <li><strong>C-7</strong> Movimiento del día, aparte del ejercicio y sin sumarse a su total: cómo pasas el día en tu trabajo o actividad principal (casi todo sentado / de pie o caminando, sin cargar cosas / cargando cosas ligeras o subiendo escaleras seguido / trabajo pesado o cargando cosas pesadas), si caminas o vas en bici al menos 10 minutos seguidos para ir a algún lado (con «Sí», días por semana) y horas sentado o reclinado en un día normal, sin contar el sueño.</li>
     <li><strong>C-8</strong> Sueño: horas que duermes en un día (24 horas, enteras) y, por separado, en los últimos 30 días qué tan seguido te costó dormirte y seguir durmiendo (nunca / algunos días / casi todos los días / todos los días). El detalle navegable está en el prototipo del cambio perfil-habitos-actividad-sueno.</li>
@@ -454,7 +466,7 @@ const numH = (k, ph, v) => `<input id="h-${k}" data-k="${k}" inputmode="numeric"
 // perfil-habitos-completitud C-16: «No recuerdo» solo en lo que pasó (edades; cigarros y horas con «Antes»)
 const numNR = (k, ph, v) => `${numH(k, ph, v)}<button data-chip="${k}NR" data-v="Sí" aria-pressed="${v[k + "NR"] === "Sí"}" aria-label="No recuerdo: ${esc(ph)}">No recuerdo</button>`;
 const subLbl = t => `<span class="lbl" style="margin-top:10px; font-weight:400">${esc(t)}</span>`;
-// perfil-habitos-actividad-sueno C-5: un chip por actividad; el total suma lo anotado y no se guarda
+// perfil-habitos-actividad-sueno C-5 + ejercicio-lista-casillas E-1..E-3: una casilla por actividad; el total suma lo anotado y no se guarda
 const actIdx = a => ACTIVIDADES.indexOf(a);
 function totalSemanal(v){
   return v.acts.reduce((t, a) => t + (Number(v[`act${actIdx(a)}Dias`]) || 0) * (Number(v[`act${actIdx(a)}Min`]) || 0), 0);
@@ -509,12 +521,12 @@ function pintarHabitos(s){
 
       <div class="habito">
         <span class="lbl">Ejercicio${ac("C-5", true)}</span>
-        ${subLbl("¿Qué ejercicio haces?")}
-        <div class="chips" role="group" aria-label="¿Qué ejercicio haces?">${ACTIVIDADES.map(o =>
-          `<button data-multi="acts" data-v="${esc(o)}" aria-pressed="${v.acts.includes(o)}">${esc(o)}</button>`).join("")}<button data-chip="noEjercicio" data-v="Sí" aria-pressed="${v.noEjercicio === "Sí"}">No hago ejercicio</button></div>
-        ${ACTIVIDADES.filter(a => v.acts.includes(a)).map(a => `
-          ${subLbl(a)}
-          <div class="cuando" style="margin-top:6px">${a === "Otra" ? `<input id="h-actOtra" data-k="actOtra" placeholder="¿Cuál?" value="${esc(v.actOtra || "")}" aria-label="¿Cuál?">` : ""}${numH(`act${actIdx(a)}Dias`, `Días por semana: ${a}`, v)}${numH(`act${actIdx(a)}Min`, `Minutos cada vez: ${a}`, v)}</div>`).join("")}
+        <fieldset class="lista"><legend>¿Qué ejercicio haces?${ac("E-1", true)}</legend>
+        ${ACTIVIDADES.map(a => `<div class="item"><button class="casilla" role="checkbox" data-multi="acts" data-v="${esc(a)}" aria-checked="${v.acts.includes(a)}"><span class="box" aria-hidden="true">${v.acts.includes(a) ? "✓" : ""}</span>${esc(a)}</button>
+          ${v.acts.includes(a) ? `<div class="rev">${ac("E-2", true)}<div class="cuando">${a === "Otra" ? `<input id="h-actOtra" data-k="actOtra" placeholder="¿Cuál?" value="${esc(v.actOtra || "")}" aria-label="¿Cuál?">` : ""}${numH(`act${actIdx(a)}Dias`, `Días por semana: ${a}`, v)}${numH(`act${actIdx(a)}Min`, `Minutos cada vez: ${a}`, v)}</div></div>` : ""}</div>`).join("")}
+        <p class="o">o</p>
+        <div class="item"><button class="casilla" role="checkbox" data-chip="noEjercicio" data-v="Sí" aria-checked="${v.noEjercicio === "Sí"}"><span class="box" aria-hidden="true">${v.noEjercicio === "Sí" ? "✓" : ""}</span>No hago ejercicio${ac("E-3", true)}</button></div>
+        </fieldset>
         ${tot ? `<p class="sub" style="margin-top:8px">Total de lo anotado: <strong>${tot}</strong> minutos por semana</p>` : ""}
       </div>
 
