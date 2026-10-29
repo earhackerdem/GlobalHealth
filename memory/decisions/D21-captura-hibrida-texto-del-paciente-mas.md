@@ -56,5 +56,5 @@ status: accepted
   - el diagnóstico suelto (FR-005);
   - el diagnóstico de la receta y sus medicinas (FR-006);
   - «Otra, ¿cuál?» de Crónicas, Enfermedades pasadas y Antecedentes familiares (FR-008, FR-028).
-  
+
   Se construye como stories nuevas (`product/prd.md` FR-029..031), no al reabrir pantallas por otra razón.
