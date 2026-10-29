@@ -2742,16 +2742,25 @@ test.describe("Perfil médico — hábitos completos (perfil-habitos-completitud
 
 // --- perfil-habitos-actividad-sueno (openspec/changes/perfil-habitos-actividad-
 // sueno/design.md → Interface contract → Frontend; C-5…C-8, C-13…C-17) -------
-// Grupos (role "group", nombre exacto = la pregunta), chips con aria-pressed:
-//   "¿Qué ejercicio haces?" (varios): "Caminar" · "Correr" · "Bicicleta" ·
-//     "Nadar" · "Pesas o gimnasio" · "Fútbol u otro deporte" ·
-//     "Yoga o pilates" · "Baile" · "Otra", y "No hago ejercicio" (excluyente:
-//     elegirlo apaga las actividades; elegir una actividad lo apaga).
-//   Por actividad elegida, en el orden del catálogo: números "Días por semana:
+// Grupos (role "group", nombre exacto = la pregunta):
+//   "¿Qué ejercicio haces?" (fieldset con legend; ejercicio-lista-casillas,
+//     D18 revisada): una lista de casillas siempre a la vista, role
+//     "checkbox" con nombre exacto y estado en aria-checked (toBeChecked):
+//     "Caminar" · "Correr" · "Bicicleta" · "Nadar" · "Pesas o gimnasio" ·
+//     "Fútbol u otro deporte" · "Yoga o pilates" · "Baile" · "Otra", el texto
+//     "o" y "No hago ejercicio" (excluyente: marcarlo desmarca las
+//     actividades; marcar una actividad lo desmarca). Con el error de grupo
+//     "Elige al menos una actividad, o «No hago ejercicio»", el fieldset lleva
+//     data-invalid y aria-describedby al mensaje. Mientras guarda (D20), las
+//     casillas llevan aria-disabled="true" e ignoran el clic, como los chips.
+//   Por actividad marcada, justo debajo de su casilla (en el DOM, después de
+//     ella y antes de la casilla siguiente): números "Días por semana:
 //     <actividad>" (1 a 7) y "Minutos cada vez: <actividad>" (1 a 600); con
-//     "Otra", antes el texto "¿Cuál?" ("Escribe cuál." si falta).
+//     "Otra", antes el texto "¿Cuál?" ("Escribe cuál." si falta). Una
+//     actividad sin marcar no tiene campos, no suma ni va en el PUT.
 //   Debajo: "Total de lo anotado: N minutos por semana" (suma de días × minutos
 //     de las actividades con los dos datos válidos; sin ninguna, no se muestra).
+//   Los demás grupos de este bloque son chips con aria-pressed.
 //   "En tu trabajo o actividad principal (casa, escuela…), ¿cómo pasas el
 //     día?": "Casi todo sentado" · "De pie o caminando, sin cargar cosas" ·
 //     "Cargando cosas ligeras o subiendo escaleras seguido" · "Trabajo pesado
@@ -2848,6 +2857,30 @@ async function expectBefore(first: Locator, second: Locator) {
   expect(following).toBe(true)
 }
 
+/**
+ * Casilla `option` de "¿Qué ejercicio haces?" (ejercicio-lista-casillas):
+ * role "checkbox" dentro del grupo, nombre exacto.
+ */
+function exerciseBox(page: Page, option: string): Locator {
+  return group(page, EXERCISE).getByRole("checkbox", {
+    name: option,
+    exact: true,
+  })
+}
+
+/**
+ * Las casillas del grupo, en el DOM: las nueve actividades en el orden del
+ * catálogo y después "No hago ejercicio"; ninguna otra.
+ */
+async function expectExerciseBoxesInOrder(page: Page) {
+  const boxes = group(page, EXERCISE).getByRole("checkbox")
+  const names = [...ACTIVITIES, NO_EXERCISE]
+  await expect(boxes).toHaveCount(names.length)
+  for (const [index, name] of names.entries()) {
+    await expect(boxes.nth(index)).toHaveAccessibleName(name)
+  }
+}
+
 /** Paciente que ya guardó "Caminar" 5 días por semana, 30 minutos cada vez. */
 const WALKING_5x30 = {
   exercise: {
@@ -2864,12 +2897,9 @@ test.describe("Perfil médico — hábitos: ejercicio, movimiento del día y sue
     const api = await freshPatient(page, request)
     await openHabitsFromProfile(page)
 
-    // Los chips del catálogo, en su orden, y "No hago ejercicio".
-    const chipNames = (
-      await group(page, EXERCISE).getByRole("button").allTextContents()
-    ).map((text) => text.trim())
-    expect(chipNames.filter((name) => name !== NO_EXERCISE)).toEqual(ACTIVITIES)
-    await expect(chip(page, EXERCISE, NO_EXERCISE)).toHaveCount(1)
+    // Las casillas del catálogo, en su orden, y "No hago ejercicio".
+    await expectExerciseBoxesInOrder(page)
+    await expect(exerciseBox(page, NO_EXERCISE)).toHaveCount(1)
     await expect(anyWeeklyTotal(page)).toHaveCount(0)
     // Sin total, la región viva del total ya existe (vacía): el primer total
     // es un cambio dentro de ella, y se oye.
@@ -2877,8 +2907,8 @@ test.describe("Perfil médico — hábitos: ejercicio, movimiento del día y sue
     await expect(totalRegion).toHaveCount(1)
     await expect(totalRegion).toHaveText("")
 
-    await chip(page, EXERCISE, "Caminar").click()
-    await expectPressed(chip(page, EXERCISE, "Caminar"), true)
+    await exerciseBox(page, "Caminar").click()
+    await expect(exerciseBox(page, "Caminar")).toBeChecked()
     await activityDays(page, "Caminar").fill("5")
     await activityMinutes(page, "Caminar").fill("30")
     await expect(weeklyTotal(page, 150)).toBeVisible()
@@ -2886,9 +2916,9 @@ test.describe("Perfil médico — hábitos: ejercicio, movimiento del día y sue
       "Total de lo anotado: 150 minutos por semana",
     )
 
-    await chip(page, EXERCISE, "Pesas o gimnasio").click()
-    await expectPressed(chip(page, EXERCISE, "Caminar"), true)
-    await expectPressed(chip(page, EXERCISE, "Pesas o gimnasio"), true)
+    await exerciseBox(page, "Pesas o gimnasio").click()
+    await expect(exerciseBox(page, "Caminar")).toBeChecked()
+    await expect(exerciseBox(page, "Pesas o gimnasio")).toBeChecked()
     // Una actividad sin sus datos no suma (ni rompe el total).
     await expect(weeklyTotal(page, 150)).toBeVisible()
     await activityDays(page, "Pesas o gimnasio").fill("2")
@@ -2897,10 +2927,10 @@ test.describe("Perfil médico — hábitos: ejercicio, movimiento del día y sue
     await saveOk(page)
 
     await reopen(page)
-    await expectPressed(chip(page, EXERCISE, "Caminar"), true)
-    await expectPressed(chip(page, EXERCISE, "Pesas o gimnasio"), true)
-    await expectPressed(chip(page, EXERCISE, "Correr"), false)
-    await expectPressed(chip(page, EXERCISE, NO_EXERCISE), false)
+    await expect(exerciseBox(page, "Caminar")).toBeChecked()
+    await expect(exerciseBox(page, "Pesas o gimnasio")).toBeChecked()
+    await expect(exerciseBox(page, "Correr")).not.toBeChecked()
+    await expect(exerciseBox(page, NO_EXERCISE)).not.toBeChecked()
     await expect(activityDays(page, "Caminar")).toHaveValue("5")
     await expect(activityMinutes(page, "Caminar")).toHaveValue("30")
     await expect(activityDays(page, "Pesas o gimnasio")).toHaveValue("2")
@@ -2928,7 +2958,7 @@ test.describe("Perfil médico — hábitos: ejercicio, movimiento del día y sue
     await openHabitsFromProfile(page)
     const puts = trackHabitPuts(page)
 
-    await chip(page, EXERCISE, "Otra").click()
+    await exerciseBox(page, "Otra").click()
     const name = numberField(page, OTHER_NAME)
     await expect(name).toBeVisible()
     // "¿Cuál?" va antes que sus días y minutos.
@@ -2951,7 +2981,7 @@ test.describe("Perfil médico — hábitos: ejercicio, movimiento del día y sue
     expect(puts).toHaveLength(1)
 
     await reopen(page)
-    await expectPressed(chip(page, EXERCISE, "Otra"), true)
+    await expect(exerciseBox(page, "Otra")).toBeChecked()
     await expect(numberField(page, OTHER_NAME)).toHaveValue("Senderismo")
     await expect(activityDays(page, "Otra")).toHaveValue("1")
     await expect(activityMinutes(page, "Otra")).toHaveValue("90")
@@ -2972,7 +3002,7 @@ test.describe("Perfil médico — hábitos: ejercicio, movimiento del día y sue
     await openHabitsFromProfile(page)
     const puts = trackHabitPuts(page)
 
-    await chip(page, EXERCISE, "Otra").click()
+    await exerciseBox(page, "Otra").click()
     const name = numberField(page, OTHER_NAME)
     await name.fill("\u200b")
     await activityDays(page, "Otra").fill("1")
@@ -2993,7 +3023,7 @@ test.describe("Perfil médico — hábitos: ejercicio, movimiento del día y sue
     await openHabitsFromProfile(page)
     const puts = trackHabitPuts(page)
 
-    await chip(page, EXERCISE, "Correr").click()
+    await exerciseBox(page, "Correr").click()
     await activityDays(page, "Correr").fill("3")
     await page.getByRole("button", { name: "Guardar", exact: true }).click()
 
@@ -3007,7 +3037,7 @@ test.describe("Perfil médico — hábitos: ejercicio, movimiento del día y sue
     expect((await getHabits(api)).exercise ?? null).toBeNull()
 
     // Ninguna pregunta del ejercicio ofrece "No recuerdo" (tampoco "Otra").
-    await chip(page, EXERCISE, "Otra").click()
+    await exerciseBox(page, "Otra").click()
     await expect(numberField(page, OTHER_NAME)).toBeVisible()
     await expect(
       page.getByRole("button", { name: /^No recuerdo/ }),
@@ -3024,20 +3054,20 @@ test.describe("Perfil médico — hábitos: ejercicio, movimiento del día y sue
     const api = await freshPatient(page, request)
     await seedHabits(api, WALKING_5x30)
     await openHabitsFromProfile(page)
-    await expectPressed(chip(page, EXERCISE, "Caminar"), true)
+    await expect(exerciseBox(page, "Caminar")).toBeChecked()
     await expect(weeklyTotal(page, 150)).toBeVisible()
 
-    await chip(page, EXERCISE, NO_EXERCISE).click()
-    await expectPressed(chip(page, EXERCISE, NO_EXERCISE), true)
-    await expectPressed(chip(page, EXERCISE, "Caminar"), false)
+    await exerciseBox(page, NO_EXERCISE).click()
+    await expect(exerciseBox(page, NO_EXERCISE)).toBeChecked()
+    await expect(exerciseBox(page, "Caminar")).not.toBeChecked()
     await expect(activityDays(page, "Caminar")).toHaveCount(0)
     await expect(anyWeeklyTotal(page)).toHaveCount(0)
     await saveOk(page)
 
     await reopen(page)
-    await expectPressed(chip(page, EXERCISE, NO_EXERCISE), true)
+    await expect(exerciseBox(page, NO_EXERCISE)).toBeChecked()
     for (const activity of ACTIVITIES) {
-      await expectPressed(chip(page, EXERCISE, activity), false)
+      await expect(exerciseBox(page, activity)).not.toBeChecked()
     }
     await expect(page.getByLabel(/^Días por semana: /)).toHaveCount(0)
     await expect(page.getByLabel(/^Minutos cada vez: /)).toHaveCount(0)
@@ -3050,9 +3080,9 @@ test.describe("Perfil médico — hábitos: ejercicio, movimiento del día y sue
     }
 
     // Elegir una actividad apaga "No hago ejercicio" (sin guardar).
-    await chip(page, EXERCISE, "Caminar").click()
-    await expectPressed(chip(page, EXERCISE, "Caminar"), true)
-    await expectPressed(chip(page, EXERCISE, NO_EXERCISE), false)
+    await exerciseBox(page, "Caminar").click()
+    await expect(exerciseBox(page, "Caminar")).toBeChecked()
+    await expect(exerciseBox(page, NO_EXERCISE)).not.toBeChecked()
   })
 
   test("C-7 (fila 5) movimiento del día aparte del ejercicio: con 'Caminar' 5×30, 'Casi todo sentado', 'Sí' con 5 días y 9 horas sentado → el total sigue en 150; al reabrir ve las tres respuestas", async ({
@@ -3186,7 +3216,7 @@ test.describe("Perfil médico — hábitos: ejercicio, movimiento del día y sue
     await openHabitsFromProfile(page)
     const puts = trackHabitPuts(page)
 
-    await chip(page, EXERCISE, "Caminar").click()
+    await exerciseBox(page, "Caminar").click()
     const days = activityDays(page, "Caminar")
     await days.fill("8")
     await days.press("Tab")
@@ -3268,7 +3298,7 @@ test.describe("Perfil médico — hábitos: ejercicio, movimiento del día y sue
     await reopen(page)
     await expect(numberField(page, SLEEP_HOURS)).toHaveValue("7")
     for (const option of [...ACTIVITIES, NO_EXERCISE]) {
-      await expectPressed(chip(page, EXERCISE, option), false)
+      await expect(exerciseBox(page, option)).not.toBeChecked()
     }
     for (const option of MAIN_ACTIVITY_OPTIONS) {
       await expectPressed(chip(page, MAIN_ACTIVITY, option), false)
@@ -3341,7 +3371,7 @@ test.describe("Perfil médico — hábitos: ejercicio, movimiento del día y sue
     const puts = trackHabitPuts(page)
 
     // Elegir una actividad cuenta como cambio sin guardar.
-    await chip(page, EXERCISE, "Correr").click()
+    await exerciseBox(page, "Correr").click()
     await backLink(page).click()
     const dialog = leaveDialog(page)
     await expect(dialog).toBeVisible()
@@ -3350,11 +3380,11 @@ test.describe("Perfil médico — hábitos: ejercicio, movimiento del día y sue
       .getByRole("button", { name: "Seguir editando", exact: true })
       .click()
     await expect(page).toHaveURL(HABITS_URL)
-    await expectPressed(chip(page, EXERCISE, "Correr"), true)
+    await expect(exerciseBox(page, "Correr")).toBeChecked()
 
     // Nombres accesibles distintos, en el orden del catálogo aunque "Correr"
     // se eligió primero.
-    await chip(page, EXERCISE, "Caminar").click()
+    await exerciseBox(page, "Caminar").click()
     for (const activity of ["Caminar", "Correr"]) {
       await expect(activityDays(page, activity)).toHaveCount(1)
       await expect(activityMinutes(page, activity)).toHaveCount(1)
@@ -3374,22 +3404,23 @@ test.describe("Perfil médico — hábitos: ejercicio, movimiento del día y sue
     await page.getByRole("button", { name: "Guardar", exact: true }).click()
     await expect.poll(() => puts.length).toBe(1)
 
-    const newChips = [
-      chip(page, EXERCISE, "Caminar"),
-      chip(page, EXERCISE, "Nadar"),
-      chip(page, EXERCISE, NO_EXERCISE),
+    // Las casillas del ejercicio y los chips nuevos: aria-disabled (D20).
+    const newChoices = [
+      exerciseBox(page, "Caminar"),
+      exerciseBox(page, "Nadar"),
+      exerciseBox(page, NO_EXERCISE),
       chip(page, MAIN_ACTIVITY, "Casi todo sentado"),
       chip(page, ACTIVE_TRAVEL, "Sí"),
       chip(page, FALLING_ASLEEP, "Nunca"),
       chip(page, STAYING_ASLEEP, "Todos los días"),
     ]
-    for (const locator of newChips) {
+    for (const locator of newChoices) {
       await expect(locator).toHaveAttribute("aria-disabled", "true")
     }
-    const swimming = chip(page, EXERCISE, "Nadar")
+    const swimming = exerciseBox(page, "Nadar")
     await swimming.click({ force: true })
     await page.waitForTimeout(300)
-    await expectPressed(swimming, false)
+    await expect(swimming).not.toBeChecked()
     await expect(activityDays(page, "Nadar")).toHaveCount(0)
     await expect(activityDays(page, "Caminar")).not.toBeEditable()
     await expect(numberField(page, SLEEP_HOURS)).not.toBeEditable()
@@ -3419,7 +3450,7 @@ test.describe("Perfil médico — hábitos: ejercicio, movimiento del día y sue
     await openHabitsFromProfile(page)
     const outOfScale = "Debe estar entre 1 y 600"
 
-    await chip(page, EXERCISE, "Caminar").click()
+    await exerciseBox(page, "Caminar").click()
     const minutes = activityMinutes(page, "Caminar")
     await minutes.fill("601")
     await minutes.press("Tab")
@@ -3429,5 +3460,211 @@ test.describe("Perfil médico — hábitos: ejercicio, movimiento del día y sue
     await expect(minutes).toHaveValue("60")
     await expect(minutes).toBeFocused()
     await expectNoFieldError(page, minutes, outOfScale)
+  })
+})
+
+// --- ejercicio-lista-casillas (openspec/changes/ejercicio-lista-casillas/
+// design.md → Interface contract; escenarios E-1…E-4 de la spec delta) -------
+// "¿Qué ejercicio haces?" es una lista de casillas siempre a la vista (D18
+// revisada): role "checkbox" dentro del grupo, nombre exacto, estado con
+// toBeChecked (aria-checked). Nueve actividades en el orden del catálogo, el
+// texto "o" y la casilla "No hago ejercicio". Los campos de cada actividad
+// marcada van justo debajo de su casilla: en el DOM, después de ella y antes
+// de la casilla siguiente. Espacio marca sin mover el foco; Tab va al primer
+// campo de su actividad ("¿Cuál?" en "Otra", "Días por semana" en las demás).
+// ---------------------------------------------------------------------------
+
+/** Lo que una fila de E-2 manda en el PUT: solo lo que lee la prueba. */
+type ExercisePut = {
+  exercise?: {
+    does_exercise?: boolean
+    activities?: Record<string, unknown>
+  }
+}
+
+test.describe("Perfil médico — hábitos: ejercicio con casillas (ejercicio-lista-casillas, grupo 2)", () => {
+  test("E-1 (fila 1) la lista de actividades siempre a la vista: sin ejercicio guardado, bajo '¿Qué ejercicio haces?' nueve casillas sin marcar en el orden del catálogo, después, separada con 'o', la casilla 'No hago ejercicio', y ningún campo de días ni de minutos", async ({
+    page,
+    request,
+  }) => {
+    await freshPatient(page, request)
+    await openHabitsFromProfile(page)
+
+    const exercise = group(page, EXERCISE)
+    await expect(exercise).toBeVisible()
+    await expectExerciseBoxesInOrder(page)
+    for (const option of [...ACTIVITIES, NO_EXERCISE]) {
+      const box = exerciseBox(page, option)
+      await expect(box).toBeVisible()
+      await expect(box).not.toBeChecked()
+    }
+
+    // "o" entre "Otra" y "No hago ejercicio".
+    const separator = exercise.getByText("o", { exact: true })
+    await expect(separator).toHaveCount(1)
+    await expect(separator).toBeVisible()
+    await expectBefore(exerciseBox(page, "Otra"), separator)
+    await expectBefore(separator, exerciseBox(page, NO_EXERCISE))
+
+    await expect(page.getByLabel(/^Días por semana: /)).toHaveCount(0)
+    await expect(page.getByLabel(/^Minutos cada vez: /)).toHaveCount(0)
+    await expect(numberField(page, OTHER_NAME)).toHaveCount(0)
+    await expect(anyWeeklyTotal(page)).toHaveCount(0)
+  })
+
+  test("E-2 (fila 2) marcar abre sus preguntas debajo y desmarcar las quita: marca 'Correr', 'Caminar' y 'Otra' → los campos de cada una entre su casilla y la siguiente ('¿Cuál?' primero en 'Otra'); desmarca 'Correr' con 3×40 → sus campos se van, el total deja de contarlos y el PUT va sin 'running'", async ({
+    page,
+    request,
+  }) => {
+    const api = await freshPatient(page, request)
+    await openHabitsFromProfile(page)
+    const puts = trackHabitPuts(page)
+
+    const chosen = ["Correr", "Caminar", "Otra"]
+    for (const activity of chosen) {
+      await exerciseBox(page, activity).check()
+      await expect(exerciseBox(page, activity)).toBeChecked()
+    }
+
+    // Cada actividad marcada: su casilla, sus campos y luego la casilla
+    // siguiente del catálogo.
+    for (const [activity, next] of [
+      ["Caminar", "Correr"],
+      ["Correr", "Bicicleta"],
+    ]) {
+      const days = activityDays(page, activity)
+      const minutes = activityMinutes(page, activity)
+      await expect(days).toBeVisible()
+      await expect(minutes).toBeVisible()
+      await expectBefore(exerciseBox(page, activity), days)
+      await expectBefore(days, minutes)
+      await expectBefore(minutes, exerciseBox(page, next))
+    }
+    // "Otra": primero "¿Cuál?", después días y minutos, antes de "No hago
+    // ejercicio".
+    const otherName = numberField(page, OTHER_NAME)
+    await expect(otherName).toBeVisible()
+    await expectBefore(exerciseBox(page, "Otra"), otherName)
+    await expectBefore(otherName, activityDays(page, "Otra"))
+    await expectBefore(
+      activityDays(page, "Otra"),
+      activityMinutes(page, "Otra"),
+    )
+    await expectBefore(
+      activityMinutes(page, "Otra"),
+      exerciseBox(page, NO_EXERCISE),
+    )
+    // Las actividades sin marcar no tienen campos.
+    for (const activity of ACTIVITIES.filter((a) => !chosen.includes(a))) {
+      await expect(exerciseBox(page, activity)).not.toBeChecked()
+      await expect(activityDays(page, activity)).toHaveCount(0)
+      await expect(activityMinutes(page, activity)).toHaveCount(0)
+    }
+
+    await activityDays(page, "Caminar").fill("2")
+    await activityMinutes(page, "Caminar").fill("30")
+    await activityDays(page, "Correr").fill("3")
+    await activityMinutes(page, "Correr").fill("40")
+    await otherName.fill("Senderismo")
+    await activityDays(page, "Otra").fill("1")
+    await activityMinutes(page, "Otra").fill("90")
+    await expect(weeklyTotal(page, 270)).toBeVisible()
+
+    // Desmarcar "Correr": sus campos se van y el total ya no los cuenta.
+    await exerciseBox(page, "Correr").uncheck()
+    await expect(exerciseBox(page, "Correr")).not.toBeChecked()
+    await expect(activityDays(page, "Correr")).toHaveCount(0)
+    await expect(activityMinutes(page, "Correr")).toHaveCount(0)
+    await expect(weeklyTotal(page, 150)).toBeVisible()
+    await expect(weeklyTotal(page, 270)).toHaveCount(0)
+    await expect(exerciseBox(page, "Caminar")).toBeChecked()
+    await expect(exerciseBox(page, "Otra")).toBeChecked()
+    await saveOk(page)
+
+    expect(puts).toHaveLength(1)
+    const sent = puts[0] as ExercisePut
+    expect(sent.exercise?.does_exercise).toBe(true)
+    expect(sent.exercise?.activities?.walking).toMatchObject({
+      days_per_week: 2,
+      minutes_per_session: 30,
+    })
+    expect(sent.exercise?.activities?.other).toMatchObject({
+      name: "Senderismo",
+      days_per_week: 1,
+      minutes_per_session: 90,
+    })
+    expect(sent.exercise?.activities?.running ?? null).toBeNull()
+
+    const saved = await getHabits(api)
+    expect(saved.exercise?.activities?.running ?? null).toBeNull()
+    expect(saved.exercise?.activities?.walking).toMatchObject({
+      days_per_week: 2,
+      minutes_per_session: 30,
+    })
+
+    await reopen(page)
+    await expect(exerciseBox(page, "Correr")).not.toBeChecked()
+    await expect(activityDays(page, "Correr")).toHaveCount(0)
+    await expect(weeklyTotal(page, 150)).toBeVisible()
+  })
+
+  test("E-3 (fila 3) 'No hago ejercicio' excluye las actividades: con 'Caminar' 5×30, marcarlo desmarca 'Caminar' y quita sus campos y el total; marcar después 'Bicicleta' desmarca 'No hago ejercicio'", async ({
+    page,
+    request,
+  }) => {
+    await freshPatient(page, request)
+    await openHabitsFromProfile(page)
+
+    await exerciseBox(page, "Caminar").check()
+    await activityDays(page, "Caminar").fill("5")
+    await activityMinutes(page, "Caminar").fill("30")
+    await expect(weeklyTotal(page, 150)).toBeVisible()
+
+    await exerciseBox(page, NO_EXERCISE).check()
+    await expect(exerciseBox(page, NO_EXERCISE)).toBeChecked()
+    for (const activity of ACTIVITIES) {
+      await expect(exerciseBox(page, activity)).not.toBeChecked()
+    }
+    await expect(activityDays(page, "Caminar")).toHaveCount(0)
+    await expect(activityMinutes(page, "Caminar")).toHaveCount(0)
+    await expect(anyWeeklyTotal(page)).toHaveCount(0)
+
+    await exerciseBox(page, "Bicicleta").check()
+    await expect(exerciseBox(page, "Bicicleta")).toBeChecked()
+    await expect(exerciseBox(page, NO_EXERCISE)).not.toBeChecked()
+    await expect(activityDays(page, "Bicicleta")).toBeVisible()
+  })
+
+  test("E-4 (fila 4) teclado y lector de pantalla: la casilla 'Caminar' dentro del grupo '¿Qué ejercicio haces?'; con el foco en ella, Espacio la marca y el foco se queda; Tab lleva a 'Días por semana: Caminar'; en 'Otra', Tab lleva a '¿Cuál?'", async ({
+    page,
+    request,
+  }) => {
+    await freshPatient(page, request)
+    await openHabitsFromProfile(page)
+
+    // Rol y nombre: grupo "¿Qué ejercicio haces?" con la casilla "Caminar".
+    const exercise = page.getByRole("group", { name: EXERCISE, exact: true })
+    await expect(exercise.first()).toHaveAccessibleName(EXERCISE)
+    const walking = exercise
+      .first()
+      .getByRole("checkbox", { name: "Caminar", exact: true })
+    await expect(walking).toHaveCount(1)
+    await expect(walking).toHaveAccessibleName("Caminar")
+
+    await walking.focus()
+    await expect(walking).toBeFocused()
+    await page.keyboard.press("Space")
+    await expect(walking).toBeChecked()
+    await expect(walking).toBeFocused()
+    await page.keyboard.press("Tab")
+    await expect(activityDays(page, "Caminar")).toBeFocused()
+
+    const other = exerciseBox(page, "Otra")
+    await other.focus()
+    await page.keyboard.press("Space")
+    await expect(other).toBeChecked()
+    await expect(other).toBeFocused()
+    await page.keyboard.press("Tab")
+    await expect(numberField(page, OTHER_NAME)).toBeFocused()
   })
 })
