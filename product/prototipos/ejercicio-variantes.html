@@ -82,6 +82,9 @@ fieldset.lista legend{font-size:.85rem; font-weight:700; padding:0; margin-botto
 .item .rev{margin:2px 0 6px 32px; padding-left:12px; border-left:3px solid var(--line)}
 .item .rev .campo{margin:6px 0}
 .o{color:var(--muted); font-size:.85rem; margin:8px 0 2px}
+.ac{font-size:.7rem; font-weight:700; letter-spacing:.04em; color:var(--b-tag); border:1px solid currentColor;
+  border-radius:6px; padding:0 6px; margin-left:6px; vertical-align:middle}
+body.sin-ac .ac{display:none}
 /* D: una por una */
 .paso{font-size:.8rem; color:var(--muted)}
 .resumen{margin:8px 0; padding:0; list-style:none}
@@ -105,6 +108,7 @@ fieldset.lista legend{font-size:.85rem; font-weight:700; padding:0; margin-botto
 <div class="actions">
   <button class="link" id="todas">Elegir todas</button>
   <button class="link" id="limpiar">Empezar de nuevo</button>
+  <button class="link" id="insignias">Ocultar insignias E-n</button>
 </div>
 
 <script>
@@ -195,13 +199,13 @@ function render() {
 
 function listaE() {
   const err = intento && !elegidas.length && !ninguno;
-  return `<fieldset class="lista"><legend id="q">¿Qué ejercicio haces? <span class="sub">Marca todas las que hagas.</span></legend>
+  return `<fieldset class="lista"><legend id="q">¿Qué ejercicio haces? <span class="sub">Marca todas las que hagas.</span><span class="ac">E-1</span><span class="ac">E-4</span></legend>
     ${err ? `<p class="err">Elige al menos una actividad, o «No hago ejercicio»</p>` : ""}
     ${ACT.map(a => { const i = ACT.indexOf(a), on = elegidas.includes(a);
       return `<div class="item"><label class="chk"><input type="checkbox" data-e="${a}" ${on ? "checked" : ""}> ${a}</label>
-        ${on ? `<div class="rev">${campos(a)}</div>` : ""}</div>`; }).join("")}
+        ${on ? `<div class="rev"><span class="ac">E-2</span>${campos(a)}</div>` : ""}</div>`; }).join("")}
     <p class="o">o</p>
-    <div class="item"><label class="chk"><input type="checkbox" data-e="no" ${ninguno ? "checked" : ""}> No hago ejercicio</label></div>
+    <div class="item"><label class="chk"><input type="checkbox" data-e="no" ${ninguno ? "checked" : ""}> No hago ejercicio<span class="ac">E-3</span></label></div>
   </fieldset>`;
 }
 
@@ -238,6 +242,8 @@ document.addEventListener("click", e => {
     else { render(); document.getElementById("msg").textContent = (elegidas.length || ninguno) ? "Guardado (de mentiras)." : "Elige al menos una actividad, o «No hago ejercicio»"; }
     return; }
   if (b.id === "todas") { ninguno = false; elegidas = [...ACT]; abierta = "Otra"; datos = {Caminar:{dias:"5",min:"30"}, Correr:{dias:"2",min:"40"}}; paso = 0; intento = false; render(); return; }
+  if (b.id === "insignias") { const off = document.body.classList.toggle("sin-ac");
+    b.textContent = off ? "Mostrar insignias E-n" : "Ocultar insignias E-n"; return; }
   if (b.id === "limpiar") { ninguno = false; elegidas = []; datos = {}; paso = 0; intento = false; abierta = null; render(); }
 });
 document.addEventListener("change", e => { const t = e.target; if (!t.dataset?.e) return;
