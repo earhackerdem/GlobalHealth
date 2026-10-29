@@ -1536,9 +1536,10 @@ function HabitsForm() {
 
   /**
    * One checkbox of "¿Qué ejercicio haces?" with its label, like the family
-   * history (FamilyHistoryFields); the name in bold so each activity stands
-   * out from its fields. While saving it says it takes no changes with
-   * aria-disabled, not `disabled`, so the focus stays on it (D20), `choose`
+   * history (FamilyHistoryFields); the name in normal weight, under the
+   * semibold question, so the question leads the hierarchy. While saving it
+   * says it takes no changes with aria-disabled, not `disabled`, so the focus
+   * stays on it (D20), `choose`
    * ignores the click, and the name dims with its box (the box is the peer).
    */
   const activityBox = (choice: ActivityChoice) => {
@@ -1555,7 +1556,7 @@ function HabitsForm() {
         />
         <Label
           htmlFor={id}
-          className="font-semibold peer-aria-disabled:cursor-not-allowed peer-aria-disabled:opacity-50"
+          className="font-normal peer-aria-disabled:cursor-not-allowed peer-aria-disabled:opacity-50"
         >
           {t(`habits.options.activities.${choice}`)}
         </Label>
@@ -1843,7 +1844,7 @@ function HabitsForm() {
               data-invalid={!!errors["exercise.activities"] || undefined}
               className="m-0 grid min-w-0 gap-3 border-0 p-0"
             >
-              <legend className="mb-3 text-sm font-medium">
+              <legend className="mb-3 text-sm font-semibold">
                 {t("habits.fields.exercise")}
               </legend>
               {ACTIVITIES.map((activity) => (
