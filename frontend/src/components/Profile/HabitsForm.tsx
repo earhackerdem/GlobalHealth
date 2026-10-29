@@ -42,6 +42,7 @@ import {
   zWoodSmokeHabit,
 } from "@/client/zod.gen"
 import { Button } from "@/components/ui/button"
+import { Checkbox } from "@/components/ui/checkbox"
 import {
   Dialog,
   DialogContent,
@@ -1227,6 +1228,27 @@ function HabitsForm() {
     })
   }
 
+  /**
+   * An exercise checkbox (D18 revised), with the rule ChipMultiGroup applies
+   * to its exclusive chip: "No hago ejercicio" empties the activities, and
+   * checking an activity turns it off. `activities` keeps the same shape
+   * (`["none"]` or the activities in catalog order), and only it changes: an
+   * unchecked activity keeps its days and minutes hidden in the draft.
+   */
+  const toggleActivity = (choice: ActivityChoice, checked: boolean) => {
+    if (choice === "none") {
+      choose("activities", checked ? ["none"] : [])
+      return
+    }
+    const chosen = new Set(chosenActivities(draftRef.current))
+    if (checked) chosen.add(choice)
+    else chosen.delete(choice)
+    choose(
+      "activities",
+      ACTIVITIES.filter((activity) => chosen.has(activity)),
+    )
+  }
+
   // A box left by pressing something else (a chip, "Guardar") shows its
   // error once that press ends: an error line appearing mid-press shifts the
   // layout under the pointer and the click would land somewhere else.
@@ -1511,6 +1533,29 @@ function HabitsForm() {
   }
 
   /**
+   * One checkbox of "¿Qué ejercicio haces?" with its label, like the family
+   * history (FamilyHistoryFields). While saving it says it takes no changes
+   * with aria-disabled, not `disabled`, so the focus stays on it (D20), and
+   * `choose` ignores the click.
+   */
+  const activityBox = (choice: ActivityChoice) => {
+    const id = `${idPrefix}-activity-${choice}`
+    return (
+      <div className="flex items-center gap-2">
+        <Checkbox
+          id={id}
+          checked={draft.activities.includes(choice)}
+          aria-disabled={busy || undefined}
+          onCheckedChange={(checked) =>
+            toggleActivity(choice, checked === true)
+          }
+        />
+        <Label htmlFor={id}>{t(`habits.options.activities.${choice}`)}</Label>
+      </div>
+    )
+  }
+
+  /**
    * Single-choice chips with their error under them (`key` = its `loc`).
    * `long`: options longer than a phone's width wrap inside their chip
    * instead of widening the page (ChipGroup stays untouched).
@@ -1769,8 +1814,11 @@ function HabitsForm() {
         </>,
       )}
 
-      {/* Each chosen activity, in catalog order, asks its own days and
-          minutes; the total sums what is written and is a live region that
+      {/* A checkbox list always in sight (D18 revised: each chosen activity
+          opens its own questions), in catalog order, then "o" and the
+          exclusive "No hago ejercicio". A checked activity's days and minutes
+          ("¿Cuál?" first in "Otra") go right under its checkbox, before the
+          next one. The total sums what is written and is a live region that
           stays in the accessibility tree while empty (only hidden from view),
           so even the first total is heard as a change (C-5, C-6). */}
       {block(
@@ -1778,37 +1826,37 @@ function HabitsForm() {
         null,
         <>
           <div className="grid gap-2">
-            <ChipMultiGroup
-              label={t("habits.fields.exercise")}
-              options={ACTIVITIES.map((activity) => ({
-                value: activity,
-                label: t(`habits.options.activities.${activity}`),
-              }))}
-              exclusive={{
-                value: "none" as const,
-                label: t("habits.options.activities.none"),
-              }}
-              values={draft.activities}
-              onChange={(next) => choose("activities", next)}
-              invalid={!!errors["exercise.activities"]}
-              describedBy={
+            <fieldset
+              aria-describedby={
                 errors["exercise.activities"]
                   ? errorId("exercise.activities")
                   : undefined
               }
-            />
+              data-invalid={!!errors["exercise.activities"] || undefined}
+              className="m-0 grid min-w-0 gap-3 border-0 p-0"
+            >
+              <legend className="mb-3 text-sm font-medium">
+                {t("habits.fields.exercise")}
+              </legend>
+              {ACTIVITIES.map((activity) => (
+                <div key={activity} className="grid gap-3">
+                  {activityBox(activity)}
+                  {draft.activities.includes(activity) && (
+                    <div className="ml-6 grid gap-4">
+                      {activity === "other" && otherNameField()}
+                      {numberField(daysKey(activity))}
+                      {numberField(minutesKey(activity))}
+                    </div>
+                  )}
+                </div>
+              ))}
+              <p className="text-sm text-muted-foreground">
+                {t("habits.fields.exerciseOr")}
+              </p>
+              {activityBox("none")}
+            </fieldset>
             {fieldError("exercise.activities")}
           </div>
-          {chosenActivities(draft).map((activity) => (
-            <div key={activity} className="grid gap-4 border-l-2 pl-3">
-              <p className="text-sm font-semibold">
-                {t(`habits.options.activities.${activity}`)}
-              </p>
-              {activity === "other" && otherNameField()}
-              {numberField(daysKey(activity))}
-              {numberField(minutesKey(activity))}
-            </div>
-          ))}
           <p role="status" className="text-sm font-medium empty:sr-only">
             {total === null ? null : t("habits.weeklyTotal", { count: total })}
           </p>
