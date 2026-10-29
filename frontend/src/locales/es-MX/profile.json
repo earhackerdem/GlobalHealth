@@ -388,6 +388,7 @@
       "woodQuitAge": "¿A qué edad dejaste de exponerte?",
       "woodHours": "¿Cuántas horas al día, en promedio?",
       "exercise": "¿Qué ejercicio haces?",
+      "exerciseOr": "o",
       "otherName": "¿Cuál?",
       "minutesPerSession": "Minutos cada vez",
       "movementHint": "Esto no se suma a tu ejercicio: el médico lo lee aparte.",

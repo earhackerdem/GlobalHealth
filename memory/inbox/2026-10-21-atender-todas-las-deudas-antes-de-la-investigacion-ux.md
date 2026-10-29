@@ -15,4 +15,6 @@ status: open
 
 **Why it matters:** La investigación de UX y la ronda 2 del dominio van a mover pantallas y modelos; la deuda acumulada en cinco revisiones (privacidad S2/S3, integridad de los bloqueos de diagnóstico, e2e inestables que impiden el truly green) se paga más barata antes que después, y una suite estable es la red para el rediseño
 
+**Reordenado 2026-10-28:** Saúl Pérez adelantó la investigación de UX completa a estas deudas y a la C2b (`memory/inbox/2026-10-28-investigacion-ux-completa.md`). Antes de decidirlo escuchó la objeción de que B1 es privacidad, y la deuda entera queda para después.
+
 **Status:** abierto · siguiente paso: `/triage` sobre el inventario para agruparlo en cambios (uno por tema: privacidad, e2e estables, rendimiento del perfil, limpieza de i18n/duplicados) y ordenarlo con Saúl Pérez; cerrar aquí cada fila cuando su cambio se archive

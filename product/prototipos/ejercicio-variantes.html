@@ -1,0 +1,265 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Ejercicio: variantes</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<style>
+/* Mismos tokens que perfil-secciones.html; prototipo de decisión, datos de ejemplo */
+:root{
+  --bg:#f7f5f2; --surface:#ffffff; --fg:#2b2a27; --muted:#6f6a61;
+  --accent:#0f766e; --accent-fg:#ffffff; --line:#e4e0d8; --warn-bg:#fdf3e2; --warn-fg:#7a5410;
+  --chip:#eef4f3; --danger:#b42318; --b-tag:#5b4bb7;
+  --font-body:"Atkinson Hyperlegible",system-ui,sans-serif;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#171a19; --surface:#202423; --fg:#e8e6e1; --muted:#a39d92;
+  --accent:#2dd4bf; --accent-fg:#0c2b27; --line:#343a38; --warn-bg:#3a2f14; --warn-fg:#e8c27a;
+  --chip:#263230; --danger:#f97066; --b-tag:#a99bf5; color-scheme:dark
+}}
+:root[data-theme="dark"]{
+  --bg:#171a19; --surface:#202423; --fg:#e8e6e1; --muted:#a39d92;
+  --accent:#2dd4bf; --accent-fg:#0c2b27; --line:#343a38; --warn-bg:#3a2f14; --warn-fg:#e8c27a;
+  --chip:#263230; --danger:#f97066; --b-tag:#a99bf5; color-scheme:dark
+}
+body{background:var(--bg); color:var(--fg); font:16px/1.5 var(--font-body);
+  padding-left:max(16px, env(safe-area-inset-left, 0px)); padding-right:max(16px, env(safe-area-inset-right, 0px));
+  padding-block:8px 64px; max-width:620px; margin:0 auto}
+h1{font-size:1.35rem; margin:.4rem 0 0; text-wrap:balance}
+h2{font-size:1.1rem; margin:0}
+p{margin:.35rem 0}
+.sub{color:var(--muted); font-size:.9rem}
+.banner{background:var(--warn-bg); color:var(--warn-fg); border-radius:8px; padding:8px 12px; font-size:.85rem; margin:12px 0}
+button{font:inherit; border:1px solid var(--line); background:var(--surface); color:var(--fg);
+  border-radius:10px; padding:10px 14px; cursor:pointer}
+button.primary{background:var(--accent); color:var(--accent-fg); border-color:transparent; font-weight:700}
+button.link{border:none; background:none; color:var(--accent); padding:4px; font-weight:600}
+button:focus-visible,input:focus-visible{outline:2px solid var(--accent); outline-offset:2px}
+.actions{display:flex; flex-wrap:wrap; gap:8px; margin:14px 0; align-items:center}
+.card{background:var(--surface); border:1px solid var(--line); border-radius:12px; padding:14px; min-width:0}
+label,.lbl{font-size:.85rem; font-weight:700; display:block; margin-bottom:3px}
+input{font:inherit; width:100%; box-sizing:border-box; border:1px solid var(--line);
+  border-radius:8px; padding:8px 10px; background:var(--bg); color:var(--fg)}
+input[aria-invalid="true"]{border-color:var(--danger)}
+.campo{margin:10px 0}
+.err{font-size:.82rem; color:var(--danger); margin-top:3px}
+.chips{display:flex; flex-wrap:wrap; gap:6px; margin:4px 0}
+.chips button{border-radius:999px; padding:5px 12px; font-size:.85rem}
+.chips button[aria-pressed="true"]{background:var(--accent); color:var(--accent-fg); border-color:transparent}
+.total{font-weight:700; margin-top:12px}
+.dos{display:grid; grid-template-columns:1fr 1fr; gap:10px}
+/* selector de variantes */
+.variantes{display:flex; flex-wrap:wrap; gap:6px; margin:10px 0}
+.variantes button[aria-pressed="true"]{background:var(--fg); color:var(--bg); border-color:transparent}
+details.nota{font-size:.88rem; margin:10px 0}
+details.nota summary{cursor:pointer; font-weight:700}
+details.nota li{margin:4px 0}
+.pro{color:var(--accent)} .contra{color:var(--danger)}
+/* A: pestañas */
+.tabs{display:flex; overflow-x:auto; gap:2px; border-bottom:1px solid var(--line); margin-top:12px}
+.tabs button{border-radius:8px 8px 0 0; border-bottom:none; white-space:nowrap; padding:8px 12px; font-size:.9rem;
+  background:transparent; color:var(--accent)}
+.tabs button[aria-selected="true"]{background:var(--surface); color:var(--fg); border-color:var(--line); margin-bottom:-1px}
+.tabs button[aria-selected="false"]{border-color:transparent}
+.dot{display:inline-block; width:8px; height:8px; border-radius:50%; background:var(--danger); margin-left:6px; vertical-align:middle}
+.panel{border:1px solid var(--line); border-top:none; border-radius:0 0 10px 10px; padding:4px 12px 10px}
+/* B: acordeón */
+.acc{border:1px solid var(--line); border-radius:10px; margin-top:8px; overflow:hidden}
+.acc > button{width:100%; text-align:left; border:none; border-radius:0; display:flex; justify-content:space-between; gap:8px}
+.acc .res{color:var(--muted); font-size:.85rem; font-weight:400}
+.acc .res.falta{color:var(--danger)}
+.acc .cuerpo{padding:0 12px 10px}
+/* C: filas */
+.fila{display:grid; grid-template-columns:minmax(0,1fr) 5.5rem 5.5rem; gap:8px; align-items:end; padding:8px 0;
+  border-bottom:1px solid var(--line)}
+.fila .nom{font-weight:700; padding-bottom:9px}
+.fila label{font-weight:400; color:var(--muted); font-size:.75rem}
+@media (max-width:380px){ .fila{grid-template-columns:1fr 1fr} .fila .nom{grid-column:1/-1; padding-bottom:0} }
+/* E: lista con casillas */
+fieldset.lista{border:none; margin:8px 0 0; padding:0; min-width:0}
+fieldset.lista legend{font-size:.85rem; font-weight:700; padding:0; margin-bottom:4px}
+.item{border-bottom:1px solid var(--line); padding:6px 0}
+.item > label.chk{display:flex; align-items:center; gap:10px; font-size:1rem; font-weight:400; margin:0; min-height:40px; cursor:pointer}
+.item input[type=checkbox]{width:22px; height:22px; margin:0; accent-color:var(--accent); flex:none}
+.item .rev{margin:2px 0 6px 32px; padding-left:12px; border-left:3px solid var(--line)}
+.item .rev .campo{margin:6px 0}
+.o{color:var(--muted); font-size:.85rem; margin:8px 0 2px}
+.ac{font-size:.7rem; font-weight:700; letter-spacing:.04em; color:var(--b-tag); border:1px solid currentColor;
+  border-radius:6px; padding:0 6px; margin-left:6px; vertical-align:middle}
+body.sin-ac .ac{display:none}
+/* D: una por una */
+.paso{font-size:.8rem; color:var(--muted)}
+.resumen{margin:8px 0; padding:0; list-style:none}
+.resumen li{display:flex; justify-content:space-between; gap:8px; padding:8px 0; border-bottom:1px solid var(--line)}
+</style>
+
+<h1>Ejercicio: cinco formas de pedir los datos de cada actividad</h1>
+<p class="sub">Prototipo para decidir, no para construir. Los datos son de ejemplo y nada se guarda.</p>
+<div class="banner">Hoy, la pantalla real agrega los dos campos de cada actividad elegida debajo de los anteriores. Con 9 actividades son 19 campos seguidos: dos por actividad y «¿Cuál?» de «Otra». Elige una variante, pulsa «Elegir todas» y «Guardar» con algo vacío, y pruébala con el celular en la mano.</div>
+
+<div class="variantes" role="group" aria-label="Variante">
+  <button data-v="A" aria-pressed="true">A · Pestañas</button>
+  <button data-v="B" aria-pressed="false">B · Acordeón</button>
+  <button data-v="C" aria-pressed="false">C · Filas compactas</button>
+  <button data-v="D" aria-pressed="false">D · Una por una</button>
+  <button data-v="E" aria-pressed="false">E · Lista con casillas</button>
+</div>
+<details class="nota" id="nota"><summary>Qué dice la evidencia de esta variante</summary><div id="notaTxt"></div></details>
+
+<main class="card" id="app"></main>
+<div class="actions">
+  <button class="link" id="todas">Elegir todas</button>
+  <button class="link" id="limpiar">Empezar de nuevo</button>
+  <button class="link" id="insignias">Ocultar insignias E-n</button>
+</div>
+
+<script>
+const ACT = ["Caminar","Correr","Bicicleta","Nadar","Pesas o gimnasio","Fútbol u otro deporte","Yoga o pilates","Baile","Otra"];
+const NOTAS = {
+  A: `<ul>
+    <li class="pro">Es tu propuesta: solo se ve una actividad a la vez y la pantalla no crece.</li>
+    <li class="contra">GOV.UK: las pestañas «esconden contenido» y no sirven para pasos que van en orden. NN/g: «entre menos pestañas, mejor». Aquí puede haber 9 y, a 400 px, se salen de la pantalla y hay que desplazarlas de lado.</li>
+    <li class="contra">Un error en una pestaña que no está a la vista no se ve. Hay que marcar la pestaña con un punto y llevar el foco a ella.</li>
+    <li class="contra">El chip ya está seleccionado, así que tocarlo de nuevo lo desmarca. Para ver una actividad hace falta una segunda fila de pestañas debajo de los chips.</li>
+    <li>Accesibilidad: el patrón de pestañas de la APG (W3C) pide <code>tablist</code>, <code>tab</code> y <code>tabpanel</code>, moverse con flechas y activar automáticamente.</li></ul>`,
+  B: `<ul>
+    <li class="pro">La última actividad elegida se abre y las demás se cierran mostrando su resumen («3 días · 30 min»). El efecto es el mismo que con pestañas: solo una a la vez.</li>
+    <li class="pro">Cada actividad que falta se ve sin abrirla, porque su resumen dice «Falta: minutos». NN/g recomienda el acordeón para el celular por el poco espacio.</li>
+    <li class="contra">Se toca una vez más para abrir cada actividad. Un acordeón cerrado puede hacer pensar que no hay nada (NN/g).</li></ul>`,
+  C: `<ul>
+    <li class="pro">No esconde nada: cada actividad ocupa una fila con días y minutos juntos. Con 9 son 9 filas, no 19 campos.</li>
+    <li class="pro">Es lo más fácil de comparar y de revisar antes de guardar, y no necesita patrones de accesibilidad especiales.</li>
+    <li class="contra">Los campos son más chicos y su etiqueta es corta. Va bien con dos números por actividad; con más preguntas por actividad ya no cabe.</li></ul>`,
+  D: `<ul>
+    <li class="pro">Es «una cosa por página» de GOV.UK: «Caminar, 1 de 3». Al final, un resumen con «Cambiar» en cada actividad.</li>
+    <li class="pro">Se parece al estilo «casi Duolingo»: cada paso es corto y tiene un avance visible.</li>
+    <li class="contra">Son más pasos, y para corregir hay que volver. Se aparta del resto del cuestionario de hábitos, que se contesta en una sola pantalla.</li></ul>`
+};
+NOTAS.E = `<ul>
+    <li class="pro">Es tu propuesta: las 9 actividades se ven siempre como una lista. Marcas las que haces y, debajo de cada una, aparecen sus días y minutos, que se vuelven obligatorios.</li>
+    <li class="pro">Es el patrón de casillas con pregunta que aparece de GOV.UK. Para «No hago ejercicio» se usa su casilla excluyente, separada con una «o»: al marcarla, se desmarca lo demás. La casilla nativa funciona con teclado y con lector de pantalla sin trabajo extra.</li>
+    <li class="contra">GOV.UK recomienda mostrar así solo una pregunta simple: si es complicada o tiene más de una parte, la pasa a la página siguiente (como la variante D). Días y minutos ya son dos partes, y en «Otra» son tres. Además, no siempre se avisa al lector de pantalla cuando aparecen los campos, una falla conocida de WCAG 2.2 (4.1.2). En sus pruebas, las preguntas simples no causaron problemas y las complicadas confundieron.</li>
+    <li class="contra">D18 fija los chips como estándar para elegir opciones. Elegir esta variante obliga a revisarlo, por ejemplo así: «opciones que llevan datos propios → lista con casillas».</li></ul>`;
+let ninguno = false;
+let V = "A", elegidas = [], datos = {}, abierta = null, paso = 0, intento = false;
+
+const falta = a => { const d = datos[a] || {}; const f = [];
+  if (a === "Otra" && !(d.nombre||"").trim()) f.push("cuál");
+  if (!d.dias) f.push("días"); if (!d.min) f.push("minutos"); return f; };
+const total = () => elegidas.reduce((s,a) => s + (+datos[a]?.dias||0) * (+datos[a]?.min||0), 0);
+const totalHtml = () => `<p class="total" role="status">${total() ? `Total de lo anotado: ${total()} minutos por semana` : ""}</p>`;
+const resumen = a => { const f = falta(a); const d = datos[a]||{};
+  return f.length ? `<span class="res falta">Falta: ${f.join(", ")}</span>` : `<span class="res">${d.dias} días · ${d.min} min</span>`; };
+
+function campos(a) {
+  const d = datos[a] || {}, f = intento ? falta(a) : [], id = ACT.indexOf(a);
+  const inp = (k, lbl, max) => `<div class="campo"><label for="${k}${id}">${lbl}</label>
+    <input id="${k}${id}" inputmode="numeric" data-a="${a}" data-k="${k}" value="${d[k]||""}" aria-invalid="${f.includes(k==="dias"?"días":"minutos")}" placeholder="${max}">
+    ${f.includes(k==="dias"?"días":"minutos") ? `<p class="err">Escribe ${k==="dias"?"los días":"los minutos"}.</p>` : ""}</div>`;
+  return (a === "Otra" ? `<div class="campo"><label for="nombre">¿Cuál?</label><input id="nombre" data-a="Otra" data-k="nombre" value="${d.nombre||""}" aria-invalid="${f.includes("cuál")}">${f.includes("cuál") ? `<p class="err">Escribe cuál.</p>` : ""}</div>` : "")
+    + `<div class="dos">${inp("dias","Días por semana","1 a 7")}${inp("min","Minutos cada vez","1 a 600")}</div>`;
+}
+
+function chips() {
+  return `<p class="lbl" id="q">¿Qué ejercicio haces?</p><div class="chips" role="group" aria-labelledby="q">
+    ${ACT.map(a => `<button data-chip="${a}" aria-pressed="${elegidas.includes(a)}">${a}</button>`).join("")}
+    <button data-chip="no" aria-pressed="false">No hago ejercicio</button></div>`;
+}
+
+function render() {
+  const app = document.getElementById("app");
+  let h = `<h2>Ejercicio</h2>`;
+  if (V === "D" && paso > 0) h += pasoD();
+  else {
+    if (V === "E") h += listaE();
+    else h += chips();
+    if (elegidas.length && V !== "E") {
+      if (V === "A") {
+        const sel = elegidas.includes(abierta) ? abierta : elegidas.at(-1);
+        h += `<div class="tabs" role="tablist" aria-label="Actividades elegidas">${elegidas.map(a =>
+          `<button role="tab" id="t${ACT.indexOf(a)}" data-tab="${a}" aria-selected="${a===sel}" aria-controls="p" tabindex="${a===sel?0:-1}">${a}${intento && falta(a).length ? `<span class="dot" aria-label=" (le falta algo)"></span>` : ""}</button>`).join("")}</div>
+          <div class="panel" role="tabpanel" id="p" aria-labelledby="t${ACT.indexOf(sel)}">${campos(sel)}</div>`;
+      }
+      if (V === "B") {
+        const sel = elegidas.includes(abierta) ? abierta : elegidas.at(-1);
+        h += elegidas.map(a => `<div class="acc"><button data-acc="${a}" aria-expanded="${a===sel}"><strong>${a}</strong>${a===sel ? "" : resumen(a)}</button>
+          ${a===sel ? `<div class="cuerpo">${campos(a)}</div>` : ""}</div>`).join("");
+      }
+      if (V === "C") {
+        h += `<div style="margin-top:8px">${elegidas.map(a => { const d = datos[a]||{}, f = intento ? falta(a) : [], i = ACT.indexOf(a);
+          return `<div class="fila"><div class="nom">${a === "Otra" ? `<label for="nombre">Otra, ¿cuál?</label><input id="nombre" data-a="Otra" data-k="nombre" value="${d.nombre||""}" aria-invalid="${f.includes("cuál")}">` : a}</div>
+            <div><label for="dias${i}">Días/sem.</label><input id="dias${i}" inputmode="numeric" data-a="${a}" data-k="dias" value="${d.dias||""}" aria-invalid="${f.includes("días")}"></div>
+            <div><label for="min${i}">Min. cada vez</label><input id="min${i}" inputmode="numeric" data-a="${a}" data-k="min" value="${d.min||""}" aria-invalid="${f.includes("minutos")}"></div></div>
+            ${f.length ? `<p class="err">${a}: falta ${f.join(", ")}.</p>` : ""}`; }).join("")}</div>`;
+      }
+      if (V === "D") h += `<div class="actions"><button class="primary" data-go="1">Siguiente: ${elegidas[0]}</button></div>`;
+    }
+  }
+  if (V !== "D" || paso === 0) h += totalHtml() + (V === "D" ? "" : `<div class="actions"><button class="primary" id="guardar">Guardar</button><span id="msg" class="sub" role="status"></span></div>`);
+  app.innerHTML = h;
+}
+
+function listaE() {
+  const err = intento && !elegidas.length && !ninguno;
+  return `<fieldset class="lista"><legend id="q">¿Qué ejercicio haces? <span class="sub">Marca todas las que hagas.</span><span class="ac">E-1</span><span class="ac">E-4</span></legend>
+    ${err ? `<p class="err">Elige al menos una actividad, o «No hago ejercicio»</p>` : ""}
+    ${ACT.map(a => { const i = ACT.indexOf(a), on = elegidas.includes(a);
+      return `<div class="item"><label class="chk"><input type="checkbox" data-e="${a}" ${on ? "checked" : ""}> ${a}</label>
+        ${on ? `<div class="rev"><span class="ac">E-2</span>${campos(a)}</div>` : ""}</div>`; }).join("")}
+    <p class="o">o</p>
+    <div class="item"><label class="chk"><input type="checkbox" data-e="no" ${ninguno ? "checked" : ""}> No hago ejercicio<span class="ac">E-3</span></label></div>
+  </fieldset>`;
+}
+
+function pasoD() {
+  const n = elegidas.length;
+  if (paso <= n) { const a = elegidas[paso-1];
+    return `<p class="paso">${a} · ${paso} de ${n}</p>${campos(a)}${totalHtml()}
+      <div class="actions"><button data-go="${paso-1}">Atrás</button><button class="primary" data-go="${paso+1}" data-check="${a}">${paso < n ? "Siguiente" : "Revisar"}</button></div>`; }
+  return `<p class="paso">Revisa tu ejercicio</p><ul class="resumen">${elegidas.map((a,i) =>
+    `<li><span><strong>${a}</strong> ${resumen(a)}</span><button class="link" data-go="${i+1}">Cambiar</button></li>`).join("")}</ul>
+    ${totalHtml()}<div class="actions"><button data-go="0">Cambiar actividades</button><button class="primary" id="guardar">Guardar</button><span id="msg" class="sub" role="status"></span></div>`;
+}
+
+document.addEventListener("click", e => {
+  const b = e.target.closest("button"); if (!b) return;
+  if (b.dataset.v) { V = b.dataset.v; ninguno = false; paso = 0; intento = false; abierta = null;
+    document.querySelectorAll("[data-v]").forEach(x => x.setAttribute("aria-pressed", x === b));
+    document.getElementById("notaTxt").innerHTML = NOTAS[V]; render(); return; }
+  if (b.dataset.chip) { const a = b.dataset.chip;
+    if (a === "no") elegidas = []; else if (elegidas.includes(a)) elegidas = elegidas.filter(x => x !== a);
+    else { elegidas.push(a); abierta = a; }
+    render(); document.querySelector(`[data-chip="${a}"]`)?.focus(); return; }
+  if (b.dataset.tab) { abierta = b.dataset.tab; render(); document.querySelector(`[data-tab="${abierta}"]`).focus(); return; }
+  if (b.dataset.acc) { abierta = b.dataset.acc; render(); document.querySelector(`[data-acc="${abierta}"]`).focus(); return; }
+  if (b.dataset.go !== undefined) {
+    if (b.dataset.check && falta(b.dataset.check).length) { intento = true; render(); document.querySelector('[aria-invalid="true"]')?.focus(); return; }
+    paso = +b.dataset.go; intento = false; render(); (document.querySelector("#app input") || document.querySelector("#app button"))?.focus(); return; }
+  if (b.id === "guardar") { intento = true;
+    const mal = elegidas.find(a => falta(a).length);
+    if (mal) { abierta = mal; render();
+      if (V === "D") document.querySelector(".resumen .falta")?.closest("li").querySelector("button").focus();
+      else document.querySelector('[aria-invalid="true"]')?.focus();
+      document.getElementById("msg").textContent = `Le falta algo a ${mal}.`; }
+    else { render(); document.getElementById("msg").textContent = (elegidas.length || ninguno) ? "Guardado (de mentiras)." : "Elige al menos una actividad, o «No hago ejercicio»"; }
+    return; }
+  if (b.id === "todas") { ninguno = false; elegidas = [...ACT]; abierta = "Otra"; datos = {Caminar:{dias:"5",min:"30"}, Correr:{dias:"2",min:"40"}}; paso = 0; intento = false; render(); return; }
+  if (b.id === "insignias") { const off = document.body.classList.toggle("sin-ac");
+    b.textContent = off ? "Mostrar insignias E-n" : "Ocultar insignias E-n"; return; }
+  if (b.id === "limpiar") { ninguno = false; elegidas = []; datos = {}; paso = 0; intento = false; abierta = null; render(); }
+});
+document.addEventListener("change", e => { const t = e.target; if (!t.dataset?.e) return;
+  const a = t.dataset.e;
+  if (a === "no") { ninguno = t.checked; if (ninguno) elegidas = []; }
+  else if (t.checked) { elegidas.push(a); ninguno = false; } else elegidas = elegidas.filter(x => x !== a);
+  render(); document.querySelector(`[data-e="${a}"]`).focus(); });
+document.addEventListener("input", e => { const t = e.target; if (!t.dataset.a) return;
+  (datos[t.dataset.a] ||= {})[t.dataset.k] = t.value;
+  const s = document.querySelector(".total"); if (s) s.textContent = total() ? `Total de lo anotado: ${total()} minutos por semana` : "";
+  document.querySelectorAll(".acc > button").forEach(btn => { const a = btn.dataset.acc; const r = btn.querySelector(".res"); if (r) r.outerHTML = resumen(a); });
+});
+document.addEventListener("keydown", e => { const t = e.target; if (!t.dataset?.tab || !["ArrowLeft","ArrowRight","Home","End"].includes(e.key)) return;
+  const i = elegidas.indexOf(t.dataset.tab), n = elegidas.length;
+  const j = e.key === "Home" ? 0 : e.key === "End" ? n-1 : (i + (e.key === "ArrowRight" ? 1 : -1) + n) % n;
+  abierta = elegidas[j]; render(); document.querySelector(`[data-tab="${abierta}"]`).focus(); e.preventDefault(); });
+document.getElementById("notaTxt").innerHTML = NOTAS.A;
+render();
+</script>

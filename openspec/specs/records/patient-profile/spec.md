@@ -612,11 +612,13 @@ nuevos.
 El cuestionario de hábitos SHALL sumar tres bloques, cada uno opcional, con las mismas reglas de guardado que los demás
 hábitos (se guardan con "Guardar", lo que no aplica se descarta, lo que una respuesta abre se contesta antes de guardar,
 y ninguna de estas preguntas admite "No recuerdo"):
-- **ejercicio:** qué ejercicio hace, eligiendo una o varias actividades (caminar · correr · bicicleta · nadar · pesas o
-  gimnasio · fútbol u otro deporte · yoga o pilates · baile · otra), o "No hago ejercicio". Cada actividad elegida pide
-  sus días por semana (1 a 7) y sus minutos cada vez (1 a 600); "Otra" pide además cuál es (texto de 1 a 60
-  caracteres). La pantalla SHALL mostrar el total de lo anotado en minutos por semana (la suma de días por minutos de
-  cada actividad);
+- **ejercicio:** qué ejercicio hace, marcando una o varias actividades en una lista con una casilla por actividad
+  (caminar · correr · bicicleta · nadar · pesas o gimnasio · fútbol u otro deporte · yoga o pilates · baile · otra), o
+  la casilla "No hago ejercicio", aparte y excluyente (D18 revisada, 2026-10-28). La lista SHALL estar siempre a la
+  vista, y las preguntas de cada actividad SHALL aparecer justo debajo de su casilla solo mientras está marcada. Cada
+  actividad elegida pide sus días por semana (1 a 7) y sus minutos cada vez (1 a 600); "Otra" pide además cuál
+  es (texto de 1 a 60 caracteres). La pantalla SHALL mostrar el total de lo anotado en minutos por semana (la suma
+  de días por minutos de cada actividad);
 - **movimiento del día:** cómo pasa el día en su trabajo o actividad principal (casi todo sentado · de pie o caminando,
   sin cargar cosas · cargando cosas ligeras o subiendo escaleras seguido · trabajo pesado o cargando cosas pesadas); si
   camina o va en bici al menos 10 minutos seguidos para ir a algún lado (No · Sí) y, con *Sí*, cuántos días por semana
@@ -656,6 +658,32 @@ cualquiera de estas preguntas.
 - **GIVEN** un paciente con "Caminar" 5 días y 30 minutos guardado
 - **WHEN** elige "No hago ejercicio" y toca "Guardar"
 - **THEN** al volver a abrir ve "No hago ejercicio" elegido, ninguna actividad y ningún total
+
+#### Scenario: La lista de actividades siempre a la vista (E-1)
+- **GIVEN** un paciente sin ejercicio guardado
+- **WHEN** abre la pantalla de hábitos
+- **THEN** bajo "¿Qué ejercicio haces?" ve nueve casillas sin marcar, en este orden: "Caminar", "Correr", "Bicicleta",
+  "Nadar", "Pesas o gimnasio", "Fútbol u otro deporte", "Yoga o pilates", "Baile", "Otra"; después, separada con
+  "o", la casilla "No hago ejercicio"; y ningún campo de días ni de minutos
+
+#### Scenario: Marcar abre sus preguntas debajo y desmarcar las quita (E-2)
+- **GIVEN** un paciente en la pantalla de hábitos
+- **WHEN** marca "Correr", después "Caminar" y después "Otra"
+- **THEN** justo debajo de cada casilla marcada, antes de la casilla siguiente, ve sus "Días por semana" y "Minutos
+  cada vez" (con "Otra", primero "¿Cuál?"); si desmarca "Correr" con 3 días y 40 minutos escritos, sus campos
+  desaparecen, el total deja de contarlos y al guardar no se guarda "Correr"
+
+#### Scenario: "No hago ejercicio" excluye las actividades (E-3)
+- **GIVEN** un paciente con "Caminar" marcada, 5 días y 30 minutos
+- **WHEN** marca "No hago ejercicio"
+- **THEN** "Caminar" queda desmarcada, sus campos y el total desaparecen; y si después marca "Bicicleta", "No hago
+  ejercicio" queda desmarcada
+
+#### Scenario: Teclado y lector de pantalla (E-4)
+- **GIVEN** un paciente con el foco en la casilla "Caminar"
+- **WHEN** pulsa Espacio y después Tab
+- **THEN** la casilla, que se anuncia como casilla "Caminar" dentro del grupo "¿Qué ejercicio haces?", queda marcada
+  con el foco en ella, y Tab lleva a "Días por semana" de caminar
 
 #### Scenario: Movimiento del día aparte del ejercicio (C-7)
 - **GIVEN** un paciente con "Caminar" 5 días y 30 minutos

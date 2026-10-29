@@ -102,7 +102,9 @@ function ChipGroup<V extends string>({
 
 /**
  * Multiple-choice chips (design.md, Interface contract → `ChipMultiGroup`;
- * D18: chips for every option, multiple choice included): same look and
+ * D18 revised 2026-10-28: chips for multiple choice too, except where each
+ * chosen option opens its own questions, which is a checkbox list, as the
+ * exercise in HabitsForm): same look and
  * group semantics as ChipGroup, but each chip toggles on its own. The
  * optional `exclusive` chip ("No me expongo") goes last; choosing it empties
  * the others, and choosing any other turns it off. `values` keeps the order
