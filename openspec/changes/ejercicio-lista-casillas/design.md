@@ -1,6 +1,7 @@
 # Design
 
-Status: DRAFT
+Status: APPROVED
+Approved by: Saúl Pérez (author) on 2026-10-28, después de navegar la variante E del prototipo
 
 **En una frase:** en la pantalla de hábitos, el bloque Ejercicio cambia los chips por una lista con casillas siempre a
 la vista (como los antecedentes familiares), con los días y minutos de cada actividad justo debajo de su casilla mientras
