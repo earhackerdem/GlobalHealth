@@ -1,0 +1,185 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Trabajo en el perfil</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<style>
+/* Paleta B · Azul clínico (D22); prototipo del cambio perfil-trabajo, datos de ejemplo */
+:root{
+  --bg:#f0f4f5; --surface:#ffffff; --fg:#212b32; --muted:#4c6272;
+  --accent:#005eb8; --accent-fg:#ffffff; --line:#d8dde0; --input:#4c6272; --chip:#e8edee;
+  --ok:#007f3b; --b-tag:#330072; --veil:rgba(33,43,50,.55);
+  --font-body:"Atkinson Hyperlegible",system-ui,sans-serif;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#0f1a22; --surface:#172630; --fg:#e8eef1; --muted:#a3b4bf;
+  --accent:#5aa9f0; --accent-fg:#0b1a26; --line:#2a3b47; --input:#7a92a1; --chip:#223644;
+  --ok:#5fd08a; --b-tag:#c9b3ff; --veil:rgba(0,0,0,.6); color-scheme:dark
+}}
+:root[data-theme="dark"]{
+  --bg:#0f1a22; --surface:#172630; --fg:#e8eef1; --muted:#a3b4bf;
+  --accent:#5aa9f0; --accent-fg:#0b1a26; --line:#2a3b47; --input:#7a92a1; --chip:#223644;
+  --ok:#5fd08a; --b-tag:#c9b3ff; --veil:rgba(0,0,0,.6); color-scheme:dark
+}
+body{background:var(--bg); color:var(--fg); font:16px/1.5 var(--font-body);
+  padding-left:max(16px, env(safe-area-inset-left, 0px)); padding-right:max(16px, env(safe-area-inset-right, 0px));
+  padding-block:8px 64px; max-width:620px; margin:0 auto}
+h1{font-size:1.35rem; margin:.4rem 0 0; text-wrap:balance}
+h2{font-size:1.1rem; margin:0}
+p{margin:.35rem 0}
+.sub{color:var(--muted); font-size:.9rem}
+button{font:inherit; border:1px solid var(--input); background:var(--surface); color:var(--fg);
+  border-radius:10px; padding:8px 14px; cursor:pointer}
+button.primary{background:var(--accent); color:var(--accent-fg); border-color:transparent; font-weight:700}
+button.link{border:none; background:none; color:var(--accent); padding:4px; font-weight:600}
+button:focus-visible,input:focus-visible{outline:2px solid var(--accent); outline-offset:2px}
+.actions{display:flex; flex-wrap:wrap; gap:8px; margin:14px 0 0; align-items:center}
+.card{background:var(--surface); border:1px solid var(--line); border-radius:12px; padding:16px; margin-top:14px; min-width:0}
+.cab{display:flex; flex-wrap:wrap; justify-content:space-between; align-items:center; gap:8px}
+.filas{display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:14px; margin-top:14px}
+@media (max-width:480px){ .filas{grid-template-columns:1fr} }
+.fila .k{display:block; font-size:.85rem; color:var(--muted)}
+.fila .v{font-size:.9rem; overflow-wrap:anywhere}
+.fila.nueva{grid-column:1/-1}
+label,.lbl{font-size:.88rem; font-weight:700; display:block; margin:14px 0 4px}
+input{font:inherit; width:100%; box-sizing:border-box; border:1px solid var(--input); border-radius:8px; padding:8px 10px;
+  background:var(--surface); color:var(--fg)}
+.opt{font-weight:400; color:var(--muted)}
+.chips{display:flex; flex-wrap:wrap; gap:6px}
+.chips button{border-radius:999px; padding:5px 12px; font-size:.88rem}
+.chips button[aria-pressed="true"]{background:var(--accent); color:var(--accent-fg); border-color:transparent}
+.o{color:var(--muted); font-size:.85rem; align-self:center}
+.velo{position:fixed; inset:0; background:var(--veil); display:grid; place-items:center; padding:16px; z-index:5}
+.dialogo{background:var(--surface); border-radius:12px; padding:18px; width:100%; max-width:440px; max-height:88vh;
+  overflow:auto; box-sizing:border-box}
+.toast{position:fixed; bottom:calc(16px + env(safe-area-inset-bottom, 0px)); left:50%; transform:translateX(-50%);
+  background:var(--fg); color:var(--bg); border-radius:10px; padding:8px 14px; font-size:.9rem; z-index:6}
+details.nota{font-size:.88rem; margin:10px 0}
+details.nota summary{cursor:pointer; font-weight:700}
+details.nota li{margin:4px 0}
+.ac{font-size:.7rem; font-weight:700; letter-spacing:.04em; color:var(--b-tag); border:1px solid currentColor;
+  border-radius:6px; padding:0 6px; margin-left:6px; vertical-align:middle; white-space:nowrap}
+body.sin-ac .ac{display:none}
+</style>
+
+<h1>Trabajo en el Perfil básico</h1>
+<p class="sub">Prototipo del cambio <code>perfil-trabajo</code> (C2b). Datos de ejemplo; nada se guarda. Con tus respuestas del 2026-10-29: diálogo propio, «No puedo trabajar por mi salud», el detalle solo con «Trabajo» y sin «Cargar peso».</p>
+
+<details class="nota" open><summary>Historia y criterios (T-n)</summary>
+  <p><i>Como paciente, quiero contar a qué me dedico, a qué me expongo en mi trabajo y en qué turno, para que el médico lo tome en cuenta sin tener que preguntármelo en cada consulta.</i></p>
+  <ul>
+    <li><b>T-1</b> Elijo «Trabajo», escribo «Chofer de transporte», elijo «Ruido fuerte» y «Rotativo», y guardo: la tarjeta dice «Chofer de transporte · rotativo · expuesto a ruido fuerte».</li>
+    <li><b>T-2</b> Guardo sin contestar nada: se acepta y la tarjeta dice «Sin registrar».</li>
+    <li><b>T-3</b> «Nada de esto» y una exposición se excluyen: elegir una quita la otra.</li>
+    <li><b>T-4</b> «Jubilado o pensionado» con «Minero» como el trabajo de más años: no me pregunta a qué me dedico, exposiciones ni turno; la tarjeta dice «Jubilado o pensionado · antes: Minero».</li>
+    <li><b>T-5</b> Va cifrado, solo lo veo yo y pide consentimiento (no se ve en el prototipo; lo prueba el servidor).</li>
+    <li><b>T-6</b> Cambio de «Trabajo» a «Busco trabajo» y guardo: se borra lo que solo aplica al trabajo.</li>
+  </ul>
+</details>
+
+<main id="app"></main>
+<div class="actions">
+  <button class="link" id="limpiar">Empezar de nuevo</button>
+  <button class="link" id="ejemplo">Cargar el ejemplo de T-6</button>
+  <button class="link" id="insignias">Ocultar insignias T-n</button>
+  <button class="link" id="tema">Cambiar a oscuro</button>
+</div>
+
+<script>
+const SIT = [["employed","Trabajo"],["looking","Busco trabajo"],["retired","Jubilado o pensionado"],["homemaker","Hogar"],["student","Estudio"],["unable_health","No puedo trabajar por mi salud"]];
+const EXP = [["dust","Polvo"],["chemicals","Químicos o solventes"],["loud_noise","Ruido fuerte"]];
+const TUR = [["day","De día"],["night","De noche"],["rotating","Rotativo"]];
+const VACIO = () => ({status:null, occupation:null, longest_job:null, exposures:[], no_exposures:false, shift:null});
+let guardado = VACIO(), borrador = null, toastTimer;
+const etq = (lista, k) => (lista.find(([v]) => v===k) || [,""])[1];
+const esc = s => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const ac = id => `<span class="ac">${id}</span>`;
+
+// Lo mismo que hará normalize_work en el servidor
+function normalizar(w){
+  const t = s => (s && s.trim()) || null;
+  const n = {...w, occupation:t(w.occupation), longest_job:t(w.longest_job), exposures:[...new Set(w.exposures)]};
+  if (n.no_exposures) n.exposures = [];
+  if (n.status !== "employed") Object.assign(n, {occupation:null, exposures:[], no_exposures:false, shift:null});
+  return n;
+}
+function resumen(w){
+  const partes = [w.occupation || etq(SIT, w.status), w.shift && etq(TUR, w.shift).toLowerCase(),
+    w.longest_job && "antes: " + w.longest_job,
+    w.exposures.length && "expuesto a " + w.exposures.map(e => etq(EXP, e).toLowerCase()).join(", ")];
+  const s = partes.filter(Boolean).map(esc).join(" · ");
+  return s || "Sin registrar";
+}
+
+function chips(nombre, lista, sel, multi){
+  return `<div class="chips" role="group" aria-labelledby="l-${nombre}">${lista.map(([v,t]) =>
+    `<button type="button" data-${multi?"multi":"uno"}="${nombre}" data-v="${v}" aria-pressed="${multi ? sel.includes(v) : sel===v}">${t}</button>`).join("")}</div>`;
+}
+function pintarDialogo(){
+  const w = borrador, trab = w.status === "employed";
+  return `<div class="velo" id="velo"><div class="dialogo" role="dialog" aria-modal="true" aria-labelledby="dt">
+    <h2 id="dt" tabindex="-1">Tu trabajo</h2>
+    <p class="sub">El médico lo pregunta porque lo que haces todo el día también es salud.</p>
+    <span class="lbl" id="l-status">Hoy…${ac("T-4")}</span>${chips("status", SIT, w.status)}
+    ${trab ? `<label for="f-occ">¿A qué te dedicas? <span class="opt">(opcional)</span>${ac("T-1")}</label>
+      <input id="f-occ" data-k="occupation" maxlength="200" value="${esc(w.occupation||"")}" placeholder="Albañil, maestra, chofer, programador…">
+      <span class="lbl" id="l-exposures">En tu trabajo te expones a…${ac("T-3")}</span>
+      <div class="chips" role="group" aria-labelledby="l-exposures">${EXP.map(([v,t]) =>
+        `<button type="button" data-multi="exposures" data-v="${v}" aria-pressed="${w.exposures.includes(v)}">${t}</button>`).join("")}
+        <span class="o">o</span><button type="button" id="nada" aria-pressed="${w.no_exposures}">Nada de esto</button></div>
+      <span class="lbl" id="l-shift">Turno</span>${chips("shift", TUR, w.shift)}` : ""}
+    <label for="f-long">El trabajo que más años has tenido, si es otro <span class="opt">(opcional)</span></label>
+    <input id="f-long" data-k="longest_job" maxlength="200" value="${esc(w.longest_job||"")}" placeholder="Minero, costurera…">
+    <div class="actions"><button type="button" id="cancelar">Cancelar</button><button type="button" class="primary" id="guardar">Guardar${ac("T-2")}</button></div>
+  </div></div>`;
+}
+function pintar(){
+  document.getElementById("app").innerHTML = `
+    <div class="card" data-testid="profile-basic-data">
+      <div class="cab"><h2>Datos básicos</h2><div class="actions" style="margin:0">
+        <button>Agregar medición</button><button>Editar datos básicos</button>
+        <button id="editar">Editar trabajo${ac("T-1")}</button></div></div>
+      <div class="filas">
+        <div class="fila"><span class="k">Fecha de nacimiento</span><span class="v">15/03/1990 · 36 años</span></div>
+        <div class="fila"><span class="k">Sexo</span><span class="v">Mujer</span></div>
+        <div class="fila"><span class="k">Alergias a medicamentos</span><span class="v">Penicilina</span></div>
+        <div class="fila"><span class="k">Peso</span><span class="v">72 kg · 12/10/2026</span></div>
+        <div class="fila"><span class="k">Estatura</span><span class="v">165 cm · 12/10/2026</span></div>
+        <div class="fila nueva"><span class="k">Trabajo${ac("T-6")}</span><span class="v" id="resumen">${resumen(guardado)}</span></div>
+      </div>
+    </div>
+    <p class="sub">Abajo siguen Antecedentes familiares y las secciones del historial, sin cambios.</p>
+    ${borrador ? pintarDialogo() : ""}`;
+}
+function toast(t){ clearTimeout(toastTimer); document.querySelector(".toast")?.remove();
+  const d = document.createElement("div"); d.className = "toast"; d.setAttribute("role","status"); d.textContent = t;
+  document.body.append(d); toastTimer = setTimeout(() => d.remove(), 2500); }
+function abrir(){ borrador = JSON.parse(JSON.stringify(guardado)); pintar(); document.getElementById("dt").focus(); }
+function cerrar(){ borrador = null; pintar(); document.getElementById("editar").focus(); }
+
+document.addEventListener("input", e => { const k = e.target.dataset.k; if (k && borrador) borrador[k] = e.target.value; });
+document.addEventListener("keydown", e => { if (e.key==="Escape" && borrador) cerrar(); });
+document.addEventListener("click", e => {
+  if (e.target.id==="velo") return cerrar();
+  const b = e.target.closest("button"); if (!b) return;
+  const d = b.dataset;
+  if (b.id==="editar") return abrir();
+  if (b.id==="cancelar") return cerrar();
+  if (b.id==="guardar"){ guardado = normalizar(borrador); cerrar(); toast("Trabajo guardado"); return; }
+  if (d.uno){ borrador[d.uno] = borrador[d.uno]===d.v ? null : d.v; }
+  else if (d.multi){ const l = borrador.exposures; borrador.exposures = l.includes(d.v) ? l.filter(x => x!==d.v) : [...l, d.v];
+    if (borrador.exposures.length) borrador.no_exposures = false; }
+  else if (b.id==="nada"){ borrador.no_exposures = !borrador.no_exposures; if (borrador.no_exposures) borrador.exposures = []; }
+  else if (b.id==="limpiar"){ guardado = VACIO(); borrador = null; }
+  else if (b.id==="ejemplo"){ guardado = {status:"employed", occupation:"Chofer de transporte", longest_job:"Taxista", exposures:["loud_noise"], no_exposures:false, shift:"rotating"}; borrador = null; }
+  else if (b.id==="insignias"){ const off = document.body.classList.toggle("sin-ac");
+    b.textContent = off ? "Mostrar insignias T-n" : "Ocultar insignias T-n"; return; }
+  else if (b.id==="tema"){ const r = document.documentElement, dark = r.dataset.theme!=="dark"
+      && !(r.dataset.theme!=="light" && matchMedia("(prefers-color-scheme: dark)").matches);
+    r.dataset.theme = dark ? "dark" : "light"; b.textContent = dark ? "Cambiar a claro" : "Cambiar a oscuro"; return; }
+  else return;
+  // Repintar el diálogo conserva el foco en el chip tocado
+  const foco = borrador && (b.dataset.v ? `[data-${d.uno?"uno":"multi"}="${d.uno||d.multi}"][data-v="${d.v}"]` : b.id && "#"+b.id);
+  pintar(); if (foco) document.querySelector(foco)?.focus();
+});
+pintar();
+</script>
