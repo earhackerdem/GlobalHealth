@@ -13,7 +13,7 @@ are `single`. `make tdd-check` requires one `test:` commit per `test→impl` gro
 
 - [x] 0.1 **Prototipo** `product/prototipos/paleta.html` con insignias P-1 a P-5. Saúl Pérez eligió B y lo dejó en
   D22.
-- [ ] 0.2 **Base.** `openspec validate paleta-azul-clinico --strict` limpio; rama al día con `origin/main`;
+- [x] 0.2 **Base.** `openspec validate paleta-azul-clinico --strict` limpio; rama al día con `origin/main`;
   `make up`.
 
 ## 1. Paleta, casillas y jerarquía · test→impl

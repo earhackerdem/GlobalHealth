@@ -1,6 +1,7 @@
 # Design
 
-Status: DRAFT
+Status: APPROVED
+Approved by: Saúl Pérez (author) on 2026-10-29, después de navegar `product/prototipos/paleta.html` y elegir B
 
 **En una frase:** los tokens de color del frontend pasan a la paleta B · Azul clínico de D22, con contraste AA medido
 en claro y en oscuro; las casillas miden 20 px; y en Ejercicio la pregunta pesa más que sus opciones. Todo se
