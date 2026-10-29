@@ -47,6 +47,8 @@ O4 IA cita o calla · O5 el profesional devuelve sin transcripción · O6 detecc
 | FR-029 | paciente | escribir diagnósticos y condiciones con sus palabras y, si la app los reconoce, ligarlos a un concepto con código de un vocabulario propio, sugerido mientras escribe, sin obligar a elegir; su texto siempre se guarda (D21, 2026-10-29) | S | O6 |
 | FR-030 | paciente | indicar por medicina de una receta «¿Para qué es?» (una crónica propia o el diagnóstico de esa receta) y ver en la crónica sus medicinas ligadas sin recapturarlas (D21) | S | O6 |
 | FR-031 | paciente | recibir, al escribir el nombre de una medicina, sugerencias de sus propias recetas anteriores con la dosis de la vez pasada (D21) | C | O1 |
+| FR-032 | paciente | ver, junto a cada dato que se le pide, por qué se pide, dicho por la mascota Axo (o como texto si la apaga), que nunca regaña ni insiste y no festeja en secciones sensibles (D23, 2026-10-29) | S | O1 |
+| FR-033 | paciente | ver celebradas sus acciones de cuidado (compartir su resumen, registrar una toma, subir un estudio) y su constancia en las tomas como cuenta semanal, nunca un porcentaje de perfil completo ni rachas de días (D23) | C | O1 |
 
 ## 3. Non-functional requirements (measurable; unknown → NEEDS CLARIFICATION)
 | ID | Attribute | Stimulus → response → measure | Priority | Source |
@@ -74,13 +76,14 @@ Covers: FR-001..004, FR-026, NFR-001, NFR-003, NFR-004, NFR-006, NFR-010 · Stor
 - US-03 As a paciente, I want ver la bitácora de accesos, so that sé quién vio qué y cuándo.
 
 ### E2 — Expediente: todo el historial en un lugar recuperable
-Covers: FR-005..009, FR-027..031, NFR-010, NFR-012 · Stories:
+Covers: FR-005..009, FR-027..033, NFR-010, NFR-012 · Stories:
 - US-04 As a paciente, I want registrar diagnósticos, recetas y adjuntar resultados, so that nada queda en papeles sueltos.
 - US-05 As a paciente, I want registrar mi historial familiar, so that el riesgo hereditario (cáncer, diabetes) sea visible.
 - US-06 As a paciente, I want buscar y recorrer mi historial, so that encuentro cualquier dato en consulta.
 - US-17 As a paciente, I want completar (u omitir) mi perfil médico mínimo justo al aceptar el consentimiento, so that mis médicos y la IA tienen mi contexto desde el primer día. (cubre FR-027 + FR-008; dominio y prototipo: rebanada 2026-10-19)
 - US-18 As a paciente, I want llenar las secciones de mi perfil médico a mi ritmo (crónicas, cirugías, fracturas, hábitos…), so that mi historia clínica se completa sin fricción. (cubre FR-028; partida en Story A — eventos: pasadas, cirugías, fracturas, transfusiones+grupo sanguíneo, "ninguna" (✅ entregada, PR #20, 2026-10-20) — Story B — crónicas enlazables a diagnóstico (✅ entregada, PR #26, 2026-10-20) — y Story C — hábitos con forma AUDIT-C, humo ajeno, actividades, movimiento del día y sueño + trabajo en el perfil básico, partida en C1 — sustancias y humo (✅ entregada, PR #30, 2026-10-21; ajustada en el PR #32: edad de inicio del alcohol, vapeador con frecuencia y edades, leña como rango con horas al día, validación al momento y aviso de cambios sin guardar; completada en el PR #33: lo que abre una respuesta es obligatorio, «No recuerdo» solo en lo que pasó, el error se va al corregirlo) — y C2 — ejercicio, movimiento, sueño y trabajo, partida en C2a — ejercicio por actividad con su total, movimiento del día y sueño (✅ entregada, PR #34, 2026-10-26) — y C2b — trabajo en el perfil básico (pendiente); dominio y prototipo: rebanada 2026-10-19 perfil por secciones)
 - US-19 As a paciente, I want escribir mis diagnósticos y medicinas con mis palabras y que la app reconozca los que conoce, so that mi médico y la IA los entienden igual sin que yo sepa nombres técnicos. (cubre FR-029..031; dominio y prototipo: rebanada 2026-10-29 captura híbrida, `product/prototipos/captura-hibrida.html`, CA-1..CA-6; D21)
+- US-20 As a paciente, I want que alguien me acompañe mientras armo mi expediente y me diga por qué me piden cada dato, so that lo lleno con confianza y sin sentir que me presionan. (cubre FR-032..033; prototipo `product/prototipos/mascota.html`, MA-1..MA-7; D23; se construye después de la C2b; la celebración de tomas y de compartir depende de E6 y E3)
 
 ### E3 — Compartir con consentimiento: un enlace revocable por profesional
 Covers: FR-010..014, NFR-002, NFR-007 · Stories:
@@ -107,7 +110,7 @@ Covers: FR-025 · Stories:
 ## 5. Traceability
 | Outcome | Epic | FR | NFR |
 |---|---|---|---|
-| O1 historial recuperable | E1, E2 | FR-001..002, FR-005..009, FR-026..027, FR-031 | NFR-001, NFR-010, NFR-012 |
+| O1 historial recuperable | E1, E2 | FR-001..002, FR-005..009, FR-026..027, FR-031..033 | NFR-001, NFR-010, NFR-012 |
 | O2 acceso < 1 min | E3, E4 | FR-010..011, FR-013, FR-015 | NFR-007 |
 | O3 revocación verificable | E1, E3 | FR-004, FR-012, FR-014 | NFR-002, NFR-003 |
 | O4 IA cita o calla | E4, E5 | FR-019..020 | NFR-005, NFR-008, NFR-009 |

@@ -1,6 +1,6 @@
 ---
 date: 2026-10-28
-status: open
+status: done
 ---
 
 **Investigación de UX completa del producto, ahora** (Saúl Pérez, 2026-10-28, después de mergear el PR #34). Va
@@ -33,3 +33,5 @@ pagar deuda en pantallas que van a cambiar.
 **Paleta decidida (2026-10-29):** Saúl Pérez eligió B · Azul clínico en `product/prototipos/paleta.html`, que queda como D22. Se aplica ya, como el cambio `paleta-azul-clinico`, junto con las casillas de 20 px. Sigue la mascota.
 
 **Paleta aplicada (2026-10-29):** el cambio archivado `openspec/changes/archive/2026-10-29-paleta-azul-clinico/` (PR #37) también resolvió la deuda de las casillas. Del hilo 2 queda la mascota.
+
+**Hecho (2026-10-29):** la mascota quedó decidida en D23 (`product/prototipos/mascota.html`, FR-032..033, US-20) y se construye después de la C2b. Con esto se cierran los tres hilos y el PRD está al día. Sigue la C2b (Trabajo en el perfil básico) y después las deudas, empezando por B1 (privacidad).
