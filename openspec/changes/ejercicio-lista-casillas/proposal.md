@@ -11,9 +11,9 @@ primer resultado del hilo 1 (formularios) de la investigación de UX completa
 ## Why
 
 Con los chips, cada actividad elegida agrega dos campos debajo del grupo, en el orden del catálogo. Con varias
-actividades, la pantalla se llena de campos y no se ve a qué actividad pertenece cada uno. Si se eligen todas, son 18
-campos seguidos. Saúl Pérez propuso pestañas. En el prototipo, las pestañas se salen de la pantalla a 400 px y esconden
-los errores; él eligió entonces su otra propuesta: una lista con casillas siempre a la vista, en la que cada casilla
+actividades, la pantalla se llena de campos y no se ve a qué actividad pertenece cada uno. Si se eligen todas, son 19
+campos seguidos: dos por actividad y «¿Cuál?» de «Otra». Saúl Pérez propuso pestañas. En el prototipo, las pestañas
+se salen de la pantalla a 400 px y esconden los errores; él eligió entonces su otra propuesta: una lista con casillas siempre a la vista, en la que cada casilla
 marcada muestra y exige sus campos justo debajo.
 
 ## User story

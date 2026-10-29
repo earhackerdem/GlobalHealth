@@ -93,7 +93,7 @@ body.sin-ac .ac{display:none}
 
 <h1>Ejercicio: cinco formas de pedir los datos de cada actividad</h1>
 <p class="sub">Prototipo para decidir, no para construir. Los datos son de ejemplo y nada se guarda.</p>
-<div class="banner">Hoy, la pantalla real agrega los dos campos de cada actividad elegida debajo de los anteriores. Con 9 actividades son 18 campos seguidos. Elige una variante, pulsa «Elegir todas» y «Guardar» con algo vacío, y pruébala con el celular en la mano.</div>
+<div class="banner">Hoy, la pantalla real agrega los dos campos de cada actividad elegida debajo de los anteriores. Con 9 actividades son 19 campos seguidos: dos por actividad y «¿Cuál?» de «Otra». Elige una variante, pulsa «Elegir todas» y «Guardar» con algo vacío, y pruébala con el celular en la mano.</div>
 
 <div class="variantes" role="group" aria-label="Variante">
   <button data-v="A" aria-pressed="true">A · Pestañas</button>
@@ -125,7 +125,7 @@ const NOTAS = {
     <li class="pro">Cada actividad que falta se ve sin abrirla, porque su resumen dice «Falta: minutos». NN/g recomienda el acordeón para el celular por el poco espacio.</li>
     <li class="contra">Se toca una vez más para abrir cada actividad. Un acordeón cerrado puede hacer pensar que no hay nada (NN/g).</li></ul>`,
   C: `<ul>
-    <li class="pro">No esconde nada: cada actividad ocupa una fila con días y minutos juntos. Con 9 son 9 filas, no 18 campos.</li>
+    <li class="pro">No esconde nada: cada actividad ocupa una fila con días y minutos juntos. Con 9 son 9 filas, no 19 campos.</li>
     <li class="pro">Es lo más fácil de comparar y de revisar antes de guardar, y no necesita patrones de accesibilidad especiales.</li>
     <li class="contra">Los campos son más chicos y su etiqueta es corta. Va bien con dos números por actividad; con más preguntas por actividad ya no cabe.</li></ul>`,
   D: `<ul>
@@ -136,7 +136,7 @@ const NOTAS = {
 NOTAS.E = `<ul>
     <li class="pro">Es tu propuesta: las 9 actividades se ven siempre como una lista. Marcas las que haces y, debajo de cada una, aparecen sus días y minutos, que se vuelven obligatorios.</li>
     <li class="pro">Es el patrón de casillas con pregunta que aparece de GOV.UK. Para «No hago ejercicio» se usa su casilla excluyente, separada con una «o»: al marcarla, se desmarca lo demás. La casilla nativa funciona con teclado y con lector de pantalla sin trabajo extra.</li>
-    <li class="contra">GOV.UK recomienda mostrar así solo una pregunta simple. Días y minutos son dos partes, el límite de lo que recomienda. Tampoco siempre se avisa al lector de pantalla cuando aparecen los campos (WCAG 2.2, 4.1.2).</li>
+    <li class="contra">GOV.UK recomienda mostrar así solo una pregunta simple: si es complicada o tiene más de una parte, la pasa a la página siguiente (como la variante D). Días y minutos ya son dos partes, y en «Otra» son tres. Además, no siempre se avisa al lector de pantalla cuando aparecen los campos, una falla conocida de WCAG 2.2 (4.1.2). En sus pruebas, las preguntas simples no causaron problemas y las complicadas confundieron.</li>
     <li class="contra">D18 fija los chips como estándar para elegir opciones. Elegir esta variante obliga a revisarlo, por ejemplo así: «opciones que llevan datos propios → lista con casillas».</li></ul>`;
 let ninguno = false;
 let V = "A", elegidas = [], datos = {}, abierta = null, paso = 0, intento = false;

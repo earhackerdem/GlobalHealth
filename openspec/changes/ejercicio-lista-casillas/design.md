@@ -5,7 +5,9 @@ Approved by: Saúl Pérez (author) on 2026-10-28, después de navegar la variant
 Enmendado tras la aprobación (2026-10-28, por el agente orquestador, a partir del rojo del tester):
 - **E-4 pierde la cláusula del foco del error de grupo.** Los bloques son opcionales, así que «Guardar» sin nada
   marcado guarda `exercise: null`, y «Elige al menos una actividad…» solo lo devuelve el servidor ante un cuerpo que
-  llega sin pasar por la pantalla. Desde la pantalla no se puede alcanzar.
+  llega sin pasar por la pantalla. Desde la pantalla no se puede alcanzar. Saúl Pérez (author) aprobó la enmienda el
+  2026-10-28. A la pregunta «que "Guardar" con el ejercicio sin marcar guarde el bloque vacío y no muestre error, como
+  los demás hábitos», contestó «Sí, guardar vacío».
 - **D20 en las casillas.** Mientras guarda, cada casilla lleva `aria-disabled="true"` e ignora el clic, igual que
   los chips. Así la fila 12 de la C2a no pierde fuerza.
 
@@ -52,7 +54,8 @@ Lo que las pruebas ejercitan (Playwright, por rol y nombre, como el resto de `pr
 
 - **Grupo:** `getByRole("group", { name: "¿Qué ejercicio haces?" })`, un `fieldset` con `legend`. Con el error de
   grupo, el fieldset lleva `data-invalid` y `aria-describedby` apunta al mensaje «Elige al menos una actividad, o «No
-  hago ejercicio»».
+  hago ejercicio»», y el foco va a la casilla «Caminar». Ese error solo llega con un 422 del servidor
+  (`loc ["body","exercise","activities"]`); lo prueba la fila 4b, con el servidor simulado.
 - **Casillas:** dentro del grupo, `getByRole("checkbox", { name })` con nombre exacto. Son las nueve actividades en
   orden de catálogo y después «No hago ejercicio». El estado se lee con `toBeChecked()`, que en Radix corresponde a
   `aria-checked`.
@@ -90,6 +93,7 @@ Lo que las pruebas ejercitan (Playwright, por rol y nombre, como el resto de `pr
 | 2 | E-2 Marcar abre sus preguntas debajo y desmarcar las quita | marcar Correr, Caminar, Otra → campos entre su casilla y la siguiente («¿Cuál?» primero en Otra); desmarcar Correr con 3×40 → campos fuera, total sin ellos, PUT sin `running` | e2e |
 | 3 | E-3 «No hago ejercicio» excluye | Caminar 5×30 → marcar «No hago ejercicio» → Caminar sin marcar, sin campos ni total; marcar Bicicleta → «No hago ejercicio» sin marcar | e2e |
 | 4 | E-4 Teclado y lector de pantalla | foco en «Caminar», Espacio → marcada y con foco; Tab → «Días por semana» de caminar; rol y nombre de grupo y casilla | e2e |
+| 4b | E-4 Error de grupo que devuelve el servidor | 422 simulado con `loc ["body","exercise","activities"]` → grupo con `data-invalid`, descripción «Elige al menos una actividad, o «No hago ejercicio»» y foco en «Caminar» | e2e |
 | 5 | C-5 Dos actividades con su total | prueba existente (fila 1 de la C2a), ahora con casillas | e2e |
 | 6 | C-5 Otra actividad con su nombre | prueba existente, con casillas | e2e |
 | 7 | C-5/C-15 Falta un dato de una actividad | prueba existente, con casillas | e2e |
@@ -107,9 +111,12 @@ Lo que las pruebas ejercitan (Playwright, por rol y nombre, como el resto de `pr
 - **Pruebas actuales del ejercicio con chips** (unas 38 menciones): el tester las pasa a casillas. Riesgo: que pierdan
   fuerza al reescribirse. Mitigación: el validador de la revisión compara las aserciones antes y después.
 - **Foco del error de grupo:** el selector `fieldset[data-invalid] button` encuentra la casilla de Radix porque es un
-  `button`. Si el implementer usa otro elemento, la fila 4 lo detecta.
-- **El lector de pantalla no anuncia los campos que aparecen:** riesgo aceptado (GOV.UK) porque los campos quedan
-  justo después de la casilla.
+  `button`. Si alguien la cambia por otro elemento, la fila 4b lo detecta.
+- **El lector de pantalla no siempre anuncia los campos que aparecen:** GOV.UK lo lista como una falla conocida de
+  WCAG 2.2 (4.1.2), y recomienda la pregunta que aparece solo si es simple: si tiene más de una parte, la pasa a la
+  página siguiente (la variante D). Días y minutos ya son dos partes, y en «Otra» son tres. Es un riesgo aceptado por
+  Saúl Pérez (author), que eligió la variante E el 2026-10-28. Lo atenúa que los campos quedan justo después de su
+  casilla en el orden del teclado.
 
 ## Gate that closes the work
 

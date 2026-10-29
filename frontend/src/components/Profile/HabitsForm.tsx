@@ -70,7 +70,7 @@ type Place = NonNullable<SecondhandSmoke["places"]>[number]
 /** "No me expongo": the exclusive chip of "¿Dónde?", sent as `exposed: false`. */
 type PlaceChoice = Place | "none"
 type Activity = keyof ExerciseActivities
-/** "No hago ejercicio": the exclusive chip of the exercise, sent as `does_exercise: false`. */
+/** "No hago ejercicio": the exclusive checkbox of the exercise, sent as `does_exercise: false`. */
 type ActivityChoice = Activity | "none"
 type MainActivity = NonNullable<DailyMovement["main_activity"]>
 type Trouble = NonNullable<SleepHabit["trouble_falling_asleep"]>
@@ -997,11 +997,11 @@ function weeklyTotalOf(body: Habits): number | null {
  * sent until "Guardar" (Decision 8): one PUT through the mutation, so the
  * 401/403 handling of main.tsx applies. "Guardar" and "Cancelar" are
  * aria-disabled while that PUT is in flight (D20), "Guardar" reads
- * "Guardando…" (R2-5) and the questions take no changes, the chips dimmed
- * like "Guardar" (R2-3, R3-4); leaving meanwhile does not ask but waits for
- * the PUT, going on after a save and staying after a failure (R3-1, R3-3), and
- * its end only touches the screen and the session that sent it (R2-1, R2-2).
- * Leaving a box checks it
+ * "Guardando…" (R2-5) and the questions take no changes, the chips and the
+ * exercise checkboxes with their names dimmed like "Guardar" (R2-3, R3-4);
+ * leaving meanwhile does not ask but waits for the PUT, going on after a
+ * save and staying after a failure (R3-1, R3-3), and its end only touches
+ * the screen and the session that sent it (R2-1, R2-2). Leaving a box checks it
  * and its block's start ≤ end without moving the focus; "Guardar" checks
  * everything, what each answer requires included (HABITS_REQUIRED, C-15),
  * and moves the focus to the first error (review R5). Leaving the
@@ -1175,10 +1175,12 @@ function HabitsForm() {
   // While saving the chips say they take no changes (R2-3; `choose` ignores
   // the press). ChipGroup has no such prop and stays untouched (design.md,
   // what is not touched): the attribute is set on its buttons from here, and
-  // React leaves it alone because it never renders it.
+  // React leaves it alone because it never renders it. The exercise
+  // checkboxes are left out: they get it from their own prop (activityBox).
   useLayoutEffect(() => {
-    const buttons =
-      formRef.current?.querySelectorAll<HTMLButtonElement>("fieldset button")
+    const buttons = formRef.current?.querySelectorAll<HTMLButtonElement>(
+      "fieldset button:not([role=checkbox])",
+    )
     for (const button of buttons ?? []) {
       if (busy) button.setAttribute("aria-disabled", "true")
       else button.removeAttribute("aria-disabled")
@@ -1534,9 +1536,10 @@ function HabitsForm() {
 
   /**
    * One checkbox of "¿Qué ejercicio haces?" with its label, like the family
-   * history (FamilyHistoryFields). While saving it says it takes no changes
-   * with aria-disabled, not `disabled`, so the focus stays on it (D20), and
-   * `choose` ignores the click.
+   * history (FamilyHistoryFields); the name in bold so each activity stands
+   * out from its fields. While saving it says it takes no changes with
+   * aria-disabled, not `disabled`, so the focus stays on it (D20), `choose`
+   * ignores the click, and the name dims with its box (the box is the peer).
    */
   const activityBox = (choice: ActivityChoice) => {
     const id = `${idPrefix}-activity-${choice}`
@@ -1550,7 +1553,12 @@ function HabitsForm() {
             toggleActivity(choice, checked === true)
           }
         />
-        <Label htmlFor={id}>{t(`habits.options.activities.${choice}`)}</Label>
+        <Label
+          htmlFor={id}
+          className="font-semibold peer-aria-disabled:cursor-not-allowed peer-aria-disabled:opacity-50"
+        >
+          {t(`habits.options.activities.${choice}`)}
+        </Label>
       </div>
     )
   }
@@ -1842,7 +1850,7 @@ function HabitsForm() {
                 <div key={activity} className="grid gap-3">
                   {activityBox(activity)}
                   {draft.activities.includes(activity) && (
-                    <div className="ml-6 grid gap-4">
+                    <div className="ml-6 grid gap-4 border-l-2 pl-3">
                       {activity === "other" && otherNameField()}
                       {numberField(daysKey(activity))}
                       {numberField(minutesKey(activity))}

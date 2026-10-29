@@ -24,4 +24,15 @@ de su casilla. Es el primer resultado del hilo 1 de la investigación de UX
 en Chrome sin defectos (`evidence.md`).
 
 **Deuda:** la casilla mide 16 × 16 px, como en el resto de la app; si se agranda, se decide para toda la casa
-(`validation.md`). Sigue el intermitente de `reset-password`. Fila 31a falló una vez en el rojo y pasó 5 de 5 sola.
+(`validation.md`). Sigue el intermitente de `reset-password`. Fila 31a falló una vez en el rojo y pasó 4 de 4 sola.
+
+## Revisión, ronda 1, y apply
+
+Dos finders y dos validadores: 14 hallazgos confirmados (3 medios: D18 decía «casilla nativa», el texto exageraba a GOV.UK y el guion de E-2 no se podía recorrer) y 1 falso positivo. Saúl Pérez (author) aprobó «Todo lo recomendado», aprobó después la enmienda de E-4 («Sí, guardar vacío»), que el agente había hecho tras el «plan approved» sin preguntarle, y eligió «Línea y nombre en negritas» para distinguir cada actividad. El fixer aplicó todo sin rebotes:
+- prueba nueva E-4b del error de grupo del servidor;
+- el nombre de la actividad se atenúa al guardar;
+- `aria-disabled` llega por un solo camino;
+- línea a la izquierda y nombre en negritas;
+- documentos corregidos.
+
+Resultado: hábitos 163 de 163; el guion de E-2 se recorrió de punta a punta.

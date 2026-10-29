@@ -18,8 +18,9 @@ Hábitos**. El bloque es **Ejercicio**. Pruébalo también en el celular.
 2. Marca **Otra**. Debajo aparece primero «¿Cuál?» y luego sus días y minutos.
 3. En Correr escribe 3 días y 40 minutos. El total dice «Total de lo anotado: 120 minutos por semana».
 4. Desmarca **Correr**. Sus campos desaparecen y el total ya no lo cuenta.
-5. Si vuelves a marcarlo sin salir de la pantalla, reaparecen tus 3 días y 40 minutos.
-6. Si guardas con Correr desmarcado, al volver a abrir Correr no está.
+5. Vuelve a marcar **Correr**. Reaparecen tus 3 días y 40 minutos.
+6. Desmarca **Correr** y **Otra**. Marca **Caminar**, escribe 5 días y 30 minutos, y pulsa **Guardar**.
+7. Vuelve a abrir Hábitos. Caminar está marcada con 5 días y 30 minutos, y Correr no está marcada.
 
 - [ ] Lo vi así
 
@@ -52,5 +53,7 @@ Hábitos**. El bloque es **Ejercicio**. Pruébalo también en el celular.
 - Las casillas son del mismo tamaño que en antecedentes familiares: 16 × 16 px, con el nombre de la actividad como
   zona para tocar. En el prototipo que aprobaste las filas eran más altas. Si en el celular te cuesta atinarles, dímelo
   y lo agrandamos en toda la app, porque es una decisión de estilo de la casa.
+- Si pulsas «Guardar» sin marcar nada en Ejercicio, se guarda el bloque vacío y no sale ningún mensaje, como en los
+  demás hábitos. En el prototipo salía «Elige al menos una actividad…». Lo aprobaste el 2026-10-28.
 - «¿Dónde?» del humo de tabaco ajeno sigue con chips (D18 revisada: tiene un solo «días por semana»).
 - El resto de la investigación de UX (mascota y colores, captura) va en cambios aparte.
