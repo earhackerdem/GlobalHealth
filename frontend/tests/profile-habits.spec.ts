@@ -3362,7 +3362,7 @@ test.describe("Perfil médico — hábitos: ejercicio, movimiento del día y sue
     expect(JSON.stringify(saved)).not.toMatch(/total/i)
   })
 
-  test("fila 12 (R7, C-13, D20) accesibilidad y no disponibles mientras guarda: elegir 'Caminar' es un cambio sin guardar; los números de 'Caminar' y 'Correr' tienen nombres distintos y van en el orden del catálogo; con el PUT retenido, los chips nuevos tienen aria-disabled='true', su clic no cambia nada y los números son de solo lectura", async ({
+  test("fila 12 (R7, C-13, D20) accesibilidad y no disponibles mientras guarda: marcar 'Correr' es un cambio sin guardar; los números de 'Caminar' y 'Correr' tienen nombres distintos y van en el orden del catálogo; con el PUT retenido, las casillas del ejercicio y los chips nuevos tienen aria-disabled='true', el clic en 'Nadar' no la marca y los números son de solo lectura", async ({
     page,
     request,
   }) => {
@@ -3666,5 +3666,44 @@ test.describe("Perfil médico — hábitos: ejercicio con casillas (ejercicio-li
     await expect(other).toBeFocused()
     await page.keyboard.press("Tab")
     await expect(numberField(page, OTHER_NAME)).toBeFocused()
+  })
+
+  test("E-4b (fila 4b) el error de grupo que devuelve el servidor: un 422 con loc ['body', 'exercise', 'activities'] marca '¿Qué ejercicio haces?' como inválido, lo describe con 'Elige al menos una actividad, o «No hago ejercicio»' y lleva el foco a la casilla 'Caminar' (servidor simulado: la pantalla no puede provocarlo)", async ({
+    page,
+    request,
+  }) => {
+    await freshPatient(page, request)
+    await openHabitsFromProfile(page)
+    const message = "Elige al menos una actividad, o «No hago ejercicio»"
+    // Completo (C-15): si faltara algo, la pantalla no mandaría el PUT.
+    await exerciseBox(page, "Caminar").check()
+    await activityDays(page, "Caminar").fill("5")
+    await activityMinutes(page, "Caminar").fill("30")
+    await page.route("**/api/v1/profile/habits", async (route) => {
+      if (route.request().method() !== "PUT") return route.continue()
+      await route.fulfill({
+        status: 422,
+        headers: {
+          "access-control-allow-origin":
+            route.request().headers().origin ?? "*",
+        },
+        json: {
+          detail: [
+            {
+              loc: ["body", "exercise", "activities"],
+              msg: message,
+              type: "value_error",
+            },
+          ],
+        },
+      })
+    })
+    await page.getByRole("button", { name: "Guardar", exact: true }).click()
+
+    await expect(group(page, EXERCISE)).toHaveAttribute("data-invalid", "true")
+    await expect(group(page, EXERCISE)).toHaveAccessibleDescription(message)
+    await expect(exerciseBox(page, "Caminar")).toBeFocused()
+    await expect(formAlert(page)).toHaveCount(0)
+    await expect(page).toHaveURL(HABITS_URL)
   })
 })
