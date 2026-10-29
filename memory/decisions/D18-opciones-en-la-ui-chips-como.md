@@ -11,6 +11,14 @@ status: accepted
   fijas, la UI usa **chips** (`frontend/src/components/Profile/ChipGroup.tsx`), no radios, ni selects, ni
   componentes escritos a mano. Cita: "hay que tener un estándar, guarda como regla usar chips cuando se tienen
   opciones".
+- **Revised:** 2026-10-28. Saúl Pérez eligió la variante E de `product/prototipos/ejercicio-variantes.html` para
+  Ejercicio («ok procede con la E»). Desde entonces, cuando **cada opción elegida abre sus propias preguntas**
+  (Ejercicio: días y minutos por actividad), las opciones van en una **lista con casillas**: casilla nativa,
+  campos debajo de la opción marcada y una opción excluyente separada con una «o». Los chips siguen siendo el
+  estándar en los demás casos, incluidas las opciones múltiples sin datos propios (dónde del humo de tabaco ajeno,
+  que tiene un solo «días por semana») y un «Otra, ¿cuál?» suelto. Motivo: con 9 actividades, los chips apilaban
+  18 campos debajo del grupo y no se veía a qué actividad pertenecía cada uno; las pestañas desbordan a 400 px y
+  esconden errores (`memory/research/formularios-ux.md`).
 - **Why:** consistencia en toda la app. Las secciones de la Story A, el grupo sanguíneo y los prototipos ya usan
   chips, y había dos implementaciones del mismo patrón: chips y radios a mano en las crónicas.
 - **Exception:** objeción del agente, anotada en la misma conversación y sujeta a que Saúl Pérez la retire. Las
