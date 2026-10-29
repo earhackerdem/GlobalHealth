@@ -40,3 +40,18 @@ insignias van de CA-1 a CA-6.
 - la sección de `product/dominio.md`;
 - el ADR del híbrido;
 - `product/prd.md`.
+
+**Decisión (mismo día).** Saúl Pérez navegó el prototipo y eligió las cuatro respuestas recomendadas:
+- A, sugerir mientras escribe;
+- lista propia con código, no la CIE-10 completa (era la objeción del agente: licencia no publicada y nombres
+  oficiales que dan 0 coincidencias);
+- el «Tratamiento actual» convive con las medicinas ligadas;
+- las medicinas se sugieren de las recetas propias.
+
+Quedó registrado en:
+- D21;
+- `product/dominio.md` (rebanada captura híbrida);
+- `product/prd.md` (FR-029..031, US-19);
+- el inbox: ronda 2 cerrada y la investigación de UX con el hilo 3 hecho.
+
+Construirlo es una story nueva, que no se ha abierto. Siguen la paleta y después la mascota.
