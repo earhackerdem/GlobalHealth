@@ -73,13 +73,22 @@ details.nota li{margin:4px 0}
 .fila .nom{font-weight:700; padding-bottom:9px}
 .fila label{font-weight:400; color:var(--muted); font-size:.75rem}
 @media (max-width:380px){ .fila{grid-template-columns:1fr 1fr} .fila .nom{grid-column:1/-1; padding-bottom:0} }
+/* E: lista con casillas */
+fieldset.lista{border:none; margin:8px 0 0; padding:0; min-width:0}
+fieldset.lista legend{font-size:.85rem; font-weight:700; padding:0; margin-bottom:4px}
+.item{border-bottom:1px solid var(--line); padding:6px 0}
+.item > label.chk{display:flex; align-items:center; gap:10px; font-size:1rem; font-weight:400; margin:0; min-height:40px; cursor:pointer}
+.item input[type=checkbox]{width:22px; height:22px; margin:0; accent-color:var(--accent); flex:none}
+.item .rev{margin:2px 0 6px 32px; padding-left:12px; border-left:3px solid var(--line)}
+.item .rev .campo{margin:6px 0}
+.o{color:var(--muted); font-size:.85rem; margin:8px 0 2px}
 /* D: una por una */
 .paso{font-size:.8rem; color:var(--muted)}
 .resumen{margin:8px 0; padding:0; list-style:none}
 .resumen li{display:flex; justify-content:space-between; gap:8px; padding:8px 0; border-bottom:1px solid var(--line)}
 </style>
 
-<h1>Ejercicio: cuatro formas de pedir los datos de cada actividad</h1>
+<h1>Ejercicio: cinco formas de pedir los datos de cada actividad</h1>
 <p class="sub">Prototipo para decidir, no para construir. Los datos son de ejemplo y nada se guarda.</p>
 <div class="banner">Hoy, la pantalla real agrega los dos campos de cada actividad elegida debajo de los anteriores. Con 9 actividades son 18 campos seguidos. Elige una variante, pulsa «Elegir todas» y «Guardar» con algo vacío, y pruébala con el celular en la mano.</div>
 
@@ -88,6 +97,7 @@ details.nota li{margin:4px 0}
   <button data-v="B" aria-pressed="false">B · Acordeón</button>
   <button data-v="C" aria-pressed="false">C · Filas compactas</button>
   <button data-v="D" aria-pressed="false">D · Una por una</button>
+  <button data-v="E" aria-pressed="false">E · Lista con casillas</button>
 </div>
 <details class="nota" id="nota"><summary>Qué dice la evidencia de esta variante</summary><div id="notaTxt"></div></details>
 
@@ -119,6 +129,12 @@ const NOTAS = {
     <li class="pro">Se parece al estilo «casi Duolingo»: cada paso es corto y tiene un avance visible.</li>
     <li class="contra">Son más pasos, y para corregir hay que volver. Se aparta del resto del cuestionario de hábitos, que se contesta en una sola pantalla.</li></ul>`
 };
+NOTAS.E = `<ul>
+    <li class="pro">Es tu propuesta: las 9 actividades se ven siempre como una lista. Marcas las que haces y, debajo de cada una, aparecen sus días y minutos, que se vuelven obligatorios.</li>
+    <li class="pro">Es el patrón de casillas con pregunta que aparece de GOV.UK. Para «No hago ejercicio» se usa su casilla excluyente, separada con una «o»: al marcarla, se desmarca lo demás. La casilla nativa funciona con teclado y con lector de pantalla sin trabajo extra.</li>
+    <li class="contra">GOV.UK recomienda mostrar así solo una pregunta simple. Días y minutos son dos partes, el límite de lo que recomienda. Tampoco siempre se avisa al lector de pantalla cuando aparecen los campos (WCAG 2.2, 4.1.2).</li>
+    <li class="contra">D18 fija los chips como estándar para elegir opciones. Elegir esta variante obliga a revisarlo, por ejemplo así: «opciones que llevan datos propios → lista con casillas».</li></ul>`;
+let ninguno = false;
 let V = "A", elegidas = [], datos = {}, abierta = null, paso = 0, intento = false;
 
 const falta = a => { const d = datos[a] || {}; const f = [];
@@ -149,8 +165,9 @@ function render() {
   let h = `<h2>Ejercicio</h2>`;
   if (V === "D" && paso > 0) h += pasoD();
   else {
-    h += chips();
-    if (elegidas.length) {
+    if (V === "E") h += listaE();
+    else h += chips();
+    if (elegidas.length && V !== "E") {
       if (V === "A") {
         const sel = elegidas.includes(abierta) ? abierta : elegidas.at(-1);
         h += `<div class="tabs" role="tablist" aria-label="Actividades elegidas">${elegidas.map(a =>
@@ -176,6 +193,18 @@ function render() {
   app.innerHTML = h;
 }
 
+function listaE() {
+  const err = intento && !elegidas.length && !ninguno;
+  return `<fieldset class="lista"><legend id="q">¿Qué ejercicio haces? <span class="sub">Marca todas las que hagas.</span></legend>
+    ${err ? `<p class="err">Elige al menos una actividad, o «No hago ejercicio»</p>` : ""}
+    ${ACT.map(a => { const i = ACT.indexOf(a), on = elegidas.includes(a);
+      return `<div class="item"><label class="chk"><input type="checkbox" data-e="${a}" ${on ? "checked" : ""}> ${a}</label>
+        ${on ? `<div class="rev">${campos(a)}</div>` : ""}</div>`; }).join("")}
+    <p class="o">o</p>
+    <div class="item"><label class="chk"><input type="checkbox" data-e="no" ${ninguno ? "checked" : ""}> No hago ejercicio</label></div>
+  </fieldset>`;
+}
+
 function pasoD() {
   const n = elegidas.length;
   if (paso <= n) { const a = elegidas[paso-1];
@@ -188,7 +217,7 @@ function pasoD() {
 
 document.addEventListener("click", e => {
   const b = e.target.closest("button"); if (!b) return;
-  if (b.dataset.v) { V = b.dataset.v; paso = 0; intento = false; abierta = null;
+  if (b.dataset.v) { V = b.dataset.v; ninguno = false; paso = 0; intento = false; abierta = null;
     document.querySelectorAll("[data-v]").forEach(x => x.setAttribute("aria-pressed", x === b));
     document.getElementById("notaTxt").innerHTML = NOTAS[V]; render(); return; }
   if (b.dataset.chip) { const a = b.dataset.chip;
@@ -206,11 +235,16 @@ document.addEventListener("click", e => {
       if (V === "D") document.querySelector(".resumen .falta")?.closest("li").querySelector("button").focus();
       else document.querySelector('[aria-invalid="true"]')?.focus();
       document.getElementById("msg").textContent = `Le falta algo a ${mal}.`; }
-    else { render(); document.getElementById("msg").textContent = elegidas.length ? "Guardado (de mentiras)." : "Elige al menos una actividad, o «No hago ejercicio»"; }
+    else { render(); document.getElementById("msg").textContent = (elegidas.length || ninguno) ? "Guardado (de mentiras)." : "Elige al menos una actividad, o «No hago ejercicio»"; }
     return; }
-  if (b.id === "todas") { elegidas = [...ACT]; abierta = "Otra"; datos = {Caminar:{dias:"5",min:"30"}, Correr:{dias:"2",min:"40"}}; paso = 0; intento = false; render(); return; }
-  if (b.id === "limpiar") { elegidas = []; datos = {}; paso = 0; intento = false; abierta = null; render(); }
+  if (b.id === "todas") { ninguno = false; elegidas = [...ACT]; abierta = "Otra"; datos = {Caminar:{dias:"5",min:"30"}, Correr:{dias:"2",min:"40"}}; paso = 0; intento = false; render(); return; }
+  if (b.id === "limpiar") { ninguno = false; elegidas = []; datos = {}; paso = 0; intento = false; abierta = null; render(); }
 });
+document.addEventListener("change", e => { const t = e.target; if (!t.dataset?.e) return;
+  const a = t.dataset.e;
+  if (a === "no") { ninguno = t.checked; if (ninguno) elegidas = []; }
+  else if (t.checked) { elegidas.push(a); ninguno = false; } else elegidas = elegidas.filter(x => x !== a);
+  render(); document.querySelector(`[data-e="${a}"]`).focus(); });
 document.addEventListener("input", e => { const t = e.target; if (!t.dataset.a) return;
   (datos[t.dataset.a] ||= {})[t.dataset.k] = t.value;
   const s = document.querySelector(".total"); if (s) s.textContent = total() ? `Total de lo anotado: ${total()} minutos por semana` : "";

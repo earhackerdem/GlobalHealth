@@ -39,6 +39,9 @@ campos de cada actividad elegida se apilan unos debajo de otros, y él propuso p
     pestañas; hace falta una segunda fila.
   - Filas compactas: 9 filas sin desborde horizontal.
   - Acordeón: el resumen de cada actividad cerrada muestra lo que falta.
+  - Lista con casillas (variante E, propuesta de Saúl Pérez el 2026-10-28): las 9 actividades siempre a la vista y
+    sin desborde. Una actividad marcada abre sus campos debajo. Espacio sobre la casilla los abre y Tab entra al
+    primero. «No hago ejercicio» desmarca las demás, y marcar otra desmarca «No hago ejercicio».
 - **Source:** `product/prototipos/ejercicio-variantes.html` · recorrido con Playwright, 2026-10-28
 - **Confidence:** [VERIFIED] en el prototipo; falta confirmarlo en la pantalla real.
 - **Re-check if:** cambia el catálogo de actividades.
