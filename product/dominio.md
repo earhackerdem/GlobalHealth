@@ -470,3 +470,64 @@ titular, como los AHF: opcionales por minimización.
 2. ~~**Borrar un diagnóstico enlazado**~~ **RESPONDIDA (Saúl Pérez, 2026-10-20: "Se queda y se avisa"):** la
    crónica conserva su registro y pierde el enlace, y la confirmación de borrado del diagnóstico avisa cuáles
    crónicas respalda (criterio B-5 de perfil-cronicas).
+
+---
+
+# Dominio — GlobalHealth · rebanada "captura híbrida: tus palabras y lo que la app reconoce" (ronda 2 del dominio)
+
+Date: 2026-10-29 · Interviewed: Saúl Pérez (author) · Status: **agreed: gate cerrado el 2026-10-29**. Saúl Pérez
+navegó el prototipo y eligió las cuatro respuestas recomendadas. · Decisión: D21 · PRD: FR-029..031, US-19.
+Prototipo: **`product/prototipos/captura-hibrida.html`** (variantes A/B/C, insignias CA-1..CA-6).
+Investigación: `memory/research/captura-catalogos.md`.
+Origen: ronda 2 del dominio (Saúl Pérez, 2026-10-20). Una receta trae medicinas de varias enfermedades, así que el
+enlace va **por medicina**. Además, hay que evitar capturar dos veces el tratamiento de una crónica.
+
+## Catálogos
+
+### Concepto reconocido (vocabulario propio) — nuevo
+| Attribute | Notes |
+|---|---|
+| clave | la misma que ya usan Crónicas y Antecedentes familiares (`hypertension`, `type2_diabetes`…) |
+| nombre para el paciente | en sus palabras («Presión alta» se reconoce como «Hipertensión») |
+| sinónimos | lo que escribe la gente: «presión alta», «azúcar», «tiroides», «anginas»; sin acentos ni mayúsculas al comparar |
+| código CIE-10 | formato DGIS de 4 caracteres; no se le muestra al paciente |
+| salud mental | marca sensible al reconocerse (FR-014), igual que en Crónicas |
+- **No es** un catálogo cerrado ni un CRUD de administrador. Lo mantenemos nosotros y crece con lo que no se
+  reconoce [ASSUMPTION: cómo se revisa lo no reconocido sin leer datos de pacientes queda para la story].
+
+### Diagnóstico o condición escrita (suelto, de receta, «Otra, ¿cuál?»): atributos que se suman
+| Attribute | Notes |
+|---|---|
+| texto del paciente | **siempre se guarda y es lo que ve** |
+| concepto reconocido | opcional: elegido por el paciente de las sugerencias; se puede quitar |
+
+### Medicina (dentro de una receta): atributo que se suma
+| Attribute | Notes |
+|---|---|
+| ¿para qué es? | opcional: una crónica propia, el diagnóstico de esa receta o «No sé» |
+
+### Enfermedad crónica: lo que cambia
+- Muestra sus **medicinas ligadas** desde las recetas, sin recapturarlas.
+- **Tratamiento actual** (texto) se conserva y convive con las ligadas, para lo que no viene en una receta (Saúl
+  Pérez: «Conviven»).
+
+## Glosario (se suma)
+| Their word | Meaning here | Never call it |
+|---|---|---|
+| la app lo reconoce | lo escrito quedó ligado a un concepto del vocabulario | codificar, mapear, CIE |
+| ¿para qué es? | la crónica o el diagnóstico que trata una medicina | indicación terapéutica |
+
+## Procesos
+| Who | Does what | When / trigger | Exceptional paths |
+|---|---|---|---|
+| paciente | escribe un diagnóstico y elige una sugerencia o «Dejarlo como lo escribí» | al capturar | término ambiguo («artritis»): se ofrecen las opciones, no se adivina; sin coincidencias: no aparece lista |
+| paciente | quita el reconocimiento | si la sugerencia no era lo que quería decir | el texto queda igual |
+| paciente | elige «¿Para qué es?» por medicina | al capturar la receta | «No sé» es válido; se puede dejar sin contestar |
+| paciente | toma una medicina de sus recetas anteriores | al escribir el nombre | la dosis sugerida es editable |
+| profesional (vía enlace, E3/E4) | ve agrupado por concepto: crónica, diagnósticos y medicinas | al abrir el enlace | lo no reconocido aparece aparte, como texto |
+
+## Open questions (max 4) — el gate del discovery
+1. ~~**¿Cómo se reconoce?**~~ **RESPONDIDA (Saúl Pérez, 2026-10-29): A**, sugiere mientras escribe.
+2. ~~**¿De dónde sale la lista?**~~ **RESPONDIDA: lista propia con código**, no la CIE-10 completa.
+3. ~~**¿Tratamiento actual?**~~ **RESPONDIDA: conviven** el texto y las medicinas ligadas.
+4. ~~**¿Sugerencias de medicinas?**~~ **RESPONDIDA: de tus recetas anteriores.**

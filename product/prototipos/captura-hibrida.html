@@ -1,0 +1,314 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Captura híbrida: variantes</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<style>
+/* Mismos tokens que perfil-secciones.html; prototipo de decisión, datos de ejemplo */
+:root{
+  --bg:#f7f5f2; --surface:#ffffff; --fg:#2b2a27; --muted:#6f6a61;
+  --accent:#0f766e; --accent-fg:#ffffff; --line:#e4e0d8; --warn-bg:#fdf3e2; --warn-fg:#7a5410;
+  --chip:#eef4f3; --danger:#b42318; --b-tag:#5b4bb7; --ok-bg:#e6f4f1;
+  --font-body:"Atkinson Hyperlegible",system-ui,sans-serif;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#171a19; --surface:#202423; --fg:#e8e6e1; --muted:#a39d92;
+  --accent:#2dd4bf; --accent-fg:#0c2b27; --line:#343a38; --warn-bg:#3a2f14; --warn-fg:#e8c27a;
+  --chip:#263230; --danger:#f97066; --b-tag:#a99bf5; --ok-bg:#16302c; color-scheme:dark
+}}
+:root[data-theme="dark"]{
+  --bg:#171a19; --surface:#202423; --fg:#e8e6e1; --muted:#a39d92;
+  --accent:#2dd4bf; --accent-fg:#0c2b27; --line:#343a38; --warn-bg:#3a2f14; --warn-fg:#e8c27a;
+  --chip:#263230; --danger:#f97066; --b-tag:#a99bf5; --ok-bg:#16302c; color-scheme:dark
+}
+body{background:var(--bg); color:var(--fg); font:16px/1.5 var(--font-body);
+  padding-left:max(16px, env(safe-area-inset-left, 0px)); padding-right:max(16px, env(safe-area-inset-right, 0px));
+  padding-block:8px 64px; max-width:620px; margin:0 auto}
+h1{font-size:1.35rem; margin:.4rem 0 0; text-wrap:balance}
+h2{font-size:1.1rem; margin:0 0 6px}
+h3{font-size:.95rem; margin:10px 0 4px}
+p{margin:.35rem 0}
+.sub{color:var(--muted); font-size:.9rem}
+.banner{background:var(--warn-bg); color:var(--warn-fg); border-radius:8px; padding:8px 12px; font-size:.85rem; margin:12px 0}
+button{font:inherit; border:1px solid var(--line); background:var(--surface); color:var(--fg);
+  border-radius:10px; padding:10px 14px; cursor:pointer}
+button.primary{background:var(--accent); color:var(--accent-fg); border-color:transparent; font-weight:700}
+button.link{border:none; background:none; color:var(--accent); padding:4px; font-weight:600}
+button:focus-visible,input:focus-visible{outline:2px solid var(--accent); outline-offset:2px}
+.actions{display:flex; flex-wrap:wrap; gap:8px; margin:14px 0; align-items:center}
+.card{background:var(--surface); border:1px solid var(--line); border-radius:12px; padding:14px; min-width:0; margin-top:12px}
+label,.lbl{font-size:.85rem; font-weight:700; display:block; margin-bottom:3px}
+input{font:inherit; width:100%; box-sizing:border-box; border:1px solid var(--line);
+  border-radius:8px; padding:8px 10px; background:var(--bg); color:var(--fg)}
+.campo{margin:10px 0; position:relative}
+.dos{display:grid; grid-template-columns:minmax(0,1.3fr) minmax(0,1fr); gap:10px}
+@media (max-width:380px){ .dos{grid-template-columns:1fr} }
+.chips{display:flex; flex-wrap:wrap; gap:6px; margin:4px 0}
+.chips button{border-radius:999px; padding:5px 12px; font-size:.85rem}
+.chips button[aria-pressed="true"]{background:var(--accent); color:var(--accent-fg); border-color:transparent}
+.med{border-bottom:1px solid var(--line); padding:4px 0 10px}
+/* sugerencias (variante A y medicinas) */
+.sug{list-style:none; margin:4px 0 0; padding:4px; border:1px solid var(--line); border-radius:8px; background:var(--surface)}
+.sug button{width:100%; text-align:left; border:none; border-radius:6px; padding:8px 10px; background:transparent}
+.sug button:hover,.sug button:focus-visible{background:var(--chip)}
+.sug .de{color:var(--muted); font-size:.8rem}
+.rec{display:inline-flex; align-items:center; gap:6px; background:var(--ok-bg); border-radius:999px; padding:2px 10px;
+  font-size:.82rem; margin-top:6px}
+.rec button{border:none; background:none; padding:0 2px; color:var(--accent); font-size:.82rem; font-weight:700}
+.sens{color:var(--warn-fg); font-size:.8rem}
+.pregunta{background:var(--chip); border-radius:10px; padding:10px 12px; margin-top:8px; font-size:.92rem}
+/* resultado */
+.reg{border-bottom:1px solid var(--line); padding:8px 0}
+.reg:last-child{border-bottom:none}
+.reg .t{font-weight:700}
+.reg .d{color:var(--muted); font-size:.88rem}
+.grupo{border-left:3px solid var(--accent); padding-left:10px; margin:10px 0}
+.grupo.sin{border-left-color:var(--line)}
+.cod{font-family:ui-monospace,Menlo,monospace; font-size:.8rem; color:var(--muted)}
+.vista{display:flex; gap:6px; margin-top:6px}
+.vista button[aria-pressed="true"]{background:var(--fg); color:var(--bg); border-color:transparent}
+/* selector de variantes */
+.variantes{display:flex; flex-wrap:wrap; gap:6px; margin:10px 0}
+.variantes button[aria-pressed="true"]{background:var(--fg); color:var(--bg); border-color:transparent}
+details.nota{font-size:.88rem; margin:10px 0}
+details.nota summary{cursor:pointer; font-weight:700}
+details.nota li{margin:4px 0}
+.pro{color:var(--accent)} .contra{color:var(--danger)}
+.ac{font-size:.7rem; font-weight:700; letter-spacing:.04em; color:var(--b-tag); border:1px solid currentColor;
+  border-radius:6px; padding:0 6px; margin-left:6px; vertical-align:middle; white-space:nowrap}
+body.sin-ac .ac{display:none}
+</style>
+
+<h1>Captura: tus palabras y lo que la app reconoce</h1>
+<p class="sub">Prototipo para decidir, no para construir. Los datos son de ejemplo y nada se guarda. <b>Decidido el 2026-10-29 (Saúl Pérez): variante A, lista propia con código, tratamiento en texto que convive con las medicinas ligadas, y medicinas sugeridas de tus recetas (D21).</b></p>
+<div class="banner">Hoy, el diagnóstico y las medicinas son texto libre: «presión alta» y la crónica «Hipertensión» quedan como dos cosas distintas para el médico y para la IA. El 2026-10-20 elegiste el híbrido: tu texto siempre se guarda y, si la app lo reconoce, se le agrega un código por dentro. Esto decide <b>cómo se ve</b> ese híbrido. Prueba: escribe «presión alta» en Diagnóstico, «los» en una medicina, elige «¿Para qué es?» y guarda.</div>
+
+<details class="nota" open><summary>Historia y criterios (CA-n)</summary>
+  <p><i>Como paciente, quiero escribir mis diagnósticos y medicinas con mis palabras y que la app reconozca los que conoce, para que mi médico y la IA los entiendan igual sin que yo tenga que saber nombres técnicos.</i></p>
+  <ul>
+    <li><b>CA-1</b> Escribo «presión alta» en Diagnóstico y la app lo reconoce como Hipertensión; se guarda mi texto, no el nombre técnico.</li>
+    <li><b>CA-2</b> Escribo «dolor de rodilla por correr», que la app no conoce: se guarda tal cual y nada me obliga a elegir de una lista.</li>
+    <li><b>CA-3</b> En una medicina de la receta elijo «¿Para qué es?» → mi crónica Hipertensión: la crónica muestra esa medicina sin que la vuelva a escribir.</li>
+    <li><b>CA-4</b> Ya capturé Losartán en otra receta: al escribir «los», me lo sugiere con su dosis de la vez pasada.</li>
+    <li><b>CA-5</b> En «Así lo ve el médico», mi «presión alta», mi crónica y el Losartán aparecen juntos bajo Hipertensión.</li>
+    <li><b>CA-6</b> Si lo reconocido es de salud mental (por ejemplo «ansiedad»), queda marcado como sensible, igual que en Crónicas.</li>
+  </ul>
+</details>
+
+<p class="lbl" id="vlbl">¿Cómo reconoce la app lo que escribes en Diagnóstico?</p>
+<div class="variantes" role="group" aria-labelledby="vlbl">
+  <button data-v="A" aria-pressed="true">A · Te sugiere mientras escribes</button>
+  <button data-v="B" aria-pressed="false">B · Te pregunta al guardar</button>
+  <button data-v="C" aria-pressed="false">C · Solo texto, como hoy</button>
+</div>
+<details class="nota" id="nota"><summary>Qué dice la evidencia de esta variante</summary><div id="notaTxt"></div></details>
+
+<main id="app"></main>
+<div class="actions">
+  <button class="link" id="limpiar">Empezar de nuevo</button>
+  <button class="link" id="insignias">Ocultar insignias CA-n</button>
+</div>
+
+<details class="nota"><summary>Lo que no cambia en ninguna variante</summary><ul>
+  <li>Tu texto siempre se guarda y es lo que ves. La DGIS dice que la CIE-10 no sustituye el texto del médico: se registran los dos. FHIR guarda igual, <code>text</code> más un código opcional que marca si lo eligió el usuario.</li>
+  <li>El código no se lo mostramos al paciente. Lo usan el médico, los enlaces por categoría y la IA.</li>
+  <li><b>La lista es nuestra, no la CIE-10 completa.</b> La CIE-10 de la DGIS trae 14,498 nombres oficiales en mayúsculas y sin sinónimos: «diabetes tipo 2», «presión alta» y «colesterol alto» dan 0 coincidencias, y la DGIS no publica licencia. Por eso aquí hay unos 20 conceptos en palabras de paciente, cada uno con su código. Son las listas que ya tienen Crónicas y Antecedentes familiares, más diagnósticos comunes de receta.</li>
+  <li>Medicinas: en México no hay un catálogo descargable (el CNIS es un PDF de 42 MB y solo trae genéricos). Por eso las sugerencias salen de tus propias recetas.</li>
+  <li>«Artritis» es ambigua (reumatoide o desgaste): la app pregunta cuál, no adivina.</li>
+</ul></details>
+
+<script>
+// Vocabulario propio: palabras del paciente → concepto con código CIE-10 (formato DGIS, 4 caracteres).
+// Los códigos sin * están verificados en memory/research/captura-catalogos.md; los * son [ASSUMPTION].
+const VOC = [
+  {k:"hypertension", n:"Hipertensión", c:"I10X", s:["presion alta","hipertension","hta","presion"]},
+  {k:"type2_diabetes", n:"Diabetes tipo 2", c:"E11", s:["diabetes","azucar alta","azucar","dm2"]},
+  {k:"asthma", n:"Asma", c:"J45", s:["asma"]},
+  {k:"hypothyroidism", n:"Hipotiroidismo", c:"E039", s:["hipotiroidismo","tiroides"]},
+  {k:"high_cholesterol", n:"Colesterol alto", c:"E780", s:["colesterol"]},
+  {k:"copd", n:"EPOC", c:"J449", s:["epoc","enfisema","bronquitis cronica"]},
+  {k:"rheumatoid_arthritis", n:"Artritis reumatoide", c:"M069", s:["artritis","reumatoide"]},
+  {k:"osteoarthritis", n:"Artrosis (desgaste de la articulación)", c:"M199", s:["artritis","artrosis","desgaste"]},
+  {k:"epilepsy", n:"Epilepsia", c:"G40", s:["epilepsia","convulsiones"]},
+  {k:"depression", n:"Depresión", c:"F32", s:["depresion"], mh:true},
+  {k:"anxiety", n:"Ansiedad", c:"F41", s:["ansiedad"], mh:true},
+  {k:"bipolar_disorder", n:"Trastorno bipolar", c:"F31", s:["bipolar"], mh:true},
+  {k:"pharyngitis", n:"Infección de garganta (faringitis)", c:"J029*", s:["garganta","anginas","faringitis"]},
+  {k:"uti", n:"Infección urinaria", c:"N390*", s:["infeccion urinaria","vias urinarias","ivu","orina"]},
+  {k:"gastritis", n:"Gastritis", c:"K297*", s:["gastritis","agruras"]},
+  {k:"migraine", n:"Migraña", c:"G439*", s:["migrana","jaqueca"]},
+];
+const CRONICAS = [
+  {k:"hypertension", n:"Hipertensión", d:"Activa · desde los 35 años", trat:"una pastilla en la mañana"},
+  {k:"type2_diabetes", n:"Diabetes tipo 2", d:"Activa · desde 2021", trat:""},
+];
+const PREVIAS = [
+  {n:"Losartán", dose:"50 mg, una al día", de:"receta del 12 de agosto"},
+  {n:"Metformina", dose:"850 mg, con el desayuno y la cena", de:"receta del 3 de mayo"},
+  {n:"Paracetamol", dose:"500 mg cada 8 horas si hay dolor", de:"receta del 9 de enero"},
+];
+const NOTAS = {
+  A: `<ul>
+    <li class="pro">Es lo que hacen Apple Salud, Medisafe y MyTherapy: buscan en su lista y siempre dejan salir a texto libre.</li>
+    <li class="pro">Con medicinas, capturar desde una lista dio 97 % de exactitud contra 84 % del texto libre (85 pacientes, JAMIA Open 2025). Muestra chica.</li>
+    <li class="contra">Solo funciona si la lista habla como el paciente. Escribir y mantener los sinónimos nos toca a nosotros.</li>
+    <li class="contra">Una sugerencia puede empujar a elegir algo que no es. Por eso tu texto se guarda igual y el reconocimiento se puede quitar.</li></ul>`,
+  B: `<ul>
+    <li class="pro">No interrumpe mientras escribes: la pregunta llega en la tarjeta guardada y no detiene el guardado.</li>
+    <li class="contra">Una pregunta que llega después se puede ignorar. Lo que no se contesta queda sin reconocer, como en C.</li>
+    <li class="contra">Es un toque más, en otra pantalla, por cada diagnóstico.</li></ul>`,
+  C: `<ul>
+    <li class="pro">No hay nada que mantener, y la DGIS dice que el texto es lo que siempre se guarda.</li>
+    <li class="contra">Para el médico y la IA, «presión alta» y tu crónica «Hipertensión» son dos cosas distintas.</li>
+    <li class="contra">Deja el código para que lo ponga la IA después. Sola, GPT-4 acertó el código exacto en 33.9 % de los casos e inventó códigos (NEJM AI, 2024). Habría que pedirte que confirmes de todos modos.</li></ul>`,
+};
+const norm = s => s.normalize("NFD").replace(/[̀-ͯ]/g,"").toLowerCase().trim();
+const esc = s => s.replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const byK = k => VOC.find(x => x.k === k);
+function buscar(txt){ const q = norm(txt); if (q.length < 3) return [];
+  return VOC.filter(x => x.s.some(s => s.includes(q) || q.includes(s))).slice(0,3); }
+
+let S;
+function nuevo(){ return {v:S?S.v:"A", vista:"paciente",
+  dx:{t:"", k:null, sug:false, preguntado:false, no:false},
+  meds:[{n:"", dose:"", para:null, sug:false}], guardado:false}; }
+S = nuevo();
+
+function badge(id){ return `<span class="ac">${id}</span>`; }
+function chipPara(i, val, txt){ return `<button data-para="${i}" data-val="${esc(val)}" aria-pressed="${S.meds[i].para===val}">${txt}</button>`; }
+
+function formulario(){
+  const dx = S.dx;
+  const recon = dx.k ? byK(dx.k) : null;
+  let dxExtra = "";
+  if (S.v === "A" && dx.sug && !dx.k) {
+    const m = buscar(dx.t);
+    if (m.length) dxExtra = `<ul class="sug" role="listbox" aria-label="Sugerencias">
+      ${m.map(x => `<li><button data-dxk="${x.k}" role="option">${esc(x.n)}${x.mh?' <span class="sens">· salud mental</span>':''}</button></li>`).join("")}
+      <li><button data-dxk="" role="option"><span class="de">Dejarlo como lo escribí:</span> «${esc(dx.t)}»</button></li></ul>`;
+  }
+  if (recon) dxExtra += `<div class="rec">✓ La app lo reconoce como <b>${esc(recon.n)}</b>${recon.mh?' · <span class="sens">sensible</span>'+badge("CA-6"):''}
+     <button data-quitar="1" aria-label="Quitar el reconocimiento">quitar</button></div>`;
+
+  const meds = S.meds.map((m,i) => {
+    let sug = "";
+    if (m.sug && m.n.length >= 2) {
+      const q = norm(m.n), p = PREVIAS.filter(x => norm(x.n).startsWith(q));
+      if (p.length) sug = `<ul class="sug" role="listbox" aria-label="De tus recetas">
+        ${p.map(x => `<li><button data-prev="${i}" data-pn="${esc(x.n)}" role="option">${esc(x.n)} · ${esc(x.dose)}<br><span class="de">De tu ${esc(x.de)}</span></button></li>`).join("")}</ul>`;
+    }
+    const dxOpt = dx.t.trim() ? chipPara(i, "dx", `Lo de esta receta: «${esc(dx.t.trim())}»`) : "";
+    return `<div class="med">
+      <div class="dos">
+        <div class="campo"><label for="mn${i}">Medicina ${i+1}${i===0?badge("CA-4"):''}</label>
+          <input id="mn${i}" data-mn="${i}" value="${esc(m.n)}" autocomplete="off" placeholder="Nombre">${sug}</div>
+        <div class="campo"><label for="md${i}">Dosis</label>
+          <input id="md${i}" data-md="${i}" value="${esc(m.dose)}" autocomplete="off"></div>
+      </div>
+      <p class="lbl">¿Para qué es?${i===0?badge("CA-3"):''}</p>
+      <div class="chips" role="group" aria-label="¿Para qué es la medicina ${i+1}?">
+        ${CRONICAS.map(c => chipPara(i, "cr:"+c.k, `${esc(c.n)} <span class="de">(tu crónica)</span>`)).join("")}
+        ${dxOpt}${chipPara(i, "nose", "No sé")}
+      </div></div>`;
+  }).join("");
+
+  return `<section class="card" aria-labelledby="fr">
+    <h2 id="fr">Nueva receta</h2>
+    <div class="dos"><div class="campo"><label>Médico</label><input value="Dra. Laura Méndez" readonly></div>
+      <div class="campo"><label>Fecha</label><input value="29 de octubre de 2026" readonly></div></div>
+    <h3>Medicinas</h3>${meds}
+    <button class="link" id="otraMed">+ Agregar otra medicina</button>
+    <div class="campo"><label for="dx">Diagnóstico (lo que te dijo el médico)${badge("CA-1")}${badge("CA-2")}</label>
+      <input id="dx" value="${esc(dx.t)}" autocomplete="off" placeholder="Con tus palabras, por ejemplo: presión alta">
+      <div id="dxExtra">${dxExtra}</div></div>
+    <div class="actions"><button class="primary" id="guardar">Guardar receta</button></div>
+  </section>`;
+}
+
+function etiquetaPara(m){
+  if (m.para === "dx") return `para «${esc(S.dx.t.trim())}»`;
+  if (m.para === "nose") return "para qué es: no sé";
+  if (m.para && m.para.startsWith("cr:")) return `para tu ${esc(byK(m.para.slice(3)).n)}`;
+  return "sin decir para qué es";
+}
+function conceptoMed(m){
+  if (m.para && m.para.startsWith("cr:")) return m.para.slice(3);
+  if (m.para === "dx") return S.dx.k;
+  return null;
+}
+
+function resultado(){
+  const meds = S.meds.filter(m => m.n.trim());
+  const dx = S.dx, recon = dx.k ? byK(dx.k) : null;
+  let preguntaB = "";
+  if (S.v === "B" && dx.t.trim() && !dx.k && !dx.no) {
+    const m = buscar(dx.t)[0];
+    if (m) preguntaB = `<div class="pregunta">Escribiste «${esc(dx.t.trim())}». ¿Es <b>${esc(m.n)}</b>?${badge("CA-1")}
+      <div class="actions" style="margin:6px 0 0"><button data-bsi="${m.k}">Sí, es eso</button><button data-bno="1">No, es otra cosa</button></div></div>`;
+  }
+  const paciente = `<section class="card"><h2>Tu expediente</h2>
+    <div class="reg"><p class="t">Receta · Dra. Laura Méndez · 29 oct</p>
+      ${meds.map(m => `<p class="d">${esc(m.n)} ${esc(m.dose)} — ${etiquetaPara(m)}</p>`).join("") || '<p class="d">Sin medicinas</p>'}
+      ${dx.t.trim() ? `<p class="d">Diagnóstico: «${esc(dx.t.trim())}»${recon?` · reconocido: ${esc(recon.n)}`:''}${recon&&recon.mh?' · <span class="sens">sensible</span>':''}</p>`:''}
+      ${preguntaB}</div>
+    ${CRONICAS.map(c => { const lig = meds.filter(m => m.para === "cr:"+c.k);  // tú ves solo lo que ligaste; el médico ve el grupo
+      return `<div class="reg"><p class="t">Crónica · ${esc(c.n)}</p><p class="d">${esc(c.d)}</p>
+        ${c.trat?`<p class="d">Tratamiento que escribiste: «${esc(c.trat)}»</p>`:''}
+        <p class="d">Medicinas ligadas${badge("CA-3")}: ${lig.length ? lig.map(m => `<b>${esc(m.n)}</b> ${esc(m.dose)} (receta de hoy)`).join(", ") : "ninguna"}</p></div>`; }).join("")}
+  </section>`;
+
+  // Vista del médico: agrupa por concepto lo que tiene código; lo demás queda como texto suelto.
+  const grupos = {}, sueltos = [];
+  const add = (k, linea) => k ? (grupos[k] = grupos[k] || []).push(linea) : sueltos.push(linea);
+  CRONICAS.forEach(c => add(c.k, `Crónica del paciente: ${esc(c.n)} (${esc(c.d)})`));
+  if (dx.t.trim()) add(dx.k, `Diagnóstico en receta, en palabras del paciente: «${esc(dx.t.trim())}»`);
+  meds.forEach(m => add(conceptoMed(m), `Medicina: ${esc(m.n)} ${esc(m.dose)}`));
+  const medico = `<section class="card"><h2>Así lo ve el médico${badge("CA-5")}</h2>
+    ${Object.entries(grupos).map(([k, ls]) => { const x = byK(k);
+      return `<div class="grupo"><p class="t">${esc(x.n)} <span class="cod">${x.c}</span>${x.mh?' <span class="sens">· sensible: oculto en enlaces sin salud mental</span>':''}</p>
+        ${ls.map(l => `<p class="d">${l}</p>`).join("")}</div>`; }).join("")}
+    ${sueltos.length ? `<div class="grupo sin"><p class="t">Sin reconocer (solo texto)</p>${sueltos.map(l => `<p class="d">${l}</p>`).join("")}</div>` : ''}
+  </section>`;
+
+  return `<div class="vista" role="group" aria-label="Vista">
+      <button data-vista="paciente" aria-pressed="${S.vista==='paciente'}">Lo que ves tú</button>
+      <button data-vista="medico" aria-pressed="${S.vista==='medico'}">Así lo ve el médico</button></div>
+    ${S.vista === "paciente" ? paciente : medico}
+    <div class="actions"><button class="link" id="editar">← Volver a la receta</button></div>`;
+}
+
+function render(focoId){
+  document.getElementById("app").innerHTML = S.guardado ? resultado() : formulario();
+  document.getElementById("notaTxt").innerHTML = NOTAS[S.v];
+  document.querySelectorAll(".variantes button").forEach(b => b.setAttribute("aria-pressed", b.dataset.v === S.v));
+  if (focoId) { const el = document.getElementById(focoId); if (el) { el.focus(); if (el.setSelectionRange) el.setSelectionRange(el.value.length, el.value.length); } }
+}
+
+document.addEventListener("input", e => {
+  const t = e.target;
+  // Repinta y devuelve el foco al campo, con el cursor al final
+  if (t.id === "dx") { S.dx.t = t.value; S.dx.k = null; S.dx.sug = true; S.dx.no = false; render("dx"); return; }
+  if (t.dataset.mn !== undefined) { const i = +t.dataset.mn; S.meds[i].n = t.value; S.meds[i].sug = true; render(t.id); return; }
+  if (t.dataset.md !== undefined) { S.meds[+t.dataset.md].dose = t.value; }
+});
+
+document.addEventListener("click", e => {
+  const b = e.target.closest("button"); if (!b) return;
+  if (b.dataset.v) { S.v = b.dataset.v; S.dx.k = null; S.dx.sug = false; S.dx.no = false; render(); return; }
+  if (b.id === "insignias") { const off = document.body.classList.toggle("sin-ac");
+    b.textContent = off ? "Mostrar insignias CA-n" : "Ocultar insignias CA-n"; return; }
+  if (b.id === "limpiar") { S = nuevo(); render(); return; }
+  if (b.dataset.dxk !== undefined) { S.dx.k = b.dataset.dxk || null; S.dx.sug = false; render("dx"); return; }
+  if (b.dataset.quitar) { S.dx.k = null; S.dx.sug = false; render("dx"); return; }
+  if (b.dataset.prev !== undefined) { const i = +b.dataset.prev, p = PREVIAS.find(x => x.n === b.dataset.pn);
+    S.meds[i].n = p.n; S.meds[i].dose = p.dose; S.meds[i].sug = false; render("md"+i); return; }
+  if (b.dataset.para !== undefined) { const m = S.meds[+b.dataset.para];
+    m.para = m.para === b.dataset.val ? null : b.dataset.val; render(); return; }
+  if (b.id === "otraMed") { S.meds.push({n:"", dose:"", para:null, sug:false}); render("mn"+(S.meds.length-1)); return; }
+  if (b.id === "guardar") { S.meds.forEach(m => m.sug = false); S.dx.sug = false; S.guardado = true; S.vista = "paciente"; render(); return; }
+  if (b.id === "editar") { S.guardado = false; render(); return; }
+  if (b.dataset.vista) { S.vista = b.dataset.vista; render(); return; }
+  if (b.dataset.bsi) { S.dx.k = b.dataset.bsi; render(); return; }
+  if (b.dataset.bno) { S.dx.no = true; render(); return; }
+});
+render();
+</script>
