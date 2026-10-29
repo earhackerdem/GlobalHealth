@@ -49,4 +49,4 @@ are `single`. `make tdd-check` requires one `test:` commit per `test→impl` gro
 
   Se hace en Chrome; si la extensión no conecta, en headless y se declara. Verificación: tabla en `evidence.md`.
 - [x] 2.3 **Entregables.** `evidence.md`, `validation.md` (no técnico, para Saúl Pérez), el journal y el PR.
-- [ ] 2.4 **Revisión y archivo** (`/epe-4-review` → `/epe-5-apply` → `/epe-6-archive` como último commit del PR).
+- [x] 2.4 **Revisión y archivo** (`/epe-4-review` → `/epe-5-apply` → `/epe-6-archive` como último commit del PR).

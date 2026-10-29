@@ -28,7 +28,7 @@ en Chrome sin defectos (`evidence.md`).
 
 ## Revisión, ronda 1, y apply
 
-Dos finders y dos validadores: 14 hallazgos confirmados (3 medios: D18 decía «casilla nativa», el texto exageraba a GOV.UK y el guion de E-2 no se podía recorrer) y 1 falso positivo. Saúl Pérez (author) aprobó «Todo lo recomendado», aprobó después la enmienda de E-4 («Sí, guardar vacío»), que el agente había hecho tras el «plan approved» sin preguntarle, y eligió «Línea y nombre en negritas» para distinguir cada actividad. El fixer aplicó todo sin rebotes:
+Dos finders y dos validadores: 15 hallazgos (3 medios: D18 decía «casilla nativa», el texto exageraba a GOV.UK y el guion de E-2 no se podía recorrer) y 12 bajos; A5 quedó confirmado en el registro y falso positivo en el comportamiento. Saúl Pérez (author) aprobó «Todo lo recomendado», aprobó después la enmienda de E-4 («Sí, guardar vacío»), que el agente había hecho tras el «plan approved» sin preguntarle, y eligió «Línea y nombre en negritas» para distinguir cada actividad. El fixer aplicó todo sin rebotes:
 - prueba nueva E-4b del error de grupo del servidor;
 - el nombre de la actividad se atenúa al guardar;
 - `aria-disabled` llega por un solo camino;
@@ -36,3 +36,7 @@ Dos finders y dos validadores: 14 hallazgos confirmados (3 medios: D18 decía «
 - documentos corregidos.
 
 Resultado: hábitos 163 de 163; el guion de E-2 se recorrió de punta a punta.
+
+## Ronda 2 y cierre
+
+Un finder revisó el apply (`fc51300..1203df9`) y encontró 5 hallazgos bajos, ninguno medio ni alto. Por la regla de cierre que Saúl Pérez aprobó con la ronda 1, quedan como deuda registrada (`memory/closed/2026-10-28-ronda-2-de-ejercicio-lista-casillas.md`) y el cambio se archiva. Solo se tocaron dos registros al cerrar: R2-3, porque el guion de `validation.md` debe poder recorrerse en orden (E-3 parte de lo que E-2 guardó), y R2-5, porque los conteos de la revisión en `evidence.md` y aquí deben cuadrar con los comentarios del PR.

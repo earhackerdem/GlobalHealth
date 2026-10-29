@@ -26,7 +26,7 @@ Hábitos**. El bloque es **Ejercicio**. Pruébalo también en el celular.
 
 ## E-3 · «No hago ejercicio» excluye a las demás
 
-1. Marca **Caminar** con 5 días y 30 minutos.
+1. Caminar ya está marcada con 5 días y 30 minutos desde E-2 (si no, márcala y escríbelos).
 2. Marca **No hago ejercicio**. Caminar se desmarca, y sus campos y el total desaparecen.
 3. Marca **Bicicleta**. «No hago ejercicio» se desmarca sola.
 

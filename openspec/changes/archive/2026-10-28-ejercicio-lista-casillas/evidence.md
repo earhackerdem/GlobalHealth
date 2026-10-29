@@ -73,7 +73,7 @@ El orquestador las commiteó como `8e958fe`.
 
 ## Revisión adversarial (ronda 1) y apply
 
-- Dos finders, uno de código y otro de documentos, y dos validadores que reprodujeron cada hallazgo: 14 confirmados (3 medios, 11 bajos) y 1 falso positivo. Detalle en los comentarios FINDER y VALIDATOR del PR #35.
+- Dos finders, uno de código y otro de documentos, y dos validadores que reprodujeron cada hallazgo: 15 hallazgos (3 medios, 12 bajos). A5 quedó confirmado en el registro y falso positivo en el comportamiento. Detalle en los comentarios FINDER y VALIDATOR del PR #35.
 - Saúl Pérez (author) aprobó «Todo lo recomendado», la enmienda de E-4 («Sí, guardar vacío») y «Línea y nombre en negritas» (B6), el 2026-10-28.
 - El fixer aplicó todo sin rebotes. El orquestador corrigió el cuerpo del PR (A6, A7) y dejó imperativo el paso 5 del guion de E-2.
 - **Guion de `validation.md` E-2 recorrido por el orquestador** (headless, Vite :5173, cuenta nueva por la API): (1) Correr abre sus campos; (2) Otra abre «¿Cuál?»; (3) 3×40 da un total de 120; (4) al desmarcar se van los campos y el total; (5) al volver a marcar reaparecen 3 y 40; (6) Guardar pasa sin errores a /perfil; (7) al reabrir, Caminar sigue marcada con 5×30 y Correr está sin marcar.

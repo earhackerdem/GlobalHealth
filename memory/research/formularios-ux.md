@@ -43,5 +43,5 @@ campos de cada actividad elegida se apilan unos debajo de otros, y él propuso p
     sin desborde. Una actividad marcada abre sus campos debajo. Espacio sobre la casilla los abre y Tab entra al
     primero. «No hago ejercicio» desmarca las demás, y marcar otra desmarca «No hago ejercicio».
 - **Source:** `product/prototipos/ejercicio-variantes.html` · recorrido con Playwright, 2026-10-28
-- **Confidence:** [VERIFIED] en el prototipo; falta confirmarlo en la pantalla real.
+- **Confidence:** [VERIFIED] en el prototipo. La variante E elegida se confirmó en la pantalla real a 384 px y en Chrome (`openspec/changes/archive/2026-10-28-ejercicio-lista-casillas/evidence.md`, 2026-10-28).
 - **Re-check if:** cambia el catálogo de actividades.

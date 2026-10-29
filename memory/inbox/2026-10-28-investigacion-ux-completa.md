@@ -26,6 +26,4 @@ antes de la C2b y de las deudas. Abarca tres hilos:
 tres hilos mueven pantallas de varias épicas, así que conviene decidirlos juntos antes de construir la C2b o
 pagar deuda en pantallas que van a cambiar.
 
-**Status:** abierto · triage: PRD (actualizar `product/prd.md` y abrir los ADR, porque varias épicas no deben
-divergir) · el siguiente paso es la investigación con fuentes primarias y prototipos de variantes en
-`product/prototipos/`
+**Status:** abierto · triage: PRD (varias épicas no deben divergir). **Hilo 1 hecho** (2026-10-28): investigación en `memory/research/formularios-ux.md`, Saúl Pérez eligió la variante E, D18 revisada, y el cambio está archivado en `openspec/changes/archive/2026-10-28-ejercicio-lista-casillas/` (PR #35). Siguen los hilos 2 (identidad: mascota y paleta) y 3 (captura), que hay que decidir con Saúl Pérez como prototipos navegables, y después actualizar `product/prd.md`. Deuda de estilo pendiente: tamaño de las casillas y peso de la etiqueta frente a la pregunta, para toda la app (`memory/closed/2026-10-28-ronda-2-de-ejercicio-lista-casillas.md`).
