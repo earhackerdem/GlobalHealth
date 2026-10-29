@@ -16,3 +16,5 @@ Ronda 2 de ejercicio-lista-casillas (PR #35, diff fc51300..1203df9). Quedan como
 - R2-4 al decidir el estilo de las casillas para toda la app, junto con el tamaño de 16 px que ya está declarado en `validation.md`.
 
 R2-3 (el guion de E-3 partía de cero aunque E-2 ya había guardado Caminar) y R2-5 (los conteos de la ronda 1 no cuadraban con los comentarios del PR) se corrigieron al cerrar, porque el guion debe poder recorrerse y la evidencia debe decir los números reales (AGENTS.md).
+
+**Actualización 2026-10-29:** R2-4 y el tamaño de 16 px quedaron resueltos en `paleta-azul-clinico` (PR #37, D22). Saúl Pérez lo decidió así: casillas de 20 px, la etiqueta de cada actividad en peso normal y la `legend` en negritas. Esta actualización no cambia R2-1 ni R2-2, que siguen abiertos.

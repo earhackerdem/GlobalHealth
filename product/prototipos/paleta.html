@@ -1,0 +1,225 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Paleta: variantes</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<style>
+/* La página usa tokens neutros; cada paleta se aplica solo a la muestra (.muestra) con variables en línea */
+:root{
+  --bg:#f4f4f2; --surface:#ffffff; --fg:#26262a; --muted:#66666c; --line:#dcdcd8; --sel:#26262a; --self:#ffffff;
+  --ok:#1d6b3a; --bad:#b42318; --b-tag:#5b4bb7;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#18181a; --surface:#222226; --fg:#e8e8ea; --muted:#a2a2a8; --line:#36363a; --sel:#e8e8ea; --self:#18181a;
+  --ok:#5fd08a; --bad:#f97066; --b-tag:#a99bf5; color-scheme:dark
+}}
+:root[data-theme="dark"]{
+  --bg:#18181a; --surface:#222226; --fg:#e8e8ea; --muted:#a2a2a8; --line:#36363a; --sel:#e8e8ea; --self:#18181a;
+  --ok:#5fd08a; --bad:#f97066; --b-tag:#a99bf5; color-scheme:dark
+}
+body{background:var(--bg); color:var(--fg); font:16px/1.5 "Atkinson Hyperlegible",system-ui,sans-serif;
+  padding-left:max(16px, env(safe-area-inset-left, 0px)); padding-right:max(16px, env(safe-area-inset-right, 0px));
+  padding-block:8px 64px; max-width:620px; margin:0 auto}
+h1{font-size:1.35rem; margin:.4rem 0 0; text-wrap:balance}
+p{margin:.35rem 0}
+.sub{color:var(--muted); font-size:.9rem}
+.banner{border:1px solid var(--line); background:var(--surface); border-radius:8px; padding:8px 12px; font-size:.85rem; margin:12px 0}
+button{font:inherit; border:1px solid var(--line); background:var(--surface); color:var(--fg); border-radius:10px; padding:8px 12px; cursor:pointer}
+button:focus-visible{outline:2px solid var(--fg); outline-offset:2px}
+.grupo{display:flex; flex-wrap:wrap; gap:6px; margin:8px 0}
+.grupo button[aria-pressed="true"]{background:var(--sel); color:var(--self); border-color:transparent}
+.lbl{font-size:.85rem; font-weight:700; margin:12px 0 0}
+details.nota{font-size:.88rem; margin:10px 0}
+details.nota summary{cursor:pointer; font-weight:700}
+details.nota li{margin:4px 0}
+.pro{color:var(--ok)} .contra{color:var(--bad)}
+.ac{font-size:.7rem; font-weight:700; letter-spacing:.04em; color:var(--b-tag); border:1px solid currentColor;
+  border-radius:6px; padding:0 6px; margin-left:6px; vertical-align:middle; white-space:nowrap}
+body.sin-ac .ac{display:none}
+.tabla{overflow-x:auto}
+table{border-collapse:collapse; width:100%; font-size:.85rem; margin-top:8px}
+th,td{text-align:left; padding:6px 8px; border-bottom:1px solid var(--line)}
+td.n{text-align:right; font-variant-numeric:tabular-nums}
+.si{color:var(--ok); font-weight:700} .no{color:var(--bad); font-weight:700}
+.chip{display:inline-block; width:14px; height:14px; border-radius:3px; border:1px solid var(--line); vertical-align:middle; margin-right:4px}
+
+/* Muestra: todo sale de variables puestas por JS (--m-*) */
+.muestra{background:var(--m-bg); color:var(--m-fg); border-radius:14px; padding:14px; margin-top:12px;
+  border:1px solid var(--line); font-size:16px}
+.muestra .barra{display:flex; justify-content:space-between; align-items:center; font-weight:700; margin-bottom:10px}
+.muestra .marca{color:var(--m-primary)}
+.muestra .aviso{background:var(--m-warnBg); color:var(--m-warnFg); border-radius:8px; padding:8px 12px; font-size:.9rem}
+.muestra .card{background:var(--m-surface); border:1px solid var(--m-line); border-radius:12px; padding:12px; margin-top:10px}
+.muestra h2{font-size:1.05rem; margin:0 0 6px}
+.muestra .fila{display:flex; justify-content:space-between; gap:8px; padding:8px 0; border-bottom:1px solid var(--m-line)}
+.muestra .fila:last-child{border-bottom:none}
+.muestra .estado{font-size:.88rem; color:var(--m-muted); text-align:right}
+.muestra .estado.listo{color:var(--m-success)}
+.muestra label{display:block; font-size:.85rem; font-weight:700; margin:10px 0 3px}
+.muestra .campo{border:1px solid var(--m-border); border-radius:8px; padding:8px 10px; background:var(--m-surface); color:var(--m-fg)}
+.muestra .campo.mal{border:2px solid var(--m-danger)}
+.muestra .err{color:var(--m-danger); font-size:.85rem; margin-top:3px}
+.muestra .chips{display:flex; flex-wrap:wrap; gap:6px}
+.muestra .chips span{border:1px solid var(--m-border); border-radius:999px; padding:4px 12px; font-size:.88rem; background:var(--m-surface)}
+.muestra .chips span.on{background:var(--m-primary); color:var(--m-pfg); border-color:var(--m-primary); font-weight:700}
+.muestra .chk{display:flex; align-items:center; gap:10px; padding:6px 0}
+.muestra .box{width:20px; height:20px; border-radius:4px; border:2px solid var(--m-border); background:var(--m-surface);
+  display:grid; place-items:center; font-size:14px; line-height:1; flex:none}
+.muestra .box.on{background:var(--m-primary); border-color:var(--m-primary); color:var(--m-pfg)}
+.muestra .sens{display:inline-block; color:var(--m-sens); border:1px solid currentColor; border-radius:6px; padding:0 8px; font-size:.82rem; font-weight:700}
+.muestra .botones{display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin-top:12px}
+.muestra .b1{background:var(--m-primary); color:var(--m-pfg); border-radius:10px; padding:10px 16px; font-weight:700}
+.muestra .b2{border:1px solid var(--m-border); color:var(--m-fg); background:var(--m-surface); border-radius:10px; padding:10px 16px}
+.muestra .link{color:var(--m-primary); text-decoration:underline; font-weight:600}
+.muestra .toast{margin-top:10px; background:var(--m-surface); border:1px solid var(--m-line); border-left:4px solid var(--m-success);
+  border-radius:8px; padding:8px 12px; color:var(--m-fg)}
+.muestra .toast b{color:var(--m-success)}
+</style>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <!-- Machado, Oliveira y Fernandes (2009), severidad 1.0; aproximación, no diagnóstico -->
+  <filter id="protan"><feColorMatrix type="matrix" values="0.152286 1.052583 -0.204868 0 0  0.114503 0.786281 0.099216 0 0  -0.003882 -0.048116 1.051998 0 0  0 0 0 1 0"/></filter>
+  <filter id="deutan"><feColorMatrix type="matrix" values="0.367322 0.860646 -0.227968 0 0  0.280085 0.672501 0.047413 0 0  -0.011820 0.042940 0.968881 0 0  0 0 0 1 0"/></filter>
+  <filter id="tritan"><feColorMatrix type="matrix" values="1.255528 -0.076749 -0.178779 0 0  -0.078411 0.930809 0.147602 0 0  0.004733 0.691367 0.303900 0 0  0 0 0 1 0"/></filter>
+  <filter id="gris"><feColorMatrix type="saturate" values="0"/></filter>
+</svg>
+
+<h1>Paleta: qué colores lleva la app</h1>
+<p class="sub">Prototipo para decidir, no para construir. Es una pantalla de ejemplo, no la app. <b>Decidido el 2026-10-29 (Saúl Pérez): B · Azul clínico, aplicado ya, con casillas de 20 px (D22).</b></p>
+<div class="banner"><b>Antes de elegir:</b> los colores de hoy no pasan WCAG AA. El texto blanco del botón principal da 3.61:1 en claro y 2.95:1 en oscuro, y se pide 4.5:1. El borde de los campos y de las casillas sin marcar da 1.26:1, y se pide 3:1. Se corrige con cualquier paleta. «Hoy» queda solo como referencia. Cambia de paleta, de claro a oscuro y de «Ver como», y mira la tabla de abajo.</div>
+
+<details class="nota" open><summary>Historia y criterios (P-n)</summary>
+  <p><i>Como paciente de cualquier edad, quiero una app con colores cómodos y fáciles de leer, para revisar y llenar mi expediente sin esfuerzo, vea bien o no.</i></p>
+  <ul>
+    <li><b>P-1</b> Todo texto tiene al menos 4.5:1 contra su fondo, incluido el del botón principal, en claro y en oscuro.</li>
+    <li><b>P-2</b> El borde de campos, casillas sin marcar y botones secundarios tiene al menos 3:1 (WCAG 1.4.11).</li>
+    <li><b>P-3</b> El error y lo «sensible» no se dicen solo con color: llevan texto o ícono.</li>
+    <li><b>P-4</b> Con daltonismo simulado se sigue distinguiendo lo elegido, el error y el aviso.</li>
+    <li><b>P-5</b> La misma paleta tiene versión clara y oscura.</li>
+  </ul>
+</details>
+
+<p class="lbl" id="plbl">Paleta</p>
+<div class="grupo" role="group" aria-labelledby="plbl" id="paletas">
+  <button data-p="hoy" aria-pressed="false">Hoy (referencia)</button>
+  <button data-p="A" aria-pressed="true">A · Verde azulado</button>
+  <button data-p="B" aria-pressed="false">B · Azul clínico</button>
+  <button data-p="C" aria-pressed="false">C · Cálido</button>
+</div>
+<details class="nota" id="nota"><summary>Qué dice la evidencia de esta paleta</summary><div id="notaTxt"></div></details>
+
+<p class="lbl" id="mlbl">Modo</p>
+<div class="grupo" role="group" aria-labelledby="mlbl" id="modos">
+  <button data-m="l" aria-pressed="true">Claro</button>
+  <button data-m="d" aria-pressed="false">Oscuro</button>
+</div>
+<p class="lbl" id="vlbl">Ver como<span class="ac">P-4</span></p>
+<div class="grupo" role="group" aria-labelledby="vlbl" id="visiones">
+  <button data-f="" aria-pressed="true">Visión típica</button>
+  <button data-f="deutan" aria-pressed="false">Deuteranopía</button>
+  <button data-f="protan" aria-pressed="false">Protanopía</button>
+  <button data-f="tritan" aria-pressed="false">Tritanopía</button>
+  <button data-f="gris" aria-pressed="false">Sin color</button>
+</div>
+
+<section class="muestra" id="muestra" aria-label="Pantalla de ejemplo">
+  <div class="barra"><span class="marca">GlobalHealth</span><span>Mi perfil médico</span></div>
+  <div class="aviso">Te faltan 2 secciones. Puedes llenarlas cuando quieras.</div>
+  <div class="card">
+    <h2>Secciones</h2>
+    <div class="fila"><span>Enfermedades crónicas</span><span class="estado listo">✓ 2 registros</span></div>
+    <div class="fila"><span>Cirugías y hospitalizaciones</span><span class="estado">Ninguna</span></div>
+    <div class="fila"><span>Hábitos</span><span class="estado">Sin llenar</span></div>
+  </div>
+  <div class="card">
+    <h2>Cirugía u hospitalización</h2>
+    <label>¿Qué fue?</label><div class="campo">Apendicitis</div>
+    <label>¿Cuántos años tenías?<span class="ac">P-3</span></label><div class="campo mal">40</div>
+    <p class="err">⚠ Escribe una edad entre 0 y 34.</p>
+    <label>¿Hubo reacción a la anestesia?</label>
+    <div class="chips"><span>Sí</span><span class="on">No</span><span>No sé</span></div>
+    <label>Ejercicio<span class="ac">P-2</span></label>
+    <div class="chk"><span class="box on">✓</span>Caminar</div>
+    <div class="chk"><span class="box"></span>Correr</div>
+    <p style="margin-top:10px">Depresión <span class="sens">🔒 Sensible: salud mental</span></p>
+    <div class="botones"><span class="b1">Guardar</span><span class="b2">Cancelar</span><span class="link">Ver mi expediente</span></div>
+  </div>
+  <div class="toast"><b>✓ Guardado.</b> Tu cirugía quedó en tu perfil.</div>
+</section>
+
+<p class="lbl">Contraste medido de esta paleta<span class="ac">P-1</span><span class="ac">P-2</span><span class="ac">P-5</span></p>
+<div class="tabla"><table><thead><tr><th>Qué</th><th>Colores</th><th>Mide</th><th>Pide</th><th></th></tr></thead><tbody id="tabla"></tbody></table></div>
+<p class="sub" id="resumen"></p>
+
+<div class="grupo"><button id="insignias">Ocultar insignias P-n</button></div>
+
+<script>
+const P = {
+ hoy:{l:{bg:"#ffffff",surface:"#ffffff",fg:"#0a0a0a",muted:"#737373",primary:"#009485",pfg:"#fafafa",border:"#e5e5e5",line:"#e5e5e5",danger:"#e7000b",success:"#15803d",warnBg:"#fef9c3",warnFg:"#713f12",sens:"#009485"},
+      d:{bg:"#0a0a0a",surface:"#171717",fg:"#fafafa",muted:"#a1a1a1",primary:"#27a495",pfg:"#fafafa",border:"#2e2e2e",line:"#2e2e2e",danger:"#ff6467",success:"#4ade80",warnBg:"#422006",warnFg:"#fde68a",sens:"#27a495"}},
+ A:{l:{bg:"#f7f5f2",surface:"#ffffff",fg:"#2b2a27",muted:"#6b665d",primary:"#0f766e",pfg:"#ffffff",border:"#8c867b",line:"#e4e0d8",danger:"#b42318",success:"#1d6b3a",warnBg:"#fdf3e2",warnFg:"#7a5410",sens:"#6b3fa0"},
+    d:{bg:"#171a19",surface:"#202423",fg:"#e8e6e1",muted:"#a39d92",primary:"#2dd4bf",pfg:"#0c2b27",border:"#7a827f",line:"#343a38",danger:"#f97066",success:"#5fd08a",warnBg:"#3a2f14",warnFg:"#e8c27a",sens:"#c4a8f0"}},
+ B:{l:{bg:"#f0f4f5",surface:"#ffffff",fg:"#212b32",muted:"#4c6272",primary:"#005eb8",pfg:"#ffffff",border:"#4c6272",line:"#d8dde0",danger:"#d5281b",success:"#007f3b",warnBg:"#fff4c2",warnFg:"#5c4400",sens:"#330072"},
+    d:{bg:"#0f1a22",surface:"#172630",fg:"#e8eef1",muted:"#a3b4bf",primary:"#5aa9f0",pfg:"#0b1a26",border:"#7a92a1",line:"#2a3b47",danger:"#ff8a80",success:"#5fd08a",warnBg:"#3a3214",warnFg:"#f0d77a",sens:"#c9b3ff"}},
+ C:{l:{bg:"#fbf7f2",surface:"#ffffff",fg:"#2a211c",muted:"#6e6259",primary:"#a8431f",pfg:"#ffffff",border:"#8f8177",line:"#eadfd4",danger:"#b42318",success:"#1d6b3a",warnBg:"#fdf0dc",warnFg:"#74480c",sens:"#6b3fa0"},
+    d:{bg:"#1d1814",surface:"#28211c",fg:"#f1e9e1",muted:"#b3a597",primary:"#f0a27a",pfg:"#3a1606",border:"#8a7b6e",line:"#3b322b",danger:"#ff8a80",success:"#6fcf97",warnBg:"#3d3015",warnFg:"#f0cf80",sens:"#d6b4ff"}},
+};
+const PARES = [
+  ["Texto sobre el fondo","fg","bg",4.5],
+  ["Texto sobre las tarjetas","fg","surface",4.5],
+  ["Texto secundario («Sin llenar»)","muted","surface",4.5],
+  ["Texto del botón principal y del chip elegido","pfg","primary",4.5],
+  ["Enlace y marca sobre las tarjetas","primary","surface",4.5],
+  ["Borde de campos y casillas sin marcar","border","surface",3],
+  ["Mensaje de error","danger","surface",4.5],
+  ["«✓ Guardado» y «✓ 2 registros»","success","surface",4.5],
+  ["Texto del aviso","warnFg","warnBg",4.5],
+  ["Etiqueta «Sensible»","sens","surface",4.5],
+];
+const NOTAS = {
+  hoy: `<ul><li class="contra">Es la de shadcn/ui con el verde azulado de la marca: no pasa P-1 en el botón ni en el enlace, ni P-2 en los bordes. Las casillas sin marcar casi no se ven, que es la deuda de estilo que quedó de la ronda 2 de ejercicio.</li>
+    <li class="contra">«Sensible» usa el mismo color que la marca: no se distingue.</li></ul>`,
+  A: `<ul><li class="pro">Es la que has visto en todos los prototipos y la que la app ya usa como marca, pero corregida: el botón pasa de 3.61:1 a 5.47:1. Cambiarla cuesta menos.</li>
+    <li class="pro">Fondo crema y texto casi negro, no negro puro: NN/g dice que el texto oscuro sobre claro rinde mejor a cualquier edad.</li>
+    <li class="contra">No hay evidencia a favor del verde azulado en particular. Es una elección de identidad, no de investigación.</li></ul>`,
+  B: `<ul><li class="pro">Es la del NHS (Reino Unido): fondo #f0f4f5, texto #212b32, azul #005eb8. Apunta a AAA y lleva años probada con pacientes.</li>
+    <li class="pro">En sitios médicos, el azul se percibe algo más confiable, aunque el efecto es «limitado».</li>
+    <li class="contra">Con la edad empeora la distinción entre azul y amarillo; el aviso amarillo depende de su texto. Pruébalo en «Tritanopía».</li>
+    <li class="contra">[OPINIÓN] Se parece a un portal de gobierno u hospital. El NHS no tiene modo oscuro: el oscuro de aquí es nuestro.</li></ul>`,
+  C: `<ul><li class="pro">[OPINIÓN] Se siente más cercana y menos hospital, más en la línea de una mascota.</li>
+    <li class="contra">No se encontró evidencia de preferencias de color en México: es gusto, no dato.</li>
+    <li class="contra">El terracota del botón y el rojo del error se parecen: el error tiene que llevar siempre ⚠ y texto. Pruébalo en «Deuteranopía».</li></ul>`,
+};
+const rgb = h => [1,3,5].map(i => parseInt(h.slice(i,i+2),16)/255);
+const lum = h => { const [r,g,b] = rgb(h).map(x => x<=0.04045 ? x/12.92 : ((x+0.055)/1.055)**2.4); return .2126*r+.7152*g+.0722*b; };
+const cr = (a,b) => { const [x,y] = [lum(a),lum(b)].sort((p,q) => q-p); return (x+0.05)/(y+0.05); };
+const S = {p:"A", m:"l", f:""};
+
+function render(){
+  const t = P[S.p][S.m], mu = document.getElementById("muestra");
+  for (const [k,v] of Object.entries(t)) mu.style.setProperty("--m-"+k, v);
+  mu.style.filter = S.f ? `url(#${S.f})` : "";
+  let fallas = 0;
+  document.getElementById("tabla").innerHTML = PARES.map(([q,a,b,min]) => {
+    const v = cr(t[a], t[b]), ok = v >= min; if (!ok) fallas++;
+    return `<tr><td>${q}</td><td><span class="chip" style="background:${t[a]}"></span><span class="chip" style="background:${t[b]}"></span></td>
+      <td class="n">${v.toFixed(2)}:1</td><td class="n">${min}:1</td><td class="${ok?'si':'no'}">${ok?'✓ pasa':'✗ no pasa'}</td></tr>`;
+  }).join("");
+  document.getElementById("resumen").textContent = fallas
+    ? `${fallas} de ${PARES.length} combinaciones no pasan WCAG 2.2 AA en modo ${S.m==="l"?"claro":"oscuro"}.`
+    : `Las ${PARES.length} combinaciones pasan WCAG 2.2 AA en modo ${S.m==="l"?"claro":"oscuro"}.`;
+  document.getElementById("notaTxt").innerHTML = NOTAS[S.p];
+  document.querySelectorAll("#paletas button").forEach(b => b.setAttribute("aria-pressed", b.dataset.p===S.p));
+  document.querySelectorAll("#modos button").forEach(b => b.setAttribute("aria-pressed", b.dataset.m===S.m));
+  document.querySelectorAll("#visiones button").forEach(b => b.setAttribute("aria-pressed", b.dataset.f===S.f));
+}
+document.addEventListener("click", e => {
+  const b = e.target.closest("button"); if (!b) return;
+  if (b.dataset.p) S.p = b.dataset.p;
+  else if (b.dataset.m) S.m = b.dataset.m;
+  else if (b.dataset.f !== undefined) S.f = b.dataset.f;
+  else if (b.id === "insignias") { const off = document.body.classList.toggle("sin-ac");
+    b.textContent = off ? "Mostrar insignias P-n" : "Ocultar insignias P-n"; return; }
+  render();
+});
+render();
+</script>
