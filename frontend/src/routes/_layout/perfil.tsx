@@ -47,7 +47,7 @@ function Row({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex flex-col gap-0.5">
       <span className="text-sm text-muted-foreground">{label}</span>
-      <span className="text-sm">{value}</span>
+      <span className="text-sm [overflow-wrap:anywhere]">{value}</span>
     </div>
   )
 }

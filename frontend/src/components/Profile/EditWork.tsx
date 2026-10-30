@@ -139,7 +139,11 @@ function EditWork({ work }: { work: Work }) {
       <DialogTrigger asChild>
         <Button variant="outline">{t("work.edit")}</Button>
       </DialogTrigger>
-      <DialogContent className="max-h-[90dvh] overflow-y-auto sm:max-w-md">
+      {/* D20: while saving, the close X («Cerrar») is not offered either. */}
+      <DialogContent
+        showCloseButton={!busy}
+        className="max-h-[90dvh] overflow-y-auto sm:max-w-md"
+      >
         <DialogHeader>
           <DialogTitle>{t("work.title")}</DialogTitle>
           <DialogDescription>{t("work.description")}</DialogDescription>
