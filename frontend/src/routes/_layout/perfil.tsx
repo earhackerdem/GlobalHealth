@@ -1,14 +1,16 @@
 import { useSuspenseQuery } from "@tanstack/react-query"
 import { createFileRoute, Link } from "@tanstack/react-router"
+import type { TFunction } from "i18next"
 import { ChevronRight } from "lucide-react"
 import { Suspense } from "react"
 import { useTranslation } from "react-i18next"
 
-import { ProfileService } from "@/client"
+import { ProfileService, type Work } from "@/client"
 import PendingItems from "@/components/Pending/PendingItems"
 import AddMeasurement from "@/components/Profile/AddMeasurement"
 import EditBasicData from "@/components/Profile/EditBasicData"
 import EditFamilyHistory from "@/components/Profile/EditFamilyHistory"
+import EditWork from "@/components/Profile/EditWork"
 import { ageFrom, formatDateMx } from "@/components/Profile/format"
 import {
   HISTORY_CARD_KEYS,
@@ -21,6 +23,7 @@ import {
   getHabitsQueryOptions,
   getHistoryQueryOptions,
   getProfileQueryOptions,
+  getWorkQueryOptions,
 } from "@/components/Profile/queries"
 import { Badge } from "@/components/ui/badge"
 import i18n from "@/i18n"
@@ -49,6 +52,29 @@ function Row({ label, value }: { label: string; value: string }) {
   )
 }
 
+/**
+ * The "Trabajo" row (perfil-trabajo): what the patient does (or the status
+ * without it) · the shift · "antes: " + the longest job as typed ·
+ * "expuesto a " + the exposures, lowercase; no verdict (C-6).
+ */
+function workSummary(work: Work, t: TFunction<"profile">): string {
+  const lower = (text: string) => text.toLocaleLowerCase("es-MX")
+  const exposures = work.exposures ?? []
+  const parts = [
+    work.occupation || (work.status ? t(`work.status.${work.status}`) : ""),
+    work.shift ? lower(t(`work.shift.${work.shift}`)) : "",
+    work.longest_job ? t("work.before", { job: work.longest_job }) : "",
+    exposures.length
+      ? t("work.exposedTo", {
+          exposures: exposures
+            .map((exposure) => lower(t(`work.exposures.${exposure}`)))
+            .join(", "),
+        })
+      : "",
+  ]
+  return parts.filter(Boolean).join(" · ") || t("notRecorded")
+}
+
 function ProfileContent() {
   const { t } = useTranslation("profile")
 
@@ -59,6 +85,7 @@ function ProfileContent() {
   })
   const { data: history } = useSuspenseQuery(getHistoryQueryOptions())
   const { data: habits } = useSuspenseQuery(getHabitsQueryOptions())
+  const { data: work } = useSuspenseQuery(getWorkQueryOptions())
 
   const birthDateValue = profile.birth_date
     ? `${formatDateMx(profile.birth_date)} · ${t("age", {
@@ -77,6 +104,7 @@ function ProfileContent() {
           <div className="flex flex-wrap gap-2">
             <AddMeasurement />
             <EditBasicData profile={profile} />
+            <EditWork work={work} />
           </div>
         </div>
         <div className="grid gap-4 sm:grid-cols-2">
@@ -111,6 +139,9 @@ function ProfileContent() {
                 : t("notRecorded")
             }
           />
+          <div className="sm:col-span-2">
+            <Row label={t("work.row")} value={workSummary(work, t)} />
+          </div>
         </div>
       </section>
 

@@ -24,21 +24,21 @@ are `single`. `make tdd-check` requires one `test:` commit per `test→impl` gro
 
 ## 1. Backend: el bloque Trabajo · test→impl
 
-- [ ] 1.1 **Tester.** `backend/tests/api/routes/test_profile_work.py` a partir de la parte pytest del test plan (filas
+- [x] 1.1 **Tester.** `backend/tests/api/routes/test_profile_work.py` a partir de la parte pytest del test plan (filas
   1–8) y del Interface contract. Verificación: rojo porque falta la ruta y el esquema, no porque un test esté roto.
   Commit `test:` solo.
-- [ ] 1.2 **Implementer.** Columna, esquema `Work`, `normalize_work` y migración en `backend/app/`, y las dos rutas en
+- [x] 1.2 **Implementer.** Columna, esquema `Work`, `normalize_work` y migración en `backend/app/`, y las dos rutas en
   `routes/profile.py`. Verificación: los tests de 1.1 verdes sin tocarlos; mypy limpio; la migración sube y baja.
-- [ ] 1.3 **Orquestador.** Suite backend completa desde limpio (cero fallos, errores y skips; cobertura ≥ 90 %);
+- [x] 1.3 **Orquestador.** Suite backend completa desde limpio (cero fallos, errores y skips; cobertura ≥ 90 %);
   regenerar el cliente (`scripts/generate-client.sh`); números en evidence.md; `make tdd-check`.
 
 ## 2. Frontend: diálogo y tarjeta · test→impl
 
-- [ ] 2.1 **Tester.** `frontend/tests/profile-work.spec.ts` a partir de la parte Playwright del test plan (filas 1–6 y
+- [x] 2.1 **Tester.** `frontend/tests/profile-work.spec.ts` a partir de la parte Playwright del test plan (filas 1–6 y
   8) y del Interface contract. El orquestador suma `profile-work` al `testMatch` de `s26-ultra`
   (`frontend/playwright.config.ts:54`) en el mismo commit `test:`, y lo declara como asimetría en evidence.md.
   Verificación: rojo por lo que falta. Commit `test:` solo.
-- [ ] 2.2 **Implementer.** `EditWork.tsx`, la fila y el botón en `perfil.tsx`, la query en `queries.ts` y los textos
+- [x] 2.2 **Implementer.** `EditWork.tsx`, la fila y el botón en `perfil.tsx`, la query en `queries.ts` y los textos
   en `profile.json`. Verificación: los tests de 2.1 verdes sin tocarlos (chromium y s26-ultra); `tsc` y `biome`
   limpios.
 - [ ] 2.3 **Orquestador.** Rojo y verde de nuevo, `make tdd-check`, imagen reconstruida y suite completa como CI,

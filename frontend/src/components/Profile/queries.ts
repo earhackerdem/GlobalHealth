@@ -36,6 +36,18 @@ export function getHabitsQueryOptions() {
 }
 
 /**
+ * Shared ["work"] query (GET /profile/work, perfil-trabajo): /perfil reads it
+ * for the "Trabajo" row of the basic-data card and seeds "Editar trabajo";
+ * saving invalidates it.
+ */
+export function getWorkQueryOptions() {
+  return {
+    queryKey: ["work"],
+    queryFn: async () => (await ProfileService.readWork()).data,
+  }
+}
+
+/**
  * The patient's diagnoses (id and title), the only records a chronic entry
  * may be backed by (Story B, B-4). Under the ["health-records"] prefix, so
  * creating, editing or deleting a record refreshes it too.
