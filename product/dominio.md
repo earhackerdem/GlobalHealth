@@ -428,7 +428,7 @@ diálogo desde la tarjeta Datos básicos; al guardar con otra situación se borr
 | a qué te dedicas | solo con «trabajo»; texto libre de hasta 200 caracteres (NIOSH tiene catálogo con traducción al español; codificar queda fuera) |
 | el trabajo de más años | con cualquier situación; texto libre de hasta 200 caracteres, si es otro (explica exposiciones antiguas) |
 | exposiciones | solo con «trabajo»: polvo · químicos o solventes · ruido fuerte (varias) o "nada de esto". Sin «cargar peso»: ya lo pregunta el movimiento del día (Saúl Pérez, 2026-10-29) |
-| turno | solo con «trabajo»: de día · de noche · rotativo. No está en el estándar NIOSH consultado, pero la IARC clasifica el trabajo nocturno como probablemente cancerígeno (research.md § ocupación, 2026-10-29) |
+| turno | solo con «trabajo»: de día · de noche · rotativo. No está en el estándar NIOSH consultado, pero la IARC clasifica el trabajo nocturno como probablemente cancerígeno (`memory/research/ocupacion.md#ocupacion`, 2026-10-29) |
 
 - **Regla C-6 (objeción del harness, aceptada por Saúl Pérez):** la app captura con la forma de los
   instrumentos, pero NO calcula puntajes (AUDIT-C), riesgos ni "cumples / no cumples": los cortes varían por fuente

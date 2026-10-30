@@ -36,7 +36,9 @@
 - **Re-check if:** la app llegara a usar el turno para algo más que registrarlo (no debe: C-6).
 
 - **Fact (situación laboral):** el value set de NIOSH ODH para situación laboral no se pudo leer (la página de HL7
-  dio 404); un resumen de búsqueda dice que tiene solo tres conceptos (empleado, desempleado, fuera de la fuerza
+  dio 404 el 2026-10-29:
+  https://build.fhir.org/ig/HL7/UTG/branches/UP-658-Adding-new-NIOSH-content-and-deprecating-old-content/ValueSet-NIOSHEmploymentStatusODH.html);
+  un resumen de búsqueda dice que tiene solo tres conceptos (empleado, desempleado, fuera de la fuerza
   laboral). INEGI (ENOE), según otro resumen, divide a la población no económicamente activa en hogar, estudio,
   jubilados o pensionados e «impedimentos personales».
 - **Source:** https://inegi.org.mx/contenidos/saladeprensa/boletines/2024/IOE/IOE2024_09.pdf (texto no extraíble) ·

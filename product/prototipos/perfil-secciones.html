@@ -263,6 +263,15 @@ const estado = {
   trabajo:{situacion:"Trabajo", ocupacion:"Diseñador gráfico", masAnios:"", exposiciones:[], expoNinguna:"Sí", turno:"De día"}
 };
 
+// Como normalizar() del prototipo de perfil-trabajo: lo que solo aplica a
+// «Trabajo» se vacía con otra situación, y «Nada de esto» quita las exposiciones.
+function normalizarTrabajo(t){
+  const n = {...t, exposiciones:[...new Set(t.exposiciones)]};
+  if(n.expoNinguna === "Sí") n.exposiciones = [];
+  if(n.situacion !== "Trabajo") Object.assign(n, {ocupacion:"", exposiciones:[], expoNinguna:"", turno:""});
+  return n;
+}
+
 function resumenTrabajo(){
   const t = estado.trabajo;
   if(!t.situacion && !t.ocupacion) return `<span class="opt">Sin llenar</span>`;
@@ -675,7 +684,7 @@ document.addEventListener("click", ev => {
 
 document.addEventListener("submit", ev => {
   ev.preventDefault(); leerInputs();
-  if(vista.nombre === "trabajo"){ estado.trabajo = vista.borrador; toast("Trabajo guardado"); return ir({nombre:"perfil"}); }
+  if(vista.nombre === "trabajo"){ estado.trabajo = normalizarTrabajo(vista.borrador); toast("Trabajo guardado"); return ir({nombre:"perfil"}); }
   const s = SECCIONES.find(x => x.id === vista.sec), v = vista.borrador;
   if(s.habitos){
     for(const a of ACTIVIDADES) if(!v.acts.includes(a)){ delete v[`act${actIdx(a)}Dias`]; delete v[`act${actIdx(a)}Min`]; if(a === "Otra") delete v.actOtra; }

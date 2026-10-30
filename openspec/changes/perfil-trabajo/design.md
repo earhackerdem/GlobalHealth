@@ -98,7 +98,7 @@ Polvo · Químicos o solventes · Ruido fuerte · Nada de esto; De día · De no
 | 5 | Cambiar de situación borra lo del trabajo (T-6) | pytest: guardar employed completo y después looking con el mismo cuerpo → GET sin occupation, exposiciones ni shift; «Taxista» queda. e2e: cambiar a «Busco trabajo», guardar, tarjeta «Busco trabajo · antes: Taxista» y al reabrir con «Trabajo» los campos vacíos | pytest + Playwright |
 | 6 | Fuera de opciones o de largo | pytest: status, exposición o turno desconocidos, texto de 201 tras recortar, una propiedad extra, `exposures` de 4 → 422 con su `loc`; GET sin cambios; «  Albañil  » se guarda recortado y «   » queda `null`. e2e: el campo no deja escribir más de 200 | pytest + Playwright |
 | 7 | Solo del paciente y cifrado (T-5) | pytest: el otro usuario recibe su trabajo vacío; «Chofer de transporte» no aparece en claro en la fila; sin consentimiento, GET y PUT → 403 | pytest |
-| 8 | Sin veredicto (C-6) y accesibilidad, D20 | pytest: la respuesta no trae campos de riesgo. e2e: cada grupo de chips tiene nombre accesible; con el `PUT` retenido, «Guardar» y los chips no están disponibles; ninguna palabra de riesgo en el diálogo ni en la tarjeta; a 384 px el diálogo no se desborda | pytest + Playwright |
+| 8 | Sin veredicto (C-6) y accesibilidad, D20 | pytest: la respuesta no trae campos de riesgo. e2e: al abrir, el foco queda dentro del diálogo; cada grupo de chips tiene nombre accesible; con el `PUT` retenido, «Guardar» y los chips no están disponibles; ninguna palabra de riesgo en el diálogo ni en la tarjeta; a 384 px el diálogo no se desborda | pytest + Playwright |
 
 ## Non-functional constraints addressed
 

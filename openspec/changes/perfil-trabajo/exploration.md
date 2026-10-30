@@ -50,7 +50,7 @@ Fecha: 2026-10-29 · Entrada: `proposal.md` (C-9, T-1…T-5), del dominio § Tra
 - **NFR-008 / C-6:** sin «riesgo laboral» ni ninguna interpretación.
 - **NFR-012 / D15:** textos en `profile.json`.
 - **D18 / D20 / D22:** chips para las opciones; deshabilitados mientras guarda; la paleta nueva ya aplica.
-- **Accesibilidad:** el grupo de chips con su nombre (`aria-labelledby`), como en hábitos.
+- **Accesibilidad:** el grupo de chips con su nombre (`aria-label`, `ChipGroup.tsx:78,170`), como en hábitos.
 - **Relación con C-7 (movimiento del día, PR #34):** ya pregunta «cómo pasas el día en tu trabajo o actividad
   principal», con el nivel «trabajo pesado o cargando cosas pesadas» (`models.py:967-973`). «Cargar peso» en las
   exposiciones repite esa idea; ver pregunta 4.
@@ -81,6 +81,6 @@ que haces todo el día también es salud») como descripción del diálogo, sin 
 2 y 4); el prototipo de producto `product/prototipos/perfil-secciones.html` (C-9, `:153`, `:274-297`); la spec canónica
 vía la delta.
 
-**Pistas para el plan:** el esquema se puede hacer con `_ClosedSchema` (`models.py:897`); la exclusión de «Nada de esto»
+**Pistas para el plan:** el esquema se puede hacer con `_ClosedSchema` (`models.py:861`); la exclusión de «Nada de esto»
 se normaliza en el servidor como `normalize_habits` (`models.py:1096`); la fila de la tarjeta, como `Row`
 (`perfil.tsx:43`).
