@@ -62,7 +62,6 @@ setup). Por ella, «truly green» queda sin marcar en el PR, como en los PR #35 
 | Escribir más de 200 caracteres en el trabajo de más años, guardar y recargar | El campo se queda en 200; tras recargar la fila muestra el texto con «antes: » |
 | Ventana angosta (el mínimo de Chrome: 500 px de ancho útil) con el diálogo abierto en «Trabajo» | Sin desborde lateral (`scrollWidth` 500 = ancho); los chips se acomodan en renglones; «Guardar» a todo el ancho. Los 384 px los cubre `s26-ultra` |
 | Consola | Sin errores de la página (solo uno de la extensión de Chrome) |
-
 | **Ronda 1 (V4), modo claro:** «Busco trabajo», «Jubilado o pensionado» y «No puedo trabajar por mi salud», cada una con «Albañil» en el de más años | Solo se ven «Hoy…» y el campo del de más años; filas «Busco trabajo · antes: Albañil», «Jubilado o pensionado · antes: Albañil», «No puedo trabajar por mi salud · antes: Albañil» |
 | **Ronda 1:** «Nada de esto» contra cada exposición (Polvo, Químicos o solventes, Ruido fuerte) | En los tres: «Nada de esto» apaga la exposición y la exposición apaga «Nada de esto»; las tres juntas se pueden elegir |
 | **Ronda 1 (V5):** ocupación de 200 caracteres sin espacios, «Nada de esto», «Rotativo», guardar | La fila se parte en renglones, sin desborde (`scrollWidth` = ancho); la X del diálogo está presente en reposo. Que desaparezca mientras guarda (V1) y los 384 px los fija el e2e |
@@ -70,7 +69,7 @@ setup). Por ella, «truly green» queda sin marcar en el PR, como en los PR #35 
 Sin defectos. Se le pasa `validation.md` a Saúl Pérez.
 
 **Cambio de formato tras el verde (declarado):** al empujar, el gate prek (`ruff format`) unió en una línea una aserción
-de `test_profile_work.py:258`. No cambia lo que prueba; va en su propio commit con prefijo `test:` (la regla de la casa para todo cambio en rutas de
+de `test_profile_work.py:258` (hoy `:282`, tras las pruebas de la ronda 1). No cambia lo que prueba; va en su propio commit con prefijo `test:` (la regla de la casa para todo cambio en rutas de
 pruebas) y el archivo sigue con 23 passed. `make tdd-check` mide desde ese commit, así que para esa línea pasa de forma
 vacía; la implementación ya estaba verde contra la versión sin formatear.
 
