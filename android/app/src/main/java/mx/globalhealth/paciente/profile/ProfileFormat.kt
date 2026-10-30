@@ -26,7 +26,8 @@ object ProfileFormat {
     const val NO_ENTRIES = "Sin registros"
     private const val SEPARATOR = " · "
     private const val AGE = "%d años"
-    private const val FAMILY_COUNT = "%d registrados"
+    private const val FAMILY_COUNT_ONE = "%d registrado"
+    private const val FAMILY_COUNT_MANY = "%d registrados"
     private const val WORK_BEFORE = "antes: %s"
     private const val WORK_EXPOSED_TO = "expuesto a %s"
     private const val STATUS_EMPTY = "Sin llenar"
@@ -125,8 +126,12 @@ object ProfileFormat {
 
     fun hasHabits(habits: JsonObject?): Boolean = habits != null && habits.values.any { it != JsonNull }
 
-    /** Family history: «N registrados», or «Sin registros». */
-    fun familyHistory(count: Int): String = if (count > 0) FAMILY_COUNT.fill(count) else NO_ENTRIES
+    /** Family history: «1 registrado», «N registrados», or «Sin registros». */
+    fun familyHistory(count: Int): String = when {
+        count == 1 -> FAMILY_COUNT_ONE.fill(count)
+        count > 1 -> FAMILY_COUNT_MANY.fill(count)
+        else -> NO_ENTRIES
+    }
 
     /** Fills a `%d`/`%s` text with ASCII digits whatever the device locale. */
     private fun String.fill(vararg args: Any): String = String.format(Locale.ROOT, this, *args)

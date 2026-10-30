@@ -11,10 +11,14 @@ import retrofit2.HttpException
 sealed interface ApiResult<out T> {
     data class Ok<T>(val value: T) : ApiResult<T>
 
-    /** No network, the API is down or dropped the connection (AB-7). The session is kept. */
+    /** No network, the API is down or dropped the connection, or a gateway answers 502/503/504 (AB-7). The session is kept. */
     data object Offline : ApiResult<Nothing>
 
-    /** A 401: [SessionInterceptor] already cleared the session, and the app goes back to the login screen (AB-5). */
+    /**
+     * A 401, or a 403 other than `CONSENT_REQUIRED` (the API's answer to an expired or invalid token,
+     * `backend/app/api/deps.py:38-42`): [SessionInterceptor] already cleared the session, and the app goes back to
+     * the login screen (AB-5).
+     */
     data object Unauthorized : ApiResult<Nothing>
 
     /** A 403 with detail `CONSENT_REQUIRED` (AB-3, design.md Decision 3). */
@@ -29,6 +33,10 @@ sealed interface ApiResult<out T> {
 
 private const val CONSENT_REQUIRED = "CONSENT_REQUIRED"
 
+/** Whether an error status ends the session: 401, or 403 without `CONSENT_REQUIRED` (shared with [SessionInterceptor]). */
+internal fun endsSession(code: Int, detail: String?): Boolean =
+    code == 401 || (code == 403 && detail != CONSENT_REQUIRED)
+
 /** Runs one Retrofit call and maps its outcome; coroutine cancellation is not caught. */
 suspend fun <T> apiCall(block: suspend () -> T): ApiResult<T> =
     try {
@@ -36,9 +44,11 @@ suspend fun <T> apiCall(block: suspend () -> T): ApiResult<T> =
     } catch (e: HttpException) {
         val detail = e.detail()
         when {
-            e.code() == 401 -> ApiResult.Unauthorized
             e.code() == 403 && detail == CONSENT_REQUIRED -> ApiResult.ConsentRequired
+            endsSession(e.code(), detail) -> ApiResult.Unauthorized
             e.code() == 400 -> ApiResult.Rejected(detail)
+            // A proxy or load balancer in front of a stopped API: the same «sin conexión» as no answer (AB-7).
+            e.code() in 502..504 -> ApiResult.Offline
             else -> ApiResult.Failed(e.code())
         }
     } catch (e: IOException) {
@@ -47,11 +57,13 @@ suspend fun <T> apiCall(block: suspend () -> T): ApiResult<T> =
         ApiResult.Failed(null)
     }
 
-/** FastAPI errors are `{"detail": "..."}`; validation errors carry a list instead, which yields null. */
+// Retrofit buffers error bodies, so reading it here does no I/O.
 private fun HttpException.detail(): String? =
+    runCatching { response()?.errorBody()?.string() }.getOrNull()?.let(::errorDetail)
+
+/** FastAPI errors are `{"detail": "..."}`; validation errors carry a list instead, which yields null. */
+internal fun errorDetail(body: String): String? =
     runCatching {
-        // Retrofit buffers error bodies, so reading it here does no I/O.
-        val body = response()?.errorBody()?.string().orEmpty()
         val detail = Json.parseToJsonElement(body).jsonObject["detail"] as? JsonPrimitive
         detail?.takeIf { it.isString }?.content
     }.getOrNull()

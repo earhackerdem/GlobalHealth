@@ -16,6 +16,7 @@
     <string name="consent_intro">Para guardar y mostrar tus datos de salud necesitamos tu consentimiento expreso.</string>
     <string name="consent_version">Versión %1$s</string>
     <string name="consent_accept">Acepto</string>
+    <string name="consent_submitting">Enviando…</string>
 
     <!-- Mi perfil médico (AB-4, AB-5) -->
     <string name="profile_title">Mi perfil médico</string>

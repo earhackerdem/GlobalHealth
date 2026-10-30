@@ -2,6 +2,7 @@ package mx.globalhealth.paciente.auth
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import kotlin.coroutines.cancellation.CancellationException
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -17,7 +18,10 @@ data class LoginUiState(
     val password: String = "",
     val sending: Boolean = false,
     val error: LoginError? = null,
-)
+) {
+    /** «Entrar» is available only with both fields filled and nothing in flight (D20). */
+    val canSubmit: Boolean get() = !sending && email.trim().isNotEmpty() && password.isNotEmpty()
+}
 
 sealed interface LoginError {
     /** The API's own message, shown as is (AB-2). */
@@ -44,13 +48,17 @@ class LoginViewModel(
 
     fun submit() {
         val current = _state.value
-        // D20: one request at a time; «Entrar» is also disabled while sending.
-        if (current.sending) return
+        // D20: one request at a time, and none with an empty field (the keyboard's «Listo» also lands here).
+        if (!current.canSubmit) return
         _state.update { it.copy(sending = true, error = null) }
         viewModelScope.launch {
             when (val result = apiCall { api.login(current.email.trim(), current.password) }) {
-                // Stays "sending" until the root leaves this screen.
-                is ApiResult.Ok -> sessionStore.save(result.value.accessToken)
+                // Stays "sending" until the root leaves this screen. A session that cannot be saved is an error
+                // on this screen, not a crash.
+                is ApiResult.Ok -> runCatching { sessionStore.save(result.value.accessToken) }.onFailure {
+                    if (it is CancellationException) throw it
+                    fail(LoginError.Generic)
+                }
                 is ApiResult.Rejected -> fail(result.detail?.let(LoginError::Api) ?: LoginError.Generic)
                 ApiResult.Offline -> fail(LoginError.Offline)
                 else -> fail(LoginError.Generic)

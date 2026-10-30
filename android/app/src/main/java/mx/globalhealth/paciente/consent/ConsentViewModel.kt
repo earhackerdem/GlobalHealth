@@ -19,8 +19,9 @@ sealed interface ConsentUiState {
 }
 
 /**
- * Shows the current consent text and records the grant with the version that was shown (AB-3). A 401 needs nothing
- * here: the interceptor clears the session and the app root goes back to the login screen.
+ * Shows the current consent text and records the grant with the version that was shown (AB-3). A 401, or a 403 that
+ * ends the session, needs nothing here: the interceptor clears the session and the app root goes back to the login
+ * screen.
  */
 class ConsentViewModel(private val api: GlobalHealthApi) : ViewModel() {
 

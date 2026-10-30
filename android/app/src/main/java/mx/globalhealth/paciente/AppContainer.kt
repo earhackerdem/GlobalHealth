@@ -6,6 +6,7 @@ import java.util.concurrent.TimeUnit
 import kotlinx.serialization.json.Json
 import mx.globalhealth.paciente.core.net.GlobalHealthApi
 import mx.globalhealth.paciente.core.net.SessionInterceptor
+import mx.globalhealth.paciente.core.session.KeystoreAead
 import mx.globalhealth.paciente.core.session.SessionStore
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
@@ -17,8 +18,10 @@ import retrofit2.converter.kotlinx.serialization.asConverterFactory
  *
  * Create one per process (the app keeps it in [GlobalHealthApplication]): [SessionStore] wraps a DataStore, and
  * DataStore refuses two live instances over the same file.
+ *
+ * [aead] is null when the Keystore cannot be used ([KeystoreAead.create]): the session is then kept in memory only.
  */
-class AppContainer(context: Context, baseUrl: String, aead: Aead) {
+class AppContainer(context: Context, baseUrl: String, aead: Aead?) {
 
     val sessionStore: SessionStore = SessionStore(context.applicationContext, aead)
 

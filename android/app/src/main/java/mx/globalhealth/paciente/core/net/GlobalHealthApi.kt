@@ -12,7 +12,7 @@ import retrofit2.http.POST
 /**
  * The GlobalHealth API (`/api/v1`), written by hand (design.md, Decision 1). Paths are relative to the base URL and
  * keep the backend's trailing slashes (`consent/`), so FastAPI never answers with a redirect. The bearer token and the
- * 401 handling live in [SessionInterceptor], not here.
+ * 401/403 handling live in [SessionInterceptor], not here.
  */
 interface GlobalHealthApi {
 

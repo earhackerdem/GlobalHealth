@@ -38,7 +38,7 @@ import mx.globalhealth.paciente.ui.components.PrimaryButton
 const val LOGIN_TAG = "login"
 const val LOGIN_ERROR_TAG = "login_error"
 
-/** Entrada (AB-1, AB-2): email, password (masked) and «Entrar», unavailable while sending (D20). */
+/** Entrada (AB-1, AB-2): email, password (masked) and «Entrar», unavailable while sending or with a field empty (D20). */
 @Composable
 fun LoginScreen(viewModel: LoginViewModel, modifier: Modifier = Modifier) {
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -108,7 +108,7 @@ fun LoginScreen(viewModel: LoginViewModel, modifier: Modifier = Modifier) {
         PrimaryButton(
             text = stringResource(if (state.sending) R.string.login_submitting else R.string.login_submit),
             onClick = viewModel::submit,
-            enabled = !state.sending,
+            enabled = state.canSubmit,
         )
         Text(
             text = stringResource(R.string.login_no_account),

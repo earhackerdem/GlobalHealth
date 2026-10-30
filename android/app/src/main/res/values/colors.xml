@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- D22 light background (#f0f4f5). -->
+    <color name="window_background">#FFF0F4F5</color>
+</resources>

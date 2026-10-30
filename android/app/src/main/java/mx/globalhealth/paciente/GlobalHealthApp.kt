@@ -43,8 +43,9 @@ private enum class Session { Unknown, SignedOut, SignedIn }
 
 /**
  * The root of the app. The saved session decides the screen (AB-5): without a token, the login; with one, the
- * profile, which may send to the consent (AB-3). Whatever clears the token («Cerrar sesión», or a 401 seen by the
- * interceptor on any request) brings back the login, and saving one (a successful login) leaves it.
+ * profile, which may send to the consent (AB-3). Whatever clears the token («Cerrar sesión», or a 401 or a 403 other
+ * than `CONSENT_REQUIRED` seen by the interceptor on any request) brings back the login, and saving one (a successful
+ * login) leaves it.
  *
  * Until the session file has been read nothing is shown, so a saved session never flashes the login screen.
  */
@@ -70,7 +71,8 @@ private fun AppNavHost(container: AppContainer, signedIn: Boolean) {
     // Read once: later session changes navigate instead of rebuilding the graph.
     val startDestination: Any = remember { if (signedIn) ProfileRoute else LoginRoute }
     val scope = rememberCoroutineScope()
-    val signOut: () -> Unit = { scope.launch { container.sessionStore.clear() } }
+    // A session file that cannot be written leaves the patient where they are instead of crashing the app.
+    val signOut: () -> Unit = { scope.launch { runCatching { container.sessionStore.clear() } } }
 
     LaunchedEffect(signedIn) {
         val onLogin = navController.currentDestination?.hasRoute(LoginRoute::class) == true

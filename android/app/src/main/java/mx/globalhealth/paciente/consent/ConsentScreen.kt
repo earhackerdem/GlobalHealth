@@ -56,23 +56,20 @@ fun ConsentScreen(
                 RetryContent(offline = current.offline, onRetry = viewModel::load, modifier = Modifier.weight(1f))
                 SignOutButton(onClick = onSignOut, modifier = Modifier.align(Alignment.CenterHorizontally))
             }
+            // The whole screen scrolls, not the card alone: sideways with a large font a squeezed card left only a
+            // sliver of the text above «Acepto».
             is ConsentUiState.Ready -> Column(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(padding)
+                    .verticalScroll(rememberScrollState())
                     .padding(16.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
                 Text(stringResource(R.string.consent_intro), style = MaterialTheme.typography.bodyLarge)
-                Card(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .weight(1f, fill = false),
-                ) {
+                Card(modifier = Modifier.fillMaxWidth()) {
                     Column(
-                        modifier = Modifier
-                            .verticalScroll(rememberScrollState())
-                            .padding(12.dp),
+                        modifier = Modifier.padding(12.dp),
                         verticalArrangement = Arrangement.spacedBy(8.dp),
                     ) {
                         Text(
@@ -83,12 +80,17 @@ fun ConsentScreen(
                         Text(current.text, style = MaterialTheme.typography.bodyMedium)
                     }
                 }
+                // D20: while the grant is sent, «Acepto» says so and neither button can be used.
                 PrimaryButton(
-                    text = stringResource(R.string.consent_accept),
+                    text = stringResource(if (current.sending) R.string.consent_submitting else R.string.consent_accept),
                     onClick = viewModel::accept,
                     enabled = !current.sending,
                 )
-                SignOutButton(onClick = onSignOut, modifier = Modifier.align(Alignment.CenterHorizontally))
+                SignOutButton(
+                    onClick = onSignOut,
+                    modifier = Modifier.align(Alignment.CenterHorizontally),
+                    enabled = !current.sending,
+                )
             }
         }
     }

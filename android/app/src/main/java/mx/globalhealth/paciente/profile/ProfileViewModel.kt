@@ -37,7 +37,8 @@ sealed interface ProfileUiState {
  * Loads `GET profile`, `profile/work`, `profile/history`, `profile/habits` and `profile/family-history` in parallel and
  * keeps them in memory only (design.md, Decision 6). The profile is shown only when all five answer: a 403
  * `CONSENT_REQUIRED` sends the patient to the consent screen (AB-3); a connection failure on any of them shows
- * «Reintentar» and keeps the session (AB-7); a 401 is handled by the interceptor and the app root (AB-5).
+ * «Reintentar» and keeps the session (AB-7); a 401, or a 403 that ends the session, is handled by the interceptor and
+ * the app root (AB-5).
  */
 class ProfileViewModel(private val api: GlobalHealthApi) : ViewModel() {
 

@@ -7,13 +7,22 @@ import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 
-// Palette B · Azul clínico (D22), the same tokens as frontend/src/index.css.
+// Palette B · Azul clínico (D22), the same tokens as frontend/src/index.css. The surfaceContainer* roles (filled
+// cards, menus, dialogs) are the D22 card colour too, never the Material 3 defaults.
+private val LightCard = Color(0xFFFFFFFF)
+private val DarkCard = Color(0xFF172630)
+
 private val Light = lightColorScheme(
     primary = Color(0xFF005EB8),
     onPrimary = Color(0xFFFFFFFF),
     background = Color(0xFFF0F4F5),
     onBackground = Color(0xFF212B32),
-    surface = Color(0xFFFFFFFF),
+    surface = LightCard,
+    surfaceContainerLowest = LightCard,
+    surfaceContainerLow = LightCard,
+    surfaceContainer = LightCard,
+    surfaceContainerHigh = LightCard,
+    surfaceContainerHighest = LightCard,
     onSurface = Color(0xFF212B32),
     surfaceVariant = Color(0xFFE8EDEE),
     onSurfaceVariant = Color(0xFF4C6272),
@@ -28,7 +37,12 @@ private val Dark = darkColorScheme(
     onPrimary = Color(0xFF0B1A26),
     background = Color(0xFF0F1A22),
     onBackground = Color(0xFFE8EEF1),
-    surface = Color(0xFF172630),
+    surface = DarkCard,
+    surfaceContainerLowest = DarkCard,
+    surfaceContainerLow = DarkCard,
+    surfaceContainer = DarkCard,
+    surfaceContainerHigh = DarkCard,
+    surfaceContainerHighest = DarkCard,
     onSurface = Color(0xFFE8EEF1),
     surfaceVariant = Color(0xFF223644),
     onSurfaceVariant = Color(0xFFA3B4BF),

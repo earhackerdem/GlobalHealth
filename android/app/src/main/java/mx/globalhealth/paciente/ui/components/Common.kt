@@ -44,8 +44,8 @@ fun PrimaryButton(text: String, onClick: () -> Unit, modifier: Modifier = Modifi
 
 /** «Cerrar sesión», as a text button (top bar of the profile, bottom of the consent). */
 @Composable
-fun SignOutButton(onClick: () -> Unit, modifier: Modifier = Modifier) {
-    TextButton(onClick = onClick, modifier = modifier.heightIn(min = MinTouchTarget)) {
+fun SignOutButton(onClick: () -> Unit, modifier: Modifier = Modifier, enabled: Boolean = true) {
+    TextButton(onClick = onClick, enabled = enabled, modifier = modifier.heightIn(min = MinTouchTarget)) {
         Text(stringResource(R.string.sign_out))
     }
 }
