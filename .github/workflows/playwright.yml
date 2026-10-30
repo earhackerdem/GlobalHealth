@@ -38,8 +38,11 @@ jobs:
           changed:
             - backend/**
             - frontend/**
-            - .env
+            - .env.example
             - compose*.yml
+            - package.json
+            - bun.lock
+            - uv.lock
             - .github/workflows/playwright.yml
 
   test-playwright:
