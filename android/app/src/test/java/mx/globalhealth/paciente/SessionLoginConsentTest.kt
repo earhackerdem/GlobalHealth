@@ -134,6 +134,11 @@ class SessionLoginConsentTest {
 
         // D20: while the request is in flight «Entrar» is not available.
         composeRule.onAllNodes(entrarButton and isEnabled()).assertCountEquals(0)
+        // ...and the login button is still there but disabled, whether it keeps «Entrar» or reads «Entrando…» (a
+        // relabelled button that stays enabled, or no button at all, would pass the line above).
+        val sending = composeRule.onAllNodes(loginButtonWhileSending).fetchSemanticsNodes()
+        assertTrue("the login button is shown while the request is held", sending.isNotEmpty())
+        composeRule.onAllNodes(loginButtonWhileSending and isEnabled()).assertCountEquals(0)
 
         waitUntil("the login error is shown") {
             composeRule.onAllNodes(loginErrorWith(WRONG_CREDENTIALS), useUnmergedTree = true)
@@ -343,6 +348,7 @@ class SessionLoginConsentTest {
         val emailField = hasText("Correo electrónico") and hasSetTextAction()
         val passwordField = hasText("Contraseña") and hasSetTextAction()
         val entrarButton = hasText("Entrar") and hasClickAction()
+        val loginButtonWhileSending = (hasText("Entrar") or hasText("Entrando…")) and hasClickAction()
         val reintentarButton = hasText("Reintentar") and hasClickAction()
         val cerrarSesionButton =
             (hasText("Cerrar sesión") or hasContentDescription("Cerrar sesión")) and hasClickAction()

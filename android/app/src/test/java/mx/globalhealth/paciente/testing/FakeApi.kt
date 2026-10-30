@@ -35,6 +35,28 @@ class FakeApi(
 
     fun requestsTo(route: String): List<RecordedRequest> = requests.filter { routeOf(it) == route }
 
+    /**
+     * The data of the spec scenario "Perfil con datos" (AB-4): born 1990-03-15, «Mujer», «Penicilina», 72 kg and
+     * 165 cm measured on 2026-10-12, the rotating driver exposed to loud noise, two `past` entries, «Ninguna» in
+     * transfusions, no habits and three family-history entries.
+     */
+    fun serveAb4Profile() {
+        respond("GET profile") { json(200, AB4_PROFILE) }
+        respond("GET profile/work") { json(200, AB4_WORK) }
+        respond("GET profile/history") { json(200, AB4_HISTORY) }
+        respond("GET profile/habits") { json(200, EMPTY_HABITS) }
+        respond("GET profile/family-history") { json(200, AB4_FAMILY_HISTORY) }
+    }
+
+    /** A profile with nothing recorded: every basic-data row says «Sin registrar». */
+    fun serveEmptyProfile() {
+        respond("GET profile") { json(200, EMPTY_PROFILE) }
+        respond("GET profile/work") { json(200, EMPTY_WORK) }
+        respond("GET profile/history") { json(200, """{"data":[],"count":0}""") }
+        respond("GET profile/habits") { json(200, EMPTY_HABITS) }
+        respond("GET profile/family-history") { json(200, """{"data":[],"count":0}""") }
+    }
+
     override fun dispatch(request: RecordedRequest): MockResponse {
         requests += request
         val route = routeOf(request)
@@ -95,6 +117,44 @@ class FakeApi(
         val PROFILE_BODY =
             """{"birth_date":"1990-03-15","sex":"female","allergies":"$PROFILE_MARKER","onboarding":"completed",""" +
                 """"latest_weight":null,"latest_height":null,"blood_type":null,"sections_none":[]}"""
+
+        const val AB4_PROFILE =
+            """{"birth_date":"1990-03-15","sex":"female","allergies":"Penicilina","onboarding":"completed",""" +
+                """"latest_weight":{"value":72.0,"measured_on":"2026-10-12"},""" +
+                """"latest_height":{"value":165.0,"measured_on":"2026-10-12"},""" +
+                """"blood_type":null,"sections_none":["transfusions"]}"""
+
+        const val AB4_WORK =
+            """{"status":"employed","occupation":"Chofer de transporte","longest_job":null,""" +
+                """"exposures":["loud_noise"],"no_exposures":false,"shift":"rotating"}"""
+
+        const val AB4_HISTORY =
+            """{"data":[""" +
+                """{"id":"7d1f0c2e-0000-4000-8000-000000000001","section":"past","condition":"covid",""" +
+                """"other_text":null,"hospitalized":false,"note":null},""" +
+                """{"id":"7d1f0c2e-0000-4000-8000-000000000002","section":"past","condition":"dengue",""" +
+                """"other_text":null,"hospitalized":true,"note":"2019"}""" +
+                """],"count":2}"""
+
+        const val AB4_FAMILY_HISTORY =
+            """{"data":[""" +
+                """{"id":"5a2b0c2e-0000-4000-8000-000000000001","condition":"diabetes","other_text":null,""" +
+                """"relatives":["mother"],"note":null},""" +
+                """{"id":"5a2b0c2e-0000-4000-8000-000000000002","condition":"hypertension","other_text":null,""" +
+                """"relatives":["father","mother"],"note":null},""" +
+                """{"id":"5a2b0c2e-0000-4000-8000-000000000003","condition":"cancer","other_text":null,""" +
+                """"relatives":["grandparent"],"note":"mama"}""" +
+                """],"count":3}"""
+
+        const val EMPTY_PROFILE =
+            """{"birth_date":null,"sex":null,"allergies":null,"onboarding":"pending",""" +
+                """"latest_weight":null,"latest_height":null,"blood_type":null,"sections_none":[]}"""
+
+        const val EMPTY_WORK =
+            """{"status":null,"occupation":null,"longest_job":null,"exposures":[],""" +
+                """"no_exposures":false,"shift":null}"""
+
+        const val EMPTY_HABITS = """{"smoking":null,"alcohol":null,"physical_activity":null}"""
 
         fun json(code: Int, body: String): MockResponse =
             MockResponse.Builder()
