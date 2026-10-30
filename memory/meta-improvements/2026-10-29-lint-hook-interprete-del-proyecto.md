@@ -1,6 +1,6 @@
 ---
 date: 2026-10-29
-status: proposed
+status: accepted
 ---
 
 El hook `lint.py` compila el Python con el intérprete del sistema, no con el del proyecto
@@ -18,5 +18,5 @@ Una alarma falsa en cada edición enseña a ignorar el hook.
 **Dónde va:** upstream, en el template del harness (`~/projects/personal/harness`, rama `improve/`), y vuelve con
 `make harness-update`. No se edita en el proyecto: `.claude/hooks/` es vendorizado.
 
-**Estado:** propuesto. Según AGENTS.md («Harness first»), va antes de la siguiente historia de producto. Lo decide
-Saúl Pérez.
+**Estado:** aceptado por Saúl Pérez («Sí, antes de Android», 2026-10-29). Upstream en earhackerdem/harness#6 (C-12,
+0.4.1); vuelve con `make harness-update` cuando se mergee.
