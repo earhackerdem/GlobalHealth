@@ -11,7 +11,7 @@ are `single`. `make tdd-check` requires one `test:` commit per `test→impl` gro
 
 ## 0. Base · single
 
-- [ ] 0.1 **Prototipo** `openspec/changes/android-base/prototipo.html`, local y navegable, en un marco de teléfono con
+- [x] 0.1 **Prototipo** `openspec/changes/android-base/prototipo.html`, local y navegable, en un marco de teléfono con
   la paleta D22 (claro y oscuro):
   - la entrada, con error y «Entrar» no disponible;
   - el consentimiento;

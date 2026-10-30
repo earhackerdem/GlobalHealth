@@ -1,6 +1,7 @@
 # Design
 
-Status: DRAFT
+Status: APPROVED
+Approved by: Saúl Pérez (author) on 2026-10-29, después de navegar el prototipo
 
 **En una frase:** un proyecto Android nativo en `android/` (Kotlin, Jetpack Compose, AGP 9.5, minSdk 29, target 36) que
 entra con correo y contraseña contra la misma API, pide el consentimiento si falta, guarda el token cifrado con el
