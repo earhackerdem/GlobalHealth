@@ -42,9 +42,9 @@ are `single`. `make tdd-check` requires one `test:` commit per `test→impl` gro
 
 ## 2. Mi perfil médico · test→impl
 
-- [ ] 2.1 **Tester.** Pruebas de `ProfileFormat` y de la pantalla del perfil (fila 5, y la 9 sobre el perfil). Commit
+- [x] 2.1 **Tester.** Pruebas de `ProfileFormat` y de la pantalla del perfil (fila 5, y la 9 sobre el perfil). Commit
   `test:` solo.
-- [ ] 2.2 **Implementer.** `profile/` (ViewModel, `ProfileFormat`, pantalla) con `strings.xml` en español.
+- [x] 2.2 **Implementer.** `profile/` (ViewModel, `ProfileFormat`, pantalla) con `strings.xml` en español.
   Verificación: verde sin tocar las pruebas; `lintDebug` limpio.
 - [ ] 2.3 **Orquestador.** Rojo, verde y `tdd-check`; `assembleDebug`; números en evidence.md.
 
