@@ -146,7 +146,7 @@ and do the improvement upstream and bring it in before the next phase or story. 
 
 ## Repo map
 ```
-harness.json          configuration: harness_version, flavor, engine (epe | openspec), plan_file, code (gated paths), tests (barrier paths), protected branches, blocked commands, skill hints
+harness.json          configuration: harness_version, flavor, engine (epe | openspec), plan_file, code (gated paths), tests (barrier paths), protected branches, blocked commands, skill hints, python (lint's interpreter)
 AGENTS.md             these rules (single source) · CLAUDE.md, .cursor/, .github/, .agents/rules/: per-IDE bridges (docs/ides.md)
 Makefile              recipes: doctor · profile · epe-new · epe-status · tdd-check · inbox · closed · changelog · decision-next · memory-migrate · memory-check · retro · check-prs · worktrees · new · adopt · engine-openspec · harness-status · harness-update · harness-harvest · install-hooks · board
 .agents/skills/       ALL the skills (agentskills.io standard): triage · epe-0…6 · epe-memory · session-retro · produce-content · product-* · codebase-context

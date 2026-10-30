@@ -23,4 +23,12 @@ bases de código para una persona a tiempo parcial sin experiencia en Android; l
 multiplataforma (por ejemplo Kotlin Multiplatform con Compose Multiplatform, React Native o Flutter). Se decide con
 chips y queda como ADR que revisa D7 (y toca D17) en el mismo cambio.
 
-**Status:** abierto · triage pendiente (va después del PR #40)
+**Reafirmado (mismo día):** el agente objetó con chips (tres bases de código; Kotlin Multiplatform, React Native o
+Flutter como alternativas). Saúl Pérez respondió que ahora le dedica la mayor parte de su tiempo al proyecto y que quiere
+las apps nativas para aprovechar el hardware. Es su decisión: **Android nativo en Kotlin con Jetpack Compose**, y
+**iPhone nativo en Swift después**. Queda abierto, para cuando llegue iPhone, si la lógica que no es pantalla se
+comparte con Kotlin Multiplatform, que no limita el acceso al hardware. Antes de empezar va la mejora del hook
+`lint.py` (harness primero, earhackerdem/harness#6).
+
+**Status:** abierto · siguiente historia después de mergear el PR #40 y traer el harness 0.4.1: un ADR que revise D7 y
+toque D17 y D23 (orden), y después `/triage` de la app de Android

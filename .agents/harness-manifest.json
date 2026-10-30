@@ -261,7 +261,7 @@
       "src": ".claude/hooks/inbox.py"
     },
     ".claude/hooks/lint.py": {
-      "sha256": "282eaf74a6525757f3dc3b94d8eeeb0a58860e315755024bb5fade4efb4f6347",
+      "sha256": "e56b7b8ac108aa4cd6ea5e94a6821ec210a716dee48b20178e0d22c1b270bc73",
       "src": ".claude/hooks/lint.py"
     },
     ".claude/hooks/memory-compaction.py": {
@@ -317,11 +317,11 @@
       "src": ".vscode/settings.json"
     },
     "AGENTS.md": {
-      "sha256": "344da4cb920379e4bbcd0af1c3a1b8cc622df023996e470cfef2b56b6d46b870",
+      "sha256": "5b4223319787301b7f5facb4cf5d4aa59155593f2ec15e13223d7ee630834759",
       "src": "AGENTS.md"
     },
     "CLAUDE.md": {
-      "sha256": "df30c54a53d44fa4639ab7a384185eece9560fb33d1dfba13c5c71a46c8495ce",
+      "sha256": "c53f7a0713ebca0633e0bf7b20a195160d3f92eebb6fb90deaf1cbaa1fb76b8b",
       "src": "CLAUDE.md"
     },
     "Makefile": {
@@ -437,8 +437,8 @@
       "src": "scripts/worktrees.py"
     }
   },
-  "harness_version": "0.4.0",
+  "harness_version": "0.4.1",
   "installed": "2026-10-11",
   "mode": "new",
-  "updated": "2026-10-20"
+  "updated": "2026-10-29"
 }
