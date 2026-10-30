@@ -20,7 +20,7 @@ are `single`. `make tdd-check` requires one `test:` commit per `test→impl` gro
   - insignias AB-n que se prenden y apagan.
 
   El agente lo recorre primero en Chrome. «plan approved» significa «navegué el prototipo y esto es lo que quiero».
-- [ ] 0.2 **Andamio** (orquestador; es infraestructura de pruebas y de compilación, se declara en evidence.md):
+- [x] 0.2 **Andamio** (orquestador; es infraestructura de pruebas y de compilación, se declara en evidence.md):
   - `android/` con el wrapper de Gradle 9.6.0 (con checksum), `libs.versions.toml`, el módulo `app` con minSdk 29,
     target 36, Compose, Material 3 con los colores de D22 y una `MainActivity` vacía;
   - las dependencias de prueba (JUnit, Robolectric, MockWebServer, ui-test de Compose);

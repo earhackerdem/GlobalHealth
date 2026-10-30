@@ -2,6 +2,10 @@
 
 Status: APPROVED
 Approved by: Saúl Pérez (author) on 2026-10-29, después de navegar el prototipo
+Enmendado durante el andamio (2026-10-29, orquestador): `compileSdk` 37 en vez de 36. OkHttp 5.5.1 y otras librerías
+actuales exigen compilar contra la API 37, que es la plataforma instalada. `targetSdk` sigue en 36 (Play) y minSdk en 29.
+Versiones subidas a lo que lint marcó como estable: activity-compose 1.13.0, lifecycle 2.11.0, navigation-compose 2.10.2,
+Robolectric 4.17 y coroutines-test 1.11.0.
 
 **En una frase:** un proyecto Android nativo en `android/` (Kotlin, Jetpack Compose, AGP 9.5, minSdk 29, target 36) que
 entra con correo y contraseña contra la misma API, pide el consentimiento si falta, guarda el token cifrado con el
@@ -54,7 +58,7 @@ cambia.
 
 **Proyecto.**
 - `applicationId` y paquete `mx.globalhealth.paciente`. Es un supuesto: no se puede cambiar después de publicar en Play.
-- minSdk 29, compileSdk y targetSdk 36.
+- minSdk 29, targetSdk 36, compileSdk 37 (enmienda del andamio).
 - AGP 9.5.0, Gradle 9.6.0, Kotlin 2.4.21 (integrado al AGP), Compose BOM 2026.09.00 con Material 3.
 - Retrofit 3 + OkHttp 5 + kotlinx.serialization 1.12; DataStore 1.3.0 + `datastore-tink`.
 - Pruebas: JUnit 4, MockWebServer, Robolectric y `ui-test-junit4` de Compose, todo en `testDebugUnitTest`.

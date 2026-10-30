@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Placeholder launcher icon: the D22 blue with a white cross. A designed icon comes with the mascot (D23). -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <path android:fillColor="#005EB8" android:pathData="M54,4a50,50 0,1 0,0.1 0z" />
+    <path android:fillColor="#FFFFFF" android:pathData="M46,30h16v16h16v16h-16v16h-16v-16h-16v-16h16z" />
+</vector>
