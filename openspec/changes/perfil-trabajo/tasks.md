@@ -11,7 +11,7 @@ are `single`. `make tdd-check` requires one `test:` commit per `test→impl` gro
 
 ## 0. Base · single
 
-- [ ] 0.1 **Prototipo** `openspec/changes/perfil-trabajo/prototipo.html`, local y navegable, con la paleta D22:
+- [x] 0.1 **Prototipo** `openspec/changes/perfil-trabajo/prototipo.html`, local y navegable, con la paleta D22:
   - la tarjeta Datos básicos con la fila «Trabajo» y el botón «Editar trabajo»;
   - el diálogo con la situación, el trabajo de más años y, solo con «Trabajo», a qué te dedicas, exposiciones con «Nada
     de esto» excluyente y turno;

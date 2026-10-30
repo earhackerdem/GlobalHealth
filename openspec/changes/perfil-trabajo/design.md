@@ -1,6 +1,7 @@
 # Design
 
-Status: DRAFT
+Status: APPROVED
+Approved by: Saúl Pérez (author) on 2026-10-29, después de navegar el prototipo
 
 **En una frase:** el perfil suma un bloque «Trabajo» cifrado y 1:1, guardado entero con `PUT /profile/work`, que se
 edita en su propio diálogo desde la tarjeta Datos básicos y se resume en una fila de esa tarjeta, sin ningún veredicto.
