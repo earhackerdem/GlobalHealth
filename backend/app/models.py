@@ -443,6 +443,11 @@ class PatientProfile(SQLModel, table=True):
     habits: str | None = Field(
         default=None, sa_column=Column(EncryptedString(), nullable=True)
     )
+    # perfil-trabajo Decision 1: the work block is 1:1 too, its normalized JSON
+    # INSIDE this encrypted field (null = nothing answered), like habits.
+    work: str | None = Field(
+        default=None, sa_column=Column(EncryptedString(), nullable=True)
+    )
 
 
 # One row per capture, never UPDATE of the value (Decision 2: history is
@@ -1279,6 +1284,48 @@ def _unanswered(value: Any) -> bool:
     if isinstance(value, ExerciseActivities):
         return not _chosen_activities(value)
     return value is None or value == []
+
+
+# --- Work block (perfil-trabajo design.md §Interface contract) ------------------
+# Trimmed before its bound: the 200 is measured without the surrounding spaces;
+# an empty text becomes null in normalize_work.
+WorkText = Annotated[str, StringConstraints(strip_whitespace=True, max_length=200)]
+WorkExposure = Literal["dust", "chemicals", "loud_noise"]
+
+
+class Work(_ClosedSchema):
+    status: (
+        Literal[
+            "employed", "looking", "retired", "homemaker", "student", "unable_health"
+        ]
+        | None
+    ) = None
+    occupation: WorkText | None = None
+    longest_job: WorkText | None = None
+    # The 3 is checked on the body as sent, before repeats are dropped.
+    exposures: list[WorkExposure] = Field(default_factory=list, max_length=3)
+    no_exposures: bool = False
+    shift: Literal["day", "night", "rotating"] | None = None
+
+
+def normalize_work(work: Work) -> Work:
+    """What gets stored (perfil-trabajo Decision 2, like normalize_habits), in
+    this order: empty texts become null; repeated exposures dropped keeping
+    their order; «Nada de esto» clears the exposures; any status other than
+    employed clears what only applies to a job (the longest job stays)."""
+    occupation = work.occupation or None
+    longest_job = work.longest_job or None
+    exposures = list(dict.fromkeys(work.exposures))
+    if work.no_exposures:
+        exposures = []
+    updates: dict[str, Any] = {
+        "occupation": occupation,
+        "longest_job": longest_job,
+        "exposures": exposures,
+    }
+    if work.status != "employed":
+        updates.update(occupation=None, exposures=[], no_exposures=False, shift=None)
+    return work.model_copy(update=updates)
 
 
 # Partial update: absent = "do not touch", explicit null clears the field.

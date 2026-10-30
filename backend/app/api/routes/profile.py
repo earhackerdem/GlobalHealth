@@ -56,11 +56,13 @@ from app.models import (
     PatientProfile,
     PatientProfilePublic,
     PatientProfileUpdate,
+    Work,
     get_datetime_utc,
     habits_errors,
     normalize_habits,
     normalize_history_content,
     normalize_relatives,
+    normalize_work,
     upgrade_stored_habits,
     validate_birth_date,
     validate_history_content,
@@ -682,3 +684,40 @@ def update_habits(
     session.commit()
     session.refresh(profile)
     return _stored_habits(profile)
+
+
+def _stored_work(profile: PatientProfile | None) -> Work:
+    """The decrypted work block; all empty when nothing is stored."""
+    if profile is None or profile.work is None:
+        return Work()
+    try:
+        return Work.model_validate_json(profile.work)
+    except ValueError:
+        # Unreadable row (like _stored_habits): read as empty, only the
+        # profile id logged.
+        logger.warning("Unreadable work of patient profile %s", profile.id)
+        return Work()
+
+
+@router.get("/work", response_model=Work)
+def read_work(session: SessionDep, current_user: ConsentedUser) -> Any:
+    """ONLY the session user's work block; reading never creates the profile."""
+    profile = session.exec(
+        select(PatientProfile).where(PatientProfile.user_id == current_user.id)
+    ).first()
+    return _stored_work(profile)
+
+
+@router.put("/work", response_model=Work)
+def update_work(
+    *, session: SessionDep, current_user: ConsentedUser, work_in: Work
+) -> Any:
+    """Replace the whole block (perfil-trabajo Decision 1): normalize, then
+    encrypt. Everything empty stores null."""
+    profile = _lock_profile(session, current_user)
+    work = normalize_work(work_in)
+    profile.work = None if work == Work() else work.model_dump_json()
+    session.add(profile)
+    session.commit()
+    session.refresh(profile)
+    return _stored_work(profile)
