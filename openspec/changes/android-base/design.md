@@ -6,6 +6,12 @@ Enmendado durante el andamio (2026-10-29, orquestador): `compileSdk` 37 en vez d
 actuales exigen compilar contra la API 37, que es la plataforma instalada. `targetSdk` sigue en 36 (Play) y minSdk en 29.
 Versiones subidas a lo que lint marcó como estable: activity-compose 1.13.0, lifecycle 2.11.0, navigation-compose 2.10.2,
 Robolectric 4.17 y coroutines-test 1.11.0.
+Enmendado en la revisión (2026-10-29, aprobado por Saúl Pérez con los 26 hallazgos de la ronda 1):
+- la API responde **403** «No se pudieron validar las credenciales» a un token vencido o inválido (`backend/app/api/deps.py:38-42`), así que la sesión termina con un 401 o con un 403 que no sea `CONSENT_REQUIRED`;
+- sin un Keystore usable el token no se guarda en disco, y un keyset ilegible se descarta en vez de cerrar la app;
+- 502, 503 y 504 cuentan como «sin conexión»;
+- «Entrar» no está disponible con campos vacíos;
+- `users/me` sale del contrato, porque la app no lo usa.
 
 **En una frase:** un proyecto Android nativo en `android/` (Kotlin, Jetpack Compose, AGP 9.5, minSdk 29, target 36) que
 entra con correo y contraseña contra la misma API, pide el consentimiento si falta, guarda el token cifrado con el
@@ -77,13 +83,12 @@ este cambio queda un marcador; no hay backend en línea).
 POST login/access-token  form: username, password            -> Token { access_token, token_type }   400 { detail }
 GET  consent/text                                             -> { version, text }
 POST consent/            json: { version }                    -> { version, granted_at, auth_method }
-GET  users/me                                                 -> { email, full_name, … }
 GET  profile                                                  -> { birth_date, sex, allergies, latest_weight{value,measured_on}, latest_height{…}, sections_none[] , … }
 GET  profile/work                                             -> Work { status, occupation, longest_job, exposures[], no_exposures, shift }
 GET  profile/history                                          -> { data: [ { section, … } ], count }
 GET  profile/habits                                           -> objeto; «Con datos» si algún valor de primer nivel no es null
 GET  profile/family-history                                   -> { data: [ … ], count }
-Cualquier 401 -> borrar el token y volver a la entrada · 403 detail "CONSENT_REQUIRED" -> pantalla de consentimiento
+Cualquier 401, o 403 con otro detail (token vencido o inválido) -> borrar el token y volver a la entrada · 403 detail "CONSENT_REQUIRED" -> pantalla de consentimiento
 ```
 Los modelos de Kotlin ignoran los campos que no usan (`ignoreUnknownKeys = true`).
 
@@ -111,14 +116,17 @@ Los modelos de Kotlin ignoran los campos que no usan (`ignoreUnknownKeys = true`
 
 **Contrato de Kotlin para las pruebas** (enmienda antes del grupo 1, 2026-10-29, orquestador; fija los nombres que el
 tester usa, sin cambiar el alcance):
-- `mx.globalhealth.paciente.core.session.SessionStore(context: Context, aead: com.google.crypto.tink.Aead, fileName: String = "session.pb")`:
-  `val token: Flow<String?>`, `suspend fun save(token: String)`, `suspend fun clear()`. El contenido va cifrado con
-  `aead`. En producción, `KeystoreAead.create(context)` da un AEAD cuyo keyset vive bajo una llave maestra
-  `android-keystore://`. Robolectric no tiene Android Keystore, así que las pruebas pasan un AEAD de Tink con un keyset
-  en memoria. La llave del Keystore se verifica a mano en el emulador.
-- `mx.globalhealth.paciente.AppContainer(context: Context, baseUrl: String, aead: Aead)`: expone `sessionStore` y
-  `api` (`GlobalHealthApi`, Retrofit). El cliente agrega `Authorization: Bearer <token>`. Con un 401 borra el token, y
-  la app vuelve a la entrada.
+- `mx.globalhealth.paciente.core.session.SessionStore(context: Context, aead: com.google.crypto.tink.Aead?, fileName: String = "session.pb")`:
+  `val token: Flow<String?>`, `suspend fun save(token: String)`, `suspend fun clear()`,
+  `suspend fun clearIfCurrent(token: String)`. El contenido va cifrado con `aead`. Con `aead` nulo no escribe nada a
+  disco: la sesión vive en memoria mientras dure el proceso (enmienda de la revisión, A1). En producción,
+  `KeystoreAead.create(context): Aead?` da un AEAD cuyo keyset vive bajo una llave maestra `android-keystore://`, o
+  null si el Keystore no se puede usar. Si el keyset guardado no se puede leer, lo descarta con `session.pb` y hace uno
+  nuevo (A2). Robolectric no tiene Android Keystore, así que las pruebas pasan un AEAD de Tink con un keyset en
+  memoria, y prueban ahí el camino sin Keystore. La llave del Keystore se verifica a mano en un dispositivo.
+- `mx.globalhealth.paciente.AppContainer(context: Context, baseUrl: String, aead: Aead?)`: expone `sessionStore` y
+  `api` (`GlobalHealthApi`, Retrofit). El cliente agrega `Authorization: Bearer <token>`. Con un 401, o un 403 que no
+  sea `CONSENT_REQUIRED`, borra el token, y la app vuelve a la entrada.
 - `@Composable fun GlobalHealthApp(container: AppContainer)`: la raíz de la navegación. `MainActivity` la crea con
   `BuildConfig.API_BASE_URL` y `KeystoreAead`.
 - **Pantallas y sus `testTag`:**
@@ -131,7 +139,7 @@ tester usa, sin cambiar el alcance):
 
 ## Decisions
 
-1. **Cliente Retrofit escrito a mano, no generado.** Son 9 endpoints, y el generador `kotlin` de openapi-generator no
+1. **Cliente Retrofit escrito a mano, no generado.** Son 8 endpoints, y el generador `kotlin` de openapi-generator no
    soporta el `anyOf` con que FastAPI escribe los opcionales (research). Se revisa cuando la app use muchos más.
 2. **DataStore con Tink y llave del Keystore**, no EncryptedSharedPreferences (obsoleta desde 1.1.0, 2025-07-30).
 3. **El consentimiento se detecta por el 403 `CONSENT_REQUIRED`** de la API, no comparando versiones en la app: el
@@ -161,7 +169,7 @@ tester usa, sin cambiar el alcance):
 | 4 | Cuenta sin consentimiento (AB-3) | 403 `CONSENT_REQUIRED` → la pantalla `consent` con el texto y «v1» de `consent/text`, sin datos del perfil; «Acepto» → `POST consent/` con `{"version":"v1"}` → el perfil | JVM |
 | 5 | Perfil con datos (AB-4) | Funciones puras de `ProfileFormat` con los datos del escenario (edad con fecha fija 2026-10-29, resumen del trabajo, «2 registros», «Ninguna», «Sin llenar», «Con datos») + Compose: la pantalla muestra esas cadenas | JVM |
 | 6 | Volver a abrir (AB-5) | Con un token guardado, el arranque va a `profile` sin pasar por `login` | JVM |
-| 7 | Cerrar sesión y 401 (AB-5) | «Cerrar sesión» → token borrado y la pantalla `login`; cualquier 401 de MockWebServer → lo mismo | JVM |
+| 7 | Cerrar sesión y 401 (AB-5) | «Cerrar sesión» → token borrado y la pantalla `login`; cualquier 401, o el 403 «No se pudieron validar las credenciales» que la API real da a un token vencido, → lo mismo | JVM |
 | 8 | Nada en claro (AB-6) | Robolectric: tras guardar `eyJ…prueba`, ningún archivo de `filesDir`/`dataDir` contiene ese texto; ningún archivo contiene datos del perfil. Manual: `adb shell run-as … ls -R` en el emulador | JVM + manual |
 | 9 | La API no responde (AB-7) | MockWebServer apagado o `SocketPolicy` de desconexión → el texto de error y «Reintentar»; con el servidor de vuelta, «Reintentar» muestra el perfil; el token sigue | JVM |
 | 10 | CI (AB-8) | El workflow corre en este PR (toca `android/**`) y queda verde; un PR sin `android/**` lo salta | GitHub Actions |

@@ -33,7 +33,8 @@ mis datos a la mano y que la app quede lista para usar la cámara y los recordat
 - **AB-4 Ver mi perfil:** veo mis datos básicos (fecha de nacimiento y edad, sexo, alergias, peso, estatura,
   trabajo) y el estado de cada sección del historial, igual que en la web y en solo lectura.
 - **AB-5 Sesión:** si cierro y vuelvo a abrir la app sigo dentro. «Cerrar sesión» borra el token. Con el token
-  vencido o rechazado (401) vuelvo a la pantalla de entrada.
+  vencido o rechazado (401, o el 403 «No se pudieron validar las credenciales» con que la API responde a un token
+  vencido) vuelvo a la pantalla de entrada.
 - **AB-6 Nada en claro:** el token se guarda cifrado con una llave del Android Keystore, y los datos de salud no se
   guardan en el teléfono (o se guardan cifrados).
 - **AB-7 Sin red:** si no hay conexión o la API no responde, veo un mensaje en español y puedo reintentar.
@@ -57,8 +58,8 @@ Ninguna. La API no cambia.
 
 ## Impact
 
-- **Backend:** ninguno (usa `/login/access-token`, `/consent`, `/consent/text`, `/users/me`, `/profile`,
-  `/profile/work`, `/profile/history`, `/profile/habits`).
+- **Backend:** ninguno (usa `/login/access-token`, `/consent`, `/consent/text`, `/profile`, `/profile/work`,
+  `/profile/history`, `/profile/habits`, `/profile/family-history`).
 - **Fuera:**
   - la cámara (FR-007) y los recordatorios (FR-025), que van en cambios propios;
   - editar el perfil;

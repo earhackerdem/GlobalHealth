@@ -16,8 +16,8 @@ cifrar, y solo hacia esas dos direcciones.
 
 ### Requirement: Entrar con correo y contraseña
 La app SHALL permitir entrar con el correo y la contraseña de una cuenta existente (`POST /login/access-token`). Ante
-un rechazo SHALL mostrar el mensaje de la API («Correo o contraseña incorrectos»). Mientras envía, «Entrar» SHALL no
-estar disponible (D20). No SHALL ofrecer entrar con Google ni crear cuentas: eso queda para cambios propios.
+un rechazo SHALL mostrar el mensaje de la API («Correo o contraseña incorrectos»). Mientras envía, o mientras el correo
+o la contraseña estén vacíos, «Entrar» SHALL no estar disponible (D20). No SHALL ofrecer entrar con Google ni crear cuentas: eso queda para cambios propios.
 
 #### Scenario: Entrar con una cuenta con consentimiento (AB-2)
 - **GIVEN** la cuenta `paciente.android@example.com` con consentimiento vigente
@@ -63,9 +63,12 @@ La app NO SHALL permitir editar nada en este cambio y NO SHALL calcular ningún 
 
 ### Requirement: Sesión guardada sin datos de salud en el teléfono
 La app SHALL guardar el token de la sesión cifrado con una llave del Android Keystore (DataStore con Tink), fuera del
-respaldo automático. NO SHALL guardar datos del perfil en el teléfono: los pide a la API cada vez. Al volver a abrir
-la app con un token guardado SHALL ir directo al perfil. «Cerrar sesión» SHALL borrar el token. Un 401 de la API
-SHALL borrar el token y volver a la pantalla de entrada.
+respaldo automático. Si el Keystore del teléfono no se puede usar, NO SHALL guardar el token en disco: la sesión dura
+mientras la app esté abierta. Si la llave guardada ya no se puede leer, SHALL descartar la sesión guardada y pedir
+entrar de nuevo, sin cerrarse. NO SHALL guardar datos del perfil en el teléfono: los pide a la API cada vez. Al
+volver a abrir la app con un token guardado SHALL ir directo al perfil. «Cerrar sesión» SHALL borrar el token. Un 401
+de la API, o un 403 que no sea `CONSENT_REQUIRED` (así responde la API a un token vencido o inválido:
+`backend/app/api/deps.py:38-42`), SHALL borrar el token y volver a la pantalla de entrada.
 
 #### Scenario: Volver a abrir la app (AB-5)
 - **GIVEN** el paciente entró y cerró la app
@@ -73,7 +76,8 @@ SHALL borrar el token y volver a la pantalla de entrada.
 - **THEN** llega a «Mi perfil médico» sin volver a escribir su contraseña
 
 #### Scenario: Cerrar sesión y token vencido (AB-5)
-- **WHEN** toca «Cerrar sesión», o la API responde 401 a cualquier pedido
+- **WHEN** toca «Cerrar sesión», o la API responde a cualquier pedido con 401 o con 403 «No se pudieron validar las
+  credenciales»
 - **THEN** el token se borra y ve la pantalla de entrada
 
 #### Scenario: Nada en claro en el teléfono (AB-6)
@@ -82,7 +86,7 @@ SHALL borrar el token y volver a la pantalla de entrada.
 - **THEN** el token no aparece en claro en ninguno y ningún dato del perfil está guardado
 
 ### Requirement: Sin conexión
-Si no hay red o la API no responde, la app SHALL mostrar «No pudimos conectar. Revisa tu conexión e intenta de
+Si no hay red, la API no responde o responde 502, 503 o 504, la app SHALL mostrar «No pudimos conectar. Revisa tu conexión e intenta de
 nuevo.» con un botón «Reintentar», sin perder la sesión.
 
 #### Scenario: La API no responde (AB-7)

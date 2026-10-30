@@ -68,3 +68,25 @@ Para D24 y el cambio `android-base`. Todas las fuentes se consultaron el 2026-10
   https://github.com/ReactiveCircus/android-emulator-runner
 - **Confidence:** [VERIFIED]
 - **Re-check if:** sale AGP 10.
+
+- **Fact (versiones fijadas en `android/gradle/libs.versions.toml`, verificadas el 2026-10-30 ~04:30 UTC):** cada una
+  es la última estable publicada en ese momento; lo que hay después es solo alpha o beta.
+  - AGP 9.5.0 (después, 9.6.0-alpha02);
+  - Kotlin 2.4.21 (después, 2.5.0-Beta2);
+  - Compose BOM 2026.09.00;
+  - activity-compose 1.13.0 (después, 1.14.0-alpha03);
+  - lifecycle 2.11.0 (después, 2.12.0-alpha05);
+  - navigation-compose 2.10.2;
+  - datastore-tink 1.3.0;
+  - Retrofit 3.0.0;
+  - OkHttp 5.5.1;
+  - kotlinx-serialization-json 1.12.0;
+  - kotlinx-coroutines-test 1.11.0;
+  - Robolectric 4.17;
+  - JUnit 4.13.2.
+- **Source:** el `maven-metadata.xml` de cada artefacto, en https://dl.google.com/android/maven2/ (AndroidX, AGP) y
+  https://repo1.maven.org/maven2/ (los demás), por ejemplo
+  https://repo1.maven.org/maven2/com/squareup/okhttp3/okhttp/maven-metadata.xml. Se leyeron los campos `<versions>`,
+  `<release>` y `<lastUpdated>`.
+- **Confidence:** [VERIFIED]
+- **Re-check if:** se sube cualquier versión del catálogo.

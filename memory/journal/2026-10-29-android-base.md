@@ -41,3 +41,36 @@ historia de la v1 «hardware primero».
 - No hay backend en línea para la versión release.
 - El ícono es provisional.
 - Gradle 9.8.2 está disponible y el plan fijó 9.6.0.
+
+## Revisión, ronda 1 (PR #44)
+
+**Quién y qué:** Saúl Pérez (author) eligió la revisión adversaria y aprobó aplicar los 26 hallazgos confirmados.
+`FLAG_SECURE` lo mandó al inbox. Revisaron cinco agentes, uno por lente: seguridad, criterios, pruebas, plataforma y
+convenciones. Validaron cuatro agentes distintos, por reproducción contra la API real, con mutantes en una copia, en
+el emulador y con `javap` de Tink. Aplicó un fixer, que no rebotó ninguno.
+
+**Lo que se encontró:**
+- **Alto, B1:** la API responde **403** a un token vencido, no 401. La app se quedaba en «Algo salió mal» con el
+  token muerto. Las pruebas usaban un 401 que la API no da, y `evidence.md` afirmaba que estaba cubierto. La spec se
+  enmendó, con la aprobación de Saúl Pérez: «un 401, o un 403 que no sea `CONSENT_REQUIRED`».
+- **Medios:**
+  - A2: un keyset ilegible cerraba la app en cada arranque;
+  - A4: las pruebas de AB-6 pasaban sin cifrado;
+  - D1: `validation.md` no se podía seguir (`JAVA_HOME`, depuración USB, qué cuenta usar).
+- **22 bajos**, entre ellos «1 registrados», D20 en el consentimiento, el consentimiento ilegible en horizontal con
+  letra grande, el destello blanco en oscuro y varias pruebas que dejaban pasar mutantes.
+
+**Verificación:**
+- Rojo de 69 pruebas con 18 fallas (`c3c46cf`) y verde de 69/0/0/0 (`369af78`), los dos re-corridos por el
+  orquestador. Lint con 0 errores y `tdd-check` ✓.
+- El S26 Ultra se conectó durante la revisión y se recorrió con el código de antes de los arreglos (`evidence.md`).
+  Su keyset es un `EncryptedKeyset`, cifrado por el Keystore.
+
+**Sobre el índice de cerrados:** los revisores lo recibieron con una línea por veredicto en el prompt, y el texto
+completo en el archivo del brief. Ninguna de sus 60 filas trataba de Android.
+
+**Que no estaba en el brief:**
+- El fixer escribió algunos archivos con `sed` o Python por Bash, así que los hooks `lint.py` y `gate-plan` no los
+  vieron (el límite declarado en CLAUDE.md). Sí pasaron por el compilador y por `lintDebug`.
+- Durante el trabajo llegó un mensaje sobre «la RAM en uso en un sidebar» que no corresponde a esta sesión. No se
+  actuó; se le pidió a Saúl Pérez que lo reenvíe a la sesión correcta.
