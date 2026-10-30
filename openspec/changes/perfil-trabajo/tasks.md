@@ -20,7 +20,7 @@ are `single`. `make tdd-check` requires one `test:` commit per `test→impl` gro
 
   El agente lo recorre primero en Chrome. Verificación: "plan approved" significa "navegué el prototipo y esto es lo
   que quiero".
-- [ ] 0.2 **Base.** `make up` con la rama al día con `origin/main`; `openspec validate perfil-trabajo --strict` limpio.
+- [x] 0.2 **Base.** `make up` con la rama al día con `origin/main`; `openspec validate perfil-trabajo --strict` limpio.
 
 ## 1. Backend: el bloque Trabajo · test→impl
 
@@ -46,7 +46,7 @@ are `single`. `make tdd-check` requires one `test:` commit per `test→impl` gro
 
 ## 3. Verificación final y entrega · single
 
-- [ ] 3.1 **Producto y memoria.** `product/dominio.md` § Trabajo, la pantalla de trabajo de
+- [x] 3.1 **Producto y memoria.** `product/dominio.md` § Trabajo, la pantalla de trabajo de
   `product/prototipos/perfil-secciones.html` (C-9) y el dato de la IARC en `memory/research/ocupacion.md`.
 - [ ] 3.2 **Exploración en Chrome por el agente.** Cada situación, «Nada de esto» contra cada exposición, cambiar de
   «Trabajo» a otra y volver, textos con espacios y de 200, emoji, doble clic en «Guardar», cerrar sin guardar, claro y

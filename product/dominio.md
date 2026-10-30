@@ -419,14 +419,16 @@ inicio, `SMKAGE_A`; research `habitos.md#no-recuerdo`). Lo guardado a medias ant
 Ronda 7 (Saúl Pérez: "también te preguntan por tu profesión… paso mucho tiempo sentado… hay oficios que implican
 movimiento diario"). Las plantillas mexicanas de historia clínica ponen la ocupación en la ficha de
 identificación; NIOSH (Occupational Data for Health) define el mínimo: situación laboral, trabajo actual y el de
-más años (research.md § ocupación). Decisión: va en el **Perfil básico**, no en Hábitos.
+más años (research.md § ocupación). Decisión: va en el **Perfil básico**, no en Hábitos, editado en su propio
+diálogo desde la tarjeta Datos básicos; al guardar con otra situación se borra lo que solo aplica al trabajo
+(cambio `perfil-trabajo`, respuestas de Saúl Pérez del 2026-10-29).
 | Attribute | Notes |
 |---|---|
-| situación laboral | trabajo · busco trabajo · jubilado o pensionado · hogar · estudio |
-| a qué te dedicas | texto libre (NIOSH tiene catálogo con traducción al español; codificar queda fuera) |
-| el trabajo de más años | texto libre, si es otro (explica exposiciones antiguas) |
-| exposiciones | polvo · químicos o solventes · ruido fuerte · cargar peso (varias) o "nada de esto" |
-| turno | de día · de noche · rotativo — [ASSUMPTION] su relevancia (sueño); no está en el estándar NIOSH consultado |
+| situación laboral | una sola: trabajo · busco trabajo · jubilado o pensionado · hogar · estudio · no puedo trabajar por mi salud (esta última sumada por Saúl Pérez, 2026-10-29) |
+| a qué te dedicas | solo con «trabajo»; texto libre de hasta 200 caracteres (NIOSH tiene catálogo con traducción al español; codificar queda fuera) |
+| el trabajo de más años | con cualquier situación; texto libre de hasta 200 caracteres, si es otro (explica exposiciones antiguas) |
+| exposiciones | solo con «trabajo»: polvo · químicos o solventes · ruido fuerte (varias) o "nada de esto". Sin «cargar peso»: ya lo pregunta el movimiento del día (Saúl Pérez, 2026-10-29) |
+| turno | solo con «trabajo»: de día · de noche · rotativo. No está en el estándar NIOSH consultado, pero la IARC clasifica el trabajo nocturno como probablemente cancerígeno (research.md § ocupación, 2026-10-29) |
 
 - **Regla C-6 (objeción del harness, aceptada por Saúl Pérez):** la app captura con la forma de los
   instrumentos, pero NO calcula puntajes (AUDIT-C), riesgos ni "cumples / no cumples": los cortes varían por fuente
