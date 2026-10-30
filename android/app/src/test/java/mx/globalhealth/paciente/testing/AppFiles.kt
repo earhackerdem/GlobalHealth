@@ -3,9 +3,19 @@ package mx.globalhealth.paciente.testing
 import android.content.Context
 import java.io.File
 
-/** Every file the app can write: its data dir holds files, cache, no_backup, databases and shared_prefs (AB-6). */
+/**
+ * Every file the app can write: its data dir holds files, cache, no_backup, databases and shared_prefs; the external
+ * files and cache dirs live elsewhere (AB-6).
+ */
 fun appFiles(context: Context): List<File> =
-    listOf(context.dataDir, context.filesDir, context.cacheDir, context.noBackupFilesDir)
+    listOfNotNull(
+        context.dataDir,
+        context.filesDir,
+        context.cacheDir,
+        context.noBackupFilesDir,
+        context.getExternalFilesDir(null),
+        context.externalCacheDir,
+    )
         .flatMap { root -> root.walkTopDown().filter { it.isFile }.toList() }
         .distinctBy { it.canonicalPath }
 

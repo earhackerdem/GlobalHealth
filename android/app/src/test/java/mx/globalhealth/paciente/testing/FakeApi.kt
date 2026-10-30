@@ -10,14 +10,17 @@ import mockwebserver3.SocketEffect
 
 /**
  * A stand-in for the GlobalHealth API (`/api/v1`) behind MockWebServer, shaped like the real FastAPI routes
- * (design.md, Interface contract): bearer auth on everything but login, 403 `CONSENT_REQUIRED` on the health-data
- * routes (`profile*`) while consent is missing, `{"detail": "..."}` error bodies. Routes are matched by
- * "METHOD path" with the `/api/v1/` prefix and any trailing slash removed, so the order in which the app calls them
- * does not matter. A test overrides one route with [respond].
+ * (design.md, Interface contract): bearer auth on everything but login (401 without the header, 403 «No se pudieron
+ * validar las credenciales» with an expired or invalid token, as `backend/app/api/deps.py:38-42`), 403
+ * `CONSENT_REQUIRED` on the health-data routes (`profile*`) while consent is missing, `{"detail": "..."}` error
+ * bodies. Routes are matched by "METHOD path" with the `/api/v1/` prefix and any trailing slash removed, so the order
+ * in which the app calls them does not matter. A test overrides one route with [respond].
  */
 class FakeApi(
     private val validToken: String = TOKEN,
     @Volatile var consentGranted: Boolean = true,
+    /** The version `consent/text` serves and `consent/` records. */
+    @Volatile var consentVersion: String = "v1",
 ) : Dispatcher() {
 
     val requests: MutableList<RecordedRequest> = CopyOnWriteArrayList()
@@ -70,7 +73,7 @@ class FakeApi(
         }
         val auth = request.headers["Authorization"]
         if (auth == null) return json(401, """{"detail":"Not authenticated"}""")
-        if (auth != "Bearer $validToken") return json(401, """{"detail":"Could not validate credentials"}""")
+        if (auth != "Bearer $validToken") return json(403, """{"detail":"$INVALID_CREDENTIALS"}""")
 
         val path = route.substringAfter(' ')
         if (path.startsWith("profile") && !consentGranted) {
@@ -78,17 +81,14 @@ class FakeApi(
         }
         return when (route) {
             "GET users/me" -> json(200, """{"email":"$EMAIL","full_name":"Paciente Android","is_active":true}""")
-            "GET consent/text" -> json(200, """{"version":"v1","text":"$CONSENT_TEXT"}""")
+            "GET consent/text" -> json(200, """{"version":"$consentVersion","text":"$CONSENT_TEXT"}""")
             "GET consent" ->
                 if (consentGranted) {
-                    json(200, """{"version":"v1","granted_at":"2026-10-29T10:00:00Z"}""")
+                    json(200, """{"version":"$consentVersion","granted_at":"2026-10-29T10:00:00Z"}""")
                 } else {
                     json(404, """{"detail":"Consent not granted"}""")
                 }
-            "POST consent" -> {
-                consentGranted = true
-                json(200, """{"version":"v1","granted_at":"2026-10-29T10:00:00Z","auth_method":"password"}""")
-            }
+            "POST consent" -> grantConsent()
             "GET profile" -> json(200, PROFILE_BODY)
             "GET profile/work" ->
                 json(
@@ -103,7 +103,19 @@ class FakeApi(
         }
     }
 
+    /** What `POST consent/` does: records the grant and answers 200. An override of that route can call it too. */
+    fun grantConsent(): MockResponse {
+        consentGranted = true
+        return json(
+            200,
+            """{"version":"$consentVersion","granted_at":"2026-10-29T10:00:00Z","auth_method":"password"}""",
+        )
+    }
+
     companion object {
+        /** The real API's 403 for an expired or invalid token (`backend/app/api/deps.py:38-42`). */
+        const val INVALID_CREDENTIALS = "No se pudieron validar las credenciales"
+
         const val TOKEN = "eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJwcnVlYmEifQ.prueba-android-base"
         const val EMAIL = "paciente.android@example.com"
         const val PASSWORD = "contrasena-de-prueba-1"

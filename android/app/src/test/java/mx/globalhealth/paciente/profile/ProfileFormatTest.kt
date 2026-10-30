@@ -193,6 +193,12 @@ class ProfileFormatTest {
         assertEquals("Sin registros", ProfileFormat.familyHistory(0))
     }
 
+    @Test
+    fun ab4_antecedentesFamiliares_unoEnSingular() {
+        assertEquals("1 registrado", ProfileFormat.familyHistory(1))
+        assertEquals("2 registrados", ProfileFormat.familyHistory(2))
+    }
+
     private companion object {
         const val NOT_RECORDED = "Sin registrar"
     }
