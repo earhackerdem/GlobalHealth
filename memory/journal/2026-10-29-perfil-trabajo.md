@@ -68,3 +68,13 @@ porque encontró encabezados del índice en el prompt.
 
 **Saúl Pérez, durante la revisión:** después de este PR la prioridad es Android, en app nativa, y más adelante iPhone
 nativa (`memory/inbox/2026-10-29-prioridad-app-android.md`). Esto revisa D7 y toca D17.
+
+## Cierre
+
+La ronda 2 trajo 4 hallazgos bajos, que se cerraron así:
+- R2-1 y R2-3, de la evidencia, se corrigieron al cerrar.
+- R2-2 y R2-4 quedaron como deuda (`memory/closed/2026-10-29-ronda-2-de-perfil-trabajo.md`), por la regla de cierre.
+
+El archivo queda en `openspec/changes/archive/2026-10-29-perfil-trabajo/` como último commit del PR #40. La spec
+canónica suma «Trabajo en el perfil básico», y el PRD y el dominio marcan la C2b como entregada. Falta la validación
+de Saúl Pérez con `validation.md` (la ruta ya archivada) y su merge.

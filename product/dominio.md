@@ -322,7 +322,7 @@ registros de secciones distintas, enlace tratamiento↔medicinas de receta.
   `openspec/specs/records/patient-profile/spec.md`**, y **C2 — cuerpo, descanso y trabajo** (ejercicio, movimiento
   del día, sueño y Trabajo; C-5, C-7, C-8, C-9), después. Saúl Pérez partió la C2 el 2026-10-26: **C2a** (ejercicio,
   movimiento del día y sueño; C-5, C-7, C-8), **✅ entregada en el PR #34 (2026-10-26)**, y **C2b** ("Trabajo" en el Perfil
-  básico; C-9) después.
+  básico; C-9), **✅ entregada en el PR #40 (2026-10-29)**.
 
 ## Catálogos (en las palabras de Saúl / del borrador que aceptó)
 
