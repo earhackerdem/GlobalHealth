@@ -134,7 +134,15 @@ class ProfileScreenTest {
         waitForText("Penicilina")
 
         composeRule.onAllNodes(hasSetTextAction(), useUnmergedTree = true).assertCountEquals(0)
-        listOf("Editar", "Agregar", "Guardar", "Registrar medición").forEach { word ->
+        // «Editar» may appear in the approved read-only note («Para editar, entra a la web…»); what must not exist
+        // is an edit CONTROL, so this word is only scanned on actionable nodes (merged tree: the button carries
+        // its label and the click action on the same node).
+        composeRule.onAllNodes(
+            (hasText("Editar", substring = true, ignoreCase = true) or
+                hasContentDescription("Editar", substring = true, ignoreCase = true)) and
+                (hasClickAction() or hasSetTextAction()),
+        ).assertCountEquals(0)
+        listOf("Agregar", "Guardar", "Registrar medición").forEach { word ->
             composeRule.onAllNodes(
                 hasText(word, substring = true, ignoreCase = true) or
                     hasContentDescription(word, substring = true, ignoreCase = true),
