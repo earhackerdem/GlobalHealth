@@ -41,14 +41,14 @@ are `single`. `make tdd-check` requires one `test:` commit per `test→impl` gro
 - [x] 2.2 **Implementer.** `EditWork.tsx`, la fila y el botón en `perfil.tsx`, la query en `queries.ts` y los textos
   en `profile.json`. Verificación: los tests de 2.1 verdes sin tocarlos (chromium y s26-ultra); `tsc` y `biome`
   limpios.
-- [ ] 2.3 **Orquestador.** Rojo y verde de nuevo, `make tdd-check`, imagen reconstruida y suite completa como CI,
+- [x] 2.3 **Orquestador.** Rojo y verde de nuevo, `make tdd-check`, imagen reconstruida y suite completa como CI,
   números en evidence.md.
 
 ## 3. Verificación final y entrega · single
 
 - [x] 3.1 **Producto y memoria.** `product/dominio.md` § Trabajo, la pantalla de trabajo de
   `product/prototipos/perfil-secciones.html` (C-9) y el dato de la IARC en `memory/research/ocupacion.md`.
-- [ ] 3.2 **Exploración en Chrome por el agente.** Cada situación, «Nada de esto» contra cada exposición, cambiar de
+- [x] 3.2 **Exploración en Chrome por el agente.** Cada situación, «Nada de esto» contra cada exposición, cambiar de
   «Trabajo» a otra y volver, textos con espacios y de 200, emoji, doble clic en «Guardar», cerrar sin guardar, claro y
   oscuro, 384 px. Verificación: tabla en evidence.md.
 - [ ] 3.3 **Entregables.** `evidence.md`, `validation.md` (no técnico, para Saúl Pérez), el journal y el PR.
