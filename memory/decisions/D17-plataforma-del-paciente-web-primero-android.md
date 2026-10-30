@@ -19,3 +19,6 @@ status: accepted
   abandonar Android (perdería el único camino a IA on-device, que la web no puede tocar).
 - **Revises:** matiza la propuesta original de "Android nativo para el paciente" del technical-brief (la intención
   sigue; cambia el cuándo y el cómo se decide).
+- **Revised:** 2026-10-29 por D24. Saúl Pérez eligió la app de Android nativa sin esperar el spike: la IA en el
+  dispositivo (ML Kit GenAI) pasa a ser una historia posible dentro de la app nativa, no la puerta de entrada. La web
+  sigue siendo la superficie completa del paciente mientras la v1 de Android cubre el hardware.

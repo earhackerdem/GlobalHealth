@@ -63,7 +63,7 @@ O4 IA cita o calla · O5 el profesional devuelve sin transcripción · O6 detecc
 | NFR-008 | functional suitability (safety) | cualquier salida de la IA → lleva fuente verificable y leyenda de que no constituye consejo médico → 0 salidas sin fuente, 0 sin leyenda | M | ADR D5 |
 | NFR-009 | performance efficiency | pregunta a la IA sobre el expediente → respuesta completa → p95 NEEDS CLARIFICATION (fijar en technical brief) | S | — |
 | NFR-010 | reliability | pérdida del dispositivo del paciente → expediente recuperable íntegro en dispositivo nuevo → RPO NEEDS CLARIFICATION | M | O1 |
-| NFR-011 | portability | paciente en móvil Android; profesional vía web en móvil y escritorio → ambas superficies funcionales | M | brief |
+| NFR-011 | portability | paciente en móvil Android (app nativa, D24); profesional vía web en móvil y escritorio → ambas superficies funcionales | M | brief |
 | NFR-012 | language/accessibility | toda UI y contenido → es-MX | M | brief |
 | NFR-013 | hosting/operations | operación y costo sostenibles por una persona a tiempo parcial → presupuesto mensual y horas: NEEDS CLARIFICATION (technical brief) | M | brief |
 | NFR-014 | maintainability | consumo de IA por usuario/periodo medible y consultable → 100% de consultas contadas (base del freemium) | M | ADR D5 |
