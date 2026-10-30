@@ -436,6 +436,10 @@ test.describe("Perfil médico — trabajo (perfil-trabajo)", () => {
     await openProfile(page)
 
     const dialog = await openWorkDialog(page)
+    // Al abrir, el foco queda dentro del diálogo (no en un elemento concreto).
+    await expect
+      .poll(() => dialog.evaluate((el) => el.contains(document.activeElement)))
+      .toBe(true)
     await expect(group(dialog, STATUS)).toBeVisible()
     await chip(dialog, STATUS, "Trabajo").click()
     await expect(group(dialog, EXPOSURES)).toBeVisible()
@@ -502,6 +506,16 @@ test.describe("Perfil médico — trabajo (perfil-trabajo)", () => {
     for (const option of SHIFT_OPTIONS) {
       await expectUnavailable(chip(dialog, SHIFT, option))
     }
+    // La X de cerrar («Cerrar») tampoco está disponible: ausente o
+    // aria-disabled="true".
+    const closeX = dialog.getByRole("button", { name: "Cerrar", exact: true })
+    await expect
+      .poll(
+        async () =>
+          (await closeX.count()) === 0 ||
+          (await closeX.getAttribute("aria-disabled")) === "true",
+      )
+      .toBe(true)
 
     const response = await hold.releaseAndWait()
     expect(response.status()).toBe(200)
@@ -512,5 +526,21 @@ test.describe("Perfil médico — trabajo (perfil-trabajo)", () => {
       "Soldador · de noche · antes: Minero · expuesto a polvo, químicos o solventes, ruido fuerte",
     )
     expect(await basics(page).innerText()).not.toMatch(FORBIDDEN)
+
+    if (test.info().project.name === "s26-ultra") {
+      // Una ocupación de 200 caracteres sin espacios no desborda la página.
+      const again = await openWorkDialog(page)
+      await textField(again, OCCUPATION).fill("a".repeat(200))
+      await save(page, again)
+      await expect
+        .poll(() => workRowValue(page))
+        .toMatch(new RegExp(`^${"a".repeat(200)} · `))
+      const pageOverflow = await page.evaluate(
+        () =>
+          document.documentElement.scrollWidth -
+          document.documentElement.clientWidth,
+      )
+      expect(pageOverflow).toBeLessThanOrEqual(0)
+    }
   })
 })

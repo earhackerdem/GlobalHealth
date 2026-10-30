@@ -24,12 +24,18 @@ contract"; base /api/v1, behind ConsentedUser):
 - Stored in the new encrypted column patient_profile.work (Fernet, "gAAAA").
 """
 
+import json
+import logging
+import uuid
 from typing import Any
 
 import pytest
 from fastapi.testclient import TestClient
-from sqlmodel import Session
+from pydantic import ValidationError
+from sqlmodel import Session, select
 
+from app.api.routes import profile as profile_routes
+from app.models import PatientProfile, Work
 from tests.api.routes.test_profile import (
     PROFILE_URL,
     consented_user,
@@ -240,6 +246,24 @@ def test_t4_retired_keeps_longest_job_drops_occupation_and_shift(
     assert stored_work(client, headers) == expected
 
 
+def test_t4_non_employed_with_no_exposures_stores_false(
+    client: TestClient, db: Session
+) -> None:
+    """retired con no_exposures true -> se guarda con no_exposures false: «Nada
+    de esto» solo aplica con employed."""
+    headers, _ = consented_user(client, db)
+    expected = work(status="retired", longest_job="Minero")
+
+    saved = save(
+        client,
+        headers,
+        {"status": "retired", "longest_job": "Minero", "no_exposures": True},
+    )
+
+    assert saved == expected
+    assert stored_work(client, headers) == expected
+
+
 # --- T-6: cambiar de situación borra lo del trabajo -------------------------------
 
 
@@ -437,3 +461,76 @@ def test_response_has_exactly_the_six_keys_no_verdict(
 
     assert set(saved) == WORK_KEYS, saved
     assert set(stored) == WORK_KEYS, stored
+
+
+# --- Trabajo guardado ilegible (como los hábitos, review R2 y B1) -----------------
+
+
+def store_raw_work_json(db: Session, user_id: str, raw_json: str) -> PatientProfile:
+    """Write a work JSON straight into the profile row (encrypted by the column
+    type), bypassing the PUT and its validation."""
+    profile = db.exec(
+        select(PatientProfile).where(PatientProfile.user_id == uuid.UUID(user_id))
+    ).one()
+    profile.work = raw_json
+    db.add(profile)
+    db.commit()
+    db.refresh(profile)
+    assert str(raw_work_rows(user_id)[0]["work"]).startswith("gAAAA")
+    return profile
+
+
+def test_unreadable_work_reads_as_empty_and_logged_by_id(
+    client: TestClient, db: Session, caplog: pytest.LogCaptureFixture
+) -> None:
+    """Una fila cifrada cuyo trabajo ya no valida (una llave desconocida): GET ->
+    200 con el bloque vacío, el log trae solo el id del perfil, nunca las
+    respuestas, y el error de validación tampoco las trae."""
+    headers, user_id = consented_user(client, db)
+    save(client, headers, DRIVER)
+    unreadable = json.dumps(
+        {"status": "employed", "occupation": "Soldador", "salario": "Platino"}
+    )
+    profile = store_raw_work_json(db, user_id, unreadable)
+
+    with caplog.at_level(logging.WARNING, logger=profile_routes.__name__):
+        r = get_work(client, headers)
+
+    assert r.status_code == 200, r.text
+    assert r.json() == EMPTY_WORK
+    assert f"Unreadable work of patient profile {profile.id}" in caplog.text
+    for answer in ("employed", "Soldador", "salario", "Platino"):
+        assert answer not in caplog.text, answer
+    with pytest.raises(ValidationError) as exc_info:
+        Work.model_validate_json(unreadable)
+    for answer in ("Soldador", "Platino"):
+        assert answer not in str(exc_info.value), answer
+
+
+@pytest.mark.parametrize(
+    "unreadable",
+    [
+        '{"status": ',
+        json.dumps([{"status": "employed"}]),
+        "[" * 100_000 + "]" * 100_000,
+    ],
+    ids=["JSON inválido", "una lista", "anidado 100 000 niveles"],
+)
+def test_unreadable_work_json_reads_as_empty_not_500(
+    client: TestClient,
+    db: Session,
+    caplog: pytest.LogCaptureFixture,
+    unreadable: str,
+) -> None:
+    """Una fila cifrada que no es un objeto JSON legible se lee como el bloque
+    vacío con el aviso de fila ilegible, nunca un 500."""
+    headers, user_id = consented_user(client, db)
+    save(client, headers, DRIVER)
+    profile = store_raw_work_json(db, user_id, unreadable)
+
+    with caplog.at_level(logging.WARNING, logger=profile_routes.__name__):
+        r = get_work(client, headers)
+
+    assert r.status_code == 200, r.text
+    assert r.json() == EMPTY_WORK
+    assert f"Unreadable work of patient profile {profile.id}" in caplog.text
