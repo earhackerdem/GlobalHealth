@@ -109,6 +109,26 @@ Los modelos de Kotlin ignoran los campos que no usan (`ignoreUnknownKeys = true`
   - el estado de error (`offline`) con «Reintentar».
 - **Accesibilidad:** objetivos de al menos 48 dp; los íconos llevan `contentDescription`.
 
+**Contrato de Kotlin para las pruebas** (enmienda antes del grupo 1, 2026-10-29, orquestador; fija los nombres que el
+tester usa, sin cambiar el alcance):
+- `mx.globalhealth.paciente.core.session.SessionStore(context: Context, aead: com.google.crypto.tink.Aead, fileName: String = "session.pb")`:
+  `val token: Flow<String?>`, `suspend fun save(token: String)`, `suspend fun clear()`. El contenido va cifrado con
+  `aead`. En producción, `KeystoreAead.create(context)` da un AEAD cuyo keyset vive bajo una llave maestra
+  `android-keystore://`. Robolectric no tiene Android Keystore, así que las pruebas pasan un AEAD de Tink con un keyset
+  en memoria. La llave del Keystore se verifica a mano en el emulador.
+- `mx.globalhealth.paciente.AppContainer(context: Context, baseUrl: String, aead: Aead)`: expone `sessionStore` y
+  `api` (`GlobalHealthApi`, Retrofit). El cliente agrega `Authorization: Bearer <token>`. Con un 401 borra el token, y
+  la app vuelve a la entrada.
+- `@Composable fun GlobalHealthApp(container: AppContainer)`: la raíz de la navegación. `MainActivity` la crea con
+  `BuildConfig.API_BASE_URL` y `KeystoreAead`.
+- **Pantallas y sus `testTag`:**
+  - `login`: campos con etiqueta «Correo electrónico» y «Contraseña», botón «Entrar», error con `testTag` `login_error`;
+  - `consent`: el texto de `consent/text`, «Versión v1», «Acepto» y «Cerrar sesión»;
+  - `profile`: el grupo 1 deja la pantalla con su carga de `GET profile` y «Cerrar sesión»; el grupo 2 la llena;
+  - `offline`: «No pudimos conectar. Revisa tu conexión e intenta de nuevo.» y «Reintentar».
+- `mx.globalhealth.paciente.profile.ProfileFormat` (grupo 2): funciones puras que reciben `today: LocalDate`, para que
+  la edad no dependa del reloj.
+
 ## Decisions
 
 1. **Cliente Retrofit escrito a mano, no generado.** Son 9 endpoints, y el generador `kotlin` de openapi-generator no
