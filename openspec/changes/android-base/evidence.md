@@ -13,7 +13,7 @@ Rutas cortas: `T/` = `android/app/src/test/java/mx/globalhealth/paciente/`.
 | AB-5 sesión | `ab5_conTokenGuardado_…`, `ab5_cerrarSesion_…`, `ab5_un401DelPerfil_…`, `ab5_un401EnCualquierPedido_…`, `ab5_clear_borraElTokenGuardado` | `:192`, `:210`, `:223`, `:234` · `T/core/session/SessionStoreEncryptionTest.kt:48` | ✅ |
 | AB-6 nada en claro | `ab6_trasGuardarElToken_…`, `ab6_trasEntrarYVerElPerfil_…` + revisión a mano de los archivos en el emulador | `T/core/session/SessionStoreEncryptionTest.kt:30` · `:248` | ✅ |
 | AB-7 sin conexión | `ab7_laApiSeDesconecta_…`, `ab7_laApiApagada_…`, `ab7_unaParteDelPerfilNoResponde_…` | `:268`, `:287` · `T/profile/ProfileScreenTest.kt:173` | ✅ |
-| AB-8 CI | `.github/workflows/test-android.yml`: corre en el PR porque toca `android/**` | — | ver el PR |
+| AB-8 CI | `.github/workflows/test-android.yml`: corre en el PR porque toca `android/**` | PR #44 | ✅ `test-android` y `alls-green-test-android` en verde (Linux, JDK 17); backend, docker-compose y playwright saltados por el filtro de rutas |
 
 ## Red before green
 

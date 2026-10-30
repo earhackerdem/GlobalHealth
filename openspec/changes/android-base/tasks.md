@@ -46,14 +46,14 @@ are `single`. `make tdd-check` requires one `test:` commit per `test→impl` gro
   `test:` solo.
 - [x] 2.2 **Implementer.** `profile/` (ViewModel, `ProfileFormat`, pantalla) con `strings.xml` en español.
   Verificación: verde sin tocar las pruebas; `lintDebug` limpio.
-- [ ] 2.3 **Orquestador.** Rojo, verde y `tdd-check`; `assembleDebug`; números en evidence.md.
+- [x] 2.3 **Orquestador.** Rojo, verde y `tdd-check`; `assembleDebug`; números en evidence.md.
 
 ## 3. Verificación final y entrega · single
 
 - [x] 3.1 **Exploración del agente por `adb`** en el emulador (y en el S26 si está conectado): los casos del test
   plan, más girar la pantalla, el modo oscuro, TalkBack en la entrada y doble toque. Verificación: tabla en
   evidence.md con capturas en el scratchpad (no en el repo).
-- [ ] 3.2 **CI.** `test-android.yml` en verde en el PR.
+- [x] 3.2 **CI.** `test-android.yml` en verde en el PR.
 - [x] 3.3 **Entregables.** `evidence.md`, `validation.md` (no técnico, para que Saúl Pérez lo recorra en su S26 con
   `adb reverse`), el journal y el PR.
 - [ ] 3.4 **Revisión y archivo** (`/epe-4-review` → `/epe-5-apply` → `/epe-6-archive` como último commit del PR), con la
