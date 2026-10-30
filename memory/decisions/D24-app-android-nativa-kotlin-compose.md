@@ -59,3 +59,8 @@ status: accepted
   - NFR-011, que deja de leerse como «Android por Capacitor»;
   - `harness.json → code` y `tests`: el primer cambio de Android suma `android/` y sus rutas de pruebas;
   - el orden de D23.
+- **Nota (2026-10-29, android-base, PR #44):** el punto 6 queda resuelto. Saúl Pérez eligió **minSdk 29** (Android
+  10) en la exploración, con las cifras de `memory/research/android.md#android`; target 36 y compileSdk 37. El punto
+  `harness.json → code` y `tests` ya se aplicó: suma `android/` y sus rutas de pruebas. La sesión va cifrada con
+  DataStore + Tink bajo una llave del Keystore; sin Keystore usable, solo en memoria. La spec vigente está en
+  `openspec/specs/clients/android-app/spec.md`.

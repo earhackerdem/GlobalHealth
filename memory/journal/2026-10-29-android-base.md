@@ -74,3 +74,25 @@ completo en el archivo del brief. Ninguna de sus 60 filas trataba de Android.
   vieron (el límite declarado en CLAUDE.md). Sí pasaron por el compilador y por `lintDebug`.
 - Durante el trabajo llegó un mensaje sobre «la RAM en uso en un sidebar» que no corresponde a esta sesión. No se
   actuó; se le pidió a Saúl Pérez que lo reenvíe a la sesión correcta.
+
+## Ronda 2 y archivo
+
+**Ronda 2:** un finder revisó el delta `913fc86..6c3c186`. Comprobó con mutantes que los arreglos se sostienen y
+encontró **seis bajos**. Por la Decision 8 quedan como deuda (`memory/closed/2026-10-29-ronda-2-de-android-base.md`):
+- R2-1: el sitio de la llamada de `clearIfCurrent` no tiene prueba;
+- R2-2: `KeystoreAead` trata cualquier falla del Keystore como keyset ilegible;
+- R2-3: ningún pase en un dispositivo usó el código arreglado.
+
+Los tres de documentos se corrigieron al cerrar: R2-4 (las anclas de la evidencia), R2-5 (las cuentas de
+`validation.md`) y R2-6 (la deuda de 404 y 400, registrada en el mismo veredicto).
+
+**Pase de los arreglos:** el emulador confirmó «1 registrado», que con los campos vacíos no se manda nada, y el
+consentimiento legible en horizontal con letra al 200 %. Después se colgó dos veces (GPU por software, poca memoria
+en la Mac). «Enviando…» y el arranque en oscuro quedan para la validación en el S26. CI en Linux: 69/0/0/0.
+
+**Archivo:** `openspec archive` creó `openspec/specs/clients/android-app/spec.md` (6 requisitos). Además:
+- el fragmento `changelog.d/2026-10-29-android-base.md`;
+- una nota en D24 (minSdk 29 resuelto);
+- la Android en el bloque de contexto verificado de AGENTS.md;
+- el inbox de prioridad de Android cerrado;
+- `.epe/active` apunta al archivo.

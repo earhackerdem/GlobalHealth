@@ -20,7 +20,9 @@ Para: Saúl Pérez, en tu S26 Ultra. Unos 15 minutos. Usa una cuenta de prueba, 
    - `"$ANDROID_HOME/platform-tools/adb" install -r app/build/outputs/apk/debug/app-debug.apk`
 4. **Dos cuentas de prueba**, creadas en la web (http://localhost:8000, «Crear cuenta»), con correos que terminen en
    `@example.com`:
-   - **A:** acepta el consentimiento al crearla. Es la de AB-2, AB-4, AB-5 y AB-7.
+   - **A:** acepta el consentimiento al crearla. En «Mi perfil médico» de la web, llena tu fecha de nacimiento y
+     tu sexo, agrega **un** antecedente familiar y marca «Ninguna» en transfusiones. Es la de AB-2, AB-4, AB-5 y
+     AB-7.
    - **B:** no aceptes el consentimiento (cierra la sesión en la web en cuanto te lo pida). Es la de AB-3.
 5. Abre «GlobalHealth» en el teléfono.
 
@@ -40,8 +42,11 @@ Para: Saúl Pérez, en tu S26 Ultra. Unos 15 minutos. Usa una cuenta de prueba, 
 - [ ] Al tocar «Acepto», el botón dice «Enviando…» un instante, y llegas al perfil.
 
 ## AB-4 · Tu perfil
-- [ ] Ves tus datos básicos tal como en la web: fecha y edad, sexo, alergias, peso, estatura y trabajo.
-- [ ] Ves cuántos antecedentes familiares hay y el estado de las seis secciones («Sin llenar», «Ninguna» o «N registros»).
+1. Cierra la sesión de la app y vuelve a entrar con la cuenta A.
+- [ ] Ves tus datos básicos tal como en la web: la fecha con tu edad y el sexo que llenaste, y «Sin registrar» en lo
+  que no llenaste.
+- [ ] En «Antecedentes familiares» dice «1 registrado».
+- [ ] En «Tu historial», transfusiones dice «Ninguna» y las demás secciones, «Sin llenar».
 - [ ] No hay nada que se pueda editar; abajo dice «Para editar, entra a la web».
 
 ## AB-5 · La sesión
@@ -56,8 +61,9 @@ Para: Saúl Pérez, en tu S26 Ultra. Unos 15 minutos. Usa una cuenta de prueba, 
 - [ ] Vuelve tu perfil.
 
 ## En el teléfono (opcional)
-- [ ] En modo oscuro se lee bien.
+- [ ] En modo oscuro se lee bien, y al abrir la app no hay un destello blanco.
 - [ ] Al girar el teléfono no pierdes nada.
+- [ ] Con TalkBack encendido, en la entrada escuchas «Correo electrónico», «Contraseña» y «Entrar».
 
 ## Lo que todavía NO hace
 - Entrar con Google ni crear cuentas (van después).

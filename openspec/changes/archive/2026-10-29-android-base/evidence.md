@@ -7,13 +7,13 @@ de `T/SessionLoginConsentTest.kt`.
 
 | Criterio | Prueba | Ancla | Resultado |
 |---|---|---|---|
-| AB-1 instalar y abrir | `ab1_sinToken_laPrimeraPantallaEsLaEntrada…` + instalación por `adb` en el emulador | `T/SessionLoginConsentTest.kt:81` | ✅ JVM · ✅ emulador |
-| AB-2 entrar | `ab2_loginCorrecto_guardaElTokenYLlegaAlPerfilConBearer`, `ab2_contrasenaEquivocada_…` (con D20 reforzado) | `:94`, `:122` | ✅ |
-| AB-3 consentimiento | `ab3_sinConsentimiento_muestraElTextoV1SinDatos…` | `:158` | ✅ JVM · ✅ emulador contra la API real |
-| AB-4 ver mi perfil | `ProfileFormatTest` (21) + `ab4_perfilConDatos_…` (2), `ab4_perfil_esSoloLectura…`, `ab4_perfilSinDatos_…` | `T/profile/ProfileFormatTest.kt` · `T/profile/ProfileScreenTest.kt:83`, `:115`, `:130`, `:158` | ✅ |
-| AB-5 sesión | `ab5_conTokenGuardado_…`, `ab5_cerrarSesion_…`, `ab5_un401DelPerfil_…`, `ab5_un401EnCualquierPedido_…`, `ab5_clear_borraElTokenGuardado` | `:192`, `:210`, `:223`, `:234` · `T/core/session/SessionStoreEncryptionTest.kt:48` | ✅ |
-| AB-6 nada en claro | `ab6_trasGuardarElToken_…`, `ab6_trasEntrarYVerElPerfil_…` + revisión a mano de los archivos en el emulador | `T/core/session/SessionStoreEncryptionTest.kt:30` · `T/SessionLoginConsentTest.kt:248` | ✅ |
-| AB-7 sin conexión | `ab7_laApiSeDesconecta_…`, `ab7_laApiApagada_…`, `ab7_unaParteDelPerfilNoResponde_…` | `:268`, `:287` · `T/profile/ProfileScreenTest.kt:173` | ✅ |
+| AB-1 instalar y abrir | `ab1_sinToken_laPrimeraPantallaEsLaEntrada…` (API 29 y 35) + instalación por `adb` en el emulador y el S26 | `:94` | ✅ JVM · ✅ emulador · ✅ S26 |
+| AB-2 entrar | `ab2_loginCorrecto_…`, `ab2_contrasenaEquivocada_…` (con D20), `ab2_conCorreoOContrasenaVacios_…`, `ab2_siLaSesionNoSePuedeGuardar_…` · `LoginViewModelTest` (doble envío) | `:107`, `:135`, `:169`, `:196` · `T/auth/LoginViewModelTest.kt` | ✅ |
+| AB-3 consentimiento | `ab3_sinConsentimiento_…`, `ab3_conOtraVersionDelTexto_…`, `ab3_mientrasSeRegistra_aceptoMuestraEnviando…` · `ConsentLayoutTest` (horizontal, letra al 200 %) | `:215`, `:249`, `:268` · `T/consent/ConsentLayoutTest.kt:65` | ✅ JVM · ✅ emulador y S26 contra la API real |
+| AB-4 ver mi perfil | `ProfileFormatTest` (22) + `ab4_perfilConDatos_…` (2), `ab4_perfil_esSoloLectura…`, `ab4_perfilSinDatos_…` | `T/profile/ProfileFormatTest.kt` · `T/profile/ProfileScreenTest.kt:83`, `:115`, `:130`, `:158` | ✅ |
+| AB-5 sesión | `ab5_conTokenGuardado_…` (reloj cuadro a cuadro), `ab5_cerrarSesion_…`, `ab5_un401DelPerfil_…`, `ab5_un401EnCualquierPedido_…`, **`ab5_unTokenVencido_laApiResponde403…`**, **`ab5_un403DeCredencialesEnCualquierPedido_…`**, `ab5_siLaSesionNoSePuedeBorrar_…` · `SessionStoreEncryptionTest` (`clear`, `clearIfCurrent`, instancia nueva, otra llave) · `KeystoreAeadTest` (keyset ilegible, sin llave maestra) · `ApiResultTest` (401, 403) | `:298`, `:326`, `:339`, `:350`, `:363`, `:375`, `:387` · `T/core/session/SessionStoreEncryptionTest.kt:62`, `:73`, `:86`, `:100` · `T/core/session/KeystoreAeadTest.kt:51`, `:64` · `T/core/net/ApiResultTest.kt:16-30` | ✅ |
+| AB-6 nada en claro | `ab6_trasGuardarElToken_…` (se descifra con su llave y no con otra), `ab6_trasEntrarYVerElPerfil_…`, `ab6_sinKeystoreUsable_…`, `BackupRulesTest` (3) + revisión a mano en el emulador y el S26 | `T/core/session/SessionStoreEncryptionTest.kt:36` · `:404` · `T/core/session/KeystoreAeadTest.kt:37` · `T/BackupRulesTest.kt` | ✅ |
+| AB-7 sin conexión | `ab7_laApiSeDesconecta_…`, `ab7_unaPuertaDeEnlaceSinApi_503_…`, `ab7_laApiApagada_…`, `ab7_unaParteDelPerfilNoResponde_…` · `ApiResultTest` (502–504) | `:432`, `:452`, `:464` · `T/profile/ProfileScreenTest.kt:173` · `T/core/net/ApiResultTest.kt:36` | ✅ |
 | AB-8 CI | `.github/workflows/test-android.yml`: corre en el PR porque toca `android/**` | PR #44 | ✅ `test-android` y `alls-green-test-android` en verde (Linux, JDK 17); backend, docker-compose y playwright saltados por el filtro de rutas |
 
 ## Red before green
@@ -166,8 +166,8 @@ real, con un JWT firmado con `exp` en el pasado. Las pruebas usan esa misma resp
 **Asimetrías y notas del fixer:**
 - A5 cancela por reflexión el `CoroutineScope` del primer DataStore para abrir otro sobre el mismo archivo. Puede
   romperse al actualizar DataStore; la alternativa limpia es un parámetro `scope` en `SessionStore`.
-- `ConsentLayoutTest` usa los gráficos nativos de Robolectric (`@GraphicsMode(NATIVE)`). El CI de Linux lo confirma
-  o lo desmiente en este PR.
+- `ConsentLayoutTest` usa los gráficos nativos de Robolectric (`@GraphicsMode(NATIVE)`). El CI de Linux la
+  corrió en verde (run 41009713195).
 - El tema de ventana es `Theme.DeviceDefault.DayNight`: `Theme.Material.DayNight.NoActionBar` no existe en
   `android.jar` API 37.
 - Fuera de los hallazgos, sin arreglar: con un token válido, la API también responde 404 «Usuario no encontrado» o
