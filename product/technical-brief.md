@@ -38,10 +38,12 @@ objeción (dos aprendizajes sobre el núcleo de privacidad), decidió lo contrar
   valdría añadirle gestión por variables en BD (no env/secrets) si se quiere operar sin redeploy — lo decide el plan
   de ese cambio. Mientras tanto, la capa IA vive detrás de una interfaz interna (`AiGateway`) para que la extracción
   no sea rediseño.
-- **Cliente Android (D7, ajustada):** shell Capacitor sobre el `frontend/` React del template.
+- **Cliente Android (D24, 2026-10-29; revisa D7):** app nativa en Kotlin + Jetpack Compose en `android/`, contra la misma
+  API; v1 «hardware primero» (cuenta, cámara para FR-007, recordatorios de FR-025, ver el perfil). iPhone nativo en
+  Swift después.
 - Costo aceptado conscientemente: Python reciente + React probablemente nuevo mientras se construye el núcleo de
   consentimiento/privacidad; mitigación: 20+ h/semana, el template trae authn, CI, pytest y Playwright resueltos.
-**Cliente móvil:** web responsive primero y la app Android como shell Capacitor (notificaciones locales nativas
+**Cliente móvil (texto de 2026-10-11, revisado por D24 el 2026-10-29: app nativa en Kotlin + Compose, no Capacitor):** web responsive primero y la app Android como shell Capacitor (notificaciones locales nativas
 para FR-025, cámara para FR-007, y vía futura a Health Connect por plugin/módulo nativo cuando los wearables entren;
 memory/research.md#wearables). Kotlin nativo descartado para v1: meses de curva sin beneficio en los FR de v1
 [OPINION]; se revisita si Health Connect lo exige.
@@ -75,7 +77,8 @@ tareas baratas; precios → verificar al implementar, no de memoria.
 | D6 | (Revised por D11) recomendación original: monolito Laravel | memory/decisions.md |
 | D10 | (Revised por D11) variante intermedia Laravel core + FastAPI portal | memory/decisions.md |
 | D11 | Stack final: monolito con el template full-stack FastAPI (backend+frontend) para médicos, paciente y capa IA; microservicio IA solo como contingencia; sin Laravel. Decidido por Saúl Pérez (mercado) | memory/decisions.md |
-| D7 | Cliente: web responsive + app Android por Capacitor; Kotlin nativo descartado en v1 | memory/decisions.md |
+| D7 | (Revised por D24) Cliente: web responsive + app Android por Capacitor; Kotlin nativo descartado en v1 | memory/decisions.md |
+| D24 | App de Android nativa (Kotlin + Jetpack Compose) en `android/`, misma API; v1 hardware primero; iPhone nativo en Swift después. Decidido por Saúl Pérez | memory/decisions/D24-app-android-nativa-kotlin-compose.md |
 | D8 | Hosting: PaaS que Saúl ya opera (Railway o Render, elegir en el primer cambio), región US + aviso de transferencia; revisar si la verificación legal exige región MX | memory/decisions.md |
 | D9 | Proveedor IA: Claude API (no-training por defecto); retención/ZDR por verificar en fuente oficial antes del primer dato real | memory/decisions.md |
 

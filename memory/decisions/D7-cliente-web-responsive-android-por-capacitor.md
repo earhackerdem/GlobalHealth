@@ -1,11 +1,11 @@
 ---
 id: D7
 date: 2026-10-11
-status: accepted
+status: revised
 ---
 
 ## D7 — Cliente: web responsive + Android por Capacitor
-- **Status:** Accepted · 2026-10-11 · decided by: Saúl Pérez (author/owner)
+- **Status:** Revised · 2026-10-29 → ver D24 (Android nativo en Kotlin + Jetpack Compose) · original: Accepted · 2026-10-11 · decided by: Saúl Pérez (author/owner)
 - **Decision:** paciente y profesional usan la misma web responsive; la app Android de v1 es un shell Capacitor
   (notificaciones locales para FR-025, cámara para FR-007, vía futura a Health Connect por plugin/módulo nativo).
 - **Why:** Saúl no tiene experiencia Android y está abierto a alternativas; Kotlin nativo son meses de curva sin

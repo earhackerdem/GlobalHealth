@@ -48,3 +48,5 @@ status: accepted
 - **Applies to:** `product/prd.md` (FR-032, FR-033, US-20); el asistente de bienvenida
   (`frontend/src/components/Profile/OnboardingWizard.tsx`), las secciones del perfil, Ajustes y el expediente vacío
   cuando se construya. Criterios MA-1..MA-7 en el prototipo.
+- **Orden revisado:** 2026-10-29 por D24. Saúl Pérez puso la app de Android nativa antes que la mascota; la mascota
+  se construye después de la v1 de Android.
