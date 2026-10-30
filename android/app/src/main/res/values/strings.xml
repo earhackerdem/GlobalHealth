@@ -1,4 +1,30 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- es-MX (D15), the texts of the spec delta and the approved prototype (openspec/changes/android-base). -->
 <resources>
     <string name="app_name">GlobalHealth</string>
+
+    <!-- Entrada (AB-1, AB-2) -->
+    <string name="login_tagline">Tu expediente, a la mano</string>
+    <string name="login_email">Correo electrónico</string>
+    <string name="login_password">Contraseña</string>
+    <string name="login_submit">Entrar</string>
+    <string name="login_submitting">Entrando…</string>
+    <string name="login_no_account">¿Aún no tienes cuenta? Créala en la web.</string>
+
+    <!-- Consentimiento (AB-3) -->
+    <string name="consent_title">Antes de empezar</string>
+    <string name="consent_intro">Para guardar y mostrar tus datos de salud necesitamos tu consentimiento expreso.</string>
+    <string name="consent_version">Versión %1$s</string>
+    <string name="consent_accept">Acepto</string>
+
+    <!-- Mi perfil médico (AB-4, AB-5) -->
+    <string name="profile_title">Mi perfil médico</string>
+    <string name="profile_read_only">Para editar, entra a la web. Aquí todo es de solo lectura.</string>
+
+    <!-- Comunes (AB-5, AB-7) -->
+    <string name="sign_out">Cerrar sesión</string>
+    <string name="offline_message">No pudimos conectar. Revisa tu conexión e intenta de nuevo.</string>
+    <string name="retry">Reintentar</string>
+    <string name="error_generic">Algo salió mal. Intenta de nuevo.</string>
+    <string name="loading">Cargando</string>
 </resources>

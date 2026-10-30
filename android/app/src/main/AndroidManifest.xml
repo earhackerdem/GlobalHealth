@@ -5,6 +5,7 @@
 
     <!-- The session file is left out of backups: its Keystore key does not survive a restore (AB-6). -->
     <application
+        android:name=".GlobalHealthApplication"
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:fullBackupContent="@xml/backup_rules"

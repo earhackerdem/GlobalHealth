@@ -32,13 +32,13 @@ are `single`. `make tdd-check` requires one `test:` commit per `test→impl` gro
 
 ## 1. Sesión, entrada y consentimiento · test→impl
 
-- [ ] 1.1 **Tester.** Pruebas en `android/app/src/test/` a partir del test plan (filas 1, 2, 3, 4, 6, 7, 8 y 9) y del
+- [x] 1.1 **Tester.** Pruebas en `android/app/src/test/` a partir del test plan (filas 1, 2, 3, 4, 6, 7, 8 y 9) y del
   Interface contract, con MockWebServer y Robolectric. Verificación: rojo porque falta la app, no porque la prueba esté
   rota. Commit `test:` solo.
-- [ ] 1.2 **Implementer.** `core/net` (Retrofit, el interceptor de token y de 401), `core/session` (DataStore con
+- [x] 1.2 **Implementer.** `core/net` (Retrofit, el interceptor de token y de 401), `core/session` (DataStore con
   Tink), `auth`, `consent` y la navegación. Verificación: las pruebas de 1.1 en verde sin tocarlas; `lintDebug`
   limpio.
-- [ ] 1.3 **Orquestador.** Rojo y verde de nuevo, `make tdd-check`, números en evidence.md.
+- [x] 1.3 **Orquestador.** Rojo y verde de nuevo, `make tdd-check`, números en evidence.md.
 
 ## 2. Mi perfil médico · test→impl
 
