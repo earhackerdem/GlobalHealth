@@ -172,3 +172,25 @@ real, con un JWT firmado con `exp` en el pasado. Las pruebas usan esa misma resp
   `android.jar` API 37.
 - Fuera de los hallazgos, sin arreglar: con un token válido, la API también responde 404 «Usuario no encontrado» o
   400 «Usuario inactivo» (`deps.py:50-53`), y la app muestra «Algo salió mal». Va con la deuda de la ronda.
+
+**Pase exploratorio de los arreglos** (emulador `Medium_Phone_API_37.0`, debug de `369af78` contra la API local,
+cuentas `@example.com` creadas por API):
+
+| Qué se intentó | Qué pasó |
+|---|---|
+| «Entrar» con los campos vacíos, y con solo el correo (tres toques) | El backend no registró **ningún** `POST /login/access-token`. Con el correo vacío y la contraseña escrita, «Entrar» se ve gris |
+| Cuenta con un antecedente familiar | «Antecedentes familiares: 1 registrado» (C2) |
+| Consentimiento en horizontal con letra al 200 % | El texto del consentimiento se lee y la pantalla se desplaza (C4). Antes de los arreglos, a ese tamaño el texto no aparecía |
+| CI en Linux, JDK 17 (run 41009713195) | 69 pruebas, 0 fallas, 0 errores, 0 saltadas, con `ConsentLayoutTest` (gráficos nativos) incluida |
+
+**No cubierto a mano tras los arreglos:**
+- «Enviando…» con «Cerrar sesión» no disponible (C1) y el arranque en oscuro sin destello blanco (C6). El emulador
+  se colgó: primero «Process system isn't responding», luego, al reiniciarlo, «invalid color buffer» de la GPU por
+  software, con poca memoria libre en la Mac.
+- Un deslizamiento rápido sobre el consentimiento, con el emulador tardando 2.6 s por evento, terminó en «Cerrar
+  sesión». La API no recibió nada, así que fue un toque, no una respuesta del servidor. No se reprodujo con gestos
+  lentos antes de que el emulador cayera, así que queda como **observación por confirmar**, no como defecto.
+
+Lo que no se cubrió a mano lo cubren `ab3_mientrasSeRegistra_aceptoMuestraEnviando…` y `ThemeTest`, y queda en los
+pasos de AB-3 y en la parte opcional de `validation.md` para el S26. El S26 no estaba conectado al terminar los
+arreglos.
