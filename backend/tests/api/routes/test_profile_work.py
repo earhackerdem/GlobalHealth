@@ -255,9 +255,7 @@ def test_t6_switch_to_looking_clears_job_fields_keeps_longest_job(
 
     save(client, headers, {**full, "status": "looking"})
 
-    assert stored_work(client, headers) == work(
-        status="looking", longest_job="Taxista"
-    )
+    assert stored_work(client, headers) == work(status="looking", longest_job="Taxista")
 
 
 # --- Fuera de opciones o de largo -------------------------------------------------

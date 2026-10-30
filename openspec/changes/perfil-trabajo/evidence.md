@@ -63,3 +63,8 @@ setup). Por ella, «truly green» queda sin marcar en el PR, como en los PR #35 
 | Consola | Sin errores de la página (solo uno de la extensión de Chrome) |
 
 Sin defectos. Se le pasa `validation.md` a Saúl Pérez.
+
+**Cambio de formato tras el verde (declarado):** al empujar, el gate prek (`ruff format`) unió en una línea una aserción
+de `test_profile_work.py:258`. No cambia lo que prueba; va en su propio commit con prefijo `test:` (la regla de la casa para todo cambio en rutas de
+pruebas) y el archivo sigue con 23 passed. `make tdd-check` mide desde ese commit, así que para esa línea pasa de forma
+vacía; la implementación ya estaba verde contra la versión sin formatear.
