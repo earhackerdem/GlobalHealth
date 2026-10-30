@@ -1692,6 +1692,36 @@ export type WoodSmokeHabit = {
     hours_per_day?: number | 'unknown' | null;
 };
 
+/**
+ * Work
+ */
+export type Work = {
+    /**
+     * Status
+     */
+    status?: 'employed' | 'looking' | 'retired' | 'homemaker' | 'student' | 'unable_health' | null;
+    /**
+     * Occupation
+     */
+    occupation?: string | null;
+    /**
+     * Longest Job
+     */
+    longest_job?: string | null;
+    /**
+     * Exposures
+     */
+    exposures?: Array<'dust' | 'chemicals' | 'loud_noise'>;
+    /**
+     * No Exposures
+     */
+    no_exposures?: boolean;
+    /**
+     * Shift
+     */
+    shift?: 'day' | 'night' | 'rotating' | null;
+};
+
 export type loginLoginAccessTokenData = {
     body: Body_login_login_access_token;
     path?: never;
@@ -3122,6 +3152,47 @@ export type profileUpdateHabitsResponses = {
 };
 
 export type profileUpdateHabitsResponse = profileUpdateHabitsResponses[keyof profileUpdateHabitsResponses];
+
+export type profileReadWorkData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/profile/work';
+};
+
+export type profileReadWorkResponses = {
+    /**
+     * Successful Response
+     */
+    200: Work;
+};
+
+export type profileReadWorkResponse = profileReadWorkResponses[keyof profileReadWorkResponses];
+
+export type profileUpdateWorkData = {
+    body: Work;
+    path?: never;
+    query?: never;
+    url: '/api/v1/profile/work';
+};
+
+export type profileUpdateWorkErrors = {
+    /**
+     * Validation Error
+     */
+    422: HTTPValidationError;
+};
+
+export type profileUpdateWorkError = profileUpdateWorkErrors[keyof profileUpdateWorkErrors];
+
+export type profileUpdateWorkResponses = {
+    /**
+     * Successful Response
+     */
+    200: Work;
+};
+
+export type profileUpdateWorkResponse = profileUpdateWorkResponses[keyof profileUpdateWorkResponses];
 
 export type privateCreateUserData = {
     body: PrivateUserCreate;
