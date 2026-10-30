@@ -1030,6 +1030,33 @@ export const zHabits = z.object({
     sleep: zSleepHabit.nullish()
 });
 
+/**
+ * Work
+ */
+export const zWork = z.object({
+    status: z.enum([
+        'employed',
+        'looking',
+        'retired',
+        'homemaker',
+        'student',
+        'unable_health'
+    ]).nullish(),
+    occupation: z.string().max(200).nullish(),
+    longest_job: z.string().max(200).nullish(),
+    exposures: z.array(z.enum([
+        'dust',
+        'chemicals',
+        'loud_noise'
+    ])).max(3).optional(),
+    no_exposures: z.boolean().optional().default(false),
+    shift: z.enum([
+        'day',
+        'night',
+        'rotating'
+    ]).nullish()
+});
+
 export const zLoginLoginAccessTokenBody = zBodyLoginLoginAccessToken;
 
 /**
@@ -1479,6 +1506,18 @@ export const zProfileUpdateHabitsBody = zHabits;
  * Successful Response
  */
 export const zProfileUpdateHabitsResponse = zHabits;
+
+/**
+ * Successful Response
+ */
+export const zProfileReadWorkResponse = zWork;
+
+export const zProfileUpdateWorkBody = zWork;
+
+/**
+ * Successful Response
+ */
+export const zProfileUpdateWorkResponse = zWork;
 
 export const zPrivateCreateUserBody = zPrivateUserCreate;
 

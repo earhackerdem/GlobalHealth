@@ -5,6 +5,7 @@
 # NFR-012); los archivos que son prosa española completa van a extend-exclude.
 [default.extend-words]
 mis = "mis"
+asume = "asume"
 confidencial = "confidencial"
 # es-MX structural strings in tests/backend (NFR-012): pure-ASCII Spanish
 # words typos mistakes for English typos

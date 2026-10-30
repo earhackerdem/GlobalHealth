@@ -25,3 +25,23 @@
   https://bjsm.bmj.com/content/52/3/149 · editorial Eur Heart J 2021;42(15):1512
   https://dbpia.nl.go.kr/eurheartj/article/42/15/1512/6213773 · consulted 2026-10-19
 - **Confidence:** [VERIFIED] la asociación en población danesa; generalización a México NO verificada.
+
+- **Fact (turno nocturno):** la IARC clasificó el trabajo nocturno como «probablemente cancerígeno para los humanos»
+  (Grupo 2A), con evidencia limitada en humanos para cáncer de mama, próstata y colon y recto. Lo define como trabajo
+  durante las horas habituales de sueño de la población general. El grupo dice qué tan fuerte es la evidencia, no
+  qué tan grande es el riesgo.
+- **Source:** IARC Monographs vol. 124 https://www.iarc.who.int/news-events/iarc-monographs-volume-124-night-shift-work
+  · consulted 2026-10-29
+- **Confidence:** [VERIFIED]
+- **Re-check if:** la app llegara a usar el turno para algo más que registrarlo (no debe: C-6).
+
+- **Fact (situación laboral):** el value set de NIOSH ODH para situación laboral no se pudo leer (la página de HL7
+  dio 404 el 2026-10-29:
+  https://build.fhir.org/ig/HL7/UTG/branches/UP-658-Adding-new-NIOSH-content-and-deprecating-old-content/ValueSet-NIOSHEmploymentStatusODH.html);
+  un resumen de búsqueda dice que tiene solo tres conceptos (empleado, desempleado, fuera de la fuerza
+  laboral). INEGI (ENOE), según otro resumen, divide a la población no económicamente activa en hogar, estudio,
+  jubilados o pensionados e «impedimentos personales».
+- **Source:** https://inegi.org.mx/contenidos/saladeprensa/boletines/2024/IOE/IOE2024_09.pdf (texto no extraíble) ·
+  consulted 2026-10-29
+- **Confidence:** NOT VERIFIED en las fuentes primarias.
+- **Re-check if:** se codifica la situación laboral.

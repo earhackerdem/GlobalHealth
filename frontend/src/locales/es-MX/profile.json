@@ -59,6 +59,44 @@
     "editDescription": "Actualiza tu fecha de nacimiento, sexo y alergias a medicamentos.",
     "savedToast": "Datos básicos guardados"
   },
+  "work": {
+    "row": "Trabajo",
+    "edit": "Editar trabajo",
+    "title": "Tu trabajo",
+    "description": "El médico lo pregunta porque lo que haces todo el día también es salud.",
+    "savedToast": "Trabajo guardado",
+    "saving": "Guardando…",
+    "before": "antes: {{job}}",
+    "exposedTo": "expuesto a {{exposures}}",
+    "fields": {
+      "status": "Hoy…",
+      "occupation": "¿A qué te dedicas?",
+      "occupationPlaceholder": "Albañil, maestra, chofer, programador…",
+      "exposures": "En tu trabajo te expones a…",
+      "shift": "Turno",
+      "longestJob": "El trabajo que más años has tenido, si es otro",
+      "longestJobPlaceholder": "Minero, costurera…"
+    },
+    "status": {
+      "employed": "Trabajo",
+      "looking": "Busco trabajo",
+      "retired": "Jubilado o pensionado",
+      "homemaker": "Hogar",
+      "student": "Estudio",
+      "unable_health": "No puedo trabajar por mi salud"
+    },
+    "exposures": {
+      "dust": "Polvo",
+      "chemicals": "Químicos o solventes",
+      "loud_noise": "Ruido fuerte",
+      "none": "Nada de esto"
+    },
+    "shift": {
+      "day": "De día",
+      "night": "De noche",
+      "rotating": "Rotativo"
+    }
+  },
   "measurements": {
     "weight": "Peso",
     "height": "Estatura",

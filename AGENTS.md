@@ -76,8 +76,11 @@ codebases enter with `/codebase-context`: verify conventions into the block belo
 <!-- /codebase-context writes the verified context of an existing codebase here: frozen paths, conventions that differ from defaults, pitfalls, where work lands. Empty in a greenfield project. -->
 ## Verified context (GlobalHealth, 2026-10-29)
 - **e2e like CI:** rebuild the backend first (`docker compose up -d --build --force-recreate --no-deps --wait backend`;
-  its image carries the frontend build), then `PLAYWRIGHT_BASE_URL=http://localhost:8000 bunx playwright test` from
-  `frontend/`. Without the variable Playwright hits Vite on 5173 (`frontend/playwright.config.ts:4`).
+  its image carries the frontend build), then apply migrations the way CI does
+  (`docker compose run --rm backend bash scripts/prestart.sh`, `.github/workflows/playwright.yml:84`): rebuilding
+  does not run them, and a missing column breaks `GET /profile` with a 500. Then
+  `PLAYWRIGHT_BASE_URL=http://localhost:8000 bunx playwright test` from `frontend/`. Without the variable Playwright
+  hits Vite on 5173 (`frontend/playwright.config.ts:4`).
 - **Phone project:** `s26-ultra` only runs the specs listed in its `testMatch` (`frontend/playwright.config.ts:54`).
   A new patient-screen spec must be added there, or it silently runs on desktop only.
 - **Type check:** `bunx tsc -p tsconfig.json --noEmit` from `frontend/` (there is no `tsconfig.app.json`).

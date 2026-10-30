@@ -51,7 +51,7 @@ export default defineConfig({
        pasan en 384px — deuda en memory/inbox.md. */
     {
       name: 's26-ultra',
-      testMatch: /(^|\/)(health-records|profile|profile-history|profile-habits|visual-accessibility)\.spec\.ts$/,
+      testMatch: /(^|\/)(health-records|profile|profile-history|profile-habits|profile-work|visual-accessibility)\.spec\.ts$/,
       use: {
         ...devices['Desktop Chrome'],
         storageState: 'playwright/.auth/user.json',

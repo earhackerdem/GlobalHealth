@@ -150,7 +150,7 @@ dd{margin:0; min-width:0; overflow-wrap:anywhere}
     <li><strong>C-15</strong> Si eliges una respuesta, completa sus preguntas: «Guardar» marca lo que falta junto a su pregunta (el detalle navegable está en el prototipo del cambio perfil-habitos-completitud).</li>
     <li><strong>C-16</strong> «No recuerdo» solo en lo que pasó: las edades, y los cigarros y las horas de leña con «Antes». Las preguntas del AUDIT-C y lo actual no lo ofrecen.</li>
     <li><strong>C-17</strong> Un error marcado se va en cuanto corriges el dato, sin salir del campo.</li>
-    <li><strong>C-9</strong> El Perfil básico suma «Trabajo»: situación laboral, a qué te dedicas, el trabajo de más años, exposiciones (polvo, químicos o solventes, ruido fuerte, cargar peso) y turno (de día, de noche, rotativo).</li>
+    <li><strong>C-9</strong> El Perfil básico suma «Trabajo»: situación laboral y el trabajo de más años; solo con «Trabajo», a qué te dedicas, exposiciones (polvo, químicos o solventes, ruido fuerte) y turno (de día, de noche, rotativo). Detalle en <code>openspec/changes/perfil-trabajo/</code> (2026-10-29).</li>
   </ol>
   <p class="sub">Origin: product/dominio.md (rebanada perfil médico por secciones, 2026-10-19) · FR-028 / US-18.</p>
 </div>
@@ -263,6 +263,15 @@ const estado = {
   trabajo:{situacion:"Trabajo", ocupacion:"Diseñador gráfico", masAnios:"", exposiciones:[], expoNinguna:"Sí", turno:"De día"}
 };
 
+// Como normalizar() del prototipo de perfil-trabajo: lo que solo aplica a
+// «Trabajo» se vacía con otra situación, y «Nada de esto» quita las exposiciones.
+function normalizarTrabajo(t){
+  const n = {...t, exposiciones:[...new Set(t.exposiciones)]};
+  if(n.expoNinguna === "Sí") n.exposiciones = [];
+  if(n.situacion !== "Trabajo") Object.assign(n, {ocupacion:"", exposiciones:[], expoNinguna:"", turno:""});
+  return n;
+}
+
 function resumenTrabajo(){
   const t = estado.trabajo;
   if(!t.situacion && !t.ocupacion) return `<span class="opt">Sin llenar</span>`;
@@ -271,8 +280,8 @@ function resumenTrabajo(){
   return partes.filter(Boolean).map(esc).join(" · ");
 }
 
-const SITUACION = ["Trabajo","Busco trabajo","Jubilado o pensionado","Hogar","Estudio"];
-const EXPOSICIONES = ["Polvo","Químicos o solventes","Ruido fuerte","Cargar peso"];
+const SITUACION = ["Trabajo","Busco trabajo","Jubilado o pensionado","Hogar","Estudio","No puedo trabajar por mi salud"];
+const EXPOSICIONES = ["Polvo","Químicos o solventes","Ruido fuerte"];
 function pintarTrabajo(){
   const v = vista.borrador;
   return `
@@ -281,15 +290,15 @@ function pintarTrabajo(){
     <p class="sub">El médico lo pregunta porque lo que haces todo el día también es salud.${ac("C-9", true)}</p>
     <form class="card" id="form-trabajo" style="margin-top:10px" novalidate>
       <span class="lbl">Hoy…</span>${chipsDe("situacion", SITUACION, v, "Situación laboral")}
-      <div class="campo"><label for="t-ocupacion">¿A qué te dedicas? <span class="opt">(opcional)</span></label>
+      ${v.situacion === "Trabajo" ? `<div class="campo"><label for="t-ocupacion">¿A qué te dedicas? <span class="opt">(opcional)</span></label>
         <input id="t-ocupacion" data-k="ocupacion" value="${esc(v.ocupacion || "")}" placeholder="Albañil, maestra, chofer, programador…"></div>
-      <div class="campo"><label for="t-masAnios">El trabajo que más años has tenido, si es otro <span class="opt">(opcional)</span></label>
-        <input id="t-masAnios" data-k="masAnios" value="${esc(v.masAnios || "")}" placeholder="Minero, costurera…"></div>
       <span class="lbl">En tu trabajo te expones a…</span>
       <div class="chips" role="group" aria-label="Exposiciones">${EXPOSICIONES.map(o =>
         `<button data-multi="exposiciones" data-v="${esc(o)}" aria-pressed="${v.exposiciones.includes(o)}">${esc(o)}</button>`).join("")}
         <button data-chip="expoNinguna" data-v="Sí" aria-pressed="${v.expoNinguna === "Sí"}">Nada de esto</button></div>
-      <span class="lbl" style="margin-top:12px">Turno</span>${chipsDe("turno", ["De día","De noche","Rotativo"], v, "Turno")}
+      <span class="lbl" style="margin-top:12px">Turno</span>${chipsDe("turno", ["De día","De noche","Rotativo"], v, "Turno")}` : ""}
+      <div class="campo"><label for="t-masAnios">El trabajo que más años has tenido, si es otro <span class="opt">(opcional)</span></label>
+        <input id="t-masAnios" data-k="masAnios" value="${esc(v.masAnios || "")}" placeholder="Minero, costurera…"></div>
       <div class="actions"><button class="primary" type="submit">Guardar</button><button type="button" data-volver>Cancelar</button></div>
     </form>`;
 }
@@ -675,7 +684,7 @@ document.addEventListener("click", ev => {
 
 document.addEventListener("submit", ev => {
   ev.preventDefault(); leerInputs();
-  if(vista.nombre === "trabajo"){ estado.trabajo = vista.borrador; toast("Trabajo guardado"); return ir({nombre:"perfil"}); }
+  if(vista.nombre === "trabajo"){ estado.trabajo = normalizarTrabajo(vista.borrador); toast("Trabajo guardado"); return ir({nombre:"perfil"}); }
   const s = SECCIONES.find(x => x.id === vista.sec), v = vista.borrador;
   if(s.habitos){
     for(const a of ACTIVIDADES) if(!v.acts.includes(a)){ delete v[`act${actIdx(a)}Dias`]; delete v[`act${actIdx(a)}Min`]; if(a === "Otra") delete v.actOtra; }

@@ -1,0 +1,1 @@
+- 2026-10-29 · perfil-trabajo · PR #40 · En «Mi perfil médico», Datos básicos suma «Trabajo»: situación laboral, el trabajo de más años y, si trabajas, a qué te dedicas, a qué te expones y tu turno. Todo opcional y cifrado.
