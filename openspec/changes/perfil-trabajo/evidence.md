@@ -4,14 +4,15 @@
 
 | Criterio | Prueba | Ancla | Resultado |
 |---|---|---|---|
-| T-1 guardar y ver en la tarjeta | `test_t1_employed_driver_round_trip` · «T-1 guardar el trabajo y verlo en la tarjeta…» | `backend/tests/api/routes/test_profile_work.py:136` · `frontend/tests/profile-work.spec.ts:272` | ✅ pytest · ✅ chromium y s26-ultra |
-| T-2 todo opcional | `test_t2_*` (3) · «T-2 todo es opcional…» | `test_profile_work.py:151`, `:169`, `:186` · `profile-work.spec.ts:308` | ✅ · ✅ |
-| T-3 «Nada de esto» excluye | `test_t3_no_exposures_drops_exposures` · «T-3 «Nada de esto» excluye…» | `:201` · `:325` | ✅ · ✅ |
-| T-4 jubilado con el de más años | `test_t4_retired_keeps_longest_job_drops_occupation_and_shift` · «T-4 el detalle solo aplica con «Trabajo»…» | `:220` · `:348` | ✅ · ✅ |
-| T-5 cifrado, solo del paciente, consentimiento | `test_t5_*` (4) | `:378`, `:393`, `:412` | ✅ |
-| T-6 cambiar de situación borra lo del trabajo | `test_t6_switch_to_looking_clears_job_fields_keeps_longest_job` · «T-6 cambiar de situación…» | `:246` · `:370` | ✅ · ✅ |
-| Fuera de opciones o de largo | `test_out_of_options_or_length_is_422_and_leaves_work_unchanged` (7 casos) y 4 de recorte y repetidos · «largo: … 200 caracteres» | `:295`-`:364` · `:412` | ✅ · ✅ |
-| Sin veredicto (C-6), accesibilidad, D20, 384 px | `test_response_has_exactly_the_six_keys_no_verdict` · «accesibilidad, D20 y sin veredicto…» | `:430` · `:431` | ✅ · ✅ |
+| T-1 guardar y ver en la tarjeta | `test_t1_employed_driver_round_trip` · «T-1 guardar el trabajo y verlo en la tarjeta…» | `backend/tests/api/routes/test_profile_work.py:142` · `frontend/tests/profile-work.spec.ts:272` | ✅ pytest · ✅ chromium y s26-ultra |
+| T-2 todo opcional | `test_t2_*` (3) · «T-2 todo es opcional…» | `test_profile_work.py:157`, `:175`, `:192` · `profile-work.spec.ts:308` | ✅ · ✅ |
+| T-3 «Nada de esto» excluye | `test_t3_no_exposures_drops_exposures` · «T-3 «Nada de esto» excluye…» | `:207` · `:325` | ✅ · ✅ |
+| T-4 jubilado con el de más años | `test_t4_retired_keeps_longest_job_drops_occupation_and_shift` y `test_t4_non_employed_with_no_exposures_stores_false` (ronda 1, V8) · «T-4 el detalle solo aplica con «Trabajo»…» | `:226`, `:249` · `:348` | ✅ · ✅ |
+| T-5 cifrado, solo del paciente, consentimiento | `test_t5_*` (4: otro usuario, cifrado, y consentimiento en GET y PUT) | `:400`, `:415`, `:434` | ✅ |
+| T-6 cambiar de situación borra lo del trabajo | `test_t6_switch_to_looking_clears_job_fields_keeps_longest_job` · «T-6 cambiar de situación…» | `:270` · `:370` | ✅ · ✅ |
+| Fuera de opciones o de largo | `test_out_of_options_or_length_is_422_and_leaves_work_unchanged` (7 casos) y 4 de recorte y repetidos · «largo: … 200 caracteres» | `:317`-`:386` · `:412` | ✅ · ✅ |
+| Sin veredicto (C-6), accesibilidad, D20, foco, 384 px | `test_response_has_exactly_the_six_keys_no_verdict` · «accesibilidad, D20 y sin veredicto…» (desde la ronda 1 también: foco dentro del diálogo al abrir `:439`, sin la X mientras guarda `:509`, una ocupación de 200 sin espacios no desborda a 384 px `:530`) | `:452` · `:431` | ✅ · ✅ |
+| Fila ilegible en la base (ronda 1, V9) | `test_unreadable_work_*` (1 + 3 casos): responde vacío y el log lleva solo el id | `:483`, `:519` | ✅ |
 
 ## Red before green
 
@@ -47,7 +48,7 @@ Backend reconstruido, migraciones con `docker compose run --rm backend bash scri
 (`memory/inbox/2026-10-20-fix-aparte-e2e-intermitentes-heredados-admin.md`); sola pasa (chromium, 2 passed con el
 setup). Por ella, «truly green» queda sin marcar en el PR, como en los PR #35 y #37.
 
-## Exploratory pass (Chrome, :8000 con la imagen reconstruida, cuenta de prueba creada por API, modo oscuro)
+## Exploratory pass (Chrome, :8000 con la imagen reconstruida, cuenta de prueba creada por API; primero en oscuro, la ronda 1 completó el claro)
 
 | Qué se intentó | Qué pasó |
 |---|---|
@@ -62,9 +63,34 @@ setup). Por ella, «truly green» queda sin marcar en el PR, como en los PR #35 
 | Ventana angosta (el mínimo de Chrome: 500 px de ancho útil) con el diálogo abierto en «Trabajo» | Sin desborde lateral (`scrollWidth` 500 = ancho); los chips se acomodan en renglones; «Guardar» a todo el ancho. Los 384 px los cubre `s26-ultra` |
 | Consola | Sin errores de la página (solo uno de la extensión de Chrome) |
 
+| **Ronda 1 (V4), modo claro:** «Busco trabajo», «Jubilado o pensionado» y «No puedo trabajar por mi salud», cada una con «Albañil» en el de más años | Solo se ven «Hoy…» y el campo del de más años; filas «Busco trabajo · antes: Albañil», «Jubilado o pensionado · antes: Albañil», «No puedo trabajar por mi salud · antes: Albañil» |
+| **Ronda 1:** «Nada de esto» contra cada exposición (Polvo, Químicos o solventes, Ruido fuerte) | En los tres: «Nada de esto» apaga la exposición y la exposición apaga «Nada de esto»; las tres juntas se pueden elegir |
+| **Ronda 1 (V5):** ocupación de 200 caracteres sin espacios, «Nada de esto», «Rotativo», guardar | La fila se parte en renglones, sin desborde (`scrollWidth` = ancho); la X del diálogo está presente en reposo. Que desaparezca mientras guarda (V1) y los 384 px los fija el e2e |
+
 Sin defectos. Se le pasa `validation.md` a Saúl Pérez.
 
 **Cambio de formato tras el verde (declarado):** al empujar, el gate prek (`ruff format`) unió en una línea una aserción
 de `test_profile_work.py:258`. No cambia lo que prueba; va en su propio commit con prefijo `test:` (la regla de la casa para todo cambio en rutas de
 pruebas) y el archivo sigue con 23 passed. `make tdd-check` mide desde ese commit, así que para esa línea pasa de forma
 vacía; la implementación ya estaba verde contra la versión sin formatear.
+
+## Revisión adversaria, ronda 1 (aplicada)
+
+Dos finders (backend, seguridad y criterios; frontend, convenciones y documentos) y un validador distinto, que
+reprodujo los 9 hallazgos: 9 confirmados, todos bajos (V1 bajó de medio). Saúl Pérez aprobó aplicarlos todos (V2 y V7
+solo en la instancia nueva). Comentarios `finder` y `validator` en el PR #40.
+
+| Hallazgo | Cambio | Commit |
+|---|---|---|
+| V1 la X parecía disponible mientras guarda | `showCloseButton={!busy}` (`EditWork.tsx:142-146`); e2e `:509` | `ad3376f` (rojo verificado) · `68e0e82` |
+| V2 el prototipo de producto no normalizaba | `normalizarTrabajo` al guardar (`perfil-secciones.html:266-273`, `:687`) | `e9ad78f` |
+| V3 anclas corridas y «pytest (11)» | esta tabla y el cuerpo del PR (12) | este commit |
+| V4 tarea 3.2 marcada de más | pase completado arriba (claro, tres situaciones, exclusiones); 3.3 marcada | este commit |
+| V5 desborde con una palabra larga | `[overflow-wrap:anywhere]` en `Row` (`perfil.tsx:50`); e2e `:530` | `ad3376f` · `68e0e82` |
+| V6 foco sin prueba y dos citas | e2e `:439`; `exploration.md:53`, `:84`; `design.md` fila 8 | `ad3376f` · `e9ad78f` |
+| V7 `research.md` inexistente y URL de HL7 | `dominio.md:431`, `memory/research/ocupacion.md` | `e9ad78f` |
+| V8 `no_exposures` con otra situación | `test_t4_non_employed_with_no_exposures_stores_false` (el mutante ahora muere: 1 failed) | `ad3376f` |
+| V9 fila ilegible sin prueba | dos pruebas portadas de hábitos (el mutante `raise` ahora muere: 4 failed) | `ad3376f` |
+
+Re-corrido por el orquestador tras aplicar: backend **588 passed, 0 failed, 0 skipped**; `profile-work` + `profile`
+en chromium y s26-ultra **27 passed**; `tsc` y `biome` limpios; `make tdd-check` ✓ (rojo `ad3376f`).
