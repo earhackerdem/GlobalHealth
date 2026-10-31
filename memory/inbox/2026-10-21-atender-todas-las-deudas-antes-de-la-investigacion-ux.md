@@ -20,3 +20,5 @@ status: open
 **Status:** abierto · siguiente paso: `/triage` sobre el inventario para agruparlo en cambios (uno por tema: privacidad, e2e estables, rendimiento del perfil, limpieza de i18n/duplicados) y ordenarlo con Saúl Pérez; cerrar aquí cada fila cuando su cambio se archive
 
 **Avance 2026-10-31 (deudas de FastAPI, por delegación de Saúl Pérez con `/epe-autopilot`):** pagados B1 (surrogate → 500 y log) y S2 (Sentry) en api-errores-sin-datos, PR #46. Su revisión dejó M1 (NUL → 500 con parámetros SQL en el log, `memory/closed/2026-10-31-nul-500-y-parametros-sql-en-el-log.md`) para el cambio de base de datos.
+
+**Avance 2026-10-31, continuación (mismo lote, mergeado por Saúl Pérez):** PR #47 pagó B2, C1 (de la ronda 2 de perfil-habitos-actividad-sueno), T3 y `validate_birth_date` con el «hoy» del servidor. PR #48 pagó M1, las FKs sin índice, H1 y R2 de perfil-cronicas. Quedan de la API: S1 (tope de registros, decisión de producto), S3 (largo del ciphertext), X2 (revocación del JWT) y el interbloqueo con el borrado de cuenta (⏸️, condición no cumplida). Los nombres de tabla van en tablas-snake-case (D25).

@@ -8,7 +8,7 @@ status: accepted
 - **Status:** Accepted · 2026-10-12 · decided by: Saúl Pérez (author/owner) al aprobar el design de
   expediente-registros ("plan approved"). Cubre FR-007 con NFR-001, NFR-008 y NFR-013.
 - **Decision:** los documentos adjuntos (PDF/JPEG/PNG, límite 10 MB inclusivo por archivo) se guardan en la tabla
-  `healthrecordattachment` con contenido y nombre cifrados app-level (`EncryptedBytes`/`EncryptedString`, mismas
+  `health_record_attachment` (antes `healthrecordattachment`, renombrada por D25) con contenido y nombre cifrados app-level (`EncryptedBytes`/`EncryptedString`, mismas
   claves por propósito de D13); validación por magic bytes del contenido, no solo por el content-type declarado.
   FK `ON DELETE CASCADE` al registro: borrar el registro borra sus adjuntos.
 - **Why:** un solo almacén = un solo respaldo (el RPO de NFR-008 cubre adjuntos sin trabajo extra), cero

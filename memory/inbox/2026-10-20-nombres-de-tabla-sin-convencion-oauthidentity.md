@@ -1,6 +1,6 @@
 ---
 date: 2026-10-20
-status: open
+status: done
 ---
 
 [2026-10-20] Nombres de tabla sin convención: `oauthidentity`, `consentgrant`, `healthrecord`,
@@ -10,3 +10,5 @@ sqlmodel/main.py:907), y desde onboarding-perfil las tablas nuevas declaran `__t
 renombrar (cambio propio `fix/tablas-snake-case`: `__tablename__` + migración nueva con `op.rename_table`, FKs a
 `healthrecord.id`, índices y constraints, y 4 tests con nombres crudos) o fijar la convención solo para tablas
 nuevas. Editar las migraciones viejas no sirve: no corren otra vez en las BD existentes.
+
+**Closure:** D25 (Saúl Pérez, 2026-10-31: «procede con el nombre de las tablas») y el cambio tablas-snake-case: las cinco tablas se renombran con sus restricciones e índices; `user` e `item` se quedan.
