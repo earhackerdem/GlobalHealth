@@ -23,8 +23,9 @@ branch_labels = None
 depends_on = None
 
 
-# (old, new). A longer old name goes before a shorter prefix of it, so that
-# healthrecord never takes the prefix of healthrecordmedicine.
+# (old, new). Each pass reads only that table's names and matches "<old>_",
+# so healthrecord never touches healthrecordmedicine's and the order does not
+# matter (review F5).
 RENAMES = [
     ('healthrecordmedicine', 'health_record_medicine'),
     ('healthrecordattachment', 'health_record_attachment'),
@@ -88,6 +89,6 @@ def upgrade():
 
 
 def downgrade():
-    # The exact reverse, longest new name first for the same reason.
-    for old, new in sorted(RENAMES, key=lambda pair: len(pair[1]), reverse=True):
+    # The exact reverse.
+    for old, new in reversed(RENAMES):
         _rename_table(new, old)
