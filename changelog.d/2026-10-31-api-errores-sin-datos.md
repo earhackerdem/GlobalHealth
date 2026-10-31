@@ -1,0 +1,1 @@
+- 2026-10-31 · api-errores-sin-datos · PR #46 · Cuando la API rechaza algo mal escrito ya no repite lo que mandaste ni lo deja en su registro, y un texto con un carácter roto ya no la tumba. El futuro reporte de errores queda configurado para no recibir lo que la persona escribió.
