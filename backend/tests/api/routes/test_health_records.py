@@ -18,8 +18,8 @@ Contract (openspec/changes/receta-mexicana/design.md §Interface contract):
 - GET|PATCH|DELETE /{id} -> 404 {"detail": "Registro no encontrado"}, identical
   for a nonexistent id and someone else's. DELETE -> {"message": "Registro
   eliminado"}; deleting a record cascades over its medicines and attachments.
-- Encrypted at rest: healthrecord clinical columns and the new
-  healthrecordmedicine table (name/dose/frequency/route are Fernet ciphertext,
+- Encrypted at rest: health_record clinical columns and the new
+  health_record_medicine table (name/dose/frequency/route are Fernet ciphertext,
   prefix "gAAAA").
 
 Spec: openspec/changes/receta-mexicana/specs/records/clinical-records/spec.md.
@@ -352,7 +352,7 @@ def test_legacy_prescription_payload_rejected(client: TestClient, db: Session) -
 
 
 def test_clinical_content_encrypted_at_rest(client: TestClient, db: Session) -> None:
-    """healthrecord y healthrecordmedicine en crudo: ciphertext Fernet (gAAAA).
+    """health_record y health_record_medicine en crudo: ciphertext Fernet (gAAAA).
 
     Nombre y dosis de cada medicina, médico, diagnóstico y notas son Fernet
     tokens; ninguna columna de ninguna fila contiene "Levotiroxina" ni
@@ -389,7 +389,7 @@ def test_clinical_content_encrypted_at_rest(client: TestClient, db: Session) -> 
     db.expire_all()
     rx_row = (
         db.execute(
-            text("SELECT * FROM healthrecord WHERE id = CAST(:id AS uuid)"),
+            text("SELECT * FROM health_record WHERE id = CAST(:id AS uuid)"),
             {"id": str(rx_id)},
         )
         .mappings()
@@ -397,7 +397,7 @@ def test_clinical_content_encrypted_at_rest(client: TestClient, db: Session) -> 
     )
     diag_row = (
         db.execute(
-            text("SELECT * FROM healthrecord WHERE id = CAST(:id AS uuid)"),
+            text("SELECT * FROM health_record WHERE id = CAST(:id AS uuid)"),
             {"id": str(diag_id)},
         )
         .mappings()
@@ -406,7 +406,7 @@ def test_clinical_content_encrypted_at_rest(client: TestClient, db: Session) -> 
     medicine_rows = (
         db.execute(
             text(
-                "SELECT * FROM healthrecordmedicine "
+                "SELECT * FROM health_record_medicine "
                 "WHERE record_id = CAST(:rid AS uuid) ORDER BY position"
             ),
             {"rid": str(rx_id)},
@@ -642,7 +642,7 @@ def test_delete_cascades_medicines_and_attachments(
     db.expire_all()
     medicine_count = db.execute(
         text(
-            "SELECT COUNT(*) FROM healthrecordmedicine "
+            "SELECT COUNT(*) FROM health_record_medicine "
             "WHERE record_id = CAST(:rid AS uuid)"
         ),
         {"rid": str(record_id)},
@@ -650,7 +650,7 @@ def test_delete_cascades_medicines_and_attachments(
     assert medicine_count == 0
     attachment_count = db.execute(
         text(
-            "SELECT COUNT(*) FROM healthrecordattachment "
+            "SELECT COUNT(*) FROM health_record_attachment "
             "WHERE record_id = CAST(:rid AS uuid)"
         ),
         {"rid": str(record_id)},

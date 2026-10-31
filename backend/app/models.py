@@ -89,6 +89,8 @@ class User(UserBase, table=True):
 
 # OAuth identity linked to a user (e.g. Google); subject is encrypted at rest
 class OAuthIdentity(SQLModel, table=True):
+    __tablename__ = "oauth_identity"
+
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
     user_id: uuid.UUID = Field(
         foreign_key="user.id", nullable=False, ondelete="CASCADE", index=True
@@ -102,6 +104,8 @@ class OAuthIdentity(SQLModel, table=True):
 # Express consent kept as data, not as a flag: one row per grant with the
 # version and the sha256 of the exact text accepted (NFR-004, design.md)
 class ConsentGrant(SQLModel, table=True):
+    __tablename__ = "consent_grant"
+
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
     user_id: uuid.UUID = Field(
         foreign_key="user.id", nullable=False, ondelete="CASCADE", index=True
@@ -138,6 +142,8 @@ class ConsentStatusPublic(SQLModel):
 # `confirmation_status` are flow metadata and stay in the clear (Decision 3,
 # same trade-off as record_type).
 class HealthRecord(SQLModel, table=True):
+    __tablename__ = "health_record"
+
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
     owner_id: uuid.UUID = Field(
         foreign_key="user.id", nullable=False, ondelete="CASCADE", index=True
@@ -174,12 +180,14 @@ class HealthRecord(SQLModel, table=True):
 # child table, not JSON — per-field encryption with EncryptedString and a
 # clean CASCADE; `position` preserves the capture order.
 class HealthRecordMedicine(SQLModel, table=True):
+    __tablename__ = "health_record_medicine"
+
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
     # Optional in Python (the relationship assigns it on flush), NOT NULL
     # in the database.
     record_id: uuid.UUID | None = Field(
         default=None,
-        foreign_key="healthrecord.id",
+        foreign_key="health_record.id",
         nullable=False,
         ondelete="CASCADE",
         index=True,
@@ -358,9 +366,11 @@ class HealthRecordsPublic(SQLModel):
 # contract, ADR D16): filename and content encrypted at rest; media_type and
 # size_bytes (of the original, pre-encryption) stay in the clear.
 class HealthRecordAttachment(SQLModel, table=True):
+    __tablename__ = "health_record_attachment"
+
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
     record_id: uuid.UUID = Field(
-        foreign_key="healthrecord.id", nullable=False, ondelete="CASCADE", index=True
+        foreign_key="health_record.id", nullable=False, ondelete="CASCADE", index=True
     )
     filename: str = Field(sa_column=Column(EncryptedString(), nullable=False))
     media_type: str = Field(max_length=64)

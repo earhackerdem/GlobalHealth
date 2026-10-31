@@ -1,6 +1,6 @@
 ---
 date: 2026-10-31
-state: deferred
+state: frozen
 anchor: journal: 2026-10-31 · api-errores-sin-datos: los errores de la API no repiten datos de salud (B1 y S2)
 ---
 M1 de api-errores-sin-datos (PR #46, ronda 1): un carácter NUL (`\u0000`) en un texto en claro da 500, y el log y el evento de Sentry llevan los parámetros SQL en claro (correo, nombre, hash argon2)
@@ -19,6 +19,8 @@ vienen de validación es un Non-Goal de su `design.md`. Se decidió por delegaci
 y del mensaje de la excepción. Lo probó el validador con SQLAlchemy 2.0.51. Rechazar `\x00` en la validación lo
 vuelve 422. Va en el cambio de base de datos de las deudas de FastAPI.
 
-**State:** ⏸️ deferred
+**State:** 🔒 frozen (pagado)
 
 **Anchor (journal: date · title):** journal: 2026-10-31 · api-errores-sin-datos: los errores de la API no repiten datos de salud (B1 y S2)
+
+**Pagado (2026-10-31):** bd-candados-indices-y-log, PR #48. `hide_parameters=True` en el engine; el NUL se rechaza con 422 en los textos en claro, y `get_user_by_email` lo ataja para el login y la recuperación de contraseña. Queda F2 (el `DETAIL` de unicidad), con veredicto propio.

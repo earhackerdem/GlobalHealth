@@ -1,0 +1,1 @@
+- 2026-10-31 · tablas-snake-case · PR #49 · Por dentro: las tablas del expediente, del consentimiento y de la cuenta de Google se llaman como las demás (`health_record`, `consent_grant`, `oauth_identity`…). La app no cambia; una base local se pone al día con `make migrate`.
