@@ -1,7 +1,10 @@
 # Validación — la base de datos: candados, índices y registro
 
-Para: Saúl Pérez. Unos 3 minutos en la terminal, con la app levantada (`make up`, que aplica la migración nueva). En
-pantalla no cambia nada.
+Para: Saúl Pérez. Unos 3 minutos en la terminal. En pantalla no cambia nada.
+
+**Antes de empezar**, con esta rama, reconstruye la API y aplica la migración (`make up` solo no reconstruye la
+imagen):
+`docker compose up -d --build --force-recreate --no-deps --wait backend && make migrate`
 
 ## 1 · Un carácter nulo ya no tumba la API ni deja datos en el registro
 1. Copia y pega:
@@ -23,8 +26,9 @@ pantalla no cambia nada.
 ## Lo que NO hace todavía
 - La carrera entre guardar una crónica y borrar su diagnóstico al mismo tiempo no se puede provocar a mano. La cubre
   una prueba automática que pausa el borrado a la mitad.
-- Si alguna vez se borra una cuenta mientras se borra uno de sus diagnósticos, la base elige cuál de las dos
-  operaciones cancela (deuda registrada; solo pasaría si el borrado de cuentas se vuelve masivo).
+- Si se borra una cuenta justo mientras se borra uno de sus diagnósticos, la base puede cancelar una de las dos
+  operaciones (deuda registrada; este cambio achica esa ventana, y se revisa si el borrado de cuentas se vuelve
+  asíncrono o masivo).
 
 ## Decisiones tomadas por delegación (corrígelas si no te late)
 - El inicio de sesión con un carácter nulo responde «Correo o contraseña incorrectos», sin decir nada más.

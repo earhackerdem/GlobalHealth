@@ -2,7 +2,7 @@
 
 **Origin:** deuda de la API (FastAPI) en la base de datos, del inventario
 `memory/inbox/2026-10-21-atender-todas-las-deudas-antes-de-la-investigacion-ux.md`:
-- M1 de api-errores-sin-datos (`memory/closed/2026-10-31-nul-500-y-parametros-sql-en-el-log.md`);
+- M1 de api-errores-sin-datos (`memory/closed/2026-10-31-nul-500-y-parametros-sql-en-el-log.md`, que llega a `main` con el PR #46);
 - FKs sin índice (`memory/closed/2026-10-12-sin-indices-en-fks-nuevas-healthrecord.md`);
 - H1 (`memory/closed/2026-10-20-ronda-3-de-perfil-cronicas-h1.md`);
 - R2 (`memory/closed/2026-10-20-deuda-de-perfil-cronicas-r2-unlink.md`).
