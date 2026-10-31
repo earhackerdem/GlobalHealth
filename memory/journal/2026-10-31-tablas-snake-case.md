@@ -24,3 +24,16 @@ delegación (`/epe-autopilot`).
 - Base de desarrollo migrada con las mismas filas; e2e 82/0; `tdd-check` ✓.
 
 **Deuda:** ninguna nueva.
+
+## Revisión y archivo
+
+**Ronda 1:** un buscador con todas las lentes, que reprodujo todo en bases desechables.
+- **F1 (medio), corregido:** la prueba de migración no miraba el catálogo. Ahora exige no dejar ningún prefijo viejo al
+  subir y el mismo catálogo al bajar; el mutante «solo tablas» muere.
+- **F2–F6, corregidos:** fidelidad de los documentos y el comentario del orden.
+- **F7:** congelado.
+
+**Verde:** 643/0/0/0. La base de desarrollo bajó y subió con las mismas filas.
+
+**Lección:** dos veces seguidas la evidencia dijo que una prueba existente cubría algo que no recorre (la receta). Una
+afirmación de cobertura «de paso» también se mide.

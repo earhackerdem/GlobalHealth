@@ -4,7 +4,9 @@ Para: Saúl Pérez. Unos 3 minutos. En pantalla no cambia nada: cambian los nomb
 
 **Antes de empezar**, con esta rama, reconstruye la API y aplica la migración:
 `docker compose up -d --build --force-recreate --no-deps --wait backend && make migrate`
-- [ ] En la salida aparece `Running upgrade 26de7399b12f -> c4a9e1d7b2f5`.
+- [ ] Termina sin errores. Si tu base todavía tenía los nombres viejos, verás
+  `Running upgrade 26de7399b12f -> c4a9e1d7b2f5`; en esta Mac ya está migrada (la migró el agente), así que no sale
+  esa línea.
 
 ## 1 · Las tablas tienen el nombre nuevo y conservan sus datos
 1. Copia y pega:

@@ -21,8 +21,8 @@ datos intactos al subir y al bajar.
   (viejo, nuevo), `op.rename_table`; después, cada restricción de esa tabla cuyo nombre empieza con `"<viejo>_"`
   (`pg_constraint`) se renombra con el prefijo `"<nuevo>_"` (`ALTER TABLE … RENAME CONSTRAINT`), y cada índice cuyo
   nombre empieza con `"ix_<viejo>_"` o `"<viejo>_"` y no es de una restricción (`pg_indexes`) se renombra igual
-  (`ALTER INDEX … RENAME TO`). El orden de los pares va de la más larga a la más corta, para que `healthrecord` no
-  se coma el prefijo de `healthrecordmedicine`. `downgrade`: lo mismo al revés.
+  (`ALTER INDEX … RENAME TO`). Cada pasada lee solo los nombres de esa tabla y compara contra `"<viejo>_"`, así
+  que el orden de los pares no importa (corrección de la revisión F5). `downgrade`: lo mismo al revés.
 - Resultado esperado en el catálogo: existen las cinco tablas nuevas; no existe ninguna vieja; ningún nombre de
   restricción o índice del esquema `public` empieza con un prefijo viejo; existen `ix_health_record_owner_id`,
   `ix_health_record_medicine_record_id`, `ix_health_record_attachment_record_id`, `ix_consent_grant_user_id` e
