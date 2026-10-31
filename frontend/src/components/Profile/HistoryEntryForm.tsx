@@ -33,6 +33,7 @@ import {
   whenToDraft,
 } from "./history"
 import { getDiagnosesQueryOptions } from "./queries"
+import { isBlank } from "./text"
 import WhenField from "./WhenField"
 
 type EntryBody = profileCreateHistoryEntryData["body"]
@@ -389,9 +390,11 @@ function HistoryEntryForm({
   const handleSubmit = (event: FormEvent) => {
     event.preventDefault()
     const body: Record<string, unknown> = {}
+    // A text that shows nothing (U+200B, the Hangul filler) counts as empty,
+    // so the required checks below catch it.
     for (const key of activeKeys(section, values)) {
-      const value = (values[key] ?? "").trim()
-      if (value) body[key] = value
+      const value = values[key] ?? ""
+      if (!isBlank(value)) body[key] = value.trim()
     }
     // A "cuándo" error is reported only after the checks of the fields above
     // it (the required datum, "¿Cuál fue?"), so the message and the focus go
