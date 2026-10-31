@@ -5,10 +5,10 @@ Un solo grupo `test→impl`: toca `code` en 5 archivos más una migración, con 
 
 ## 1. Base de datos: valores ocultos, NUL, índices, candado y log · test→impl
 
-- [ ] 1.1 Test: los 7 escenarios + R2 (red)
-- [ ] 1.2 Impl: `hide_parameters`; validación de NUL; `authenticate`; migración de índices; `lock_diagnosis` y `FOR SHARE`; `logger.warning`
-- [ ] 1.3 Verify: suite truly green (0 failures, 0 errors, 0 skipped); migración arriba y abajo; `make tdd-check`
+- [x] 1.1 Test: los 7 escenarios + R2 (red)
+- [x] 1.2 Impl: `hide_parameters`; validación de NUL; `authenticate`; migración de índices; `lock_diagnosis` y `FOR SHARE`; `logger.warning`
+- [x] 1.3 Verify: suite truly green (0 failures, 0 errors, 0 skipped); migración arriba y abajo; `make tdd-check`
 
 ## Close
-- [ ] evidence.md (red/green numbers per group) · validation.md (non-technical, for whoever approves)
-- [ ] journal entry in memory/journal/ · PR opened
+- [x] evidence.md (red/green numbers per group) · validation.md (non-technical, for whoever approves)
+- [x] journal entry in memory/journal/ · PR opened
