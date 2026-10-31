@@ -19,7 +19,7 @@ elegir un DSN; tocar el esquema OpenAPI o el cliente generado.
   error sin la clave `input` y pasado por `jsonable_encoder`; toda cadena (también las de `loc`) queda como UTF-8
   válido: un surrogate suelto se cambia por `"?"`.
 - Handler registrado en `app` para `RequestValidationError`: `JSONResponse(422, validation_error_content(exc.errors()))`.
-- `app.main.SENTRY_OPTIONS: dict[str, Any]` con, al menos, `enable_tracing=True`, `max_request_body_size="never"`,
+- `app.main.SENTRY_OPTIONS: dict[str, Any]` con, al menos, `traces_sample_rate=1.0` (lo que hacía el `enable_tracing=True` obsoleto en 2.70.0), `max_request_body_size="never"`,
   `include_local_variables=False`, `send_default_pii=False`; `sentry_sdk.init(dsn=…, **SENTRY_OPTIONS)` con la
   misma condición de hoy.
 

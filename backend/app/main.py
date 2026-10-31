@@ -18,7 +18,7 @@ FRONTEND_DIR = Path(__file__).parent / "frontend"
 # api-errores-sin-datos Decisions 3-4: an event keeps the exception type, the
 # stack and the route, never the request body, frame variables or PII.
 SENTRY_OPTIONS: dict[str, Any] = {
-    "enable_tracing": True,
+    "traces_sample_rate": 1.0,  # what the deprecated enable_tracing=True set
     "max_request_body_size": "never",
     "include_local_variables": False,
     "send_default_pii": False,
