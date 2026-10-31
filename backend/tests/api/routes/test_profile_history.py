@@ -239,6 +239,57 @@ def test_s04_past_illness_other_without_text_rejected(
     assert_history_empty(client, headers)
 
 
+# --- validaciones-hoy-y-texto-invisible: texto sin nada visible -------------------
+
+INVISIBLE_TEXTS = ["​", "ㅤ⠀", " ​ "]
+INVISIBLE_IDS = ["zero-width-space", "fillers-hangul-braille", "spaces-around-zwsp"]
+PAST_CONDITION_REQUIRED = "Elige la condición o escribe cuál fue"
+
+
+def entries_count(client: TestClient, headers: dict[str, str]) -> int:
+    r = list_entries(client, headers)
+    assert r.status_code == 200, r.text
+    count: int = r.json()["count"]
+    return count
+
+
+@pytest.mark.parametrize("other_text", INVISIBLE_TEXTS, ids=INVISIBLE_IDS)
+def test_past_other_invisible_text_is_required(
+    client: TestClient, db: Session, other_text: str
+) -> None:
+    """«¿Cuál fue?» con un texto invisible: POST past/other con other_text sin
+    nada visible -> 422 "Elige la condición o escribe cuál fue"; no se crea."""
+    headers, _ = consented_user(client, db)
+    before = entries_count(client, headers)
+
+    r = post_entry(
+        client,
+        headers,
+        {"section": "past", "condition": "other", "other_text": other_text},
+    )
+
+    assert r.status_code == 422, r.text
+    assert r.json()["detail"] == PAST_CONDITION_REQUIRED, r.text
+    assert entries_count(client, headers) == before
+
+
+def test_past_other_visible_text_with_zero_width_is_saved(
+    client: TestClient, db: Session
+) -> None:
+    """Un texto visible con un invisible dentro sí cuenta: POST past/other con
+    other_text "Zika" + U+200B -> 201."""
+    headers, _ = consented_user(client, db)
+
+    r = post_entry(
+        client,
+        headers,
+        {"section": "past", "condition": "other", "other_text": "Zika​"},
+    )
+
+    assert r.status_code == 201, r.text
+    assert entries_count(client, headers) == 1
+
+
 # --- Escenario 5: Cirugía con todos sus datos -------------------------------------
 
 
@@ -1416,6 +1467,26 @@ def test_b1_chronic_other_without_text_rejected(
     assert r.status_code == 422, r.text
     assert r.json()["detail"] == CONDITION_REQUIRED
     assert_history_empty(client, headers)
+
+
+@pytest.mark.parametrize("other_text", INVISIBLE_TEXTS, ids=INVISIBLE_IDS)
+def test_chronic_other_invisible_text_is_required(
+    client: TestClient, db: Session, other_text: str
+) -> None:
+    """Texto sin nada visible también en crónicas: POST chronic/other con
+    other_text invisible -> 422 "Elige la condición o escribe cuál es"; no se crea."""
+    headers, _ = consented_user(client, db)
+    before = entries_count(client, headers)
+
+    r = post_entry(
+        client,
+        headers,
+        chronic(condition="other", status="active", other_text=other_text),
+    )
+
+    assert r.status_code == 422, r.text
+    assert r.json()["detail"] == CONDITION_REQUIRED, r.text
+    assert entries_count(client, headers) == before
 
 
 def test_b1_empty_chronic_rejected(client: TestClient, db: Session) -> None:
