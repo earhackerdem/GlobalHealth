@@ -227,6 +227,11 @@ def delete_health_record(
     record = _get_owned_record(session, current_user, id)
     if record.record_type == "diagnosis":
         crud.lock_profile(session=session, owner_id=current_user.id)
+        # Without a profile the lock above takes no row: the diagnosis row lock
+        # holds off a first chronic save's FOR SHARE read (bd-candados Decision 3).
+        crud.lock_diagnosis(
+            session=session, owner_id=current_user.id, diagnosis_id=record.id
+        )
         crud.unlink_diagnosis(
             session=session, owner_id=current_user.id, diagnosis_id=record.id
         )

@@ -177,17 +177,21 @@ def _check_diagnosis_link(
 ) -> None:
     """A chronic entry may only point to a diagnosis of the session user's own
     records; the SAME 422 for a foreign one, a prescription or a missing id.
-    Only the id is selected, so no clinical text gets decrypted."""
+    Only the id is selected, so no clinical text gets decrypted. Read FOR
+    SHARE: it waits for a DELETE of that diagnosis (crud.lock_diagnosis) and
+    then finds no row, so the link never dangles (bd-candados Decision 3)."""
     if not isinstance(content_in, ChronicHistoryContent):
         return
     if content_in.diagnosis_id is None:
         return
     found = session.exec(
-        select(HealthRecord.id).where(
+        select(HealthRecord.id)
+        .where(
             HealthRecord.id == content_in.diagnosis_id,
             HealthRecord.owner_id == current_user.id,
             HealthRecord.record_type == "diagnosis",
         )
+        .with_for_update(read=True)
     ).first()
     if found is None:
         raise HTTPException(
