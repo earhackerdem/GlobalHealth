@@ -31,7 +31,7 @@ import logging
 import threading
 import uuid
 from collections.abc import Callable
-from datetime import date, datetime, tzinfo
+from datetime import UTC, date, datetime, tzinfo
 from typing import Any
 from zoneinfo import ZoneInfo
 
@@ -86,6 +86,11 @@ def freeze_routes_clock(monkeypatch: pytest.MonkeyPatch, mexico_wall: datetime) 
     class FrozenDatetime(datetime):
         @classmethod
         def now(cls, tz: tzinfo | None = None) -> datetime:  # type: ignore[override]
+            # now() without a zone reads the frozen instant in UTC, never the
+            # host's zone: a route that forgot MEXICO_CITY fails the same on a
+            # Mac in CST as in CI (review D).
+            if tz is None:
+                return instant.astimezone(UTC).replace(tzinfo=None)
             return instant.astimezone(tz)
 
     monkeypatch.setattr(profile_routes, "datetime", FrozenDatetime)
@@ -241,8 +246,29 @@ def test_s04_past_illness_other_without_text_rejected(
 
 # --- validaciones-hoy-y-texto-invisible: texto sin nada visible -------------------
 
-INVISIBLE_TEXTS = ["​", "ㅤ⠀", " ​ "]
-INVISIBLE_IDS = ["zero-width-space", "fillers-hangul-braille", "spaces-around-zwsp"]
+# Escapes, never the raw characters: an editor that drops them would leave the
+# tests passing on "" (review B). The last five are Default_Ignorable_Code_Point
+# marks outside Cc/Cf (C1, paid with B2: one shared blank rule).
+INVISIBLE_TEXTS = [
+    "\u200b",
+    "\u3164\u2800",
+    " \u200b ",
+    "\u034f",
+    "\ufe0f",
+    "\U000e0100",
+    "\u17b4",
+    "\u180b",
+]
+INVISIBLE_IDS = [
+    "zero-width-space",
+    "fillers-hangul-braille",
+    "spaces-around-zwsp",
+    "combining-grapheme-joiner",
+    "variation-selector-16",
+    "variation-selector-17",
+    "khmer-inherent-aq",
+    "mongolian-fvs1",
+]
 PAST_CONDITION_REQUIRED = "Elige la condición o escribe cuál fue"
 
 
@@ -283,11 +309,54 @@ def test_past_other_visible_text_with_zero_width_is_saved(
     r = post_entry(
         client,
         headers,
-        {"section": "past", "condition": "other", "other_text": "Zika​"},
+        {"section": "past", "condition": "other", "other_text": "Zika\u200b"},
     )
 
     assert r.status_code == 201, r.text
     assert entries_count(client, headers) == 1
+
+
+@pytest.mark.parametrize("text", INVISIBLE_TEXTS, ids=INVISIBLE_IDS)
+def test_invisible_only_datum_is_an_empty_entry(
+    client: TestClient, db: Session, text: str
+) -> None:
+    """Review C: a transfusion whose only datum is invisible is an empty entry
+    -> 422 "Llena al menos un dato"; nothing is created."""
+    headers, _ = consented_user(client, db)
+
+    r = post_entry(client, headers, {"section": "transfusions", "reason": text})
+
+    assert r.status_code == 422, r.text
+    assert r.json()["detail"] == "Llena al menos un dato", r.text
+    assert entries_count(client, headers) == 0
+
+
+@pytest.mark.parametrize(
+    ("body", "message"),
+    [
+        (
+            {"section": "surgeries", "name": "\u3164", "reason": "Apendicitis"},
+            "Escribe qué cirugía u hospitalización fue",
+        ),
+        (
+            {"section": "fractures", "what": "\u200b", "side": "left"},
+            "Escribe qué hueso o lesión fue",
+        ),
+    ],
+    ids=["surgery-name", "fracture-what"],
+)
+def test_invisible_required_name_is_missing(
+    client: TestClient, db: Session, body: dict[str, Any], message: str
+) -> None:
+    """Review C: an invisible required name next to a visible datum is the
+    missing required field -> 422 with its message; nothing is created."""
+    headers, _ = consented_user(client, db)
+
+    r = post_entry(client, headers, body)
+
+    assert r.status_code == 422, r.text
+    assert r.json()["detail"] == message, r.text
+    assert entries_count(client, headers) == 0
 
 
 # --- Escenario 5: Cirugía con todos sus datos -------------------------------------
