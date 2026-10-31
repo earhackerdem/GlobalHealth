@@ -19,8 +19,11 @@ historial (alergias, trabajo); cambiar mensajes.
   `birth_date > today`. `update_profile` (`routes/profile.py`) le pasa `datetime.now(MEXICO_CITY).date()`, a través
   del `datetime` del módulo (lo que `freeze_routes_clock` congela).
 - `app.models._is_filled(value)`: una cadena cuenta solo si `not _is_blank(value)`.
-- `frontend/src/components/Profile/text.ts` (nuevo): `export const isBlank = (text: string) => boolean`, la misma
-  expresión de `HabitsForm.tsx:146`; `HabitsForm.tsx` la importa de ahí.
+- `frontend/src/components/Profile/text.ts` (nuevo): `export const isBlank = (text: string) => boolean`;
+  `HabitsForm.tsx` la importa de ahí. **Revisión (C1 con B2):** la regla, igual en los dos lados, es espacio, Cc, Cf,
+  `Default_Ignorable_Code_Point` (en Python, los rangos de Unicode 16 en `BLANK_RANGES`) y U+2800; siempre con escapes.
+- **Revisión (F y E):** `WhenField` y `draftToWhen` usan `isBlank`; `EditBasicData` y `OnboardingWizard` miden «futura»
+  (y el `measured_on` de la bienvenida) con `mexicoCityTodayIso()`; `localTodayIso` se quitó por no tener usuarios.
 - `HistoryEntryForm.tsx` `handleSubmit`: un valor que `isBlank` no entra en `body` (y por eso dispara el mensaje de
   requerido de la pantalla, en la caja de «¿Cuál fue?»).
 
@@ -38,7 +41,10 @@ historial (alergias, trabajo); cambiar mensajes.
 | patient-profile · Fecha de nacimiento futura rechazada | `backend/tests/api/routes/test_profile.py::test_ac2_future_birth_date_rejected_profile_unchanged` (fecha relativa) |
 | patient-profile · «Hoy» es el de Ciudad de México | `backend/tests/api/routes/test_profile.py::test_birth_date_today_is_mexico_city` |
 | patient-profile · «¿Cuál fue?» con un texto invisible | API: `backend/tests/api/routes/test_profile_history.py::test_past_other_invisible_text_is_required` · pantalla: `frontend/tests/profile-history.spec.ts` «S04b …» (chromium y s26-ultra) |
-| patient-profile · Un texto visible con un invisible dentro sí cuenta | `backend/tests/api/routes/test_profile_history.py::test_past_other_visible_text_with_zero_width_is_saved` |
+| patient-profile · Un texto visible con un invisible dentro sí cuenta | `backend/tests/api/routes/test_profile_history.py::test_past_other_visible_text_with_zero_width_is_saved` · pantalla: «S04b» (tercera pasada) |
+| patient-profile · La pantalla usa el mismo «hoy» (revisión E) | `frontend/tests/profile.spec.ts` «el 2026-03-11 es futuro y el 2026-03-10 no…» (`timezoneId: Asia/Tokyo`) |
+| patient-profile · Un «cuándo» invisible no es un dato (revisión F) | `frontend/tests/profile-history.spec.ts` «S09b» |
+| (regla, revisión C) «Llena al menos un dato» y nombres requeridos invisibles | `test_invisible_only_datum_is_an_empty_entry`, `test_invisible_required_name_is_missing` |
 
 ## Non-functional constraints addressed
 NFR-012 sin cambios de texto; NFR-009 una prueba por escenario.

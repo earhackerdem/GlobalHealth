@@ -38,4 +38,4 @@ Ninguna.
 
 ## Impact
 `backend/app/models.py`, `backend/app/api/routes/profile.py`, `frontend/src/components/Profile/HistoryEntryForm.tsx`,
-y el `isBlank` de `HabitsForm.tsx`, que pasa a un módulo compartido. Sin migración; el esquema OpenAPI no cambia.
+y el `isBlank` de `HabitsForm.tsx`, que pasa a un módulo compartido. Sin migración. El esquema OpenAPI solo cambia la descripción de `updateProfile` (su docstring), y el cliente se regeneró para eso (`5c4580a`).

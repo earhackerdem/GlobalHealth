@@ -33,3 +33,27 @@
 - Otros formularios del perfil deciden «vacío» con `.trim()`: `EditBasicData.tsx:91`, `EditFamilyHistory.tsx:78`,
   `EditWork.tsx:66-67`, `OnboardingWizard.tsx:97/132/205/351`, `WhenField.tsx:85` (lo vio el implementer de pantalla).
   Ninguno es un campo requerido del historial; queda en el inbox.
+
+## Revisión, ronda 1 (una ronda: diff de código < 300 líneas)
+Dos buscadores (criterios, pruebas y seguridad; casa y restricciones) y un validador distinto. Gate y arreglos por
+delegación de Saúl Pérez (author).
+
+| Id | Hallazgo (validado) | Decisión |
+|---|---|---|
+| A | el paso de la fecha de `validation.md` no se podía ver por la web (la pantalla ya validaba con la fecha del aparato y otro mensaje) | corregido: §3 reescrita, con el mensaje real |
+| B | caracteres invisibles escritos tal cual en `text.ts`, pruebas y validación | corregido: escapes en código y pruebas |
+| C | `_is_filled` sin prueba para «Llena al menos un dato» ni para nombres requeridos (mutante sobrevivía 596/596) | corregido: `test_invisible_only_datum_is_an_empty_entry`, `test_invisible_required_name_is_missing` |
+| D | el reloj congelado devolvía la hora local con `now()` sin zona: un mutante `datetime.now()` sobrevivía en la Mac (CST) | corregido: `now(None)` da el instante en UTC |
+| E | la web medía «futura» con la fecha del aparato | corregido: `mexicoCityTodayIso()` en `EditBasicData` y `OnboardingWizard` (también el `measured_on` de la bienvenida); prueba con `timezoneId: Asia/Tokyo` |
+| F | la caja de «cuándo» usaba `.trim()`: un U+200B borraba el chip y pedía «solo el número» | corregido: `WhenField` y `draftToWhen` con `isBlank`; S09b |
+| G | la propuesta decía que OpenAPI no cambiaba; faltaba `openspec validate` en la evidencia | corregido |
+| H | «Zika» + invisible sin prueba de pantalla | corregido: tercera pasada de S04b |
+| I | el paso del carácter invisible no se podía seleccionar (la mitad de S04b es falso positivo: el conteo final lo cubre) | corregido: relleno U+3164 entre flechas |
+| J | ⏸️ C1 se planeó pagar con B2 | **pagado aquí**: regla común con `Default_Ignorable_Code_Point` |
+
+Rojo de la revisión (`dd14b2b`): backend **15 failed** (C1 en pasadas, crónicas y transfusiones); e2e **6 failed**
+(S04b con U+FE0F, S09b y la fecha en Tokio, en chromium y s26-ultra).
+Verde (`829b970`): backend **616 passed, 0 failed, 0 errors, 0 skipped**, cobertura 96 %; la prueba de la fecha
+también pasa con `TZ=America/Mexico_City`; e2e de perfil, historial y hábitos **247 passed, 0 failed, 0 flaky**; tsc,
+`biome check src/components/Profile/` (de solo lectura, en lugar de `bun run lint`, que reescribe archivos), ruff y
+mypy limpios; `make tdd-check` ✓; `openspec validate validaciones-hoy-y-texto-invisible --strict` válido.

@@ -34,3 +34,25 @@ Los testers y los implementers de API y pantalla corrieron a la par, sobre archi
 `memory/meta-improvements/2026-10-31-guard-review-brief-validators-de-codigo.md`.
 
 **Deuda:** otros formularios con `.trim()` (`memory/inbox/2026-10-31-trim-en-otros-formularios-del-perfil.md`).
+
+## Revisión y archivo
+
+**Ronda 1:** dos buscadores y un validador; los 10 hallazgos se reprodujeron. Gate y arreglos por delegación.
+- **Corregidos:**
+  - **A:** la validación de la fecha no se podía hacer por la web.
+  - **B:** escapes en lugar de caracteres crudos.
+  - **C:** la regla de «al menos un dato» y los nombres requeridos sin prueba; un mutante sobrevivía.
+  - **D:** el reloj congelado leía la zona del host.
+  - **E:** la web medía «futura» con la fecha del aparato, y también el `measured_on` de la bienvenida.
+  - **F:** la caja de «cuándo».
+  - **G, H, I:** documentos y pruebas.
+- **J (C1):** pagado junto con B2, como preveía su veredicto: una sola regla de blanco con
+  `Default_Ignorable_Code_Point`, en Python con los rangos de Unicode 16.
+- **Falso positivo:** la mitad de I.
+
+**Rojo de la revisión:** 15 en el backend y 6 en e2e (`dd14b2b`).
+
+**Verde:** 616/0/0/0 en el backend; e2e 247/0/0/0.
+
+**Lección:** el buscador de pruebas encontró dos veces el mismo patrón: una regla correcta que ninguna prueba
+protegía. Un mutante por regla nueva, antes de abrir el PR, lo habría visto.
