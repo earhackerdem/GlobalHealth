@@ -11,3 +11,5 @@ Ronda 3 de perfil-cronicas: (H1) un usuario SIN perfil cuyo primer POST de crón
 **State:** ⏸️ deferred
 
 **Anchor (journal: date · title):** journal: 2026-10-20 · perfil-cronicas (review)
+
+**H1 pagado (2026-10-31):** bd-candados-indices-y-log, PR #48. `crud.lock_diagnosis` (`FOR UPDATE`) en el DELETE de diagnóstico y `FOR SHARE` en `_check_diagnosis_link`, con el orden perfil → diagnóstico. Lo prueban `test_chronic_link_vs_diagnosis_delete_never_dangles` y `test_diagnosis_delete_locks_profile_before_diagnosis`. H2 sigue diferido.

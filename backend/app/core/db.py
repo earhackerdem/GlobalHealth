@@ -4,7 +4,11 @@ from app import crud
 from app.core.config import settings
 from app.models import User, UserCreate
 
-engine = create_engine(str(settings.DATABASE_URL), pool_pre_ping=True)
+# hide_parameters: a DB error never carries the bound values (NFR-001: they can
+# be clinical text or credentials) into logs or error reports.
+engine = create_engine(
+    str(settings.DATABASE_URL), pool_pre_ping=True, hide_parameters=True
+)
 
 
 # make sure all SQLModel models are imported (app.models) before initializing DB

@@ -1,4 +1,5 @@
 import json
+import logging
 import uuid
 from typing import Any
 
@@ -6,6 +7,7 @@ from sqlmodel import Session, select
 
 from app.core.security import get_password_hash, verify_password
 from app.models import (
+    HealthRecord,
     Item,
     ItemCreate,
     MedicalHistoryEntry,
@@ -14,6 +16,8 @@ from app.models import (
     UserCreate,
     UserUpdate,
 )
+
+logger = logging.getLogger(__name__)
 
 
 def create_user(*, session: Session, user_create: UserCreate) -> User:
@@ -41,6 +45,10 @@ def update_user(*, session: Session, db_user: User, user_in: UserUpdate) -> Any:
 
 
 def get_user_by_email(*, session: Session, email: str) -> User | None:
+    if "\x00" in email:
+        # Postgres rejects a NUL in varchar (a 500): no such user, without
+        # querying, for every caller (login, password recovery; review M-1)
+        return None
     statement = select(User).where(User.email == email)
     session_user = session.exec(statement).first()
     return session_user
@@ -90,6 +98,25 @@ def lock_profile(*, session: Session, owner_id: uuid.UUID) -> PatientProfile | N
     ).first()
 
 
+def lock_diagnosis(
+    *, session: Session, owner_id: uuid.UUID, diagnosis_id: uuid.UUID
+) -> HealthRecord | None:
+    """The owner's diagnosis re-read FOR UPDATE, or None. The DELETE of a
+    diagnosis takes it after lock_profile, and a chronic save reads it FOR SHARE
+    (same order), so a link is never written to a diagnosis being deleted
+    (bd-candados Decision 3). Held until the caller's commit or rollback."""
+    return session.exec(
+        select(HealthRecord)
+        .where(
+            HealthRecord.id == diagnosis_id,
+            HealthRecord.owner_id == owner_id,
+            HealthRecord.record_type == "diagnosis",
+        )
+        .with_for_update()
+        .execution_options(populate_existing=True)
+    ).first()
+
+
 def unlink_diagnosis(
     *, session: Session, owner_id: uuid.UUID, diagnosis_id: uuid.UUID
 ) -> int:
@@ -105,7 +132,10 @@ def unlink_diagnosis(
         try:
             content = json.loads(row.content)
         except json.JSONDecodeError:
-            continue  # unreadable row: left as is, like the history list does
+            # Unreadable row: left as is and only its id logged; the history
+            # list leaves it out with the same warning.
+            logger.warning("Skipped unreadable medical history entry %s", row.id)
+            continue
         if (
             isinstance(content, dict)
             and content.get("section") == "chronic"

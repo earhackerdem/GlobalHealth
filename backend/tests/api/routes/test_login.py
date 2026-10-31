@@ -7,6 +7,7 @@ from sqlmodel import Session
 from app.core.config import settings
 from app.core.security import get_password_hash, verify_password
 from app.crud import create_user
+from app.main import app
 from app.models import User, UserCreate
 from app.utils import generate_password_reset_token
 from tests.utils.user import user_authentication_headers
@@ -194,3 +195,34 @@ def test_login_with_argon2_password_keeps_hash(client: TestClient, db: Session) 
     assert user.hashed_password is not None
     assert user.hashed_password == original_hash
     assert user.hashed_password.startswith("$argon2")
+
+
+def test_login_username_with_nul_is_incorrect_credentials() -> None:
+    """Escenario «NUL en el login»: username "correo" seguido de \\u0000 -> 400
+    «Correo o contraseña incorrectos», como con cualquier credencial incorrecta.
+
+    The client does not re-raise server exceptions: a NUL reaching Postgres
+    shows up as a 500 instead of crashing the test."""
+    test_client = TestClient(app, raise_server_exceptions=False)
+    login_data = {"username": "correo\u0000@example.com", "password": "cualquiera"}
+
+    r = test_client.post(f"{settings.API_V1_STR}/login/access-token", data=login_data)
+
+    assert r.status_code == 400, r.text
+    assert r.json()["detail"] == "Correo o contraseña incorrectos"
+
+
+def test_password_recovery_with_nul_answers_like_an_unknown_email() -> None:
+    """Review M-1: a NUL in the recovery path (no session) answers exactly like
+    an email that does not exist, never with a 500."""
+    test_client = TestClient(app, raise_server_exceptions=False)
+
+    r_nul = test_client.post(
+        f"{settings.API_V1_STR}/password-recovery/correo%00@example.com"
+    )
+    r_unknown = test_client.post(
+        f"{settings.API_V1_STR}/password-recovery/{random_email()}"
+    )
+
+    assert r_nul.status_code == r_unknown.status_code, r_nul.text
+    assert r_nul.json() == r_unknown.json()

@@ -8,9 +8,11 @@ from sqlmodel import Session, select
 from app import crud
 from app.core import security
 from app.core.config import settings
+from app.core.db import engine
 from app.core.security import verify_password
+from app.main import app
 from app.models import User, UserCreate
-from tests.utils.user import create_random_user
+from tests.utils.user import create_random_user, user_authentication_headers
 from tests.utils.utils import random_email, random_lower_string
 
 
@@ -551,3 +553,96 @@ def test_delete_user_without_privileges(
     )
     assert r.status_code == 403
     assert r.json()["detail"] == "El usuario no tiene privilegios suficientes"
+
+
+# --- bd-candados-indices-y-log: un NUL en un texto en claro se rechaza ------------
+#
+# Contract: UserRegister / UserUpdateMe reject a "\x00" in `full_name` with a
+# FastAPI validation error (422). The client below does not re-raise server
+# exceptions, so a NUL reaching Postgres shows up as a 500, not as a crash.
+
+
+def _client_without_server_exceptions() -> TestClient:
+    return TestClient(app, raise_server_exceptions=False)
+
+
+def test_signup_full_name_with_nul_is_422() -> None:
+    """Escenario «Nombre con NUL en el alta»: alta con full_name "Nombre" seguido
+    de \\u0000 -> 422 y no se crea la cuenta."""
+    email = random_email()
+    data = {
+        "email": email,
+        "password": random_lower_string(),
+        "full_name": "Nombre\u0000",
+    }
+
+    r = _client_without_server_exceptions().post(
+        f"{settings.API_V1_STR}/users/signup", json=data
+    )
+
+    assert r.status_code == 422, r.text
+    with Session(engine) as fresh:
+        assert crud.get_user_by_email(session=fresh, email=email) is None
+
+
+def test_update_me_full_name_with_nul_is_422(db: Session) -> None:
+    """Escenario «Nombre con NUL al editar la cuenta»: una persona con sesión
+    cambia su full_name a uno con \\u0000 -> 422 y su nombre no cambia."""
+    email = random_email()
+    password = random_lower_string()
+    user = crud.create_user(
+        session=db,
+        user_create=UserCreate(email=email, password=password, full_name="Nombre Bien"),
+    )
+    test_client = _client_without_server_exceptions()
+    headers = user_authentication_headers(
+        client=test_client, email=email, password=password
+    )
+
+    r = test_client.patch(
+        f"{settings.API_V1_STR}/users/me",
+        headers=headers,
+        json={"full_name": "Nombre\u0000Malo"},
+    )
+
+    assert r.status_code == 422, r.text
+    with Session(engine) as fresh:
+        stored = fresh.get(User, user.id)
+        assert stored is not None
+        assert stored.full_name == "Nombre Bien"
+
+
+def test_signup_nul_error_is_a_value_error_on_the_field() -> None:
+    """Review L-2: the NUL error has the house's shape (`value_error`, es-MX
+    message) and the `loc` of the field."""
+    r = _client_without_server_exceptions().post(
+        f"{settings.API_V1_STR}/users/signup",
+        json={
+            "email": random_email(),
+            "password": random_lower_string(),
+            "full_name": "Nombre\u0000",
+        },
+    )
+
+    assert r.status_code == 422, r.text
+    (error,) = r.json()["detail"]
+    assert error["loc"] == ["body", "full_name"]
+    assert error["type"] == "value_error"
+    assert "El texto no puede contener el carácter nulo" in error["msg"]
+
+
+def test_signup_full_name_too_long_keeps_string_too_long() -> None:
+    """Review L-1: guarding the NUL does not change the length error of the
+    field (still pydantic's `string_too_long`, as every other text field)."""
+    r = _client_without_server_exceptions().post(
+        f"{settings.API_V1_STR}/users/signup",
+        json={
+            "email": random_email(),
+            "password": random_lower_string(),
+            "full_name": "a" * 256,
+        },
+    )
+
+    assert r.status_code == 422, r.text
+    (error,) = r.json()["detail"]
+    assert error["type"] == "string_too_long", error

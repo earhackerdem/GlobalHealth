@@ -11,3 +11,5 @@ Deuda de perfil-cronicas: R2 (`unlink_diagnosis` se salta una fila ilegible sin 
 **State:** ⏸️ deferred
 
 **Anchor (journal: date · title):** journal: 2026-10-20 · perfil-cronicas (review)
+
+**R2 pagado (2026-10-31):** bd-candados-indices-y-log, PR #48. `unlink_diagnosis` registra la fila ilegible por su id, y su comentario ya es exacto (`test_unlink_diagnosis_logs_unreadable_row`). Los demás (R8, R9a, R10, R20–R23) siguen diferidos.

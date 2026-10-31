@@ -35,6 +35,10 @@ accesible = "accesible"
 foto = "foto"
 importante = "importante"
 visibles = "visibles"
+# bd-candados-indices-y-log (mensaje del NUL, pruebas y validación)
+contener = "contener"
+momento = "momento"
+credencial = "credencial"
 # etiquetas es-MX de hábitos que asierta profile-habits.spec.ts ("Años con humo de
 # leña, aprox.", "hace" y "comparte" en sus comentarios)
 aprox = "aprox"

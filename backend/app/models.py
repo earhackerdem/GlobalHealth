@@ -4,7 +4,13 @@ from collections.abc import Sequence
 from datetime import UTC, date, datetime
 from typing import Annotated, Any, Literal
 
-from pydantic import ConfigDict, Discriminator, EmailStr, StringConstraints
+from pydantic import (
+    AfterValidator,
+    ConfigDict,
+    Discriminator,
+    EmailStr,
+    StringConstraints,
+)
 from sqlalchemy import Column
 from sqlmodel import Field, Relationship, SQLModel
 
@@ -13,6 +19,24 @@ from app.core.encrypted import EncryptedBytes, EncryptedString
 
 def get_datetime_utc() -> datetime:
     return datetime.now(UTC)
+
+
+def _reject_nul(value: str) -> str:
+    if "\x00" in value:
+        raise ValueError("El texto no puede contener el carácter nulo")
+    return value
+
+
+# Text stored in the clear: Postgres rejects a NUL in varchar (a 500), so the
+# input schemas reject it first with a 422. Table models keep plain `str`. The
+# length lives inside the Annotated: a Field(max_length) on `PlainText | None`
+# would turn pydantic's string_too_long into a generic too_long (review L-1).
+PlainText = Annotated[
+    str, StringConstraints(max_length=255), AfterValidator(_reject_nul)
+]
+PlainTitle = Annotated[
+    str, StringConstraints(min_length=1, max_length=255), AfterValidator(_reject_nul)
+]
 
 
 # Shared properties
@@ -25,13 +49,14 @@ class UserBase(SQLModel):
 
 # Properties to receive via API on creation
 class UserCreate(UserBase):
+    full_name: PlainText | None = None
     password: str = Field(min_length=8, max_length=128)
 
 
 class UserRegister(SQLModel):
     email: EmailStr = Field(max_length=255)
     password: str = Field(min_length=8, max_length=128)
-    full_name: str | None = Field(default=None, max_length=255)
+    full_name: PlainText | None = None
 
 
 # Properties to receive via API on update, all are optional
@@ -39,12 +64,12 @@ class UserUpdate(SQLModel):
     email: EmailStr | None = Field(default=None, max_length=255)
     is_active: bool | None = None
     is_superuser: bool | None = None
-    full_name: str | None = Field(default=None, max_length=255)
+    full_name: PlainText | None = None
     password: str | None = Field(default=None, min_length=8, max_length=128)
 
 
 class UserUpdateMe(SQLModel):
-    full_name: str | None = Field(default=None, max_length=255)
+    full_name: PlainText | None = None
     email: EmailStr | None = Field(default=None, max_length=255)
 
 
@@ -66,7 +91,7 @@ class User(UserBase, table=True):
 class OAuthIdentity(SQLModel, table=True):
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
     user_id: uuid.UUID = Field(
-        foreign_key="user.id", nullable=False, ondelete="CASCADE"
+        foreign_key="user.id", nullable=False, ondelete="CASCADE", index=True
     )
     provider: str = Field(max_length=32)
     subject: str = Field(sa_column=Column(EncryptedString(), nullable=False))
@@ -79,7 +104,7 @@ class OAuthIdentity(SQLModel, table=True):
 class ConsentGrant(SQLModel, table=True):
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
     user_id: uuid.UUID = Field(
-        foreign_key="user.id", nullable=False, ondelete="CASCADE"
+        foreign_key="user.id", nullable=False, ondelete="CASCADE", index=True
     )
     version: str = Field(max_length=32)
     text_sha256: str = Field(max_length=64)
@@ -115,7 +140,7 @@ class ConsentStatusPublic(SQLModel):
 class HealthRecord(SQLModel, table=True):
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
     owner_id: uuid.UUID = Field(
-        foreign_key="user.id", nullable=False, ondelete="CASCADE"
+        foreign_key="user.id", nullable=False, ondelete="CASCADE", index=True
     )
     record_type: str = Field(max_length=32)  # "diagnosis" | "prescription"
     occurred_on: date
@@ -153,7 +178,11 @@ class HealthRecordMedicine(SQLModel, table=True):
     # Optional in Python (the relationship assigns it on flush), NOT NULL
     # in the database.
     record_id: uuid.UUID | None = Field(
-        default=None, foreign_key="healthrecord.id", nullable=False, ondelete="CASCADE"
+        default=None,
+        foreign_key="healthrecord.id",
+        nullable=False,
+        ondelete="CASCADE",
+        index=True,
     )
     position: int
     name: str = Field(sa_column=Column(EncryptedString(), nullable=False))
@@ -331,7 +360,7 @@ class HealthRecordsPublic(SQLModel):
 class HealthRecordAttachment(SQLModel, table=True):
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
     record_id: uuid.UUID = Field(
-        foreign_key="healthrecord.id", nullable=False, ondelete="CASCADE"
+        foreign_key="healthrecord.id", nullable=False, ondelete="CASCADE", index=True
     )
     filename: str = Field(sa_column=Column(EncryptedString(), nullable=False))
     media_type: str = Field(max_length=64)
@@ -459,7 +488,7 @@ class BodyMeasurement(SQLModel, table=True):
 
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
     user_id: uuid.UUID = Field(
-        foreign_key="user.id", nullable=False, ondelete="CASCADE"
+        foreign_key="user.id", nullable=False, ondelete="CASCADE", index=True
     )
     type: str = Field(max_length=16)  # "weight" | "height"
     value: str = Field(sa_column=Column(EncryptedString(), nullable=False))
@@ -477,7 +506,7 @@ class FamilyHistory(SQLModel, table=True):
 
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
     user_id: uuid.UUID = Field(
-        foreign_key="user.id", nullable=False, ondelete="CASCADE"
+        foreign_key="user.id", nullable=False, ondelete="CASCADE", index=True
     )
     condition: str = Field(sa_column=Column(EncryptedString(), nullable=False))
     other_text: str | None = Field(
@@ -522,7 +551,7 @@ class MedicalHistoryEntry(SQLModel, table=True):
 
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
     user_id: uuid.UUID = Field(
-        foreign_key="user.id", nullable=False, ondelete="CASCADE"
+        foreign_key="user.id", nullable=False, ondelete="CASCADE", index=True
     )
     # JSON of the entry WITH its section, encrypted (Decision 2).
     content: str = Field(sa_column=Column(EncryptedString(), nullable=False))
@@ -1448,13 +1477,14 @@ class ItemBase(SQLModel):
 
 # Properties to receive on item creation
 class ItemCreate(ItemBase):
-    pass
+    title: PlainTitle
+    description: PlainText | None = None
 
 
 # Properties to receive on item update
 class ItemUpdate(SQLModel):
-    title: str | None = Field(default=None, min_length=1, max_length=255)
-    description: str | None = Field(default=None, max_length=255)
+    title: PlainTitle | None = None
+    description: PlainText | None = None
 
 
 # Database model, database table inferred from class name
@@ -1462,7 +1492,7 @@ class Item(ItemBase, table=True):
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
     created_at: datetime | None = Field(default_factory=get_datetime_utc)
     owner_id: uuid.UUID = Field(
-        foreign_key="user.id", nullable=False, ondelete="CASCADE"
+        foreign_key="user.id", nullable=False, ondelete="CASCADE", index=True
     )
     owner: User | None = Relationship(back_populates="items")
 
