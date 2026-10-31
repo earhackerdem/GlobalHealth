@@ -647,9 +647,9 @@ export class ProfileService {
      *
      * Partial update: absent = untouched, explicit null clears the field.
      *
-     * birth_date must fall in [1900-01-01, today]; the check runs HERE (not a
-     * pydantic validator) so the 422 carries a string es-MX detail, and BEFORE
-     * anything gets encrypted or persisted.
+     * birth_date must fall in [1900-01-01, Mexico City's today]; the check runs
+     * HERE (not a pydantic validator) so the 422 carries a string es-MX detail,
+     * and BEFORE anything gets encrypted or persisted.
      */
     public static updateProfile<ThrowOnError extends boolean = true>(options: Options<profileUpdateProfileData, ThrowOnError>) {
         return (options.client ?? client).put<profileUpdateProfileResponses, profileUpdateProfileErrors, ThrowOnError>({
