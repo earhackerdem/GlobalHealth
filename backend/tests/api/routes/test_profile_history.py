@@ -40,6 +40,7 @@ from fastapi.testclient import TestClient
 from sqlalchemy import text
 from sqlmodel import Session
 
+from app import crud
 from app.api.routes import profile as profile_routes
 from app.core.db import engine
 from app.core.encrypted import decrypt_str
@@ -1676,3 +1677,101 @@ def test_r1_delete_diagnosis_does_not_create_profile(
 
     assert r.status_code == 200, r.text
     assert raw_rows(profile_sql, {"uid": user_id}) == []
+
+
+# --- bd-candados-indices-y-log (H1): el enlace a un diagnóstico nunca cuelga ------
+
+# Ceiling for each side of the race to reach its checkpoint or finish (never
+# hangs the suite), and how long the POST gets to run while the DELETE is paused.
+RACE_TIMEOUT_S = 10.0
+RACE_POST_HEAD_START_S = 1.0
+
+
+def test_chronic_link_vs_diagnosis_delete_never_dangles(
+    client: TestClient, db: Session, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Escenario «Primer guardado sin perfil contra el borrado del diagnóstico»:
+    persona con consentimiento, un diagnóstico y todavía sin perfil. El DELETE
+    del diagnóstico ya desenlazó las crónicas pero no ha confirmado, y en ese
+    momento llega el POST de una crónica enlazada a ese diagnóstico. Al terminar
+    los dos, ninguna crónica apunta al diagnóstico borrado: la crónica se guardó
+    sin enlace o se rechazó con «Ese diagnóstico no está en tu expediente»."""
+    headers, user_id = consented_user(client, db)
+    diag_id = create_diagnosis(client, headers)
+    profile_sql = "SELECT id FROM patient_profile WHERE user_id = CAST(:uid AS uuid)"
+    assert raw_rows(profile_sql, {"uid": user_id}) == [], "must start without profile"
+
+    unlinked = threading.Event()
+    go = threading.Event()
+    original_unlink = crud.unlink_diagnosis
+
+    def unlink_then_pause(**kwargs: Any) -> Any:
+        changed = original_unlink(**kwargs)
+        unlinked.set()
+        go.wait(timeout=RACE_TIMEOUT_S)
+        return changed
+
+    monkeypatch.setattr(crud, "unlink_diagnosis", unlink_then_pause)
+
+    results: dict[str, Any] = {}
+
+    def run(name: str, call: Callable[[], Any]) -> None:
+        try:
+            results[name] = call()
+        except BaseException as e:  # surfaced in the main thread below
+            results[f"{name}_error"] = e
+
+    delete_worker = threading.Thread(
+        target=run,
+        args=("delete", lambda: client.delete(record_url(diag_id), headers=headers)),
+        daemon=True,
+    )
+    post_worker = threading.Thread(
+        target=run,
+        args=(
+            "post",
+            lambda: post_entry(
+                client, headers, {**HYPOTHYROIDISM_ACTIVE, "diagnosis_id": diag_id}
+            ),
+        ),
+        daemon=True,
+    )
+    try:
+        delete_worker.start()
+        assert unlinked.wait(timeout=RACE_TIMEOUT_S), (
+            "the DELETE never reached crud.unlink_diagnosis"
+        )
+        post_worker.start()
+        post_worker.join(timeout=RACE_POST_HEAD_START_S)
+    finally:
+        go.set()
+        delete_worker.join(timeout=RACE_TIMEOUT_S)
+        if post_worker.ident is not None:
+            post_worker.join(timeout=RACE_TIMEOUT_S)
+
+    assert not delete_worker.is_alive(), "the DELETE did not finish"
+    assert not post_worker.is_alive(), "the POST did not finish"
+    for name in ("delete", "post"):
+        if f"{name}_error" in results:
+            raise results[f"{name}_error"]
+    monkeypatch.undo()
+
+    r_delete = results["delete"]
+    assert r_delete.status_code == 200, r_delete.text
+
+    r_list = list_entries(client, headers)
+    assert r_list.status_code == 200, r_list.text
+    dangling = [
+        e for e in r_list.json()["data"] if str(e.get("diagnosis_id")) == diag_id
+    ]
+    assert dangling == [], f"chronic entries still point to deleted {diag_id}"
+
+    r_post = results["post"]
+    assert r_post.status_code in (201, 422), r_post.text
+    if r_post.status_code == 422:
+        assert r_post.json()["detail"] == DIAGNOSIS_NOT_YOURS, r_post.text
+        assert_history_empty(client, headers)
+    else:
+        saved = only_entry(client, headers)
+        assert str(saved["id"]) == str(r_post.json()["id"])
+        assert saved.get("diagnosis_id") is None, saved
