@@ -41,6 +41,41 @@ MEDICINE_2_ID = uuid.UUID("00000000-0000-0000-0000-000000000022")
 
 NOW = datetime(2026, 10, 31, 12, 0, tzinfo=UTC)
 
+
+OLD_PREFIXES = (
+    "healthrecordmedicine_",
+    "healthrecordattachment_",
+    "healthrecord_",
+    "consentgrant_",
+    "oauthidentity_",
+)
+EXPECTED_IX = {
+    "ix_health_record_owner_id",
+    "ix_health_record_medicine_record_id",
+    "ix_health_record_attachment_record_id",
+    "ix_consent_grant_user_id",
+    "ix_oauth_identity_user_id",
+}
+
+
+def _catalog_names(conn: Any) -> list[str]:
+    """Every constraint and index name of the public schema (review F1: the
+    migration test itself checks the renames, both ways)."""
+    rows = conn.execute(
+        sa.text(
+            "SELECT c.conname FROM pg_constraint c "
+            "JOIN pg_namespace n ON n.oid = c.connamespace WHERE n.nspname = 'public' "
+            "UNION ALL SELECT indexname FROM pg_indexes WHERE schemaname = 'public'"
+        )
+    )
+    return sorted(r[0] for r in rows)
+
+
+def _has_old_prefix(name: str) -> bool:
+    bare = name.removeprefix("ix_")
+    return any(bare.startswith(prefix) for prefix in OLD_PREFIXES)
+
+
 RECORD = {
     "id": RECORD_ID,
     "owner_id": USER_ID,
@@ -209,8 +244,15 @@ def test_rename_keeps_rows_and_cascade_both_ways(ephemeral_db_url: str) -> None:
             _insert(conn, "healthrecordattachment", ATTACHMENT)
             _insert(conn, "consentgrant", CONSENT)
             _insert(conn, "oauthidentity", IDENTITY)
+        with engine.connect() as conn:
+            before = _catalog_names(conn)
 
         _with_url(ephemeral_db_url, "upgrade", "head")
+        with engine.connect() as conn:
+            after = _catalog_names(conn)
+        assert [n for n in after if _has_old_prefix(n)] == []
+        assert EXPECTED_IX <= set(after)
+        assert len(after) == len(before)  # renamed, nothing dropped or added
 
         # Same rows, same values, under the NEW names; old tables gone.
         with engine.connect() as conn:
@@ -248,6 +290,7 @@ def test_rename_keeps_rows_and_cascade_both_ways(ephemeral_db_url: str) -> None:
 
         with engine.connect() as conn:
             assert _version(conn) == PREVIOUS_REVISION
+            assert _catalog_names(conn) == before  # every name back, both ways
             tables = _public_tables(conn)
             assert _select(conn, "healthrecord", RECORD_2) == [RECORD_2]
             assert _select(conn, "healthrecordmedicine", MEDICINE_2) == [MEDICINE_2]
