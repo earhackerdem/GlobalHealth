@@ -44,7 +44,9 @@ memory: `make memory-migrate DRY_RUN=1`, read what it would write, `make memory-
 In a project, **harness-owned files are not edited in place**. An improvement goes to `memory/meta-improvements/`,
 then upstream to the template, and comes back with the next update. A project that needs a different hook forks it
 knowingly: the manifest will list it as forked forever, which is the honest state. After an update, run `make doctor`
-and record it as one small change folder with a journal entry: it is a change to the repo like any other.
+and record it as one small change folder with a journal entry: it is a change to the repo like any other. The local
+meta-improvements the update applies (the update lists them: their «Where it lives» line cites the version or the C-NN it
+installs) are marked `applied` in that same PR, not afterwards; `make doctor` and `make memory-check` flag one left behind.
 
 ## What the two frameworks we looked at do (research 2026-10-08, `memory/research/updates.md`)
 OpenSpec: *"generated files are OpenSpec's to own — keep your own instructions elsewhere"*; content comparison, drift

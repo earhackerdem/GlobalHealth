@@ -25,7 +25,10 @@ An entry is plain `key: value` frontmatter between two `---` lines (`date`, and 
 `id` for decisions) and a markdown body whose first line is the title. Each folder's README has the template. The
 parser is `.claude/hooks/_memory.py`, shared by the hooks and the scripts. `make memory-check` reports what a
 merge can still get wrong: two decision files with the same id, an unknown status, an old single file that came back,
-a line of `CHANGELOG.md` written by hand.
+a line of `CHANGELOG.md` written by hand. The frontmatter of one entry is checked earlier, with the same rules
+(`_memory.entry_problems`): after each edit (`lint.py` refuses it with the fix) and at the close (`check-journal.py`
+reads git, so it catches what the shell wrote; an entry already broken on the base branch does not count) (C-16).
+`"lint": false` in `harness.json` turns off the check after each edit too; the one at the close stays.
 
 `CHANGELOG.md` is rendered on the main branch or in a release PR, never inside a change PR: two change PRs that both
 render it would conflict again.

@@ -18,7 +18,9 @@ printed on demand and never committed (`make inbox`, `make closed`, `make change
 
 Each folder's README says what an entry carries. Frontmatter is plain `key: value` lines between `---` lines; the
 first line of the body is the title. `make memory-check` reports a duplicate decision id, an unknown status, or an
-old single file (`inbox.md`…) that came back.
+old single file (`inbox.md`…) that came back. An entry's frontmatter is also checked after each edit (`lint.py`)
+and at the close (`check-journal.py`, whatever wrote the file; only the entries the branch or the working tree
+touched), with the same rules.
 
 ## Session protocol
 **At the start**: read this README, `decisions/` and the inbox (the hook already injects 3; `make inbox` lists all).
