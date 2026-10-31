@@ -16,7 +16,9 @@ typo costs as much credibility as code without a story.
 2. If there is an active change and the request belongs to it → **route to the phase it is in** (`make epe-status`).
    If it is a different thing, it does not get mixed in: new rung below.
 3. Not new work? Route and stop: review of finished work → `/epe-4-review`; "note this", "compact", end of
-   session → `/epe-memory`; "how did it go", loops, friction → `/session-retro`; a question → answer it.
+   session → `/epe-memory`; "how did it go", loops, friction → `/session-retro`; a question → answer it. New work that
+   the person wants taken to a reviewed PR without stopping ("don't stop", "like the last PRs") still gets its rung here,
+   and then runs under `/epe-autopilot`.
 4. Walk the rungs **from the bottom**; the lowest that fits wins, and you name the condition that would move it up:
 
 | Rung | Signals | Next |

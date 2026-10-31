@@ -15,6 +15,7 @@
 | `epe-4-review` | Review | adversarial review with independent finders and validators; edits nothing; human gate |
 | `epe-5-apply` | Apply | applies only what was approved; the fixer bounces back, never discards |
 | `epe-6-archive` | Archive | closes the change folder as the last commit of its PR (fallback: after a merge) |
+| `epe-autopilot` | 0 → Archive | the whole cycle for one request under a delegation the invocation grants: gates closed by the agent and written down, one review round, archive, report of assumptions; merge stays human |
 | `epe-memory` | cross-cutting | sweeps memory (first what lies, then what is missing) |
 | `session-retro` | cross-cutting | measured retro over the transcript; "nothing to standardize" is a legitimate result |
 | `produce-content` | content flavor | content production core: primary sources, [VERIFIED]/[OPINION], citers, cold reader |

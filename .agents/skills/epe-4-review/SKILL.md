@@ -1,6 +1,6 @@
 ---
 name: epe-4-review
-description: INDEPENDENT adversarial review of an EPE change (branch or PR). Fan-out of parallel finders, one per lens (correctness/house style, security and privacy, criteria compliance against evidence.md, non-functional constraints, tests), merge + dedupe, independent validators that reproduce each finding, loop until a dry round, human gate, idempotent PR comments. Edits NOTHING. Use when the user says "/epe-4-review", "review the PR", "adversarial review", "fresh eyes".
+description: INDEPENDENT adversarial review of an EPE change (branch or PR). Fan-out of parallel finders, one per lens (correctness/house style, security and privacy, criteria compliance against evidence.md, non-functional constraints, tests), merge + dedupe, independent validators that reproduce each finding, rounds calibrated by the diff (one; a second only over files with confirmed medium/high findings), human gate, idempotent PR comments. Edits NOTHING. Use when the user says "/epe-4-review", "review the PR", "adversarial review", "fresh eyes".
 argument-hint: [change path or PR number; defaults to .epe/active + current branch]
 ---
 
@@ -10,8 +10,8 @@ The author is the worst person to review their own work: they know their intent 
 independent agents attack and **the human decides**.
 
 ## Flow
-DoD → finders (parallel, one lens each) → merge+dedupe → validators (parallel, reproduce) → loop-until-dry
-→ human gate → `/epe-5-apply` → record in `memory/closed/`.
+DoD → finders (parallel, one lens each) → merge+dedupe → validators (parallel, reproduce) → human gate
+→ `/epe-5-apply` → second round only over files with confirmed medium/high findings → `/epe-5-apply` → record in `memory/closed/`.
 
 ## 0. Before launching anything (you, cheap)
 - Locate the change and read `story.md`, `plan.md`, `evidence.md`.
@@ -48,8 +48,16 @@ confidence, lens, **and a mandatory "withdrawn as already-triaged" section** (ev
 One per touched file + one cross-cutting. They reproduce each finding. They classify confirmed / false positive /
 doubtful / already-triaged and return the discard pile **with reasons**. Reproduce through the user's real path.
 
-## 5. Loop-until-dry. Another round over the files still dirty until one comes out dry. Report rounds:
-"a single round does not prove there is nothing; it proves that round did not see it".
+## 5. Rounds, calibrated by the diff (C-13)
+Measured in the Odoo harness (PR #12, 730 lines added): 3 rounds, 14 subagents, ~2.0 M tokens, ~2.5 h, no dry round,
+and the person flagged the cost. The cap is explicit and the person lifts it, not the skill:
+- Diff under ~1000 lines: **one** round of finders + validators, then the human gate and `/epe-5-apply`.
+- A **second** round only over the files that got at least one **confirmed medium or high** finding, run after the
+  fixes land (it reviews the fixed files, same brief, `make closed` again). Measured there (PR #13): it found 2 more
+  medium ones, so it pays for itself.
+- Never a third round unless the person asks for it after seeing the second.
+- Larger diffs: state the plan (rounds × files × lenses) before launching anything and let the person size it.
+Report rounds either way: "a single round does not prove there is nothing; it proves that round did not see it".
 
 ## 6. Delivery to the human (in two beats)
 1. Count table file × class. 2. Detail grouped by file with recommendation and how it was verified.

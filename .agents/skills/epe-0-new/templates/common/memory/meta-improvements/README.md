@@ -16,5 +16,7 @@ status: proposed
 **Why:** …
 **Where it lives:** <PR, file> (once it does)
 ```
-`status` is one of `proposed` · `accepted` · `rejected` · `applied`. `make harness-harvest` compares these against
+`status` is one of `proposed` · `accepted` · `rejected` · `applied`. `applied` is written in the **same PR** that applies the
+change, never in a later commit: in the template, the C-NN PR; in a project, the `make harness-update` PR that brings it, which
+lists the entries whose «Where it lives» line cites the version or C-NN it installs (`make doctor` flags one left behind). `make harness-harvest` compares these against
 the template's.

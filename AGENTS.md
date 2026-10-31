@@ -146,7 +146,8 @@ back with the next update. A fork is a deliberate, listed state, not an accident
 ## Meta-improvement of the harness itself
 If you discover a rule, template or gate that would improve the next sessions, **don't apply it silently**: branch
 `improve/<slug>`, change in the skill, hook or this file, PR, and verdict recorded in `memory/meta-improvements/`
-(rejections too). When closing a substantial session, `/session-retro`; "nothing to standardize" is a legitimate
+(rejections too). The verdict `applied` goes in the **same PR** that applies the change (in a project, the
+`make harness-update` PR that brings it; the update lists those entries and `make doctor` flags one left behind). When closing a substantial session, `/session-retro`; "nothing to standardize" is a legitimate
 result. A rule that gets skipped isn't fixed by writing it again: it's fixed with a gate.
 
 **Harness first.** A better harness improves every change that comes after it, so a harness improvement goes
@@ -159,7 +160,7 @@ and do the improvement upstream and bring it in before the next phase or story. 
 harness.json          configuration: harness_version, flavor, engine (epe | openspec), plan_file, code (gated paths), tests (barrier paths), protected branches, blocked commands, skill hints, python (lint's interpreter)
 AGENTS.md             these rules (single source) · CLAUDE.md, .cursor/, .github/, .agents/rules/: per-IDE bridges (docs/ides.md)
 Makefile              recipes: doctor · profile · epe-new · epe-status · tdd-check · inbox · closed · changelog · decision-next · memory-migrate · memory-check · retro · check-prs · worktrees · new · adopt · engine-openspec · harness-status · harness-update · harness-harvest · install-hooks · board
-.agents/skills/       ALL the skills (agentskills.io standard): triage · epe-0…6 · epe-memory · session-retro · produce-content · product-* · codebase-context
+.agents/skills/       ALL the skills (agentskills.io standard): triage · epe-0…6 · epe-autopilot · epe-memory · session-retro · produce-content · product-* · codebase-context
 .claude/skills/       only symlinks to .agents/skills/* (make skills-link)
 .claude/hooks/        profile · session-guard · inbox · gate-plan · guard-tests · guard-commands · guard-git-add · guard-review-brief · lint · check-journal · memory-compaction · skill-nudge
 .claude/agents/       cold-reader (where a reader without context stumbles) · dod-checker (checklist against artifact) · tester · implementer (development tasks, see epe-3-execute)
@@ -178,6 +179,7 @@ scripts/              what the Makefile runs
 | an existing codebase (brownfield, monorepo, multirepo) | `codebase-context`, then `epe-0-new` for one bounded change |
 | any new story or brief | `epe-0-new` → `epe-1-explore` → `epe-2-plan` → `epe-3-execute` |
 | writing content for an audience (content flavor) | `produce-content` (inside explore and execute) |
+| one request taken all the way to a reviewed PR, the person delegating the gates ("don't stop") | `epe-autopilot` (merge stays human) |
 | reviewing a PR or a finished piece | `epe-4-review` → `epe-5-apply` |
 | closing a session, compacting, change of belief | `epe-memory` |
 | retro on how the work went | `session-retro` |

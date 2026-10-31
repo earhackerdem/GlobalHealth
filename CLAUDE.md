@@ -24,8 +24,8 @@ substantive, name the assumption, verify it and offer an alternative. It's the r
 | PreToolUse Edit/Write | `guard-tests.py` | inside a `tester` subagent, only `tests` paths; inside an `implementer`, never `tests` (role = `agent_type`, or `HARNESS_ROLE`) |
 | PreToolUse Agent | `guard-review-brief.py` | an adversarial-review subagent must carry the closed index (`make closed`) in its prompt |
 | PreToolUse Chrome | `guard-browser.py` | the browser tools are allowed without a prompt (exploratory pass), and navigation is fenced to local files (`file://`), localhost, `*.localhost`, `*.test` and `harness.json → browser_hosts`; blocks in both profiles |
-| PostToolUse Edit/Write | `lint.py` | py_compile (with the project's Python: `harness.json → python`, else the nearest `.venv`) · json · xml · bash -n over `code` and the agentic layer |
-| Stop | `check-journal.py` | if you wrote work but no journal entry, blocks the close once |
+| PostToolUse Edit/Write | `lint.py` | py_compile (with the project's Python: `harness.json → python`, else the nearest `.venv`) · json · xml · bash -n · node --check (.js/.mjs, silent without node) over `code` and the agentic layer; a memory entry's frontmatter after each edit (C-16) |
+| Stop | `check-journal.py` | if you wrote work but no journal entry, blocks the close once; at the close, also for a memory entry the branch touched with a broken frontmatter, written by any tool, once per set of problems (C-16) |
 | PreCompact | `memory-compaction.py mark` | leaves the breadcrumb to sweep later |
 
 The same hooks run in VS Code (`.github/hooks/`) and, those with an event, in Cursor (`.cursor/hooks.json`);
@@ -36,7 +36,8 @@ Documented escapes: `NO-CLOSED: <reason>` in the prompt of a subagent that isn't
 `gate-plan`, `lint` and `check-journal` see the Edit/Write tools. **What gets written through Bash (`cat`, `sed`,
 heredoc) they don't see**, and in bypass mode the agent tends to write that way (measured at origin: 10 writes, 0
 warnings). This isn't fixed by parsing the command (every unforeseen form would be a false negative): it's declared,
-and in those sessions the rule depends on you again. If you're starting with this repo, start in the default mode or
+and in those sessions the rule depends on you again. The exception is memory: the close reads git, not the tools, so a
+broken entry written by the shell is still caught at the close. If you're starting with this repo, start in the default mode or
 `acceptEdits`.
 
 ## Private memory vs repo memory
