@@ -145,3 +145,26 @@ def test_sentry_event_has_no_body_locals_or_token(
     blob = json.dumps(sentry_events)
     assert marker not in blob
     assert token not in blob
+
+
+def test_production_sentry_init_uses_the_privacy_options(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """The guarded init the app runs with a DSN (review M3/L10): the options,
+    send_default_pii included, reach sentry_sdk.init; development never inits."""
+    calls: list[dict[str, Any]] = []
+    monkeypatch.setattr(main.sentry_sdk, "init", lambda **kw: calls.append(kw))
+    monkeypatch.setattr(
+        main.settings, "SENTRY_DSN", "https://key@o0.ingest.example.invalid/1"
+    )
+    monkeypatch.setattr(main.settings, "FASTAPI_ENV", "development")
+    main.init_sentry()
+    assert calls == []
+    monkeypatch.setattr(main.settings, "FASTAPI_ENV", "production")
+    main.init_sentry()
+    assert len(calls) == 1
+    kw = calls[0]
+    assert kw["dsn"] == "https://key@o0.ingest.example.invalid/1"
+    assert kw["max_request_body_size"] == "never"
+    assert kw["include_local_variables"] is False
+    assert kw["send_default_pii"] is False
