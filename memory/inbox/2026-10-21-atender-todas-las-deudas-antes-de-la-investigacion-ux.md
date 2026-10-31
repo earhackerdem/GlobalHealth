@@ -18,3 +18,5 @@ status: open
 **Reordenado 2026-10-28:** Saúl Pérez adelantó la investigación de UX completa a estas deudas y a la C2b (`memory/inbox/2026-10-28-investigacion-ux-completa.md`). Antes de decidirlo escuchó la objeción de que B1 es privacidad, y la deuda entera queda para después.
 
 **Status:** abierto · siguiente paso: `/triage` sobre el inventario para agruparlo en cambios (uno por tema: privacidad, e2e estables, rendimiento del perfil, limpieza de i18n/duplicados) y ordenarlo con Saúl Pérez; cerrar aquí cada fila cuando su cambio se archive
+
+**Avance 2026-10-31 (deudas de FastAPI, por delegación de Saúl Pérez con `/epe-autopilot`):** pagados B1 (surrogate → 500 y log) y S2 (Sentry) en api-errores-sin-datos, PR #46. Su revisión dejó M1 (NUL → 500 con parámetros SQL en el log, `memory/closed/2026-10-31-nul-500-y-parametros-sql-en-el-log.md`) para el cambio de base de datos.
