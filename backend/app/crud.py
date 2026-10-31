@@ -45,6 +45,10 @@ def update_user(*, session: Session, db_user: User, user_in: UserUpdate) -> Any:
 
 
 def get_user_by_email(*, session: Session, email: str) -> User | None:
+    if "\x00" in email:
+        # Postgres rejects a NUL in varchar (a 500): no such user, without
+        # querying, for every caller (login, password recovery; review M-1)
+        return None
     statement = select(User).where(User.email == email)
     session_user = session.exec(statement).first()
     return session_user
@@ -56,11 +60,6 @@ DUMMY_HASH = "$argon2id$v=19$m=65536,t=3,p=4$MjQyZWE1MzBjYjJlZTI0Yw$YTU4NGM5ZTZm
 
 
 def authenticate(*, session: Session, email: str, password: str) -> User | None:
-    if "\x00" in email:
-        # Postgres rejects a NUL in varchar: answer as an unknown email, without
-        # querying and in the same constant time (bd-candados Decision 2)
-        verify_password(password, DUMMY_HASH)
-        return None
     db_user = get_user_by_email(session=session, email=email)
     if not db_user or not db_user.hashed_password:
         # Prevent timing attacks by running password verification even when the

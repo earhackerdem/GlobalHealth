@@ -11,7 +11,6 @@ from pydantic import (
     EmailStr,
     StringConstraints,
 )
-from pydantic_core import PydanticCustomError
 from sqlalchemy import Column
 from sqlmodel import Field, Relationship, SQLModel
 
@@ -24,15 +23,20 @@ def get_datetime_utc() -> datetime:
 
 def _reject_nul(value: str) -> str:
     if "\x00" in value:
-        raise PydanticCustomError(
-            "nul_character", "El texto no puede contener el carácter nulo"
-        )
+        raise ValueError("El texto no puede contener el carácter nulo")
     return value
 
 
 # Text stored in the clear: Postgres rejects a NUL in varchar (a 500), so the
-# input schemas reject it first with a 422. Table models keep plain `str`.
-PlainText = Annotated[str, AfterValidator(_reject_nul)]
+# input schemas reject it first with a 422. Table models keep plain `str`. The
+# length lives inside the Annotated: a Field(max_length) on `PlainText | None`
+# would turn pydantic's string_too_long into a generic too_long (review L-1).
+PlainText = Annotated[
+    str, StringConstraints(max_length=255), AfterValidator(_reject_nul)
+]
+PlainTitle = Annotated[
+    str, StringConstraints(min_length=1, max_length=255), AfterValidator(_reject_nul)
+]
 
 
 # Shared properties
@@ -45,14 +49,14 @@ class UserBase(SQLModel):
 
 # Properties to receive via API on creation
 class UserCreate(UserBase):
-    full_name: PlainText | None = Field(default=None, max_length=255)
+    full_name: PlainText | None = None
     password: str = Field(min_length=8, max_length=128)
 
 
 class UserRegister(SQLModel):
     email: EmailStr = Field(max_length=255)
     password: str = Field(min_length=8, max_length=128)
-    full_name: PlainText | None = Field(default=None, max_length=255)
+    full_name: PlainText | None = None
 
 
 # Properties to receive via API on update, all are optional
@@ -60,12 +64,12 @@ class UserUpdate(SQLModel):
     email: EmailStr | None = Field(default=None, max_length=255)
     is_active: bool | None = None
     is_superuser: bool | None = None
-    full_name: PlainText | None = Field(default=None, max_length=255)
+    full_name: PlainText | None = None
     password: str | None = Field(default=None, min_length=8, max_length=128)
 
 
 class UserUpdateMe(SQLModel):
-    full_name: PlainText | None = Field(default=None, max_length=255)
+    full_name: PlainText | None = None
     email: EmailStr | None = Field(default=None, max_length=255)
 
 
@@ -1449,14 +1453,14 @@ class ItemBase(SQLModel):
 
 # Properties to receive on item creation
 class ItemCreate(ItemBase):
-    title: PlainText = Field(min_length=1, max_length=255)
-    description: PlainText | None = Field(default=None, max_length=255)
+    title: PlainTitle
+    description: PlainText | None = None
 
 
 # Properties to receive on item update
 class ItemUpdate(SQLModel):
-    title: PlainText | None = Field(default=None, min_length=1, max_length=255)
-    description: PlainText | None = Field(default=None, max_length=255)
+    title: PlainTitle | None = None
+    description: PlainText | None = None
 
 
 # Database model, database table inferred from class name

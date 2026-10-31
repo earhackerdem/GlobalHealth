@@ -34,7 +34,10 @@ FOREIGN_KEYS = [
 
 
 def upgrade():
-    # The tables are small today; a large one would need CREATE INDEX CONCURRENTLY.
+    # The tables are small today. A large one would need CREATE INDEX
+    # CONCURRENTLY, which refuses to run inside a transaction: env.py runs all
+    # pending migrations in one, so it has to go in
+    # `with op.get_context().autocommit_block():` (review L-3).
     for table, column in FOREIGN_KEYS:
         op.create_index(op.f(f'ix_{table}_{column}'), table, [column])
 
