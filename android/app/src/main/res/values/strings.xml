@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- es-MX (D15), the texts of the spec delta and the approved prototype (openspec/changes/android-base). -->
+<resources>
+    <string name="app_name">GlobalHealth</string>
+
+    <!-- Entrada (AB-1, AB-2) -->
+    <string name="login_tagline">Tu expediente, a la mano</string>
+    <string name="login_email">Correo electrónico</string>
+    <string name="login_password">Contraseña</string>
+    <string name="login_submit">Entrar</string>
+    <string name="login_submitting">Entrando…</string>
+    <string name="login_no_account">¿Aún no tienes cuenta? Créala en la web.</string>
+
+    <!-- Consentimiento (AB-3) -->
+    <string name="consent_title">Antes de empezar</string>
+    <string name="consent_intro">Para guardar y mostrar tus datos de salud necesitamos tu consentimiento expreso.</string>
+    <string name="consent_version">Versión %1$s</string>
+    <string name="consent_accept">Acepto</string>
+    <string name="consent_submitting">Enviando…</string>
+
+    <!-- Mi perfil médico (AB-4, AB-5) -->
+    <string name="profile_title">Mi perfil médico</string>
+    <string name="profile_read_only">Para editar, entra a la web. Aquí todo es de solo lectura.</string>
+    <!-- Labels of the web's es-MX/profile.json; the values come from profile/ProfileFormat.kt. -->
+    <string name="profile_basic_heading">Datos básicos</string>
+    <string name="profile_birth_date">Fecha de nacimiento</string>
+    <string name="profile_sex">Sexo</string>
+    <string name="profile_allergies">Alergias a medicamentos</string>
+    <string name="profile_weight">Peso</string>
+    <string name="profile_height">Estatura</string>
+    <string name="profile_work">Trabajo</string>
+    <string name="profile_family_heading">Antecedentes familiares</string>
+    <string name="profile_history_heading">Tu historial</string>
+    <string name="profile_section_chronic">Enfermedades crónicas</string>
+    <string name="profile_section_past">Enfermedades pasadas e infecciosas</string>
+    <string name="profile_section_surgeries">Cirugías y hospitalizaciones</string>
+    <string name="profile_section_fractures">Fracturas y lesiones</string>
+    <string name="profile_section_transfusions">Transfusiones y grupo sanguíneo</string>
+    <string name="profile_section_habits">Hábitos</string>
+
+    <!-- Comunes (AB-5, AB-7) -->
+    <string name="sign_out">Cerrar sesión</string>
+    <string name="offline_message">No pudimos conectar. Revisa tu conexión e intenta de nuevo.</string>
+    <string name="retry">Reintentar</string>
+    <string name="error_generic">Algo salió mal. Intenta de nuevo.</string>
+    <string name="loading">Cargando</string>
+</resources>

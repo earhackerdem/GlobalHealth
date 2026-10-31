@@ -1,0 +1,160 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>App Android: base</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<style>
+/* Paleta B · Azul clínico (D22) llevada a Material 3; prototipo del cambio android-base, datos de ejemplo */
+:root{
+  --bg:#f0f4f5; --surface:#ffffff; --fg:#212b32; --muted:#4c6272; --accent:#005eb8; --accent-fg:#ffffff;
+  --line:#d8dde0; --input:#4c6272; --chip:#e8edee; --danger:#d5281b; --b-tag:#330072; --bar:#ffffff;
+  --font-body:"Atkinson Hyperlegible",system-ui,sans-serif;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#0f1a22; --surface:#172630; --fg:#e8eef1; --muted:#a3b4bf; --accent:#5aa9f0; --accent-fg:#0b1a26;
+  --line:#2a3b47; --input:#7a92a1; --chip:#223644; --danger:#ff8a80; --b-tag:#c9b3ff; --bar:#172630; color-scheme:dark
+}}
+:root[data-theme="dark"]{
+  --bg:#0f1a22; --surface:#172630; --fg:#e8eef1; --muted:#a3b4bf; --accent:#5aa9f0; --accent-fg:#0b1a26;
+  --line:#2a3b47; --input:#7a92a1; --chip:#223644; --danger:#ff8a80; --b-tag:#c9b3ff; --bar:#172630; color-scheme:dark
+}
+body{background:var(--bg); color:var(--fg); font:16px/1.5 var(--font-body);
+  padding-left:max(16px, env(safe-area-inset-left, 0px)); padding-right:max(16px, env(safe-area-inset-right, 0px));
+  padding-block:8px 64px; max-width:640px; margin:0 auto}
+h1{font-size:1.35rem; margin:.4rem 0 0; text-wrap:balance}
+p{margin:.35rem 0}
+.sub{color:var(--muted); font-size:.9rem}
+button{font:inherit; border:1px solid var(--input); background:var(--surface); color:var(--fg); border-radius:20px;
+  padding:10px 18px; min-height:48px; cursor:pointer}
+button.primary{background:var(--accent); color:var(--accent-fg); border-color:transparent; font-weight:700}
+button.text{border:none; background:none; color:var(--accent); font-weight:700; padding:8px 10px}
+button[aria-disabled="true"]{opacity:.5; cursor:not-allowed}
+button:focus-visible,input:focus-visible{outline:2px solid var(--accent); outline-offset:2px}
+.variantes{display:flex; flex-wrap:wrap; gap:6px; margin:6px 0 10px}
+.variantes button{min-height:0; padding:6px 12px; font-size:.88rem; border-radius:10px}
+.variantes button[aria-pressed="true"]{background:var(--fg); color:var(--bg); border-color:transparent}
+.lbl{font-size:.85rem; font-weight:700; display:block; margin:10px 0 4px}
+details.nota{font-size:.88rem; margin:10px 0}
+details.nota summary{cursor:pointer; font-weight:700}
+.ac{font-size:.68rem; font-weight:700; letter-spacing:.04em; color:var(--b-tag); border:1px solid currentColor;
+  border-radius:6px; padding:0 5px; margin-left:6px; vertical-align:middle; white-space:nowrap}
+body.sin-ac .ac{display:none}
+/* teléfono */
+.tel{max-width:380px; margin:12px auto; border:10px solid #10181e; border-radius:36px; overflow:hidden;
+  background:var(--bg); min-height:640px; display:flex; flex-direction:column}
+.status{display:flex; justify-content:space-between; padding:6px 18px; font-size:.75rem; color:var(--muted)}
+.topbar{display:flex; justify-content:space-between; align-items:center; padding:8px 12px 8px 18px; background:var(--bar);
+  border-bottom:1px solid var(--line)}
+.topbar b{font-size:1.15rem}
+.pantalla{padding:16px; display:flex; flex-direction:column; gap:12px; flex:1; overflow:auto}
+.campo{display:flex; flex-direction:column; gap:4px}
+.campo input{font:inherit; border:1px solid var(--input); border-radius:6px; padding:14px 12px; background:var(--surface); color:var(--fg)}
+.error{color:var(--danger); font-size:.9rem}
+.card{background:var(--surface); border:1px solid var(--line); border-radius:16px; padding:14px; display:flex; flex-direction:column; gap:10px}
+.card h2{font-size:1rem; margin:0}
+.fila .k{display:block; font-size:.8rem; color:var(--muted)}
+.fila .v{font-size:.95rem; overflow-wrap:anywhere}
+.sec{display:flex; justify-content:space-between; align-items:center; gap:8px; min-height:48px; border-top:1px solid var(--line)}
+.sec:first-of-type{border-top:none}
+.pill{font-size:.8rem; border-radius:999px; padding:2px 10px; background:var(--chip); white-space:nowrap}
+.consent{background:var(--surface); border:1px solid var(--line); border-radius:12px; padding:12px; font-size:.9rem; max-height:300px; overflow:auto}
+.centro{flex:1; display:flex; flex-direction:column; justify-content:center; align-items:center; text-align:center; gap:12px}
+.logo{font-size:1.6rem; font-weight:700; color:var(--accent)}
+</style>
+
+<h1>App de Android: entrar y ver tu perfil</h1>
+<p class="sub">Prototipo del cambio <code>android-base</code> (D24). Muestra cómo se ve, no cómo se programa. Datos de ejemplo. Con tus respuestas del 2026-10-29: solo correo (Google después), consentimiento en la app, datos básicos más el estado de cada sección, Android 10 o más reciente.</p>
+
+<details class="nota" open><summary>Historia y criterios (AB-n)</summary>
+  <p><i>Como paciente, quiero entrar a GlobalHealth desde una app en mi teléfono Android y ver mi perfil médico, para tener mis datos a la mano y que la app quede lista para usar la cámara y los recordatorios.</i></p>
+  <ul>
+    <li><b>AB-1</b> La app se instala y abre en la pantalla de entrada, en español.</li>
+    <li><b>AB-2</b> Entro con correo y contraseña; si me equivoco veo «Correo o contraseña incorrectos».</li>
+    <li><b>AB-3</b> Sin consentimiento, la app me lo pide antes de mostrar cualquier dato, con el mismo texto que la web.</li>
+    <li><b>AB-4</b> Veo mis datos básicos y el estado de cada sección, en solo lectura.</li>
+    <li><b>AB-5</b> Al volver a abrir sigo dentro; «Cerrar sesión» o un token vencido me regresan a la entrada.</li>
+    <li><b>AB-6</b> El token va cifrado con el Keystore y el perfil no se guarda en el teléfono (no se ve aquí).</li>
+    <li><b>AB-7</b> Sin conexión veo un mensaje y «Reintentar».</li>
+  </ul>
+</details>
+
+<p class="lbl" id="slbl">Recorrido</p>
+<div class="variantes" role="group" aria-labelledby="slbl" id="sel">
+  <button data-s="login" aria-pressed="true">Entrada</button>
+  <button data-s="consent" aria-pressed="false">Consentimiento</button>
+  <button data-s="profile" aria-pressed="false">Perfil con datos</button>
+  <button data-s="empty" aria-pressed="false">Perfil vacío</button>
+  <button data-s="offline" aria-pressed="false">Sin conexión</button>
+</div>
+
+<div class="tel"><div class="status"><span>9:41</span><span>5G ▮▮▮</span></div><div id="app" style="display:flex;flex-direction:column;flex:1"></div></div>
+
+<p class="sub" style="text-align:center">En la entrada: cualquier contraseña distinta de <code>prueba123</code> da error. Con <code>sin.consentimiento@example.com</code> pasa por el consentimiento.</p>
+<div class="variantes" style="justify-content:center">
+  <button id="insignias">Ocultar insignias AB-n</button>
+  <button id="tema">Cambiar a oscuro</button>
+</div>
+
+<details class="nota"><summary>Lo que no hace todavía</summary><ul>
+  <li>Entrar con Google y crear cuentas (van después).</li>
+  <li>Editar el perfil o abrir el detalle de una sección (sigue en la web).</li>
+  <li>La cámara y los recordatorios (sus propios cambios).</li>
+</ul></details>
+
+<script>
+const S = {s:"login", correo:"paciente.android@example.com", error:"", enviando:false, vacio:false};
+const ac = id => `<span class="ac">${id}</span>`;
+const esc = s => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const SECS = [["Enfermedades crónicas","Sin llenar","Sin llenar"],["Enfermedades pasadas e infecciosas","2 registros","Sin llenar"],
+  ["Cirugías y hospitalizaciones","Sin llenar","Sin llenar"],["Fracturas y lesiones","1 registro","Sin llenar"],
+  ["Transfusiones y grupo sanguíneo","Ninguna","Sin llenar"],["Hábitos","Con datos","Sin llenar"]];
+
+const P = {
+  login: () => `<div class="pantalla"><div class="centro" style="flex:0;margin-top:40px"><span class="logo">GlobalHealth</span>
+      <span class="sub">Tu expediente, a la mano</span></div>
+    <div class="campo"><label class="lbl" for="c">Correo electrónico${ac("AB-1")}</label><input id="c" type="email" value="${esc(S.correo)}" autocomplete="email"></div>
+    <div class="campo"><label class="lbl" for="p">Contraseña</label><input id="p" type="password" placeholder="••••••••"></div>
+    ${S.error ? `<p class="error" role="alert">${S.error}${ac("AB-2")}</p>` : ""}
+    <button class="primary" id="entrar" aria-disabled="${S.enviando}">${S.enviando ? "Entrando…" : "Entrar"}${ac("AB-2")}</button>
+    <p class="sub" style="text-align:center">¿Aún no tienes cuenta? Créala en la web.</p></div>`,
+  consent: () => `<div class="topbar"><b>Antes de empezar</b></div><div class="pantalla">
+    <p>Para guardar y mostrar tus datos de salud necesitamos tu consentimiento expreso.${ac("AB-3")}</p>
+    <div class="consent" tabindex="0"><b>Aviso de privacidad y consentimiento · versión v1</b><p>Tus datos de salud son datos personales sensibles (LFPDPPP). Los guardamos cifrados y solo tú decides con quién compartirlos… <i>(aquí va el texto completo de <code>GET /consent/text</code>)</i></p></div>
+    <button class="primary" id="acepto">Acepto</button><button class="text" id="salir">Cerrar sesión</button></div>`,
+  profile: () => {
+    const v = S.vacio;
+    const fila = (k, val) => `<div class="fila"><span class="k">${k}</span><span class="v">${v ? "Sin registrar" : val}</span></div>`;
+    return `<div class="topbar"><b>Mi perfil médico</b><button class="text" id="salir">Cerrar sesión${ac("AB-5")}</button></div><div class="pantalla">
+    <div class="card"><h2>Datos básicos${ac("AB-4")}</h2>
+      ${fila("Fecha de nacimiento","15/03/1990 · 36 años")}${fila("Sexo","Mujer")}${fila("Alergias a medicamentos","Penicilina")}
+      ${fila("Peso","72 kg · 12/10/2026")}${fila("Estatura","165 cm · 12/10/2026")}${fila("Trabajo","Chofer de transporte · rotativo · expuesto a ruido fuerte")}</div>
+    <div class="card"><h2>Antecedentes familiares</h2><span class="v">${v ? "Sin registros" : "3 registrados"}</span></div>
+    <div class="card"><h2>Tu historial</h2>${SECS.map(([n,a,b]) => `<div class="sec"><span>${n}</span><span class="pill">${v ? b : a}</span></div>`).join("")}</div>
+    <p class="sub">Para editar, entra a la web. Aquí todo es de solo lectura.</p></div>`;
+  },
+  offline: () => `<div class="topbar"><b>Mi perfil médico</b><button class="text" id="salir">Cerrar sesión</button></div>
+    <div class="pantalla"><div class="centro"><span style="font-size:2rem" aria-hidden="true">⚠︎</span>
+    <p>No pudimos conectar. Revisa tu conexión e intenta de nuevo.${ac("AB-7")}</p><button class="primary" id="reintentar">Reintentar</button></div></div>`,
+};
+function pintar(){
+  const actual = S.s==="profile" && S.vacio ? "empty" : S.s;
+  document.querySelectorAll("#sel button").forEach(b => b.setAttribute("aria-pressed", b.dataset.s===actual));
+  document.getElementById("app").innerHTML = P[S.s]();
+}
+document.addEventListener("click", e => {
+  const b = e.target.closest("button"); if (!b) return;
+  if (b.dataset.s){ S.error=""; S.enviando=false; if (b.dataset.s==="empty"){ S.s="profile"; S.vacio=true; } else { S.s=b.dataset.s; S.vacio=false; } return pintar(); }
+  if (b.id==="entrar"){ if (S.enviando) return; S.correo=document.getElementById("c").value; const pw=document.getElementById("p").value;
+    S.enviando=true; S.error=""; pintar();
+    setTimeout(() => { S.enviando=false;
+      if (pw!=="prueba123"){ S.error="Correo o contraseña incorrectos"; }
+      else S.s = S.correo.startsWith("sin.consentimiento") ? "consent" : "profile";
+      pintar(); }, 700); return; }
+  if (b.id==="acepto"){ S.s="profile"; S.vacio=false; return pintar(); }
+  if (b.id==="salir"){ S.s="login"; S.error=""; return pintar(); }
+  if (b.id==="reintentar"){ S.s="profile"; return pintar(); }
+  if (b.id==="insignias"){ const off=document.body.classList.toggle("sin-ac"); b.textContent = off ? "Mostrar insignias AB-n" : "Ocultar insignias AB-n"; return; }
+  if (b.id==="tema"){ const r=document.documentElement, dark=r.dataset.theme!=="dark" && !(r.dataset.theme!=="light" && matchMedia("(prefers-color-scheme: dark)").matches);
+    r.dataset.theme = dark ? "dark" : "light"; b.textContent = dark ? "Cambiar a claro" : "Cambiar a oscuro"; }
+});
+pintar();
+</script>

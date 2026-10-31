@@ -87,6 +87,16 @@ codebases enter with `/codebase-context`: verify conventions into the block belo
 - **Spanish words** in code or tests trip the `typos` gate: add them to `_typos.toml` → `[default.extend-words]`.
 - **Known flaky e2e** (not caused by a change, do not chase inside one): `reset-password.spec.ts:90` and the
   «socket hang up» in `createUser`; evidence in `memory/inbox/2026-10-20-fix-aparte-e2e-intermitentes-heredados-admin.md`.
+- **Android (`android/`):**
+  - The Mac has no system JDK. Run Gradle with
+    `JAVA_HOME="/Applications/Android Studio.app/Contents/jbr/Contents/Home"` (JDK 25). CI uses JDK 17.
+  - Robolectric is pinned to `sdk=35` (`app/src/test/resources/robolectric.properties`), because its SDK 36 does not
+    start on JDK 25.
+  - The phone reaches the local API through `adb reverse tcp:8000 tcp:8000` plus
+    `-PapiBaseUrl=http://localhost:8000/api/v1/`. Airplane mode does not cut it; simulate offline with
+    `docker compose stop backend`.
+  - The API answers an expired or invalid token with **403**, not 401 (`backend/app/api/deps.py:38-42`).
+  - The emulator (software GPU) hangs under memory pressure; restart it rather than chase app bugs.
 <!-- /harness:context -->
 
 ## Skeptical partner, not compliant executor

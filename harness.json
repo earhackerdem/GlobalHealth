@@ -9,6 +9,7 @@
   "code": [
     "backend/",
     "frontend/",
+    "android/",
     "src/",
     "app/",
     "lib/",
@@ -17,6 +18,8 @@
   "tests": [
     "backend/tests/",
     "frontend/tests/",
+    "android/app/src/androidTest/",
+    "android/app/src/test/",
     "tests/",
     "test/",
     "spec/",

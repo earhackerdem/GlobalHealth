@@ -1,0 +1,7 @@
+- 2026-10-29 · android-base · PR #44 · Primera versión de la app de Android nativa (D24, Kotlin con Jetpack Compose, Android 10 o más reciente):
+  - Entras con tu correo y contraseña contra la misma API. Si tu cuenta no tiene consentimiento, la app te lo pide antes de mostrar nada.
+  - Ves «Mi perfil médico» en solo lectura: datos básicos, trabajo, antecedentes familiares y el estado de las seis secciones.
+  - La sesión se guarda cifrada con una llave del Keystore y fuera del respaldo; ningún dato de salud queda en el teléfono.
+  - Sin conexión, la app lo dice y ofrece «Reintentar». Con el token vencido, vuelves a la entrada.
+  - Tiene su propio CI, que corre solo cuando cambia `android/`.
+  - Pasó por una revisión adversaria de dos rondas.

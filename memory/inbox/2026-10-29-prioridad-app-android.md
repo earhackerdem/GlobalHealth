@@ -1,6 +1,6 @@
 ---
 date: 2026-10-29
-status: open
+status: done
 ---
 
 **Prioridad: la app de Android, después del PR #40** (Saúl Pérez, 2026-10-29, durante la revisión de perfil-trabajo:
@@ -32,3 +32,5 @@ comparte con Kotlin Multiplatform, que no limita el acceso al hardware. Antes de
 
 **Status:** abierto · siguiente historia después de mergear el PR #40 y traer el harness 0.4.1: un ADR que revise D7 y
 toque D17 y D23 (orden), y después `/triage` de la app de Android
+
+**Closure:** decidido en D24 (PR #42, app nativa en Kotlin con Jetpack Compose; iPhone en Swift después) y empezado con su primera historia, android-base (PR #44: entrar, consentimiento y «Mi perfil médico» en solo lectura). Siguen android-camara y android-recordatorios.

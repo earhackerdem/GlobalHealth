@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The window behind Compose: follows the system's light or dark mode with the D22 background, so a start in dark
+     mode does not flash white. Compose paints everything else (ui/theme/Theme.kt). -->
+<resources>
+    <style name="Theme.GlobalHealth" parent="@android:style/Theme.DeviceDefault.DayNight">
+        <item name="android:windowActionBar">false</item>
+        <item name="android:windowNoTitle">true</item>
+        <item name="android:windowBackground">@color/window_background</item>
+    </style>
+</resources>
