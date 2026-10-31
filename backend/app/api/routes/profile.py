@@ -286,15 +286,15 @@ def update_profile(
 ) -> Any:
     """Partial update: absent = untouched, explicit null clears the field.
 
-    birth_date must fall in [1900-01-01, today]; the check runs HERE (not a
-    pydantic validator) so the 422 carries a string es-MX detail, and BEFORE
-    anything gets encrypted or persisted.
+    birth_date must fall in [1900-01-01, Mexico City's today]; the check runs
+    HERE (not a pydantic validator) so the 422 carries a string es-MX detail,
+    and BEFORE anything gets encrypted or persisted.
     """
     update_dict = profile_in.model_dump(exclude_unset=True)
     birth_date = update_dict.get("birth_date")
     if birth_date is not None:
         try:
-            validate_birth_date(birth_date)
+            validate_birth_date(birth_date, datetime.now(MEXICO_CITY).date())
         except ValueError as e:
             raise HTTPException(status_code=422, detail=str(e)) from e
         update_dict["birth_date"] = birth_date.isoformat()

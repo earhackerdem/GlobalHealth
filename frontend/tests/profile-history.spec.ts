@@ -357,6 +357,33 @@ test.describe("Perfil médico — historial por secciones (perfil-eventos, grupo
     ).toBeVisible()
   })
 
+  test("S04b «¿Cuál fue?» con solo un carácter invisible no se guarda", async ({
+    page,
+    request,
+  }) => {
+    // validaciones-hoy-y-texto-invisible: lo que no se ve cuenta como vacío
+    // (espacio de ancho cero U+200B; también el relleno Hangul U+3164 y el
+    // braille en blanco U+2800), así que sale el mensaje de requerido de la
+    // pantalla junto a la caja y no se guarda nada.
+    const api = await freshPatient(page, request)
+    await openSection(page, "/perfil/pasadas")
+    await startAdd(page)
+    await choose(page, /condición/i, "Otra")
+    const which = textbox(page, /^¿cuál fue\?/i)
+
+    for (const invisible of ["​", "ㅤ⠀"]) {
+      await which.fill(invisible)
+      await save(page)
+      await expect(which).toHaveAttribute("aria-invalid", "true")
+      await expect(which).toHaveAccessibleDescription(
+        "Elige la condición o escribe cuál fue",
+      )
+    }
+
+    await expect(entries(page)).toHaveCount(0)
+    expect(await historyCount(api)).toBe(0)
+  })
+
   test("S05 cirugía con todos sus datos; al editar se ven tal cual", async ({
     page,
     request,
