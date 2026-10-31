@@ -38,17 +38,17 @@ import { Textarea } from "@/components/ui/textarea"
 import useCustomToast from "@/hooks/useCustomToast"
 import i18n from "@/i18n"
 import { handleError } from "@/utils"
-import { localTodayIso } from "./format"
+import { mexicoCityTodayIso } from "./format"
 
 const SEXES = ["female", "male", "unspecified"] as const
 
 const formSchema = z.object({
   // Empty is a valid state (the profile may be partial); a captured date must
-  // fall in [1900-01-01, today], mirrored from the API so the 422 never has
+  // fall in [1900-01-01, Mexico City's today], mirrored from the API so the 422 never has
   // to fire for a well-behaved client — the message shows inline, es-MX.
   birth_date: z
     .string()
-    .refine((value) => !value || value <= localTodayIso(), {
+    .refine((value) => !value || value <= mexicoCityTodayIso(), {
       message: i18n.t("profile:validation.birthDateFuture"),
     })
     .refine((value) => !value || value >= "1900-01-01", {

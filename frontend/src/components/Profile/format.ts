@@ -11,14 +11,6 @@ export function formatDateMx(isoDate: string): string {
   return `${day}/${month}/${year}`
 }
 
-/** Today as a LOCAL "aaaa-mm-dd" string (toISOString would be UTC). */
-export function localTodayIso(): string {
-  const now = new Date()
-  const month = String(now.getMonth() + 1).padStart(2, "0")
-  const day = String(now.getDate()).padStart(2, "0")
-  return `${now.getFullYear()}-${month}-${day}`
-}
-
 /**
  * Today in America/Mexico_City as "aaaa-mm-dd", whatever the device's
  * timezone: the API's "today" for the history checks (profile.py MEXICO_CITY),

@@ -936,9 +936,30 @@ MinutesPerSession = Annotated[int, Field(ge=1, le=600)]
 # but a missing one ("Escribe cuál."), so the 1 of 1..60 is checked after
 # normalizing.
 ActivityName = Annotated[str, StringConstraints(strip_whitespace=True, max_length=60)]
-# Not whitespace nor format characters, yet they show nothing: the Hangul
-# fillers and the braille blank.
-BLANK_FILLERS = frozenset("\u115f\u1160\u3164\uffa0\u2800")
+# Not whitespace nor controls, yet they show nothing: every
+# Default_Ignorable_Code_Point (Unicode 16 DerivedCoreProperties.txt; unicodedata
+# has no such property, so the ranges are listed) and the braille blank, which
+# is visible-width but empty (validaciones-hoy-y-texto-invisible, C1 with B2).
+BLANK_RANGES = (
+    (0x00AD, 0x00AD),
+    (0x034F, 0x034F),
+    (0x061C, 0x061C),
+    (0x115F, 0x1160),
+    (0x17B4, 0x17B5),
+    (0x180B, 0x180F),
+    (0x200B, 0x200F),
+    (0x202A, 0x202E),
+    (0x2060, 0x206F),
+    (0x2800, 0x2800),
+    (0x3164, 0x3164),
+    (0xFE00, 0xFE0F),
+    (0xFEFF, 0xFEFF),
+    (0xFFA0, 0xFFA0),
+    (0xFFF0, 0xFFF8),
+    (0x1BCA0, 0x1BCA3),
+    (0x1D173, 0x1D17A),
+    (0xE0000, 0xE0FFF),
+)
 SleepTrouble = Literal["never", "some_days", "most_days", "every_day"]
 
 
@@ -1067,11 +1088,12 @@ def _normalize_wood(wood: WoodSmokeHabit) -> WoodSmokeHabit:
 
 def _is_blank(text: str) -> bool:
     """Nothing visible: only whitespace, controls, format characters (Cf, such
-    as U+200B) or blank fillers (an empty text too)."""
+    as U+200B) or the ignorable marks and fillers of BLANK_RANGES (an empty
+    text too). Same rule as isBlank in frontend/src/components/Profile/text.ts."""
     return all(
         char.isspace()
         or unicodedata.category(char) in ("Cc", "Cf")
-        or char in BLANK_FILLERS
+        or any(low <= ord(char) <= high for low, high in BLANK_RANGES)
         for char in text
     )
 

@@ -12,6 +12,7 @@ import {
   type Stage,
   type WhenDraft,
 } from "./history"
+import { isBlank } from "./text"
 
 /**
  * "¿Cuándo?" answered the way the doctor asks it (A-3, prototype v4): the age
@@ -81,8 +82,9 @@ function WhenField({
               onChange({
                 ...value,
                 text: e.target.value,
-                // A typed number replaces a chosen chip; an empty box keeps it.
-                choice: e.target.value.trim() ? null : value.choice,
+                // A typed number replaces a chosen chip; an empty (or
+                // invisible) box keeps it.
+                choice: isBlank(e.target.value) ? value.choice : null,
               })
             }
           />
