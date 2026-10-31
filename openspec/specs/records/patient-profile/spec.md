@@ -7,7 +7,7 @@ un onboarding omitible tras aceptar el consentimiento y editables después desde
 ## Requirements
 ### Requirement: Perfil básico del paciente
 El sistema SHALL permitir al paciente con consentimiento vigente guardar y editar su perfil básico: fecha de
-nacimiento (nunca futura), sexo (mujer / hombre / prefiero no decir) y alergias a medicamentos (texto libre).
+nacimiento (nunca futura según la fecha de hoy en Ciudad de México, America/Mexico_City), sexo (mujer / hombre / prefiero no decir) y alergias a medicamentos (texto libre).
 Todos los campos SHALL ser opcionales (el perfil parcial o vacío es válido) y SHALL almacenarse cifrados en
 reposo. Donde el perfil se muestre, la edad SHALL derivarse de la fecha de nacimiento a la fecha actual.
 
@@ -17,8 +17,21 @@ reposo. Donde el perfil se muestre, la edad SHALL derivarse de la fecha de nacim
 - **THEN** su perfil muestra esos datos y la edad "36 años", y los valores quedan cifrados en reposo
 
 #### Scenario: Fecha de nacimiento futura rechazada
-- **WHEN** el paciente intenta guardar fecha de nacimiento 2030-01-01
+- **WHEN** el paciente intenta guardar como fecha de nacimiento la de pasado mañana
 - **THEN** el sistema la rechaza con un mensaje en es-MX y el perfil no cambia
+
+#### Scenario: «Hoy» es el de Ciudad de México
+- **GIVEN** son las 20:00 del 2026-03-10 en Ciudad de México (02:00 del 2026-03-11 en UTC)
+- **WHEN** el paciente guarda fecha de nacimiento 2026-03-11
+- **THEN** el sistema la rechaza con «La fecha de nacimiento no puede estar en el futuro»; y si guarda
+  2026-03-10, la acepta
+
+#### Scenario: La pantalla usa el mismo «hoy», no el del aparato
+- **GIVEN** el aparato está en la zona de Tokio y son las 20:00 del 2026-03-10 en Ciudad de México (ya 2026-03-11
+  en Tokio)
+- **WHEN** el paciente escribe como fecha de nacimiento 2026-03-11
+- **THEN** la pantalla le dice «La fecha de nacimiento no puede ser futura» sin enviar nada; con 2026-03-10 no hay
+  mensaje
 
 #### Scenario: Perfil vacío es válido
 - **WHEN** el paciente guarda el perfil sin llenar ningún campo
@@ -129,7 +142,9 @@ lugar; médico; complicaciones; ¿reacción a la anestesia? con detalle; materia
 (qué hueso o lesión; lado; cuándo; ¿requirió cirugía?; material implantado; secuelas); transfusión (cuándo;
 motivo; qué se transfundió; hospital o lugar; ¿hubo reacción? con detalle). Las preguntas sí/no SHALL admitir
 "No sé". Son requeridos solo la condición, el nombre de la cirugía y el hueso o lesión; un registro sin ningún
-dato SHALL rechazarse. Eliminar SHALL pedir confirmación en la misma pantalla.
+dato SHALL rechazarse. Un texto sin nada visible (solo espacios, controles, caracteres de formato como U+200B, marcas que Unicode
+declara ignorables como U+034F, U+FE0F o el relleno U+3164, y el braille en blanco U+2800) SHALL contar como vacío,
+en la pantalla y en la API, también en la caja de «cuándo». Eliminar SHALL pedir confirmación en la misma pantalla.
 
 #### Scenario: Enfermedad pasada del catálogo (A-4)
 - **WHEN** el paciente registra la condición "Varicela", cuándo "En la primaria" y hospitalización "No"
@@ -169,6 +184,20 @@ dato SHALL rechazarse. Eliminar SHALL pedir confirmación en la misma pantalla.
   pantalla
 - **THEN** primero se muestra "derecho" y después el registro desaparece de la sección y del almacenamiento; si
   en lugar de confirmar elige "Cancelar", el registro sigue ahí
+
+#### Scenario: «¿Cuál fue?» con un texto invisible
+- **WHEN** el paciente elige «Otra» en una enfermedad pasada y en «¿Cuál fue?» solo hay un espacio de ancho cero
+  (U+200B)
+- **THEN** la pantalla le pide «Elige la condición o escribe cuál fue» junto a esa caja y no se guarda nada; y si
+  la petición llega igual a la API, responde 422 con ese mensaje y no crea el registro
+
+#### Scenario: Un «cuándo» invisible no es un dato
+- **WHEN** el paciente intenta guardar una transfusión cuyo único contenido es un U+200B en «Edad que tenías»
+- **THEN** la pantalla le dice «Llena al menos un dato» y no se guarda nada
+
+#### Scenario: Un texto visible con un carácter invisible dentro sí cuenta
+- **WHEN** el paciente elige «Otra» y escribe «Zika» seguido de un U+200B
+- **THEN** el registro se guarda
 
 ### Requirement: "Cuándo" como lo pregunta el médico
 El "cuándo" de un registro SHALL contestarse con la edad que tenía el paciente, una etapa escolar (antes de la

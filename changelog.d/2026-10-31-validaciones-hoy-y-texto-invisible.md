@@ -1,0 +1,1 @@
+- 2026-10-31 · validaciones-hoy-y-texto-invisible · PR #47 · La fecha de nacimiento se revisa con el día de hoy en Ciudad de México, en la pantalla y en la API, aunque tu aparato esté en otra zona. En el historial, un texto que no se ve (espacios de ancho cero, rellenos) ya no cuenta como respuesta.

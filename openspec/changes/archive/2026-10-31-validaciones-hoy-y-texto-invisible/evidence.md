@@ -57,3 +57,6 @@ Verde (`829b970`): backend **616 passed, 0 failed, 0 errors, 0 skipped**, cobert
 también pasa con `TZ=America/Mexico_City`; e2e de perfil, historial y hábitos **247 passed, 0 failed, 0 flaky**; tsc,
 `biome check src/components/Profile/` (de solo lectura, en lugar de `bun run lint`, que reescribe archivos), ruff y
 mypy limpios; `make tdd-check` ✓; `openspec validate validaciones-hoy-y-texto-invisible --strict` válido.
+
+**Pase exploratorio de los arreglos (Chrome):** en «Transfusiones», un relleno U+3164 en «Edad que tenías» → Enter
+→ «Llena al menos un dato» al pie del formulario; nada guardado.
