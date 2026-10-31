@@ -15,7 +15,7 @@ openspec/changes/expediente-registros/design.md §Interface contract):
   with skip/limit, listing ONLY the session user's records.
 - Foreign record by id -> not-found/not-authorized, resource never exposed.
 - HealthRecord.title is encrypted at rest (EncryptedString) in table
-  ``healthrecord``: the ORM/API read plaintext, the raw column holds only
+  ``health_record``: the ORM/API read plaintext, the raw column holds only
   ciphertext.
 
 Email scenarios already partially covered by the template
@@ -236,7 +236,7 @@ def test_health_record_note_is_encrypted_at_rest(
     record = create_record(client, headers, title=secret_note)
 
     raw_rows = db.execute(
-        text("SELECT title FROM healthrecord WHERE id = CAST(:id AS uuid)"),
+        text("SELECT title FROM health_record WHERE id = CAST(:id AS uuid)"),
         {"id": str(record["id"])},
     ).all()
     assert len(raw_rows) == 1

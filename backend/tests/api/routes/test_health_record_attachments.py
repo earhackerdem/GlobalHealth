@@ -20,7 +20,7 @@ Contract (openspec/changes/expediente-registros/design.md §Interface contract):
 - Nonexistent or foreign record on ANY of these -> 404
   {"detail": "Registro no encontrado"}; missing attachment on an own record
   -> 404 {"detail": "Adjunto no encontrado"}.
-- Attachments encrypted at rest in table ``healthrecordattachment``; deleting
+- Attachments encrypted at rest in table ``health_record_attachment``; deleting
   the record cascades over its attachment rows.
 
 Spec: openspec/changes/expediente-registros/specs/records/clinical-records/spec.md
@@ -184,7 +184,7 @@ def test_ac2_exactly_10mb_is_accepted(client: TestClient, db: Session) -> None:
 
 
 def test_ac3_attachment_is_encrypted_at_rest(client: TestClient, db: Session) -> None:
-    """Raw row of healthrecordattachment: no clear %PDF, filename is ciphertext."""
+    """Raw row of health_record_attachment: no clear %PDF, filename is ciphertext."""
     headers, record_id = own_diagnosis(client, db)
     r = upload(
         client, headers, record_id, "perfil-tiroideo.pdf", PDF_BYTES, "application/pdf"
@@ -195,7 +195,7 @@ def test_ac3_attachment_is_encrypted_at_rest(client: TestClient, db: Session) ->
     db.expire_all()
     row = (
         db.execute(
-            text("SELECT * FROM healthrecordattachment WHERE id = CAST(:id AS uuid)"),
+            text("SELECT * FROM health_record_attachment WHERE id = CAST(:id AS uuid)"),
             {"id": str(attachment_id)},
         )
         .mappings()
@@ -298,7 +298,7 @@ def test_ac4_missing_attachment_on_own_record_is_404_adjunto(
 def test_ac5_deleting_record_cascades_over_attachment_rows(
     client: TestClient, db: Session
 ) -> None:
-    """DELETE of the record: its healthrecordattachment rows disappear (count=0)."""
+    """DELETE of the record: its health_record_attachment rows disappear (count=0)."""
     headers, record_id = own_diagnosis(client, db)
     r_att = upload(
         client, headers, record_id, "perfil-tiroideo.pdf", PDF_BYTES, "application/pdf"
@@ -315,7 +315,7 @@ def test_ac5_deleting_record_cascades_over_attachment_rows(
     db.expire_all()
     count = db.execute(
         text(
-            "SELECT COUNT(*) FROM healthrecordattachment "
+            "SELECT COUNT(*) FROM health_record_attachment "
             "WHERE record_id = CAST(:rid AS uuid)"
         ),
         {"rid": str(record_id)},
