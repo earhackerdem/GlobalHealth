@@ -1,0 +1,1 @@
+- 2026-10-31 · bd-candados-indices-y-log · PR #48 · Un carácter nulo en tu nombre o al iniciar sesión ya no hace fallar la app ni deja tus datos en el registro del servidor; las búsquedas por paciente usan índices; y guardar una enfermedad crónica mientras borras su diagnóstico ya no deja un enlace roto.

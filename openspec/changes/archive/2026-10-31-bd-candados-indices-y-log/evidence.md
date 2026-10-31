@@ -83,4 +83,3 @@ Verde (`60840d1`): **608 passed, 0 failed, 0 errors, 0 skipped**, cobertura 97 %
 carreras 3 de 3; `make tdd-check` ✓; `openspec validate bd-candados-indices-y-log --strict` válido.
 Pase real con la API reconstruida: recuperación con NUL → 200 con el mismo mensaje que un correo inexistente; alta con
 NUL → `value_error`; nombre de 256 caracteres → `string_too_long`.
-
