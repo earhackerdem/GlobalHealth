@@ -35,6 +35,10 @@ inherits). Stories carry an `Origin:` line. Existing codebases enter with `/code
 7. **Validate**: whoever approves follows `validation.md` (now in the archived folder) and comments on the PR per
    criterion; small fixes go on top in the same PR. Then a human merges.
 
+**All of it in one go** (`/epe-autopilot <request>`): invoking it delegates the gates of steps 2, 3 and 5 to the agent,
+which closes them, writes "by delegation of <name>" where the person would have written it, runs one review round as
+gate and fixer, archives, and reports the assumptions to veto. Step 7 and the merge stay with the person.
+
 ## Guardrails (they don't depend on anyone remembering)
 - `supervised` profile (`make profile`): without an approved plan, `code` isn't edited; push to protected branches,
   force and merge are blocked. `autonomous` profile: the same ones warn.

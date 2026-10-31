@@ -1,18 +1,23 @@
 #!/usr/bin/env python3
 """PostToolUse hook (Edit|Write|MultiEdit): cheap deterministic check after each edit of code or of the
-agentic layer. .py → py_compile · .json → json.load · .xml → ElementTree · .sh → bash -n · .yaml/.yml →
-PyYAML if available. Failure → exit 2 with the error (the agent fixes it right away).
+agentic layer. .py → py_compile · .json → json.load · .xml → ElementTree · .sh → bash -n · .js/.mjs/.cjs →
+node --check (silent without node; C-13) · .yaml/.yml → PyYAML if available. Failure → exit 2 with the error (the
+agent fixes it right away).
+A memory entry (`memory/<inbox|closed|decisions|meta-improvements>/*.md`) is checked too, with the rules doctor uses
+(`_memory.entry_problems`): frontmatter, status or state, date (C-16). What the shell writes, check-journal sees at the close.
 Python compiles with the project's interpreter (C-12): `harness.json → python`, else the nearest `.venv` between
 the file and the project root, else the interpreter running this hook (often an older system python3).
 Disable with "lint": false in harness.json.
 """
 import json
 import os
+import shutil
 import subprocess
 import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from _config import is_code, is_harness, load, relative, root  # noqa: E402
+from _memory import file_problems  # noqa: E402
 
 VENV_PYTHONS = (os.path.join(".venv", "bin", "python"), os.path.join(".venv", "Scripts", "python.exe"))
 
@@ -51,7 +56,14 @@ def main():
     if not cfg.get("lint", True):
         return 0
     rel = relative(fp, cwd)
-    if not rel or not (is_code(rel, cfg) or is_harness(rel)):
+    if not rel:
+        return 0
+    bad = file_problems(fp, rel)
+    if bad:
+        sys.stderr.write(f"The memory entry {rel} does not parse as one (make inbox, make closed and doctor read it):\n"
+                         + "".join(f"  - {m}\n" for m in bad))
+        return 2
+    if not (is_code(rel, cfg) or is_harness(rel)):
         return 0
     ext = os.path.splitext(fp)[1].lower()
     try:
@@ -70,6 +82,14 @@ def main():
             r = subprocess.run(["bash", "-n", fp], capture_output=True, text=True, timeout=20)
             if r.returncode:
                 sys.stderr.write("bash -n FAILED on the edited file:\n" + r.stderr)
+                return 2
+        elif ext in (".js", ".mjs", ".cjs"):
+            node = shutil.which("node")
+            if not node:
+                return 0  # no node on this machine: silent, like PyYAML
+            r = subprocess.run([node, "--check", fp], capture_output=True, text=True, timeout=20)
+            if r.returncode:
+                sys.stderr.write("node --check FAILED on the edited file:\n" + (r.stderr or r.stdout))
                 return 2
         elif ext in (".yaml", ".yml"):
             try:

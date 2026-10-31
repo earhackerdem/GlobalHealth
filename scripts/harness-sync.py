@@ -228,6 +228,13 @@ def cmd_status(a, apply=False):
         return 2
     rows = plan(a, man)
     counts = report(rows, man.get("harness_version"), version_of(a.src), dry=not apply)
+    sys.path.insert(0, os.path.join(a.src, ".claude", "hooks"))   # the template's _memory: the update brings the newest rules
+    from _memory import meta_arrived
+    arrived = meta_arrived(a.root, version_of(a.src), a.src)
+    if arrived:   # C-15: the verdict goes in the same PR as the change it describes
+        print("  ✎ meta-improvements this update applies: mark them `applied` in this same PR")
+        for rel, why in arrived:
+            print(f"     {rel}  ({why})")
     if not apply:
         return 0
     recorded = man.get("files", {})
@@ -265,7 +272,8 @@ def cmd_status(a, apply=False):
     if backups:
         print("  backups: " + ", ".join(backups))
     print(f"  manifest and harness.json → harness_version {man['harness_version'] or '?'} rewritten; skills relinked.")
-    print("  next: `make doctor`, then record the update as one small change folder + journal entry (it is a change to this repo).")
+    print("  next: `make doctor`, then record the update as one small change folder + journal entry (it is a change to this repo)"
+          + (", with the meta-improvements above marked `applied` in the same PR." if arrived else "."))
     return 1 if left else 0
 
 

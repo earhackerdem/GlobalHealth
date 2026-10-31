@@ -75,7 +75,8 @@ class Entry:
 # ---------- files ----------
 
 def parse(text):
-    """(meta, body) of an entry file."""
+    """(meta, body) of an entry file. A UTF-8 BOM before the frontmatter is ignored (some editors write one)."""
+    text = text.lstrip("﻿")
     m = FRONT.match(text)
     if not m:
         return {}, text
@@ -432,6 +433,130 @@ def decision_ids(root):
     return out
 
 
+# the field as people and memory-migrate write it: «**Where it lives:**», «**Where it lives (PR, file):**», «**Dónde vive**:», as a
+# bullet; its value runs until a blank line or the next «**Field**» (C-15 review: one line missed 10 of 12 real entries)
+WHERE_LIVES = re.compile(r"^[ \t]*(?:[-*][ \t]+)?\*\*(?:Where it lives|D[oó]nde vive)[^*\n]*\*\*:?", re.M | re.I)
+FIELD_END = re.compile(r"\n[ \t]*\n|\n[ \t]*(?:[-*][ \t]+)?\*\*[^*\n]+\*\*")
+# x.y.z not inside a longer dotted number (19.0.1.0.0 is a module version); a sentence's final dot is fine
+VERSION = re.compile(r"(?<![\d.])(\d+)\.(\d+)\.(\d+)(?!\.?\d)")
+C_ID = re.compile(r"\bC-(\d+)\b")
+
+
+def installed_version(root):
+    try:
+        import json
+        with open(os.path.join(root, "harness.json"), encoding="utf-8") as f:
+            return json.load(f).get("harness_version") or ""
+    except Exception:
+        return ""
+
+
+def meta_arrived(root, version=None, template=None):
+    """[(path, why)]: meta-improvements still `proposed`/`accepted` whose «Where it lives» line (or «Dónde vive») cites a harness
+    version ≤ `version` (default: the one this repo runs), or a C-NN that `template/changes/` holds. Only that line counts: a
+    version mentioned in passing in the «Why» is not where the improvement lives (C-15). Known limits: a pre-release
+    (`0.4.3-dev`) counts as its release, a bare `0.4` is not a version, and any other x.y.z tool version written in that field
+    would count."""
+    version = installed_version(root) if version is None else version
+    have = tuple(int(x) for x in VERSION.findall(version or "")[0]) if VERSION.search(version or "") else None
+    c_ids = set()
+    def c_of(d):
+        out_ = set()
+        for sub in (d, os.path.join(d, "_archive")):
+            if os.path.isdir(sub):
+                out_ |= {m.group(1).lstrip("0") for n in os.listdir(sub) for m in [re.match(r"C-(\d+)-", n)] if m}
+        return out_
+    if template:
+        # a C-NN the project also has in its own changes/ is the project's, not the template's (C-15 review)
+        c_ids = c_of(os.path.join(template, "changes")) - c_of(os.path.join(root, "changes"))
+    out = []
+    todas = []
+    d = os.path.join(memory_dir(root), "meta-improvements")
+    for name in (sorted(os.listdir(d)) if os.path.isdir(d) else []):
+        if not name.endswith(".md") or name == "README.md" or name.startswith(("_", ".")):
+            continue
+        try:   # one unreadable entry is skipped, never a reason to stop an update nor to hide the others (C-15 review)
+            meta, body = parse(read(os.path.join(d, name)))
+        except (OSError, UnicodeDecodeError):
+            continue
+        todas.append(Entry("meta-improvements", meta, body, path=os.path.join(d, name), stem=name[:-3]))
+    for e in todas:
+        if e.status not in ("proposed", "accepted"):
+            continue
+        parts = []
+        for m in WHERE_LIVES.finditer(e.body):
+            rest = e.body[m.end():]
+            fin = FIELD_END.search(rest)
+            parts.append(rest[:fin.start()] if fin else rest)
+        if not parts:
+            continue
+        where = " ".join(parts)
+        llegadas = sorted({tuple(int(x) for x in v) for v in VERSION.findall(where) if have and tuple(int(x) for x in v) <= have})
+        why = [f"cites {'.'.join(map(str, llegadas[-1]))}"] if llegadas else []
+        why += [f"cites C-{c}" for c in C_ID.findall(where) if c.lstrip("0") in c_ids]
+        if why:
+            out.append((os.path.relpath(e.path, root), ", ".join(why)))
+    return out
+
+
+def entry_kind(rel):
+    """The kind of `memory/<kind>/<name>.md` when the format rules cover it (an entry with a status); None otherwise.
+    READMEs, `_`/`.` files, journal entries and research notes carry no status, so they are not judged (C-16)."""
+    parts = (rel or "").replace("\\", "/").split("/")
+    if len(parts) != 3 or parts[0] != "memory" or parts[1] not in STATUSES:
+        return None
+    name = parts[2]
+    if not name.endswith(".md") or name == "README.md" or name.startswith(("_", ".")):
+        return None
+    return parts[1]
+
+
+def entry_problems(e):
+    """What is wrong with one entry's frontmatter, each message saying how to fix it. The single source for
+    doctor/memory-check (`problems`) and the hooks that check an entry after each edit and at the close (C-16)."""
+    allowed = STATUSES[e.kind]
+    key = STATUS_KEY.get(e.kind, "status")
+    out = []
+    if not e.meta:
+        if e.kind == "decisions":
+            block = f"`---` / `id: D<n>` (make decision-next) / `date: YYYY-MM-DD` / `{key}: {allowed[0]}` / `---`"
+        elif e.kind == "closed":
+            block = f"`---` / `date: YYYY-MM-DD` / `{key}: <{' | '.join(allowed)}>` / `---`"
+        else:
+            block = f"`---` / `date: YYYY-MM-DD` / `{key}: {allowed[0]}` / `---`"
+        return [f"no frontmatter: start the file with {block} (allowed {key}: {' | '.join(allowed)})"]
+    cased = {k.lower(): k for k in e.meta if k != k.lower()}
+    if e.status not in allowed:
+        msg = f"unknown {key} `{e.status or '(none)'}` (allowed: {' | '.join(allowed)})"
+        other = "status" if key == "state" else "state"
+        if not e.status and e.meta.get(other):
+            msg += f": it says `{other}:`, and {e.kind}/ uses `{key}:`"
+        elif not e.status and key in cased:
+            msg += f": it says `{cased[key]}:`, and keys are lowercase"
+        out.append(msg)
+    if e.kind != "decisions" and not DATE.fullmatch(e.date):
+        if e.date:
+            out.append(f"`date:` is `{e.date}`, not YYYY-MM-DD")
+        elif "date" in cased:
+            out.append(f"frontmatter without `date: YYYY-MM-DD`: it says `{cased['date']}:`, and keys are lowercase")
+        else:
+            out.append("frontmatter without `date: YYYY-MM-DD`")
+    return out
+
+
+def file_problems(path, rel):
+    """entry_problems for the file at `path`, whose repo-relative path `rel` gives its kind; [] when it is not an
+    entry or cannot be read."""
+    kind = entry_kind(rel)
+    if not kind:
+        return []
+    try:
+        meta, body = parse(read(path))
+    except (OSError, UnicodeDecodeError):
+        return []
+    return entry_problems(Entry(kind, meta, body))
+
+
 def problems(root):
     """[(path, message)]: duplicate decision ids, unknown statuses, missing dates, monoliths left over."""
     out = []
@@ -442,14 +567,14 @@ def problems(root):
                                f"(`make decision-next` gives the next free one)"))
         else:
             seen[n] = where
-    for kind, allowed in STATUSES.items():
+    for kind in STATUSES:
         for e in load_dir(root, kind):
             rel = os.path.relpath(e.path, root)
-            if e.status not in allowed:
-                out.append((rel, f"unknown {STATUS_KEY.get(kind, 'status')} `{e.status or '(none)'}` "
-                                 f"(allowed: {' | '.join(allowed)})"))
-            if kind != "decisions" and not DATE.fullmatch(e.date):
-                out.append((rel, "frontmatter without `date: YYYY-MM-DD`"))
+            out += [(rel, msg) for msg in entry_problems(e)]
+    v = installed_version(root)
+    for rel, why in meta_arrived(root, v):
+        out.append((rel, f"status still proposed/accepted but it {why} and this repo runs {v}: it arrived — mark it `applied` "
+                         f"in the PR that brought it (C-15, docs/updating.md)"))
     for kind in KINDS:
         if os.path.isfile(monolith(root, kind)):
             out.append((f"memory/{kind}.md", "old single file: run `make memory-migrate` (one file per entry)"))

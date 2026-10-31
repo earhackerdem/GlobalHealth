@@ -1,6 +1,6 @@
 ---
 date: 2026-10-29
-status: accepted
+status: applied
 ---
 
 El hook `lint.py` compila el Python con el intérprete del sistema, no con el del proyecto
@@ -20,3 +20,5 @@ Una alarma falsa en cada edición enseña a ignorar el hook.
 
 **Estado:** aceptado por Saúl Pérez («Sí, antes de Android», 2026-10-29). Upstream en earhackerdem/harness#6 (C-12,
 0.4.1); vuelve con `make harness-update` cuando se mergee.
+
+**Where it lives:** earhackerdem/harness#6 (C-12, 0.4.1), `.claude/hooks/lint.py:29` (`project_python`). Verificado el 2026-10-31 en la actualización a 0.4.5: el hook encuentra `.venv/bin/python` (3.14.7) en la raíz y `backend/app/api/routes/profile.py:224` ya no da «py_compile FAILED» (el `python3` del sistema, 3.9.6, sí falla).

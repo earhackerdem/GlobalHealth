@@ -5,7 +5,7 @@
       "src": ".agents/rules/epe.md"
     },
     ".agents/skills/README.md": {
-      "sha256": "f39c219de711eb2a89db7cd0c97d558c841906986e96c8205be3f9ff1ffda4e5",
+      "sha256": "cba2ead98693b5a6b53b10b2237b11c3408cf4f77e79d4ace8c131dd90c90462",
       "src": ".agents/skills/README.md"
     },
     ".agents/skills/codebase-context/SKILL.md": {
@@ -25,7 +25,7 @@
       "src": ".agents/skills/epe-0-new/templates/common/changes-README.md"
     },
     ".agents/skills/epe-0-new/templates/common/memory/README.md": {
-      "sha256": "0f8c54d9f5bc7d6aeff3c81c407a97715f76934bd0660b56a15044664637da48",
+      "sha256": "688dc4b56e637fdb7eaa378551f88daafe96b0a8a70bc98077b9c20a3c6a464c",
       "src": ".agents/skills/epe-0-new/templates/common/memory/README.md"
     },
     ".agents/skills/epe-0-new/templates/common/memory/closed/README.md": {
@@ -45,7 +45,7 @@
       "src": ".agents/skills/epe-0-new/templates/common/memory/journal/README.md"
     },
     ".agents/skills/epe-0-new/templates/common/memory/meta-improvements/README.md": {
-      "sha256": "fe75845dff541220538aa1056ad0fe4e3e02fa2f4e6c9c484749320533a14082",
+      "sha256": "04c470acbe22d9c2c6446db152a2eb11e732db8e30fec55e8e42b79bce6c86ea",
       "src": ".agents/skills/epe-0-new/templates/common/memory/meta-improvements/README.md"
     },
     ".agents/skills/epe-0-new/templates/common/memory/research/README.md": {
@@ -129,7 +129,7 @@
       "src": ".agents/skills/epe-3-execute/SKILL.md"
     },
     ".agents/skills/epe-4-review/SKILL.md": {
-      "sha256": "75683a5cebe9147741a192476919a8de22de4cd325a5ae9cff5663b9ac9f92bc",
+      "sha256": "f1a1c54cd8e522e8f6fed7a70ed7eca84048d65bd6347e1009a5e7e2b1dbe2fe",
       "src": ".agents/skills/epe-4-review/SKILL.md"
     },
     ".agents/skills/epe-5-apply/SKILL.md": {
@@ -139,6 +139,10 @@
     ".agents/skills/epe-6-archive/SKILL.md": {
       "sha256": "0da180d5d5066206214e94137818d94a7a725c13385c1bcc75f046b90053d758",
       "src": ".agents/skills/epe-6-archive/SKILL.md"
+    },
+    ".agents/skills/epe-autopilot/SKILL.md": {
+      "sha256": "835896be9511fc8bc2f4ce0cb0f9640db7e3356f017861d4a2f94a851dd284dc",
+      "src": ".agents/skills/epe-autopilot/SKILL.md"
     },
     ".agents/skills/epe-memory/SKILL.md": {
       "sha256": "b1597702109321dd3fb94f37f8303e50ebab1862feeb13645801c9715a4868e0",
@@ -193,7 +197,7 @@
       "src": ".agents/skills/session-retro/SKILL.md"
     },
     ".agents/skills/triage/SKILL.md": {
-      "sha256": "db01dc28c97effc3654b2685994ed6b4e8e9b332756509d916d4fd21991b0e13",
+      "sha256": "1887b19267902b1bf2087e0a94518639a951a949a18382cb34eda04d518c223f",
       "src": ".agents/skills/triage/SKILL.md"
     },
     ".claude/agents/cold-reader.md": {
@@ -221,7 +225,7 @@
       "src": ".claude/hooks/_harness.py"
     },
     ".claude/hooks/_memory.py": {
-      "sha256": "5612e0d3f2fe07e20823f579bc9bc5602adb95c836371e7e4557f11cb74376cc",
+      "sha256": "0b7c296f736dd057edeec19ed1d077b5830a52f42f4eafdf19885b09be200e6e",
       "src": ".claude/hooks/_memory.py"
     },
     ".claude/hooks/_profile.py": {
@@ -229,7 +233,7 @@
       "src": ".claude/hooks/_profile.py"
     },
     ".claude/hooks/check-journal.py": {
-      "sha256": "f7c9bc915f4968b161ca212937e3595ef6267dd9e3409fed1629ff6016f62156",
+      "sha256": "9cad8a02818a7b2f941f689a2f51cb8b7a4da9191374878da26ced25df55b0a7",
       "src": ".claude/hooks/check-journal.py"
     },
     ".claude/hooks/gate-plan.py": {
@@ -261,7 +265,7 @@
       "src": ".claude/hooks/inbox.py"
     },
     ".claude/hooks/lint.py": {
-      "sha256": "e56b7b8ac108aa4cd6ea5e94a6821ec210a716dee48b20178e0d22c1b270bc73",
+      "sha256": "c55b6cd768ce06705c1f40bd4ffbd14cca2a35383c9005cf749bade1fbf93f82",
       "src": ".claude/hooks/lint.py"
     },
     ".claude/hooks/memory-compaction.py": {
@@ -317,11 +321,11 @@
       "src": ".vscode/settings.json"
     },
     "AGENTS.md": {
-      "sha256": "5b4223319787301b7f5facb4cf5d4aa59155593f2ec15e13223d7ee630834759",
+      "sha256": "0718edc0ee13e9f468da4fa21159790d30b01cf41bb1ec09ef1751955fff7fbc",
       "src": "AGENTS.md"
     },
     "CLAUDE.md": {
-      "sha256": "c53f7a0713ebca0633e0bf7b20a195160d3f92eebb6fb90deaf1cbaa1fb76b8b",
+      "sha256": "159302a8099fac28bed8435e384408f9f21858937ad2c954d7c14a7940260cdc",
       "src": "CLAUDE.md"
     },
     "Makefile": {
@@ -341,7 +345,7 @@
       "src": "docs/engines.md"
     },
     "docs/epe-cycle.md": {
-      "sha256": "6f1f383009e07ac80cb897ba80fd6fcda57bc08595f720bb13e70e642b7e41ca",
+      "sha256": "170e29b8dcc9140bf50af70968038e0f57d8027f272585cc366ed9ed35e89e1e",
       "src": "docs/epe-cycle.md"
     },
     "docs/flavors.md": {
@@ -353,11 +357,11 @@
       "src": "docs/ides.md"
     },
     "docs/memory.md": {
-      "sha256": "07e599c179b657bc1e395bb0334aefc224b79ea4428067fd81a1bde934a0618c",
+      "sha256": "6dea34eb915f89265c7879ff108210fe4d770e7f08a908dc8630c38db567171b",
       "src": "docs/memory.md"
     },
     "docs/updating.md": {
-      "sha256": "435367684e06d268fa2d2967f7ff94d3c6e78144e14756a3477b36edcaca5edd",
+      "sha256": "cab066f2e974839255f794c70bde4dd7726fee85a6eca0d1bec389a7e5d031c5",
       "src": "docs/updating.md"
     },
     "scripts/adopt.sh": {
@@ -389,7 +393,7 @@
       "src": "scripts/harness-harvest.py"
     },
     "scripts/harness-sync.py": {
-      "sha256": "18467eb827b602ee8f9a5de6b2ddb2afbb9ae92e3fc2a54d023a8feaf4f34104",
+      "sha256": "c5576d47c575c8f02e4d7df7bcf778e54db963680f66c404cce51345c3d22697",
       "src": "scripts/harness-sync.py"
     },
     "scripts/inbox.py": {
@@ -437,8 +441,8 @@
       "src": "scripts/worktrees.py"
     }
   },
-  "harness_version": "0.4.1",
+  "harness_version": "0.4.5",
   "installed": "2026-10-11",
   "mode": "new",
-  "updated": "2026-10-29"
+  "updated": "2026-10-31"
 }
