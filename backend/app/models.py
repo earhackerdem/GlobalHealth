@@ -370,9 +370,10 @@ PROFILE_MIN_BIRTH_DATE = date(1900, 1, 1)
 # Range validations run BEFORE encrypting (Decision 4) and live outside
 # pydantic validators so the 422 detail stays a STRING in es-MX, like
 # health_records.
-def validate_birth_date(birth_date: date) -> None:
-    """es-MX ValueError when birth_date falls outside [1900-01-01, today]."""
-    if birth_date > date.today():
+def validate_birth_date(birth_date: date, today: date) -> None:
+    """es-MX ValueError when birth_date falls outside [1900-01-01, today];
+    the caller passes today (Mexico City's, not the server's)."""
+    if birth_date > today:
         raise ValueError("La fecha de nacimiento no puede estar en el futuro")
     if birth_date < PROFILE_MIN_BIRTH_DATE:
         raise ValueError(
@@ -734,7 +735,8 @@ def _is_filled(value: Any) -> bool:
     if value is None:
         return False
     if isinstance(value, str):
-        return bool(value.strip())
+        # Invisible text (zero-width, blank fillers) counts as empty too.
+        return not _is_blank(value)
     return True
 
 
