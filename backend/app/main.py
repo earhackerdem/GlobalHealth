@@ -29,27 +29,21 @@ def custom_generate_unique_id(route: APIRoute) -> str:
     return f"{route.tags[0]}-{route.name}"
 
 
-def _valid_utf8(value: Any) -> Any:
-    """A lone surrogate (in a value or in a key name that lands in `loc`)
-    becomes "?", so the response always encodes (Decision 2)."""
-    if isinstance(value, str):
-        return value.encode("utf-8", "replace").decode("utf-8")
-    if isinstance(value, list):
-        return [_valid_utf8(v) for v in value]
-    if isinstance(value, dict):
-        return {_valid_utf8(k): _valid_utf8(v) for k, v in value.items()}
-    return value
-
-
 def validation_error_content(errors: Sequence[Any]) -> dict[str, Any]:
     """FastAPI's 422 shape without the received value (`input`): the client
-    already has it, and it is health data echoed back (Decision 1)."""
+    already has it, and it is health data echoed back (Decision 1). Outside
+    `input`, pydantic-core already turns a lone surrogate into U+FFFD, so the
+    rest always encodes (review M2)."""
     detail = [{k: v for k, v in e.items() if k != "input"} for e in errors]
-    return {"detail": _valid_utf8(jsonable_encoder(detail))}
+    return {"detail": jsonable_encoder(detail)}
 
 
-if settings.SENTRY_DSN and settings.FASTAPI_ENV != "development":
-    sentry_sdk.init(dsn=str(settings.SENTRY_DSN), **SENTRY_OPTIONS)
+def init_sentry() -> None:
+    if settings.SENTRY_DSN and settings.FASTAPI_ENV != "development":
+        sentry_sdk.init(dsn=str(settings.SENTRY_DSN), **SENTRY_OPTIONS)
+
+
+init_sentry()
 
 app = FastAPI(
     title=settings.PROJECT_NAME,
