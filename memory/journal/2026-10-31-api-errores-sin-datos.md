@@ -29,3 +29,21 @@ autónoma («quiero ver hasta dónde llegas»). Primer cambio del lote: el grupo
 commit, para que `tdd-check` mida desde el rojo real.
 
 **Deuda:** ninguna nueva.
+
+## Revisión y archivo
+
+**Ronda 1:** tres buscadores y un validador que reprodujo los 13 hallazgos; gate y arreglo por delegación.
+- **Corregidos:**
+  - **M2:** `_valid_utf8` era código muerto. La exploración había razonado, sin medir, que la clave con surrogate
+    llegaba a `loc`.
+  - **M3:** `init_sentry()` probado.
+  - **L2–L7 y L10:** documentos y una aserción vacía.
+- **Deuda:**
+  - **M1:** NUL → 500 con parámetros SQL en el log. Va al cambio de base de datos.
+  - **L1** y **L8:** en `memory/closed/`.
+- **Falso positivo:** L9.
+
+**Verde final:** 593/0/0/0, `main.py` 100 %. Pase real repetido con la API reconstruida: 422, 0 apariciones en el log.
+
+**Lección:** «empírico antes que documental» también vale para la premisa de una decisión. La Decision 2 salió de leer
+`extra="forbid"`, no de mandar la petición.

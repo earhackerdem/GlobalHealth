@@ -1,9 +1,11 @@
 ## ADDED Requirements
 
 ### Requirement: Un dato rechazado no se devuelve ni se escribe en el log
-El sistema SHALL responder 422 a un cuerpo con datos inválidos, incluido un texto que no es Unicode válido, con
+El sistema SHALL responder 422 a un cuerpo JSON con datos inválidos, incluido un texto con un surrogate UTF-16 suelto
+(escape `\ud800`), con
 `detail` como lista de errores (`loc`, `msg`, `type`). La respuesta SHALL ser UTF-8 válido y SHALL NOT incluir el
-valor recibido (`input`), y el sistema SHALL NOT escribir ese valor en sus logs.
+campo `input` con el valor recibido, y el sistema SHALL NOT escribir ese valor en sus logs. (Un cuerpo que ni
+siquiera se puede leer como JSON, con bytes inválidos, recibe el 400 de FastAPI sin eco.)
 
 #### Scenario: Texto con un surrogate suelto en el alta
 - **GIVEN** una persona sin sesión

@@ -18,7 +18,7 @@ Dos caminos sacan datos de salud de donde deben estar:
 
 ## What Changes
 - Un handler de `RequestValidationError` para toda la API: el 422 conserva `detail[]` con `loc`, `msg`, `type`
-  (y `ctx`, `url`), pero **ya no devuelve `input`**, y su cuerpo es siempre UTF-8 válido.
+  (y `ctx`), pero **ya no devuelve `input`**, y su cuerpo es siempre UTF-8 válido.
 - La inicialización de Sentry no captura el cuerpo de la petición ni las variables locales.
 
 ## Capabilities

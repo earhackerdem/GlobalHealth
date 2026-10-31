@@ -17,4 +17,4 @@ tocan un solo archivo de implementación (`backend/app/main.py`) y cubren menos 
 
 ## Close
 - [x] evidence.md (red/green numbers per group) · validation.md (non-technical, for whoever approves)
-- [ ] journal entry in memory/journal/ · PR opened
+- [x] journal entry in memory/journal/ · PR opened

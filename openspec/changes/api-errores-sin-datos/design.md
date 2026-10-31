@@ -16,9 +16,10 @@ elegir un DSN; tocar el esquema OpenAPI o el cliente generado.
 
 ## Interface contract
 - `app.main.validation_error_content(errors: Sequence[Any]) -> dict[str, Any]`: devuelve `{"detail": [...]}`, cada
-  error sin la clave `input` y pasado por `jsonable_encoder`; toda cadena (también las de `loc`) queda como UTF-8
-  válido: un surrogate suelto se cambia por `"?"`.
+  error sin la clave `input` y pasado por `jsonable_encoder`. (Revisión M2: fuera de `input`, pydantic-core ya cambia
+  un surrogate suelto por U+FFFD; no hace falta sanear nada más.)
 - Handler registrado en `app` para `RequestValidationError`: `JSONResponse(422, validation_error_content(exc.errors()))`.
+- `app.main.init_sentry() -> None` (revisión M3): la inicialización con la condición de siempre, probada.
 - `app.main.SENTRY_OPTIONS: dict[str, Any]` con, al menos, `traces_sample_rate=1.0` (lo que hacía el `enable_tracing=True` obsoleto en 2.70.0), `max_request_body_size="never"`,
   `include_local_variables=False`, `send_default_pii=False`; `sentry_sdk.init(dsn=…, **SENTRY_OPTIONS)` con la
   misma condición de hoy.
@@ -27,9 +28,9 @@ elegir un DSN; tocar el esquema OpenAPI o el cliente generado.
 1. **Quitar `input` de todo 422, no solo del que falla.** El cliente ya tiene lo que envió; el eco no le sirve a
    ninguna pantalla (nadie lo lee) y es el dato de salud de vuelta en la respuesta. Perdió: escapar el surrogate
    (sigue haciendo eco, ver exploration §3).
-2. **Sanear cadenas con `encode("utf-8", "replace")`** después del `jsonable_encoder`, para la clave desconocida con
-   surrogate (`loc`). Perdió: rechazar el cuerpo antes de parsear (un middleware que lea el cuerpo crudo, más caro y
-   duplica lo que pydantic ya hace).
+2. ~~Sanear cadenas con `encode("utf-8", "replace")`~~ **Retirada en la revisión (M2):** el validador mandó 18 tipos
+   de petición a la API y ningún surrogate llegó al contenido del 422 fuera de `input`; pydantic-core ya lo cambia por
+   U+FFFD. Era código muerto.
 3. **Opciones de Sentry y no un `before_send`.** Medido: las dos opciones bastan. Perdió: `before_send` que borre
    `request.data` (red sobre un campo que ya no se captura).
 4. **Por delegación:** `send_default_pii=False` explícito, aunque es el valor por defecto, para que un cambio de
@@ -41,7 +42,10 @@ elegir un DSN; tocar el esquema OpenAPI o el cliente generado.
 | error-reports · Texto con un surrogate suelto en el alta | `backend/tests/api/routes/test_error_reports.py::test_signup_lone_surrogate_is_422_without_echo_or_log` |
 | error-reports · Un 422 ordinario conserva su forma y pierde el eco | `…::test_ordinary_422_keeps_shape_without_input` |
 | error-reports · Una clave desconocida con un surrogate suelto | `…::test_unknown_key_with_lone_surrogate_is_valid_utf8_422` |
-| error-reports · Falla inesperada al guardar un antecedente | `…::test_sentry_event_has_no_body_locals_or_token` |
+| error-reports · Falla inesperada al guardar un antecedente | `…::test_sentry_event_has_no_body_locals_or_token` · el init de producción: `…::test_production_sentry_init_uses_the_privacy_options` (revisión M3) |
+
+La mitad «ningún log» del primer escenario la cubre el pase real con `docker logs` (evidence.md): en la prueba,
+`TestClient` no tiene uvicorn y la aserción de `caplog` solo protege el logging de Python (revisión L4).
 
 ## Non-functional constraints addressed
 NFR-001 y privacidad (arriba); NFR-014 conservado (el evento trae tipo, stack y ruta); NFR-009 (una prueba por
