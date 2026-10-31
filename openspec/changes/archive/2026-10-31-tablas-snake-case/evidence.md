@@ -55,4 +55,3 @@ validador aparte (lo declara el brief). Gate y arreglos por delegación de Saúl
 | F7 | `alembic upgrade --sql` (sin conexión) falla porque se lee el catálogo | congelado: `a7f3c9e21d54` ya necesita conexión igual, y nada usa `--sql` (`memory/closed/2026-10-31-ronda-1-de-tablas-snake-case.md`) |
 
 Verde después de la revisión: **643 passed, 0 failed, 0 errors, 0 skipped**, cobertura 97 %; `make tdd-check` ✓.
-
