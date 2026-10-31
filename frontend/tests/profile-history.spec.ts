@@ -357,6 +357,43 @@ test.describe("Perfil médico — historial por secciones (perfil-eventos, grupo
     ).toBeVisible()
   })
 
+  test("S04b «¿Cuál fue?» con solo un carácter invisible no se guarda", async ({
+    page,
+    request,
+  }) => {
+    // validaciones-hoy-y-texto-invisible: lo que no se ve cuenta como vacío
+    // (espacio de ancho cero U+200B; el relleno Hangul U+3164 y el braille en
+    // blanco U+2800; el selector de variante U+FE0F, C1), así que sale el
+    // mensaje de requerido de la pantalla junto a la caja y no se guarda nada.
+    // Siempre con escapes: un editor que los borre dejaría la prueba en "".
+    const api = await freshPatient(page, request)
+    await openSection(page, "/perfil/pasadas")
+    await startAdd(page)
+    await choose(page, /condición/i, "Otra")
+    const which = textbox(page, /^¿cuál fue\?/i)
+
+    for (const invisible of ["\u200b", "\u3164\u2800", "\ufe0f"]) {
+      await which.fill(invisible)
+      await save(page)
+      await expect(which).toHaveAttribute("aria-invalid", "true")
+      await expect(which).toHaveAccessibleDescription(
+        "Elige la condición o escribe cuál fue",
+      )
+    }
+
+    await expect(entries(page)).toHaveCount(0)
+    expect(await historyCount(api)).toBe(0)
+
+    // Un texto visible con un invisible dentro sí cuenta (review H).
+    await which.fill("Zika\u200b")
+    await save(page)
+    await expect(entries(page)).toHaveCount(1)
+    await expect(
+      entries(page).first().getByText("Zika", { exact: true }),
+    ).toBeVisible()
+    expect(await historyCount(api)).toBe(1)
+  })
+
   test("S05 cirugía con todos sus datos; al editar se ven tal cual", async ({
     page,
     request,
@@ -426,6 +463,22 @@ test.describe("Perfil médico — historial por secciones (perfil-eventos, grupo
     await expect(entries(page)).toHaveCount(1)
     await expect(entries(page).first()).toContainText("en 2015")
     await expect(entries(page).first()).toContainText("Parto")
+  })
+
+  test("S09b un «cuándo» con solo un carácter invisible es una transfusión vacía", async ({
+    page,
+    request,
+  }) => {
+    // Review F: el «cuándo» también trata lo invisible como vacío; antes
+    // borraba el chip y pedía «solo el número».
+    const api = await freshPatient(page, request)
+    await openSection(page, "/perfil/transfusiones")
+    await startAdd(page)
+    await page.getByLabel("Edad que tenías").fill("\u200b")
+    await save(page)
+
+    await expect(page.getByText("Llena al menos un dato")).toBeVisible()
+    expect(await historyCount(api)).toBe(0)
   })
 
   test("S09 una transfusión sin datos no se guarda", async ({

@@ -29,7 +29,7 @@ errors carry a STRING detail in es-MX; lists use {"data": [...], "count": N}):
 """
 
 import uuid
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Any
 from zoneinfo import ZoneInfo
 
@@ -201,12 +201,16 @@ def test_ac1_save_basic_profile_and_read_back_encrypted_at_rest(
 def test_ac2_future_birth_date_rejected_profile_unchanged(
     client: TestClient, db: Session
 ) -> None:
-    """PUT birth_date 2030-01-01: 422 con detalle es-MX y el perfil no cambia."""
+    """Fecha de nacimiento futura rechazada: PUT birth_date = pasado mañana en
+    Ciudad de México -> 422 con detalle es-MX y el perfil no cambia."""
     headers, _user_id = consented_user(client, db)
     r_seed = put_profile(client, headers, {"birth_date": "1990-03-15"})
     assert r_seed.status_code == 200, r_seed.text
+    day_after_tomorrow = datetime.now(
+        ZoneInfo("America/Mexico_City")
+    ).date() + timedelta(days=2)
 
-    r = put_profile(client, headers, {"birth_date": "2030-01-01"})
+    r = put_profile(client, headers, {"birth_date": day_after_tomorrow.isoformat()})
 
     assert r.status_code == 422, r.text
     detail = r.json()["detail"]
@@ -217,6 +221,38 @@ def test_ac2_future_birth_date_rejected_profile_unchanged(
     r_get = get_profile(client, headers)
     assert r_get.status_code == 200, r_get.text
     assert r_get.json()["birth_date"] == "1990-03-15"
+
+
+def test_birth_date_today_is_mexico_city(
+    client: TestClient, db: Session, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """«Hoy» es el de Ciudad de México: a las 20:00 del 2026-03-10 en CDMX
+    (02:00 del 2026-03-11 UTC), birth_date 2026-03-11 -> 422 "La fecha de
+    nacimiento no puede estar en el futuro" y el perfil no cambia; 2026-03-10
+    -> 200."""
+    # Import local: test_profile_history importa de este módulo (evita el ciclo
+    # al cargar; en ejecución ambos módulos ya están completos).
+    from tests.api.routes.test_profile_history import freeze_routes_clock
+
+    freeze_routes_clock(monkeypatch, datetime(2026, 3, 10, 20, 0))
+    headers, _user_id = consented_user(client, db)
+    r_seed = put_profile(client, headers, {"birth_date": "1990-03-15"})
+    assert r_seed.status_code == 200, r_seed.text
+
+    r_future = put_profile(client, headers, {"birth_date": "2026-03-11"})
+
+    assert r_future.status_code == 422, r_future.text
+    assert r_future.json()["detail"] == (
+        "La fecha de nacimiento no puede estar en el futuro"
+    ), r_future.text
+    r_get = get_profile(client, headers)
+    assert r_get.status_code == 200, r_get.text
+    assert r_get.json()["birth_date"] == "1990-03-15"
+
+    r_today = put_profile(client, headers, {"birth_date": "2026-03-10"})
+
+    assert r_today.status_code == 200, r_today.text
+    assert r_today.json()["birth_date"] == "2026-03-10"
 
 
 # --- Escenario 3: Perfil vacío válido ---------------------------------------------

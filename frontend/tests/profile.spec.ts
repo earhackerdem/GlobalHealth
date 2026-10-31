@@ -501,3 +501,29 @@ test.describe("Perfil médico — onboarding y /perfil", () => {
     await expect(ahf.getByText("Padre", { exact: true })).toBeVisible()
   })
 })
+
+test.describe("Fecha de nacimiento con el «hoy» de Ciudad de México", () => {
+  // validaciones-hoy-y-texto-invisible, review E: el aparato está en Tokio y
+  // son las 20:00 del 2026-03-10 en Ciudad de México (11:00 del 2026-03-11 en
+  // Tokio). La pantalla mide «futura» con el día de México, como la API.
+  test.use({ timezoneId: "Asia/Tokyo" })
+
+  test("el 2026-03-11 es futuro y el 2026-03-10 no, aunque el aparato ya esté en el 11", async ({
+    page,
+  }) => {
+    await page.clock.setFixedTime(new Date("2026-03-11T02:00:00Z"))
+    await freshUserWithConsent(page)
+
+    const wizard = page.getByTestId("onboarding-wizard")
+    await expect(wizard).toBeVisible()
+    const date = wizard.getByLabel("Fecha de nacimiento")
+    const future = wizard.getByText(
+      "La fecha de nacimiento no puede ser futura",
+    )
+
+    await date.fill("2026-03-11")
+    await expect(future).toBeVisible()
+    await date.fill("2026-03-10")
+    await expect(future).not.toBeVisible()
+  })
+})

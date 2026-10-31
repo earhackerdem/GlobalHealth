@@ -59,6 +59,7 @@ import ChipGroup, { ChipMultiGroup } from "./ChipGroup"
 import { mexicoCityTodayIso } from "./format"
 import { ageToday } from "./history"
 import { getHabitsQueryOptions, getProfileQueryOptions } from "./queries"
+import { isBlank } from "./text"
 
 type AlcoholStatus = AlcoholHabit["status"]
 type SmokeStatus = TobaccoHabit["status"]
@@ -138,13 +139,6 @@ const OTHER_NAME = "exercise.activities.other.name"
 /** Its length, from the generated schema like the scales. */
 const OTHER_NAME_MAX =
   zOtherExerciseActivity.shape.name.unwrap().unwrap().maxLength ?? undefined
-/**
- * A name that shows nothing is a missing one, as in the server (models.py
- * `_is_blank`): only whitespace, controls, format characters (U+200B) or the
- * Hangul and braille blank fillers.
- */
-const BLANK = /^[\s\p{Cc}\p{Cf}\u115F\u1160\u3164\uFFA0\u2800]*$/u
-const isBlank = (text: string) => BLANK.test(text)
 /**
  * "No recuerdo" (perfil-habitos-completitud design.md, Decision 1), stored in
  * the number's own field.

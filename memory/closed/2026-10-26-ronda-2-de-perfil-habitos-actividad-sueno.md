@@ -21,3 +21,5 @@ Ronda 2 de perfil-habitos-actividad-sueno (PR #34, diff a95570c..d3f114b), once 
 **State:** ⏸️ deferred
 
 **Anchor (journal: date · title):** journal: 2026-10-26 · perfil-habitos-actividad-sueno (C2a: C-5, C-7, C-8)
+
+**C1 pagado (2026-10-31):** validaciones-hoy-y-texto-invisible, PR #47, junto con B2 como preveía este veredicto: una sola regla de blanco (espacio, Cc, Cf, `Default_Ignorable_Code_Point`, U+2800) en `_is_blank` (`BLANK_RANGES`, Unicode 16) e `isBlank` (`\p{Default_Ignorable_Code_Point}`). Los demás hallazgos de esta ronda siguen diferidos.

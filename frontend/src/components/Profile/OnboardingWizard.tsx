@@ -34,7 +34,7 @@ import FamilyHistoryFields, {
   CONDITIONS,
   type HistoryMap,
 } from "./FamilyHistoryFields"
-import { ageFrom, formatDateMx, localTodayIso } from "./format"
+import { ageFrom, formatDateMx, mexicoCityTodayIso } from "./format"
 
 type Sex = NonNullable<PatientProfileUpdate["sex"]>
 
@@ -100,7 +100,7 @@ function OnboardingWizard() {
       }
       if (weight || height) {
         const current = (await ProfileService.readProfile()).data
-        const today = localTodayIso()
+        const today = mexicoCityTodayIso() // the API's measured_on
         const alreadyMeasured = (
           latest: typeof current.latest_weight,
           value: string,
@@ -188,7 +188,7 @@ function OnboardingWizard() {
   // API enforces, shown next to the field instead of as a 422 toast.
   const birthDateError = !birthDate
     ? null
-    : birthDate > localTodayIso()
+    : birthDate > mexicoCityTodayIso()
       ? t("validation.birthDateFuture")
       : birthDate < "1900-01-01"
         ? t("validation.birthDateTooOld")

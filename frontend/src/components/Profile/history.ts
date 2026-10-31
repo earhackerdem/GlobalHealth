@@ -8,6 +8,7 @@ import type {
   WhenStage,
 } from "@/client"
 import { mexicoCityTodayIso } from "./format"
+import { isBlank } from "./text"
 
 /**
  * The sections with their own screen (keys as in perfil.tsx): chronic (US-18
@@ -285,7 +286,7 @@ export function draftToWhen(draft: WhenDraft): When | null | "invalid" {
   if (draft.choice === "unknown") return { kind: "unknown" }
   if (draft.choice) return { kind: "stage", value: draft.choice }
   const text = draft.text.trim()
-  if (!text) return null
+  if (isBlank(text)) return null
   if (!/^\d+$/.test(text)) return "invalid"
   return { kind: draft.mode, value: Number(text) }
 }
