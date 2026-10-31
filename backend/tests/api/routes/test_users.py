@@ -610,3 +610,39 @@ def test_update_me_full_name_with_nul_is_422(db: Session) -> None:
         stored = fresh.get(User, user.id)
         assert stored is not None
         assert stored.full_name == "Nombre Bien"
+
+
+def test_signup_nul_error_is_a_value_error_on_the_field() -> None:
+    """Review L-2: the NUL error has the house's shape (`value_error`, es-MX
+    message) and the `loc` of the field."""
+    r = _client_without_server_exceptions().post(
+        f"{settings.API_V1_STR}/users/signup",
+        json={
+            "email": random_email(),
+            "password": random_lower_string(),
+            "full_name": "Nombre\u0000",
+        },
+    )
+
+    assert r.status_code == 422, r.text
+    (error,) = r.json()["detail"]
+    assert error["loc"] == ["body", "full_name"]
+    assert error["type"] == "value_error"
+    assert "El texto no puede contener el carácter nulo" in error["msg"]
+
+
+def test_signup_full_name_too_long_keeps_string_too_long() -> None:
+    """Review L-1: guarding the NUL does not change the length error of the
+    field (still pydantic's `string_too_long`, as every other text field)."""
+    r = _client_without_server_exceptions().post(
+        f"{settings.API_V1_STR}/users/signup",
+        json={
+            "email": random_email(),
+            "password": random_lower_string(),
+            "full_name": "a" * 256,
+        },
+    )
+
+    assert r.status_code == 422, r.text
+    (error,) = r.json()["detail"]
+    assert error["type"] == "string_too_long", error

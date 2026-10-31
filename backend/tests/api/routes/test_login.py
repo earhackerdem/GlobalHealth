@@ -210,3 +210,19 @@ def test_login_username_with_nul_is_incorrect_credentials() -> None:
 
     assert r.status_code == 400, r.text
     assert r.json()["detail"] == "Correo o contraseña incorrectos"
+
+
+def test_password_recovery_with_nul_answers_like_an_unknown_email() -> None:
+    """Review M-1: a NUL in the recovery path (no session) answers exactly like
+    an email that does not exist, never with a 500."""
+    test_client = TestClient(app, raise_server_exceptions=False)
+
+    r_nul = test_client.post(
+        f"{settings.API_V1_STR}/password-recovery/correo%00@example.com"
+    )
+    r_unknown = test_client.post(
+        f"{settings.API_V1_STR}/password-recovery/{random_email()}"
+    )
+
+    assert r_nul.status_code == r_unknown.status_code, r_nul.text
+    assert r_nul.json() == r_unknown.json()

@@ -10,10 +10,13 @@ Interface contract (design.md, "## Interface contract"):
 from typing import Any
 
 import pytest
+from pydantic import ValidationError
 from sqlalchemy import text
 from sqlalchemy.exc import DBAPIError
 
+from app import models
 from app.core.db import engine
+from tests.utils.utils import random_email
 
 MARKER = "Valor-Prueba-M1"
 
@@ -69,3 +72,28 @@ def test_every_foreign_key_has_an_index() -> None:
         f"{r['table_name']}.{r['column_name']} ({r['constraint_name']})" for r in rows
     ]
     assert unindexed == [], unindexed
+
+
+@pytest.mark.parametrize(
+    ("schema", "field"),
+    [
+        ("UserCreate", "full_name"),
+        ("UserRegister", "full_name"),
+        ("UserUpdate", "full_name"),
+        ("UserUpdateMe", "full_name"),
+        ("ItemCreate", "title"),
+        ("ItemCreate", "description"),
+        ("ItemUpdate", "title"),
+        ("ItemUpdate", "description"),
+    ],
+)
+def test_every_plain_text_input_rejects_nul(schema: str, field: str) -> None:
+    """Review F4b: every input schema of the contract rejects a NUL in its
+    clear-text fields (a validation error on that field)."""
+    model = getattr(models, schema)
+    base: dict[str, Any] = {"email": random_email(), "password": "contrasena-larga"}
+    if schema.startswith("Item"):
+        base = {"title": "Elemento"}
+    with pytest.raises(ValidationError) as caught:
+        model.model_validate({**base, field: "Texto\u0000"})
+    assert [e["loc"] for e in caught.value.errors()] == [(field,)]
